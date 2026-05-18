@@ -1,14 +1,25 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { Phone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Menu, Phone, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { navItems, siteConfig } from "@/lib/site";
 import { brandAssets } from "@/lib/brand";
 
 export function SiteHeader() {
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   return (
     <header className="site-header">
       <div className="container-shell site-header__inner">
-        <Link href="/" className="site-brand" aria-label="Thực Phẩm Số Một">
+        <Link href="/" className="site-brand" aria-label="Thuc Pham So Mot">
           <span className="site-brand__mark">
             <Image src={brandAssets.logoTransparent} alt="TPS1" width={160} height={52} priority />
           </span>
@@ -18,7 +29,18 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="site-nav">
+        <button
+          type="button"
+          className="site-menu-toggle"
+          aria-expanded={menuOpen}
+          aria-controls="site-mobile-nav"
+          onClick={() => setMenuOpen((value) => !value)}
+        >
+          {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          <span>{menuOpen ? "Đóng" : "Menu"}</span>
+        </button>
+
+        <nav className="site-nav" aria-label="Điều hướng chính">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -35,6 +57,22 @@ export function SiteHeader() {
             <Phone size={17} />
             {siteConfig.phone}
           </a>
+        </div>
+      </div>
+
+      <div id="site-mobile-nav" className={`site-mobile-nav${menuOpen ? " is-open" : ""}`}>
+        <div className="container-shell site-mobile-nav__panel">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={item.href === "/bao-gia" ? "site-mobile-nav__link site-mobile-nav__link--order" : "site-mobile-nav__link"}
+              onClick={() => setMenuOpen(false)}
+            >
+              <span>{item.label}</span>
+              {item.href === "/bao-gia" ? <span className="site-mobile-nav__hint">Đặt hàng / báo giá</span> : null}
+            </Link>
+          ))}
         </div>
       </div>
     </header>
