@@ -2465,6 +2465,10 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .home-catalog__grid {
+    grid-template-columns: 1fr;
+  }
+
   .metric-strip__item,
   .trust-item {
     border-right: 0;
@@ -2549,16 +2553,7 @@ a {
   }
 
   .social-widget {
-    right: 14px;
-    bottom: 14px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: calc(100% - 28px);
-  }
-
-  .social-widget__item {
-    min-width: 0;
-    padding: 12px 8px;
-    font-size: 12px;
+    display: none;
   }
 
   .product-section-title {
@@ -4339,16 +4334,7 @@ body {
   }
 
   .social-widget {
-    right: 10px;
-    bottom: 10px;
-    width: calc(100% - 20px);
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .social-widget__item {
-    min-width: 0;
-    padding: 11px 8px;
-    font-size: 11px;
+    display: none;
   }
 
   .site-footer__inner,
