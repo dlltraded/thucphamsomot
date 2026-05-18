@@ -3824,17 +3824,40 @@ body {
   background: rgba(199, 55, 47, 0.12);
   color: #b42318;
   position: relative;
-}
-
-.site-nav__link--order::after {
-  content: "✦";
-  display: inline-block;
-  margin-left: 8px;
-  color: #c7372f;
-  font-weight: 900;
+  white-space: nowrap;
 }
 
 .site-nav__link--order:hover {
   background: rgba(199, 55, 47, 0.18);
   color: #8f1d16;
+}
+
+@media (min-width: 1201px) {
+  .site-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .site-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+    row-gap: 6px;
+    max-width: 100%;
+  }
+
+  .site-nav__link {
+    padding: 8px 12px;
+    font-size: 0.88rem;
+  }
+
+  .site-nav__link--order {
+    padding-inline: 14px;
+  }
+}
+
+@media (max-width: 1400px) and (min-width: 1201px) {
+  .site-nav__link {
+    padding: 8px 10px;
+  }
 }
