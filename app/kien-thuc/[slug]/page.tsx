@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentPage } from "@/components/content-page";
 import { PageShell } from "@/components/page-shell";
-import { findBySlug, posts } from "@/lib/content";
+import { readKnowledgeArticle, readKnowledgeArticles } from "@/lib/knowledge";
 import { makeMetadata } from "@/lib/seo";
 
-export function generateStaticParams() {
-  return posts.map((item) => ({ slug: item.slug }));
+export async function generateStaticParams() {
+  const articles = await readKnowledgeArticles();
+  return articles.map((item) => ({ slug: item.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const item = findBySlug(posts, slug);
+  const item = await readKnowledgeArticle(slug);
   if (!item) return makeMetadata({ title: "Kiến thức", path: `/kien-thuc/${slug}` });
   return makeMetadata({
     title: item.title,
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function KnowledgeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const item = findBySlug(posts, slug);
+  const item = await readKnowledgeArticle(slug);
   if (!item) return notFound();
   const description = item.description ?? item.title;
 

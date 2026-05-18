@@ -53,3 +53,10 @@ npm run build
 - Neu Apps Script la project rieng, hay dat `SPREADSHEET_ID` trong `Script Properties` de script biet ghi vao file nao.
 - Neu script duoc tao bang cach gan truc tiep trong Google Sheet, `SpreadsheetApp.getActiveSpreadsheet()` se hoat dong luon.
 - Sau khi sua Apps Script, `Deploy` lai `Web app` va cap nhat lai `GOOGLE_SHEET_WEBHOOK_URL` neu can.
+
+## Deploy len Vercel
+
+- Vercel khong tu lay `.env.local` trong repo de dung cho production.
+- Vao `Project Settings` -> `Environment Variables` tren Vercel va them `GOOGLE_SHEET_WEBHOOK_URL` cho moi environment can dung.
+- Neu muon doi mat khau quan tri, them `ADMIN_TOKEN` tren Vercel. Mac dinh cua repo la `88888888`.
+- Sau khi doi env, can redeploy lai deployment moi co hieu luc.

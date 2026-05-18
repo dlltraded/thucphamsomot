@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { readManagedProducts, replaceProductsFromCsv, upsertManagedProduct } from "@/lib/products";
 
-const adminToken = process.env.ADMIN_TOKEN?.trim() || "tps1-admin";
+const adminToken = process.env.ADMIN_TOKEN?.trim() || "88888888";
 
 function isAdminAuthorized(req: Request) {
   return req.headers.get("x-admin-token") === adminToken;

@@ -10,9 +10,9 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { posts } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+import { readKnowledgeArticles } from "@/lib/knowledge";
 
 export const metadata = makeMetadata({
   title: "Kiến thức | Chọn hàng, lên menu và vận hành bếp B2B",
@@ -42,20 +42,20 @@ const knowledgePillars = [
   },
 ];
 
-const heroStats = [
-  { value: `${posts.length}+`, label: "Chủ đề đang có" },
-  { value: "3", label: "Nhóm nội dung chính" },
-  { value: "B2B", label: "Tập trung bếp mua định kỳ" },
-];
-
 const heroImage =
   "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1400&q=80";
 const featuredImage =
   "https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1100&q=80";
 
-export default function KnowledgePage() {
-  const featuredPost = posts[0];
-  const secondaryPosts = posts.slice(1, 4);
+export default async function KnowledgePage() {
+  const articles = await readKnowledgeArticles();
+  const featuredPost = articles[0];
+  const secondaryPosts = articles.slice(1, 4);
+  const heroStats = [
+    { value: `${articles.length}+`, label: "Chủ đề đang có" },
+    { value: "3", label: "Nhóm nội dung chính" },
+    { value: "B2B", label: "Tập trung bếp mua định kỳ" },
+  ];
 
   return (
     <main className="knowledge-page">
@@ -71,9 +71,9 @@ export default function KnowledgePage() {
             <Link href="/bao-gia" className="btn-primary">
               Nhận báo giá <ArrowRight size={18} />
             </Link>
-            <Link href={`/kien-thuc/${featuredPost.slug}`} className="btn-secondary">
-              Đọc bài nổi bật <BookOpenText size={18} />
-            </Link>
+              <Link href={featuredPost ? `/kien-thuc/${featuredPost.slug}` : "/bao-gia"} className="btn-secondary">
+                Đọc bài nổi bật <BookOpenText size={18} />
+              </Link>
           </div>
 
           <div className="knowledge-strip" aria-label="Chủ đề nổi bật">
@@ -168,17 +168,17 @@ export default function KnowledgePage() {
             <div className="eyebrow">Bài nổi bật</div>
             <h2 className="knowledge-section-title">Bài mở đầu trước khi lập danh mục mua hàng.</h2>
           </div>
-          <Link href={`/kien-thuc/${featuredPost.slug}`} className="text-link">
+          <Link href={featuredPost ? `/kien-thuc/${featuredPost.slug}` : "/bao-gia"} className="text-link">
             Mở bài nổi bật <ArrowRight size={16} />
           </Link>
         </div>
 
         <div className="knowledge-feature-grid">
-          <Link href={`/kien-thuc/${featuredPost.slug}`} className="knowledge-feature-card">
+          <Link href={featuredPost ? `/kien-thuc/${featuredPost.slug}` : "/bao-gia"} className="knowledge-feature-card">
             <div className="knowledge-feature-card__media">
               <Image
                 src={featuredImage}
-                alt={featuredPost.title}
+                alt={featuredPost?.title ?? "Bài kiến thức nổi bật"}
                 fill
                 sizes="(max-width: 768px) 100vw, 58vw"
                 className="knowledge-feature-card__image"
@@ -186,8 +186,8 @@ export default function KnowledgePage() {
             </div>
             <div className="knowledge-feature-card__body">
               <div className="pill">Nổi bật</div>
-              <h3>{featuredPost.title}</h3>
-              <p>{featuredPost.description}</p>
+              <h3>{featuredPost?.title ?? "Đang cập nhật bài kiến thức mới"}</h3>
+              <p>{featuredPost?.description ?? "Nội dung kiến thức sẽ hiển thị sau khi có bài viết."}</p>
               <div className="knowledge-feature-card__meta">
                 <span>Góc nhìn vận hành bếp</span>
                 <ArrowRight size={16} />
@@ -227,7 +227,7 @@ export default function KnowledgePage() {
         </div>
 
         <div className="knowledge-post-grid">
-          {posts.map((post, index) => (
+          {articles.map((post, index) => (
             <Link
               key={post.slug}
               href={`/kien-thuc/${post.slug}`}

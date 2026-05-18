@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { RefreshCw, Save, Upload } from "lucide-react";
+import { ADMIN_TOKEN_STORAGE_KEY } from "@/lib/admin-token";
 
 type ManagedProduct = {
   slug: string;
@@ -11,11 +12,17 @@ type ManagedProduct = {
   image?: string;
 };
 
+type ProductAdminProps = {
+  initialProducts?: ManagedProduct[];
+  adminToken?: string;
+  hideTokenInput?: boolean;
+};
+
 const sampleCsv = `title,slug,summary,features,image
 Rau cu qua tuoi song,rau-cu-qua-tuoi-song,Nguon rau cu theo mua,kiem soat dau vao|giao dinh ky,/images/tps1-cover-food.jpg`;
 
-export function ProductAdmin({ initialProducts = [] }: { initialProducts?: ManagedProduct[] }) {
-  const [token, setToken] = useState("");
+export function ProductAdmin({ initialProducts = [], adminToken, hideTokenInput = false }: ProductAdminProps) {
+  const [token, setToken] = useState(adminToken ?? "");
   const [csv, setCsv] = useState(sampleCsv);
   const [products, setProducts] = useState<ManagedProduct[]>(initialProducts);
   const [message, setMessage] = useState<string | null>(null);
@@ -27,14 +34,19 @@ export function ProductAdmin({ initialProducts = [] }: { initialProducts?: Manag
   const [editFeatures, setEditFeatures] = useState("");
 
   useEffect(() => {
-    const savedToken = window.localStorage.getItem("tps1-admin-token") ?? "";
-    setToken(savedToken);
+    if (adminToken) {
+      setToken(adminToken);
+    } else {
+      const savedToken = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
+      setToken(savedToken);
+    }
+
     if (!initialProducts.length) {
       void loadProducts();
     } else {
       selectProduct(initialProducts[0].slug, initialProducts);
     }
-  }, []);
+  }, [adminToken, initialProducts]);
 
   async function loadProducts() {
     setLoading(true);
@@ -63,7 +75,9 @@ export function ProductAdmin({ initialProducts = [] }: { initialProducts?: Manag
 
   function persistToken(value: string) {
     setToken(value);
-    window.localStorage.setItem("tps1-admin-token", value);
+    if (!adminToken) {
+      window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, value);
+    }
   }
 
   async function uploadCsv() {
@@ -130,10 +144,12 @@ export function ProductAdmin({ initialProducts = [] }: { initialProducts?: Manag
           <h2>Upload danh sach san pham bang CSV</h2>
           <p>Format: title, slug, summary, features (tach bang dau |), image.</p>
         </div>
-        <div className="admin-token">
-          <label>Ma quan tri</label>
-          <input value={token} onChange={(event) => persistToken(event.target.value)} className="lead-form__input" />
-        </div>
+        {hideTokenInput ? null : (
+          <div className="admin-token">
+            <label>Ma quan tri</label>
+            <input value={token} onChange={(event) => persistToken(event.target.value)} className="lead-form__input" />
+          </div>
+        )}
       </div>
 
       <div className="admin-grid">

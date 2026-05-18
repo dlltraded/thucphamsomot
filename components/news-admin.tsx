@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Check, Edit3, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { brandAssets } from "@/lib/brand";
+import { ADMIN_TOKEN_STORAGE_KEY } from "@/lib/admin-token";
 import type { NewsArticle } from "@/lib/news";
 
 type NewsForm = {
@@ -17,6 +18,12 @@ type NewsForm = {
   coverImage: string;
   content: string;
   featured: boolean;
+};
+
+type NewsAdminProps = {
+  initialArticles?: NewsArticle[];
+  adminToken?: string;
+  hideTokenInput?: boolean;
 };
 
 const coverOptions = [
@@ -49,8 +56,8 @@ function createInitialForm(): NewsForm {
   };
 }
 
-export function NewsAdmin({ initialArticles = [] }: { initialArticles?: NewsArticle[] }) {
-  const [token, setToken] = useState("");
+export function NewsAdmin({ initialArticles = [], adminToken, hideTokenInput = false }: NewsAdminProps) {
+  const [token, setToken] = useState(adminToken ?? "");
   const [articles, setArticles] = useState<NewsArticle[]>(initialArticles);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [form, setForm] = useState<NewsForm>(createInitialForm);
@@ -63,9 +70,14 @@ export function NewsAdmin({ initialArticles = [] }: { initialArticles?: NewsArti
   );
 
   useEffect(() => {
-    const savedToken = window.localStorage.getItem("tps1-admin-token") ?? "";
+    if (adminToken) {
+      setToken(adminToken);
+      return;
+    }
+
+    const savedToken = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
     setToken(savedToken);
-  }, []);
+  }, [adminToken]);
 
   useEffect(() => {
     void loadArticles();
@@ -105,7 +117,9 @@ export function NewsAdmin({ initialArticles = [] }: { initialArticles?: NewsArti
 
   function persistToken(value: string) {
     setToken(value);
-    window.localStorage.setItem("tps1-admin-token", value);
+    if (!adminToken) {
+      window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, value);
+    }
   }
 
   function resetForm() {
@@ -175,15 +189,17 @@ export function NewsAdmin({ initialArticles = [] }: { initialArticles?: NewsArti
           <h2>Đăng tin, sửa bài và quản lý nội dung hữu ích cho khách hàng.</h2>
           <p>Không cần rời site, anh vẫn có thể cập nhật bài viết, thông báo và nội dung tư vấn theo từng giai đoạn bán hàng.</p>
         </div>
-        <div className="admin-token">
-          <label>Mã quản trị</label>
-          <input
-            value={token}
-            onChange={(event) => persistToken(event.target.value)}
-            placeholder="Nhập mã quản trị"
-            className="lead-form__input"
-          />
-        </div>
+        {hideTokenInput ? null : (
+          <div className="admin-token">
+            <label>Mã quản trị</label>
+            <input
+              value={token}
+              onChange={(event) => persistToken(event.target.value)}
+              placeholder="Nhập mã quản trị"
+              className="lead-form__input"
+            />
+          </div>
+        )}
       </div>
 
       <div className="admin-grid">
