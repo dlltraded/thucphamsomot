@@ -8,7 +8,8 @@ import { brandAssets } from "@/lib/brand";
 type PageShellProps = {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
+  compact?: boolean;
   children: ReactNode;
 };
 
@@ -25,8 +26,16 @@ const pageVisuals: Record<string, string> = {
   "Portal báo giá": brandAssets.warehousePeople,
 };
 
-export function PageShell({ eyebrow, title, description, children }: PageShellProps) {
+export function PageShell({ eyebrow, title, description, compact = false, children }: PageShellProps) {
   const visual = pageVisuals[eyebrow] ?? brandAssets.coverFood;
+
+  if (compact) {
+    return (
+      <main className="page-shell">
+        <section className="container-shell section-pad">{children}</section>
+      </main>
+    );
+  }
 
   return (
     <main className="page-shell">
@@ -34,7 +43,7 @@ export function PageShell({ eyebrow, title, description, children }: PageShellPr
         <div className="page-hero__copy">
           <div className="eyebrow">{eyebrow}</div>
           <h1 className="page-hero__title">{title}</h1>
-          <p className="page-hero__description">{description}</p>
+          {description ? <p className="page-hero__description">{description}</p> : null}
           <div className="page-hero__actions">
             <Link href="/bao-gia" className="btn-primary">
               Mở form báo giá <ArrowRight size={18} />

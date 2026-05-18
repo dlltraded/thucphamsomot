@@ -1,334 +1,390 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useMemo, useState, type InputHTMLAttributes } from "react";
+import {
+  useEffect,
+  useState,
+  type InputHTMLAttributes,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Minus, Plus, Send, ShoppingBag, Sparkles, Trash2 } from "lucide-react";
-import { productImageBySlug } from "@/lib/content";
-import { clearQuoteBasket, loadQuoteBasket, saveQuoteBasket, type QuoteBasketItem } from "@/lib/quote-basket";
+import { Send, Sparkles } from "lucide-react";
 import { leadSchema, type LeadInput } from "@/lib/validation";
+import { siteConfig } from "@/lib/site";
 
-type ProductSource = {
-  slug: string;
-  title: string;
-  summary?: string;
-  features?: string[];
-  image?: string;
+const facilityOptions = [
+  "Bếp ăn tập thể",
+  "Nhà máy / KCN",
+  "Trường học",
+  "Bệnh viện",
+  "Nhà hàng / Khách sạn",
+  "Đại lý / Nhà phân phối",
+  "Khác",
+];
+
+const interestOptions = [
+  "Rau củ quả",
+  "Thịt cá hải sản",
+  "Hàng đông lạnh",
+  "Gia vị / Khô / Gia dụng",
+  "Thực phẩm chay",
+  "Tất cả nhóm hàng",
+];
+
+const scaleOptions = [
+  "Dưới 50 suất/ngày",
+  "50 - 100 suất/ngày",
+  "100 - 300 suất/ngày",
+  "300 - 500 suất/ngày",
+  "Trên 500 suất/ngày",
+];
+
+const frequencyOptions = ["Hàng ngày", "2 - 3 lần/tuần", "Theo tuần", "Theo tháng", "Theo nhu cầu"];
+const LAST_SUCCESS_KEY = "tps1-quote-last-success-v1";
+const LAST_NOTICE_KEY = "tps1-quote-last-notice-v1";
+const SUCCESS_TITLE = "Cảm ơn anh/chị đã gửi yêu cầu báo giá.";
+const SUCCESS_COPY =
+  "Phòng Kinh Doanh đã ghi nhận thông tin. Chúng tôi sẽ liên hệ lại sớm nhất theo khu vực, nhóm hàng và nhu cầu anh/chị đã chọn.";
+const ERROR_TITLE = "Xin lỗi, chúng tôi chưa gửi được yêu cầu của anh/chị.";
+const ERROR_COPY = "Vui lòng liên hệ hotline để được hỗ trợ ngay: ";
+
+type QuoteSummary = {
+  name: string;
+  facilityType: string;
+  interestedIn: string;
+  deliveryArea: string;
 };
+
+type QuoteNotice =
+  | {
+      kind: "success";
+      summary: QuoteSummary;
+    }
+  | {
+      kind: "error";
+      message: string;
+    };
 
 type QuotePortalProps = {
-  initialProducts: ProductSource[];
+  initialNotice?: QuoteNotice | null;
 };
 
-export function QuotePortal({ initialProducts }: QuotePortalProps) {
-  const [basket, setBasket] = useState<QuoteBasketItem[]>([]);
-  const [products, setProducts] = useState<ProductSource[]>(initialProducts);
-  const [submitted, setSubmitted] = useState(false);
-  const [submittedItems, setSubmittedItems] = useState<ReturnType<typeof selectedItemsFromBasket>>([]);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+export function QuotePortal({ initialNotice = null }: QuotePortalProps) {
+  const initialSummary = initialNotice?.kind === "success" ? initialNotice.summary : readLastSuccessState();
+  const [submittedSummary, setSubmittedSummary] = useState<QuoteSummary | null>(initialSummary);
+  const [submitted, setSubmitted] = useState(Boolean(initialSummary));
+  const [submitError, setSubmitError] = useState<string | null>(
+    initialNotice?.kind === "error" ? initialNotice.message : null,
+  );
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    setBasket(loadQuoteBasket());
-    if (initialProducts.length) {
-      setProducts(initialProducts);
-    } else {
-      void loadProducts();
+    if (initialNotice?.kind === "success") {
+      saveSuccessState(initialNotice.summary);
+      return;
     }
-  }, [initialProducts]);
 
-  async function loadProducts() {
+    if (initialNotice?.kind === "error") {
+      saveNoticeState(initialNotice);
+      return;
+    }
+
+    const storedSummary = readLastSuccessState();
+    if (storedSummary) {
+      setSubmittedSummary(storedSummary);
+      setSubmitted(true);
+    }
+
+    const storedNotice = readLastNoticeState();
+    if (storedNotice?.kind === "error") {
+      setSubmitError(storedNotice.message);
+    }
+  }, [initialNotice]);
+
+  function saveSuccessState(summary: QuoteSummary) {
     try {
-      const res = await fetch("/api/products", { cache: "no-store" });
-      const data = (await res.json()) as { products?: ProductSource[] };
-      setProducts(data.products ?? []);
+      window.localStorage.setItem(LAST_SUCCESS_KEY, JSON.stringify(summary));
+      window.localStorage.removeItem(LAST_NOTICE_KEY);
     } catch {
-      setProducts([]);
+      // Ignore localStorage write failures.
     }
   }
 
-  function selectedItemsFromBasket(items: QuoteBasketItem[]) {
-    return items.map((item) => ({
-      slug: item.slug,
-      title: item.title,
-      quantity: item.quantity,
-    }));
+  function saveNoticeState(notice: QuoteNotice) {
+    try {
+      window.localStorage.setItem(LAST_NOTICE_KEY, JSON.stringify(notice));
+    } catch {
+      // Ignore localStorage write failures.
+    }
   }
-
-  const selectedCount = useMemo(() => basket.reduce((total, item) => total + item.quantity, 0), [basket]);
-
-  const selectedItems = selectedItemsFromBasket(basket);
 
   const {
     register,
-    handleSubmit,
+    trigger,
+    getValues,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LeadInput>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
       name: "",
       phone: "",
       company: "",
-      email: "",
+      facilityType: "",
+      interestedIn: "",
+      purchaseScale: "",
+      deliveryFrequency: "",
       deliveryArea: "",
       needBy: "",
+      email: "",
       message: "",
       selectedItems: [],
     },
   });
 
-  function handleAddItem(product: ProductSource) {
-    setBasket((current) => {
-      const next = current.map((item) => ({ ...item }));
-      const existing = next.find((item) => item.slug === product.slug);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        next.push({
-          slug: product.slug,
-          title: product.title,
-          summary: product.summary,
-          quantity: 1,
-        });
-      }
-      saveQuoteBasket(next);
-      return next;
-    });
-  }
-
-  function handleSetQuantity(slug: string, quantity: number) {
-    setBasket((current) => {
-      const next = current
-        .map((item) => (item.slug === slug ? { ...item, quantity } : item))
-        .filter((item) => item.quantity > 0);
-      saveQuoteBasket(next);
-      return next;
-    });
-  }
-
-  function handleRemove(slug: string) {
-    setBasket((current) => {
-      const next = current.filter((item) => item.slug !== slug);
-      saveQuoteBasket(next);
-      return next;
-    });
-  }
-
-  const onSubmit = handleSubmit(async (values) => {
+  const submitLead = async () => {
     setSubmitError(null);
     setSubmitted(false);
+    setIsSending(true);
+
+    const isValid = await trigger();
+    if (!isValid) {
+      setIsSending(false);
+      return;
+    }
+
+    const values = getValues();
 
     const payload = {
       ...values,
-      selectedItems,
+      selectedItems: [],
       message: [
         values.message,
-        selectedItems.length ? `Danh mục đã chọn: ${selectedItems.map((item) => `${item.title} x${item.quantity}`).join(", ")}` : null,
+        `Loại hình đơn vị: ${values.facilityType}`,
+        `Nhóm hàng quan tâm: ${values.interestedIn}`,
+        `Quy mô nhu cầu: ${values.purchaseScale}`,
+        `Tần suất giao: ${values.deliveryFrequency}`,
       ]
         .filter(Boolean)
         .join("\n"),
     };
 
-    const res = await fetch("/api/quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("/api/quote", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) {
-      setSubmitError("Chưa gửi được yêu cầu. Anh thử lại hoặc gọi hotline giúp em nhé.");
+      if (!res.ok) {
+        const message = "Xin lỗi, chúng tôi chưa gửi được yêu cầu của anh/chị. Vui lòng liên hệ hotline để được hỗ trợ ngay.";
+        setSubmitError(message);
+        saveNoticeState({ kind: "error", message });
+        return;
+      }
+
+      const responseBody = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+      if (!responseBody?.ok) {
+        const message = "Xin lỗi, chúng tôi chưa ghi nhận được yêu cầu. Vui lòng liên hệ hotline để được hỗ trợ ngay.";
+        setSubmitError(message);
+        saveNoticeState({ kind: "error", message });
+        return;
+      }
+    } catch {
+      const message = "Xin lỗi, đã có lỗi khi gửi yêu cầu. Vui lòng liên hệ hotline để được hỗ trợ ngay.";
+      setSubmitError(message);
+      saveNoticeState({ kind: "error", message });
       return;
+    } finally {
+      setIsSending(false);
     }
 
-    setSubmittedItems(selectedItems);
+    const summary = {
+      name: values.name,
+      facilityType: values.facilityType,
+      interestedIn: values.interestedIn,
+      deliveryArea: values.deliveryArea,
+    };
+
+    setSubmittedSummary(summary);
+    saveSuccessState(summary);
     reset();
     setSubmitted(true);
-  });
+  };
 
   return (
-    <section className="portal-layout">
-      <div className="portal-layout__catalog">
-        <div className="section-heading">
-          <div className="eyebrow">Chọn sản phẩm</div>
-          <h2 className="section-heading__title">Bấm thêm vào danh sách rồi gửi một lượt.</h2>
-          <p className="section-heading__description">
-            Khách có thể chọn đúng nhóm hàng, gom số lượng theo nhu cầu và gửi sang đội kinh doanh để nhận báo giá riêng.
-          </p>
-        </div>
-
-        <div className="portal-grid">
-          {products.map((item) => (
-            <article key={item.slug} className="portal-card">
-              <div className="portal-card__media">
-                <Image
-                  src={item.image ?? productImageBySlug[item.slug] ?? productImageBySlug["rau-cu-qua-tuoi-song"]}
-                  alt={item.title}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 28vw"
-                  className="portal-card__image"
-                />
-              </div>
-              <div className="portal-card__body">
-                <div className="portal-card__index">0{products.indexOf(item) + 1}</div>
-                <h3>{item.title}</h3>
-                <p>{item.summary}</p>
-                <div className="portal-card__features">
-                  {(item.features ?? []).slice(0, 3).map((feature) => (
-                    <span key={feature}>{feature}</span>
-                  ))}
-                </div>
-                <div className="portal-card__actions">
-                  <Link href={`/san-pham/${item.slug}`} className="text-link">
-                    Xem chi tiết <ArrowRight size={16} />
-                  </Link>
-                  <button type="button" className="btn-secondary" onClick={() => handleAddItem(item)}>
-                    <ShoppingBag size={16} />
-                    Thêm vào báo giá
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+    <form
+      className="quote-landing__form quote-landing__form--solo"
+      method="post"
+      action="/api/quote"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submitLead();
+      }}
+    >
+      <div className="quote-landing__form-head">
+        <div className="portal-form__eyebrow">Gửi yêu cầu báo giá</div>
+        <p>
+          Điền nhanh theo 3 bước: thông tin liên hệ, nhu cầu mua, khu vực giao. Càng đủ, sale càng phản hồi đúng hẹn.
+        </p>
+        <div className="quote-landing__steps">
+          <span>1. Điền thông tin liên hệ</span>
+          <span>2. Chọn nhu cầu chính</span>
+          <span>3. Gửi yêu cầu để sale gọi lại</span>
         </div>
       </div>
 
-      <aside className="portal-layout__panel">
-        {submitted ? (
-          <div className="portal-submit-status portal-submit-status--success" aria-live="polite">
-            <div className="portal-submit-status__badge">
-              <Sparkles size={16} />
-              Đã gửi thành công
-            </div>
-            <strong>Đội ngũ đã nhận thông tin của anh.</strong>
-            <p>Em sẽ dựa trên danh mục đã chọn, số lượng và khu vực giao để phản hồi phương án phù hợp.</p>
-            {submittedItems.length ? (
-              <div className="portal-submit-status__summary">
-                <span>Đơn vừa gửi:</span>
-                <strong>
-                  {submittedItems.map((item) => `${item.title} x${item.quantity}`).join(" · ")}
-                </strong>
-              </div>
-            ) : null}
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => {
-                clearQuoteBasket();
-                setBasket([]);
-                setSubmitted(false);
-                setSubmittedItems([]);
-              }}
-            >
-              Gửi đơn mới
-            </button>
-          </div>
-        ) : null}
+      <div className="quote-landing__grid">
+        <Field label="Họ tên" error={errors.name?.message} {...register("name")} />
+        <Field label="Số điện thoại" error={errors.phone?.message} {...register("phone")} />
+      </div>
 
-        {submitError ? (
-          <div className="portal-submit-status portal-submit-status--error" aria-live="polite">
-            <strong>Chưa gửi được yêu cầu.</strong>
-            <p>{submitError}</p>
-          </div>
-        ) : null}
+      <div className="quote-landing__grid">
+        <Field label="Công ty / Đơn vị" error={errors.company?.message} {...register("company")} />
+        <Field label="Email" error={errors.email?.message} {...register("email")} />
+      </div>
 
-        <div className="portal-panel">
-          <div className="portal-panel__header">
-            <div>
-              <div className="portal-panel__eyebrow">Danh sách đã chọn</div>
-              <h2>{selectedCount} sản phẩm trong báo giá</h2>
-            </div>
-            <button
-              type="button"
-              className="portal-panel__clear"
-              onClick={() => {
-                clearQuoteBasket();
-                setBasket([]);
-                setSubmitted(false);
-                setSubmittedItems([]);
-              }}
-            >
-              <Trash2 size={16} />
-              Xóa tất cả
-            </button>
-          </div>
+      <div className="quote-landing__grid">
+        <SelectField label="Loại hình đơn vị" error={errors.facilityType?.message} {...register("facilityType")}>
+          <option value="">Chọn loại hình</option>
+          {facilityOptions.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField label="Nhóm hàng quan tâm" error={errors.interestedIn?.message} {...register("interestedIn")}>
+          <option value="">Chọn nhóm hàng</option>
+          {interestOptions.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </SelectField>
+      </div>
 
-          {basket.length ? (
-            <div className="portal-basket">
-              {basket.map((item) => (
-                <div key={item.slug} className="portal-basket__item">
-                  <div className="portal-basket__copy">
-                    <strong>{item.title}</strong>
-                    <span>{item.summary ?? "Đã thêm vào danh sách báo giá"}</span>
-                  </div>
-                  <div className="portal-basket__controls">
-                    <button type="button" onClick={() => handleSetQuantity(item.slug, item.quantity - 1)} aria-label="Giảm số lượng">
-                      <Minus size={14} />
-                    </button>
-                    <strong>{item.quantity}</strong>
-                    <button type="button" onClick={() => handleSetQuantity(item.slug, item.quantity + 1)} aria-label="Tăng số lượng">
-                      <Plus size={14} />
-                    </button>
-                    <button type="button" onClick={() => handleRemove(item.slug)} aria-label="Xóa sản phẩm">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+      <div className="quote-landing__grid">
+        <SelectField label="Quy mô nhu cầu" error={errors.purchaseScale?.message} {...register("purchaseScale")}>
+          <option value="">Chọn quy mô</option>
+          {scaleOptions.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
+          label="Tần suất giao"
+          error={errors.deliveryFrequency?.message}
+          {...register("deliveryFrequency")}
+        >
+          <option value="">Chọn tần suất</option>
+          {frequencyOptions.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </SelectField>
+      </div>
+
+      <div className="quote-landing__grid">
+        <Field label="Khu vực giao" error={errors.deliveryArea?.message} {...register("deliveryArea")} />
+        <Field label="Cần phản hồi trước" error={errors.needBy?.message} {...register("needBy")} />
+      </div>
+
+      <TextAreaField
+        label="Mô tả nhu cầu"
+        error={errors.message?.message}
+        {...register("message")}
+        rows={5}
+        placeholder="Mô tả sơ bộ nhu cầu: nhóm hàng cần mua, số lượng, lịch giao, quy cách đóng gói, ngân sách hoặc điều kiện đặc biệt"
+      />
+
+      <button type="submit" disabled={isSending} className="btn-primary quote-landing__submit">
+        {isSending ? "Đang gửi..." : "Gửi yêu cầu báo giá"}
+        <Send size={18} />
+      </button>
+
+      <p className="quote-landing__note">
+        Thông tin sẽ được chuyển qua Phòng Kinh Doanh để bộ phận sale liên hệ lại theo khu vực, nhóm hàng và nhu cầu
+        anh/chị đã chọn.
+      </p>
+
+      {submitted ? (
+        <div className="portal-submit-status portal-submit-status--success" aria-live="polite">
+          <div className="portal-submit-status__badge">
+            <Sparkles size={16} />
+            Gửi thành công
+          </div>
+          <strong>{SUCCESS_TITLE}</strong>
+          <p>{SUCCESS_COPY}</p>
+          {submittedSummary ? (
+            <div className="portal-submit-status__summary">
+              <span>Lead vừa gửi:</span>
+              <strong>
+                {submittedSummary.name} · {submittedSummary.facilityType} · {submittedSummary.interestedIn} ·{" "}
+                {submittedSummary.deliveryArea}
+              </strong>
             </div>
-          ) : (
-            <div className="portal-empty">
-              <ShoppingBag size={22} />
-              <p>Chưa có sản phẩm nào. Anh chọn hàng ở bên trái hoặc quay về trang sản phẩm.</p>
-            </div>
-          )}
+          ) : null}
         </div>
+      ) : null}
 
-        <form className="portal-form" onSubmit={onSubmit}>
-          <div className="portal-form__header">
-            <div className="portal-form__eyebrow">Gửi yêu cầu báo giá</div>
-            <p>Điền thông tin người liên hệ để đội ngũ chuẩn bị báo giá riêng theo danh mục đã chọn.</p>
-          </div>
-
-          <div className="portal-form__grid">
-            <Field label="Họ tên" error={errors.name?.message} {...register("name")} />
-            <Field label="Số điện thoại" error={errors.phone?.message} {...register("phone")} />
-          </div>
-
-          <div className="portal-form__grid">
-            <Field label="Công ty" error={errors.company?.message} {...register("company")} />
-            <Field label="Email" error={errors.email?.message} {...register("email")} />
-          </div>
-
-          <div className="portal-form__grid">
-            <Field label="Khu vực giao" error={errors.deliveryArea?.message} {...register("deliveryArea")} />
-            <Field label="Thời gian cần báo giá" error={errors.needBy?.message} {...register("needBy")} />
-          </div>
-
-          <div>
-            <label className="portal-form__label">Ghi chú đơn hàng</label>
-            <textarea
-              {...register("message")}
-              rows={5}
-              className="lead-form__textarea"
-              placeholder="Mô tả số lượng, quy cách, tần suất giao, yêu cầu đóng gói hoặc ngân sách dự kiến"
-            />
-            {errors.message?.message ? <p className="lead-form__error">{errors.message.message}</p> : null}
-          </div>
-
-          <button disabled={isSubmitting} className="btn-primary portal-form__button">
-            {isSubmitting ? "Đang gửi..." : "Gửi yêu cầu báo giá"}
-            <Send size={18} />
-          </button>
-
-          <p className="portal-form__note">
-            Bấm gửi là đội ngũ sẽ xem danh mục đã chọn và phản hồi theo số lượng, tuyến giao và tần suất mua hàng.
-          </p>
-        </form>
-      </aside>
-    </section>
+      {submitError ? (
+        <div className="portal-submit-status portal-submit-status--error" aria-live="polite">
+          <strong>{ERROR_TITLE}</strong>
+          <p>{submitError}</p>
+          <a className="btn-secondary" href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`}>
+            {ERROR_COPY}
+            {siteConfig.phone}
+          </a>
+        </div>
+      ) : null}
+    </form>
   );
+}
+
+function readLastSuccessState(): QuoteSummary | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(LAST_SUCCESS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<QuoteSummary>;
+
+    if (parsed?.name && parsed?.facilityType && parsed?.interestedIn && parsed?.deliveryArea) {
+      return {
+        name: parsed.name,
+        facilityType: parsed.facilityType,
+        interestedIn: parsed.interestedIn,
+        deliveryArea: parsed.deliveryArea,
+      };
+    }
+  } catch {
+    // Ignore malformed local state and continue with a clean form.
+  }
+
+  return null;
+}
+
+function readLastNoticeState(): QuoteNotice | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(LAST_NOTICE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as QuoteNotice;
+    if (parsed?.kind === "error" && parsed.message) {
+      return parsed;
+    }
+  } catch {
+    // Ignore malformed local state and continue with a clean form.
+  }
+
+  return null;
 }
 
 type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -338,9 +394,41 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
 
 function Field({ label, error, ...props }: FieldProps) {
   return (
-    <div>
+    <div className="quote-landing__field">
       <label className="portal-form__label">{label}</label>
       <input {...props} className="lead-form__input" />
+      {error ? <p className="lead-form__error">{error}</p> : null}
+    </div>
+  );
+}
+
+type SelectFieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  error?: string;
+};
+
+function SelectField({ label, error, children, ...props }: SelectFieldProps) {
+  return (
+    <div className="quote-landing__field">
+      <label className="portal-form__label">{label}</label>
+      <select {...props} className="lead-form__input">
+        {children}
+      </select>
+      {error ? <p className="lead-form__error">{error}</p> : null}
+    </div>
+  );
+}
+
+type TextAreaFieldProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  error?: string;
+};
+
+function TextAreaField({ label, error, ...props }: TextAreaFieldProps) {
+  return (
+    <div className="quote-landing__field">
+      <label className="portal-form__label">{label}</label>
+      <textarea {...props} className="lead-form__textarea" />
       {error ? <p className="lead-form__error">{error}</p> : null}
     </div>
   );

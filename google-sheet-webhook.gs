@@ -26,12 +26,17 @@ function doPost(e) {
       "Phone",
       "Email",
       "Company",
+      "Facility Type",
+      "Interested In",
+      "Purchase Scale",
+      "Delivery Frequency",
       "Delivery Area",
       "Need By",
       "Message",
       "Selected Items",
       "Selected Count",
       "Source",
+      "Raw Payload",
     ]);
   }
 
@@ -45,12 +50,17 @@ function doPost(e) {
     data.phone || "",
     data.email || "",
     data.company || "",
+    data.facilityType || "",
+    data.interestedIn || "",
+    data.purchaseScale || "",
+    data.deliveryFrequency || "",
     data.deliveryArea || "",
     data.needBy || "",
     data.message || "",
     selectedItems,
     data.selectedCount || 0,
     data.source || "",
+    JSON.stringify(data),
   ]);
 
   return ContentService.createTextOutput(
