@@ -1177,8 +1177,8 @@ a {
 
 .social-widget {
   position: fixed;
-  right: 18px;
   bottom: 18px;
+  right: 18px;
   z-index: 60;
   display: grid;
   gap: 10px;
@@ -1189,10 +1189,10 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 132px;
+  min-width: 120px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 11px 12px;
   color: #fff;
   font-size: 14px;
   font-weight: 900;
@@ -1234,19 +1234,20 @@ a {
 
 .company-profile-widget {
   position: fixed;
-  top: 50%;
-  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  right: auto;
   z-index: 58;
   display: grid;
-  gap: 12px;
-  width: min(280px, calc(100vw - 36px));
-  transform: translateY(-50%);
+  justify-items: start;
+  gap: 8px;
+  width: min(200px, calc(100vw - 36px));
   border: 1px solid rgba(15, 122, 77, 0.16);
-  border-radius: 24px;
+  border-radius: 20px;
   background:
     radial-gradient(circle at top right, rgba(255, 209, 102, 0.16), transparent 30%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 242, 0.98));
-  padding: 18px;
+  padding: 12px;
   box-shadow: 0 20px 48px rgba(20, 35, 28, 0.14);
 }
 
@@ -1268,20 +1269,19 @@ a {
 .company-profile-widget h2 {
   margin: 0;
   color: #123127;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   line-height: 1.25;
   font-weight: 900;
+  text-align: left;
 }
 
 .company-profile-widget p {
-  margin: 0;
-  color: var(--muted-foreground);
-  line-height: 1.65;
+  display: none;
 }
 
 .company-profile-widget__actions {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .company-profile-widget__button {
@@ -1289,12 +1289,17 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 14px;
-  padding: 12px 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
   background: var(--accent);
   color: #fff;
+  font-size: 0.88rem;
   font-weight: 800;
   box-shadow: 0 14px 28px rgba(15, 122, 77, 0.22);
+}
+
+.company-profile-widget__button--ghost {
+  display: none;
 }
 
 .company-profile-widget__button--ghost {
@@ -4956,14 +4961,22 @@ body {
     top: auto;
     bottom: 92px;
     transform: none;
-    width: min(240px, calc(100vw - 20px));
+    width: min(220px, calc(100vw - 20px));
+    grid-template-columns: 1fr;
+    align-items: start;
     gap: 8px;
     padding: 12px;
     border-radius: 18px;
   }
 
+  .company-profile-widget__badge {
+    margin-top: 0;
+    align-self: start;
+  }
+
   .company-profile-widget h2 {
     font-size: 0.95rem;
+    line-height: 1.15;
   }
 
   .company-profile-widget p {
