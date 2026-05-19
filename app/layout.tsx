@@ -25,6 +25,20 @@ export const metadata: Metadata = {
     url: siteConfig.url,
     siteName: siteConfig.name,
     type: "website",
+    images: [
+      {
+        url: new URL(siteConfig.shareImage, siteConfig.url).toString(),
+        width: 3000,
+        height: 1688,
+        alt: siteConfig.name,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [new URL(siteConfig.shareImage, siteConfig.url).toString()],
   },
 };
 

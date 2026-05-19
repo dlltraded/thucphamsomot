@@ -10,6 +10,7 @@ export const siteConfig = {
   zalo: "0898902222",
   facebook: "https://www.facebook.com/thucphamsomot.vn",
   address: "Đồng Nai, Việt Nam",
+  shareImage: "/images/catalog-cover.png",
   profilePagePath: "/ho-so-nang-luc",
   profilePdfUrl: "https://drive.google.com/file/d/15TK_qDCgEPk0A6xMCXry6fCrQu4QcYbb/view?usp=sharing",
   profilePreviewUrl: "https://drive.google.com/file/d/15TK_qDCgEPk0A6xMCXry6fCrQu4QcYbb/preview",

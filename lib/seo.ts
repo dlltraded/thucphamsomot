@@ -9,6 +9,7 @@ export function makeMetadata(params: {
   const title = params.title;
   const description = params.description ?? siteConfig.description;
   const url = new URL(params.path ?? "/", siteConfig.url).toString();
+  const image = new URL(siteConfig.shareImage, siteConfig.url).toString();
 
   return {
     title,
@@ -20,11 +21,20 @@ export function makeMetadata(params: {
       url,
       siteName: siteConfig.name,
       type: "website",
+      images: [
+        {
+          url: image,
+          width: 3000,
+          height: 1688,
+          alt: siteConfig.name,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [image],
     },
   };
 }
