@@ -1177,8 +1177,8 @@ a {
 
 .social-widget {
   position: fixed;
-  bottom: 18px;
-  right: 18px;
+  bottom: 10px;
+  right: 10px;
   z-index: 60;
   display: grid;
   gap: 10px;
@@ -1189,10 +1189,10 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 120px;
+  min-width: 108px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
-  padding: 11px 12px;
+  padding: 10px 11px;
   color: #fff;
   font-size: 14px;
   font-weight: 900;
@@ -1234,20 +1234,20 @@ a {
 
 .company-profile-widget {
   position: fixed;
-  bottom: 18px;
-  left: 18px;
+  bottom: 8px;
+  left: 8px;
   right: auto;
   z-index: 58;
   display: grid;
   justify-items: start;
-  gap: 8px;
-  width: min(200px, calc(100vw - 36px));
+  gap: 5px;
+  width: min(138px, calc(100vw - 16px));
   border: 1px solid rgba(15, 122, 77, 0.16);
-  border-radius: 20px;
+  border-radius: 16px;
   background:
     radial-gradient(circle at top right, rgba(255, 209, 102, 0.16), transparent 30%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 242, 0.98));
-  padding: 12px;
+  padding: 8px;
   box-shadow: 0 20px 48px rgba(20, 35, 28, 0.14);
 }
 
@@ -1258,9 +1258,9 @@ a {
   width: fit-content;
   border-radius: 999px;
   background: rgba(15, 122, 77, 0.08);
-  padding: 7px 11px;
+  padding: 6px 9px;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1269,8 +1269,8 @@ a {
 .company-profile-widget h2 {
   margin: 0;
   color: #123127;
-  font-size: 0.95rem;
-  line-height: 1.25;
+  font-size: 0.8rem;
+  line-height: 1.15;
   font-weight: 900;
   text-align: left;
 }
@@ -1281,7 +1281,7 @@ a {
 
 .company-profile-widget__actions {
   display: grid;
-  gap: 8px;
+  gap: 5px;
 }
 
 .company-profile-widget__button {
@@ -1290,10 +1290,10 @@ a {
   justify-content: center;
   gap: 8px;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 8px 9px;
   background: var(--accent);
   color: #fff;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 800;
   box-shadow: 0 14px 28px rgba(15, 122, 77, 0.22);
 }
