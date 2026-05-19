@@ -66,7 +66,7 @@ export function SiteFooter() {
       </div>
 
       <div className="container-shell site-footer__bottom">
-        <span>thucphamso1.vn</span>
+        <span>thucphamsomot.vn</span>
         <div className="site-footer__bottom-links">
           <Link href="/bao-gia">Mở form báo giá</Link>
           <Link href="/quan-tri">Quản trị nội dung</Link>

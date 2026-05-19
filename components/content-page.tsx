@@ -37,7 +37,7 @@ export function ContentPage({
     <article className="content-detail">
       <div className="content-detail__hero">
         <div className="content-detail__copy">
-          <div className="pill">thucphamso1.vn</div>
+          <div className="pill">thucphamsomot.vn</div>
           <h1 className="content-detail__title">{title}</h1>
           <p className="content-detail__description">{description}</p>
           <div className="content-detail__actions">

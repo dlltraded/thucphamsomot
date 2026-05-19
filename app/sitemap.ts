@@ -10,6 +10,7 @@ const staticPaths = [
   "/kien-thuc",
   "/lien-he",
   "/bao-gia",
+  "/ho-so-nang-luc",
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

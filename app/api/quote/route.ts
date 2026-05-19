@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   const payload = {
     ...parsed.data,
     site: siteConfig.domain,
-    source: "thucphamso1.vn/bao-gia",
+    source: `${siteConfig.domain}/bao-gia`,
     submittedAt: new Date().toISOString(),
     selectedCount: parsed.data.selectedItems?.length ?? 0,
   };

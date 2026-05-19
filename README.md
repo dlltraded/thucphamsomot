@@ -1,6 +1,6 @@
 # thuc_pham_so_1
 
-Website B2B cho `thucphamso1.vn` theo huong SEO-first va local-first.
+Website B2B cho `thucphamsomot.vn` theo huong SEO-first va local-first.
 
 ## Stack
 

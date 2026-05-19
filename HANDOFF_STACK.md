@@ -1,6 +1,6 @@
 # thuc_pham_so_1 - Stack Chuan Va Handoff
 
-Tieu chi: rebuild website `thucphamso1.vn` theo huong B2B, SEO-first, de mo rong, de handoff cho agent moi.
+Tieu chi: rebuild website `thucphamsomot.vn` theo huong B2B, SEO-first, de mo rong, de handoff cho agent moi.
 
 ## 1) Muc tieu san pham
 
@@ -174,7 +174,7 @@ thucphamso1/
 ## 9) Bien moi truong de nghi
 
 ```env
-NEXT_PUBLIC_SITE_URL=https://thucphamso1.vn
+NEXT_PUBLIC_SITE_URL=https://thucphamsomot.vn
 NEXT_PUBLIC_SITE_NAME=Thuc Pham So 1
 NEXT_PUBLIC_PHONE=
 NEXT_PUBLIC_EMAIL=
@@ -184,11 +184,11 @@ NEXT_PUBLIC_ADDRESS=
 
 ## 10) Decision log
 
-- Domain chot de lam site moi: `thucphamso1.vn`
+- Domain chot de lam site moi: `thucphamsomot.vn`
 - Vi tri SEO chinh: B2B supply, khong phai site ban le chung
 - Source code moi hoan toan, khong reuse theme cu
 - Content cu chi dung lam nguyen lieu, khong dung cuc bo cue
-- Contact chot: hotline `0898 902 222`, email `banhang@thucphamso1.vn`
+- Contact chot: hotline `0898 902 222`, email `contact@thucphamsomot.vn`
 
 ## 11) Cach tiep tuc neu quota het
 

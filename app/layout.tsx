@@ -8,6 +8,7 @@ import "@fontsource/be-vietnam-pro/900.css";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { CompanyProfileWidget } from "@/components/company-profile-widget";
 import { SocialWidget } from "@/components/social-widget";
 import { siteConfig } from "@/lib/site";
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SiteHeader />
         {children}
+        <CompanyProfileWidget />
         <SocialWidget />
         <SiteFooter />
       </body>
