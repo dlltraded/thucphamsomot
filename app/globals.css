@@ -4780,7 +4780,23 @@ body {
   }
 
   .social-widget {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: calc(100% - 20px);
+    right: 10px;
+    bottom: 10px;
+    gap: 8px;
+  }
+
+  .social-widget__item {
+    min-width: 0;
+    padding: 11px 10px;
+    font-size: 12px;
+    border-radius: 14px;
+  }
+
+  .social-widget__item span {
+    line-height: 1;
   }
 
   .site-footer__inner,
@@ -5020,10 +5036,7 @@ body {
     flex-direction: column;
   }
 
-  .social-widget {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: calc(100% - 20px);
-    right: 10px;
-    bottom: 10px;
+  .social-widget__item {
+    padding: 10px 8px;
   }
 }
