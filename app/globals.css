@@ -4964,17 +4964,7 @@ body {
   }
 
   .company-profile-widget {
-    left: 10px;
-    right: auto;
-    top: auto;
-    bottom: 92px;
-    transform: none;
-    width: min(220px, calc(100vw - 20px));
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 8px;
-    padding: 12px;
-    border-radius: 18px;
+    display: none;
   }
 
   .company-profile-widget__badge {
