@@ -1,8 +1,8 @@
 export const brandAssets = {
   logoTransparent: "/images/tps1-logo-transparent.png",
   logoHorizontal: "/images/tps1-logo-horizontal.png",
-  coverFood: "/images/tps1-cover-food-v2.jpg",
-  warehouseWide: "/images/tps1-warehouse-wide-v2.jpg",
+  coverFood: "/images/tps1-cover-food.jpg",
+  warehouseWide: "/images/tps1-warehouse-wide.jpg",
   warehousePeople: "/images/tps1-warehouse-people.jpg",
   deliveryTruck: "/images/tps1-delivery-truck.jpg",
   deliveryTruckReal: "/images/tps1-real-delivery-truck.jpg",
