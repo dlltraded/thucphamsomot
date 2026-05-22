@@ -57,6 +57,13 @@ const heroStats = [
   { value: "4", label: "Nhóm khách B2B trọng tâm" },
 ];
 
+const galleryImages = [
+  { src: brandAssets.warehouseWide, alt: "Kho v?n TPS1" },
+  { src: brandAssets.kitchen, alt: "Khu b?p TPS1" },
+  { src: "/images/tps1-gallery-warehouse-people.jpg", alt: "Kho v?n TPS1 th?c t?" },
+  { src: "/images/tps1-gallery-factory-visit.jpg", alt: "Ho?t d?ng th?c t? TPS1" },
+];
+
 export default function HomePage() {
   return (
     <main className="home-page">
@@ -98,13 +105,18 @@ export default function HomePage() {
           <div className="home-hero__visual">
             <div className="home-mosaic">
               <div className="home-mosaic__tile home-mosaic__tile--large">
-                <Image src={brandAssets.warehouseWide} alt="Kho vận TPS1" fill className="home-mosaic__image" />
+                <Image src={brandAssets.warehouseWide} alt="Bộ nhận diện TPS1" fill className="home-mosaic__image" />
               </div>
               <div className="home-mosaic__tile">
-                <Image src={brandAssets.coverFood} alt="Nhóm thực phẩm TPS1" fill className="home-mosaic__image" />
+                <Image src={brandAssets.coverFood} alt="TPS1 thực tế" fill className="home-mosaic__image" />
               </div>
               <div className="home-mosaic__tile home-mosaic__tile--wide">
-                <Image src={brandAssets.deliveryTruck} alt="Xe giao hàng TPS1" fill className="home-mosaic__image" />
+                <Image
+                  src={brandAssets.deliveryTruckReal}
+                  alt="Xe giao hàng TPS1 thực tế"
+                  fill
+                  className="home-mosaic__image home-mosaic__image--truck"
+                />
               </div>
             </div>
           </div>
@@ -206,9 +218,9 @@ export default function HomePage() {
           </div>
 
           <div className="home-gallery__grid">
-            {[brandAssets.warehouseWide, brandAssets.kitchen, brandAssets.deliveryTruck, brandAssets.quality].map((src, index) => (
-              <div key={src} className={`home-gallery__card home-gallery__card--${index + 1}`}>
-                <Image src={src} alt="TPS1 thực tế" fill className="home-gallery__image" />
+            {galleryImages.map((item, index) => (
+              <div key={item.src} className={`home-gallery__card home-gallery__card--${index + 1}`}>
+                <Image src={item.src} alt={item.alt} fill className="home-gallery__image" />
               </div>
             ))}
           </div>

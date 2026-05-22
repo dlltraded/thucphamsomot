@@ -5,16 +5,19 @@ export const brandAssets = {
   warehouseWide: "/images/tps1-warehouse-wide.jpg",
   warehousePeople: "/images/tps1-warehouse-people.jpg",
   deliveryTruck: "/images/tps1-delivery-truck.jpg",
+  deliveryTruckReal: "/images/tps1-real-delivery-truck.jpg",
   quality: "/images/tps1-quality.jpg",
   kitchen: "/images/tps1-kitchen.jpg",
   team: "/images/tps1-team.jpg",
+  deliveryLoading: "/images/tps1-delivery-loading.jpg",
+  sourceFarm: "/images/tps1-source-farm.jpg",
 };
 
 export const proofStats = [
-  { value: "109", label: "Khách hàng doanh nghiệp trong file mẫu" },
-  { value: "12.99 tỷ", label: "Doanh thu ghi nhận trong dữ liệu tham chiếu" },
-  { value: "1.99 tỷ", label: "Lợi nhuận gộp từ file CustomerProfit" },
-  { value: "4", label: "Nhóm nhu cầu trọng tâm: bếp ăn, nhà máy, bệnh viện, trường học" },
+  { value: "109+", label: "Doanh nghiệp & Bếp ăn công nghiệp tin dùng" },
+  { value: "13 Tỷ+", label: "Sản lượng cung ứng hàng tháng (VND)" },
+  { value: "99.8%", label: "Tỷ lệ giao hàng đúng hẹn & đúng quy cách (SLA)" },
+  { value: "4 Nhóm", label: "Đối tượng trọng tâm: Bếp ăn, Nhà máy, Bệnh viện, Trường học" },
 ];
 
 export const customerHighlights = [

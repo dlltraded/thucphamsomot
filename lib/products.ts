@@ -124,11 +124,11 @@ export async function replaceProductsFromCsv(csvText: string) {
 
 export function buildProductImageMap(products: ManagedProduct[]) {
   const fallback: Record<string, string> = {
-    "rau-cu-qua-tuoi-song": "/images/tps1-cover-food.jpg",
-    "thit-ca-hai-san-tuoi-song": "/images/tps1-quality.jpg",
-    "hang-dong-lanh": "/images/tps1-warehouse-wide.jpg",
-    "gia-vi-nha-bep": "/images/tps1-kitchen.jpg",
-    "thuc-pham-chay": "/images/tps1-team.jpg",
+    "rau-cu-qua-tuoi-song": "/images/tps1-vegetables.jpg",
+    "thit-ca-hai-san-tuoi-song": "/images/tps1-meat-seafood.png",
+    "hang-dong-lanh": "/images/tps1-frozen.png",
+    "gia-vi-nha-bep": "/images/tps1-spices.png",
+    "thuc-pham-chay": "/images/tps1-vegan.png",
   };
 
   const map: Record<string, string> = {};

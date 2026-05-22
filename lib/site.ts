@@ -22,12 +22,12 @@ export const siteConfig = {
 };
 
 export const navItems = [
+  { label: "Đặt Hàng", href: "/bao-gia" },
   { label: "Giới thiệu", href: "/gioi-thieu" },
   { label: "Sản phẩm", href: "/san-pham" },
   { label: "Tin tức", href: "/tin-tuc" },
   { label: "Ngành hàng", href: "/nganh-hang/bep-an-tap-the" },
   { label: "Dịch vụ", href: "/dich-vu/tu-van-menu" },
-  { label: "Đặt Hàng", href: "/bao-gia" },
   { label: "Kiến thức", href: "/kien-thuc" },
   { label: "Liên hệ", href: "/lien-he" },
 ];

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { BookOpenText, LockKeyhole, Newspaper, Package, ShieldCheck } from "lucide-react";
-import { DEFAULT_ADMIN_TOKEN, ADMIN_TOKEN_STORAGE_KEY } from "@/lib/admin-token";
+import { useEffect, useState } from "react";
+import { BookOpenText, LockKeyhole, Newspaper, Package, ShieldCheck, Loader2 } from "lucide-react";
+import { ADMIN_TOKEN_STORAGE_KEY } from "@/lib/admin-token";
 import { NewsAdmin } from "@/components/news-admin";
 import { ProductAdmin } from "@/components/product-admin";
 import type { NewsArticle } from "@/lib/news";
@@ -30,58 +30,97 @@ export function AdminWorkspace({ initialArticles, initialProducts, initialKnowle
   const [token, setToken] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("news");
   const [unlocked, setUnlocked] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState("Nhập mật khẩu để mở quản trị.");
+
+  async function validateToken(pwd: string) {
+    if (!pwd.trim()) {
+      setTokenStatus("Nhập mật khẩu để mở quản trị.");
+      setUnlocked(false);
+      return;
+    }
+    setIsValidating(true);
+    setTokenStatus("Đang kiểm tra mật khẩu...");
+    try {
+      const res = await fetch("/api/admin/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token: pwd.trim() }),
+      });
+      if (res.ok) {
+        setToken(pwd.trim());
+        setUnlocked(true);
+        setTokenStatus("Mật khẩu đúng.");
+      } else {
+        setUnlocked(false);
+        setTokenStatus("Mật khẩu chưa đúng.");
+      }
+    } catch (err) {
+      setUnlocked(false);
+      setTokenStatus("Lỗi kết nối đến máy chủ.");
+    } finally {
+      setIsValidating(false);
+    }
+  }
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
     if (savedToken) {
       setTokenInput(savedToken);
-      setToken(savedToken);
-      setUnlocked(savedToken === DEFAULT_ADMIN_TOKEN);
+      validateToken(savedToken);
     }
   }, []);
 
   function persistToken(value: string) {
     setTokenInput(value);
     window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, value);
+    if (!value.trim()) {
+      setTokenStatus("Nhập mật khẩu để mở quản trị.");
+    } else {
+      setTokenStatus("Nhấn 'Mở quản trị' để xác thực.");
+    }
   }
 
   function unlock() {
-    const value = tokenInput.trim();
-    setToken(value);
-    window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, value);
-    setUnlocked(value === DEFAULT_ADMIN_TOKEN);
+    validateToken(tokenInput);
   }
-
-  const tokenStatus = useMemo(() => {
-    if (!tokenInput.trim()) return "Nhap mat khau de mo quan tri.";
-    return tokenInput.trim() === DEFAULT_ADMIN_TOKEN ? "Mat khau dung." : "Mat khau chua dung.";
-  }, [tokenInput]);
 
   return (
     <section className="admin-workspace">
       <div className="admin-gate">
         <div>
-          <div className="eyebrow">Quan tri noi dung</div>
-          <h2>Mot noi de sua tin tuc, san pham va kien thuc.</h2>
-          <p>Nhap mat khau de mo khu quan tri. Sau khi mo, anh co the chuyen giua tin tuc, san pham va kien thuc trong cung mot khu vuc.</p>
+          <div className="eyebrow">Quản trị nội dung</div>
+          <h2>Một nơi để sửa tin tức, sản phẩm và kiến thức.</h2>
+          <p>Nhập mật khẩu để mở khu quản trị. Sau khi mở, anh có thể chuyển giữa tin tức, sản phẩm và kiến thức trong cùng một khu vực.</p>
         </div>
 
         <div className="admin-token">
-          <label>Mat khau quan tri</label>
+          <label>Mật khẩu quản trị</label>
           <input
             type="password"
             value={tokenInput}
             onChange={(event) => persistToken(event.target.value)}
-            placeholder="Nhap mat khau"
+            placeholder="Nhập mật khẩu"
             className="lead-form__input"
+            disabled={isValidating}
           />
           <div className="admin-gate__status">
-            <ShieldCheck size={16} />
+            {isValidating ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <ShieldCheck size={16} />
+            )}
             <span>{tokenStatus}</span>
           </div>
-          <button type="button" className="btn-primary" onClick={unlock}>
-            <LockKeyhole size={16} />
-            Mo quan tri
+          <button type="button" className="btn-primary" onClick={unlock} disabled={isValidating}>
+            {isValidating ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <LockKeyhole size={16} />
+            )}
+            {isValidating ? "Đang xác thực..." : "Mở quản trị"}
           </button>
         </div>
       </div>
