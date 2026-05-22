@@ -7,54 +7,54 @@ import { brandAssets, customerHighlights } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
 export const metadata = makeMetadata({
-  title: "Thực Phẩm Số Một | Cung cấp thực phẩm B2B tại Đồng Nai",
+  title: "ThÃ¡Â»Â±c PhÃ¡ÂºÂ©m SÃ¡Â»â€˜ MÃ¡Â»â„¢t | Cung cÃ¡ÂºÂ¥p thÃ¡Â»Â±c phÃ¡ÂºÂ©m B2B tÃ¡ÂºÂ¡i Ã„ÂÃ¡Â»â€œng Nai",
   description:
-    "TPS1 cung cấp thực phẩm cho bếp ăn tập thể, nhà máy, trường học, bệnh viện. Danh mục rõ ràng, giao định kỳ, báo giá theo nhu cầu thực tế.",
+    "TPS1 cung cÃ¡ÂºÂ¥p thÃ¡Â»Â±c phÃ¡ÂºÂ©m cho bÃ¡ÂºÂ¿p Ã„Æ’n tÃ¡ÂºÂ­p thÃ¡Â»Æ’, nhÃƒÂ  mÃƒÂ¡y, trÃ†Â°Ã¡Â»Âng hÃ¡Â»Âc, bÃ¡Â»â€¡nh viÃ¡Â»â€¡n. Danh mÃ¡Â»Â¥c rÃƒÂµ rÃƒÂ ng, giao Ã„â€˜Ã¡Â»â€¹nh kÃ¡Â»Â³, bÃƒÂ¡o giÃƒÂ¡ theo nhu cÃ¡ÂºÂ§u thÃ¡Â»Â±c tÃ¡ÂºÂ¿.",
   path: "/",
 });
 
 const servicePillars = [
   {
     icon: ShieldCheck,
-    title: "Nguồn hàng rõ ràng",
-    text: "Danh mục theo nhóm hàng bếp dùng hàng ngày, dễ so sánh và dễ ra quyết định.",
+    title: "NguÃ¡Â»â€œn hÃƒÂ ng rÃƒÂµ rÃƒÂ ng",
+    text: "Danh mÃ¡Â»Â¥c theo nhÃƒÂ³m hÃƒÂ ng bÃ¡ÂºÂ¿p dÃƒÂ¹ng hÃƒÂ ng ngÃƒÂ y, dÃ¡Â»â€¦ so sÃƒÂ¡nh vÃƒÂ  dÃ¡Â»â€¦ ra quyÃ¡ÂºÂ¿t Ã„â€˜Ã¡Â»â€¹nh.",
   },
   {
     icon: Truck,
-    title: "Giao đúng lịch",
-    text: "Linh hoạt theo ca, theo ngày hoặc theo tuần, phù hợp vận hành bếp công nghiệp.",
+    title: "Giao Ã„â€˜ÃƒÂºng lÃ¡Â»â€¹ch",
+    text: "Linh hoÃ¡ÂºÂ¡t theo ca, theo ngÃƒÂ y hoÃ¡ÂºÂ·c theo tuÃ¡ÂºÂ§n, phÃƒÂ¹ hÃ¡Â»Â£p vÃ¡ÂºÂ­n hÃƒÂ nh bÃ¡ÂºÂ¿p cÃƒÂ´ng nghiÃ¡Â»â€¡p.",
   },
   {
     icon: ClipboardList,
-    title: "Báo giá theo nhu cầu",
-    text: "Mỗi khách có nhu cầu riêng, đội ngũ TPS1 phản hồi phương án phù hợp để chốt đơn nhanh.",
+    title: "BÃƒÂ¡o giÃƒÂ¡ theo nhu cÃ¡ÂºÂ§u",
+    text: "MÃ¡Â»â€”i khÃƒÂ¡ch cÃƒÂ³ nhu cÃ¡ÂºÂ§u riÃƒÂªng, Ã„â€˜Ã¡Â»â„¢i ngÃ…Â© TPS1 phÃ¡ÂºÂ£n hÃ¡Â»â€œi phÃ†Â°Ã†Â¡ng ÃƒÂ¡n phÃƒÂ¹ hÃ¡Â»Â£p Ã„â€˜Ã¡Â»Æ’ chÃ¡Â»â€˜t Ã„â€˜Ã†Â¡n nhanh.",
   },
   {
     icon: Building2,
-    title: "Kinh nghiệm B2B",
-    text: "Phục vụ thực tế cho nhà máy, bếp ăn, bệnh viện và trường học tại Đồng Nai.",
+    title: "Kinh nghiÃ¡Â»â€¡m B2B",
+    text: "PhÃ¡Â»Â¥c vÃ¡Â»Â¥ thÃ¡Â»Â±c tÃ¡ÂºÂ¿ cho nhÃƒÂ  mÃƒÂ¡y, bÃ¡ÂºÂ¿p Ã„Æ’n, bÃ¡Â»â€¡nh viÃ¡Â»â€¡n vÃƒÂ  trÃ†Â°Ã¡Â»Âng hÃ¡Â»Âc tÃ¡ÂºÂ¡i Ã„ÂÃ¡Â»â€œng Nai.",
   },
 ];
 
 const processSteps = [
   {
-    title: "1. Chọn nhóm sản phẩm",
-    text: "Chọn nhanh theo danh mục: rau củ, thịt cá, đông lạnh, gia vị, thực phẩm chay.",
+    title: "1. ChÃ¡Â»Ân nhÃƒÂ³m sÃ¡ÂºÂ£n phÃ¡ÂºÂ©m",
+    text: "ChÃ¡Â»Ân nhanh theo danh mÃ¡Â»Â¥c: rau cÃ¡Â»Â§, thÃ¡Â»â€¹t cÃƒÂ¡, Ã„â€˜ÃƒÂ´ng lÃ¡ÂºÂ¡nh, gia vÃ¡Â»â€¹, thÃ¡Â»Â±c phÃ¡ÂºÂ©m chay.",
   },
   {
-    title: "2. Gửi yêu cầu",
-    text: "Nhập số lượng, khu vực giao, thời gian cần hàng và ghi chú quy cách.",
+    title: "2. GÃ¡Â»Â­i yÃƒÂªu cÃ¡ÂºÂ§u",
+    text: "NhÃ¡ÂºÂ­p sÃ¡Â»â€˜ lÃ†Â°Ã¡Â»Â£ng, khu vÃ¡Â»Â±c giao, thÃ¡Â»Âi gian cÃ¡ÂºÂ§n hÃƒÂ ng vÃƒÂ  ghi chÃƒÂº quy cÃƒÂ¡ch.",
   },
   {
-    title: "3. Nhận phương án",
-    text: "Đội kinh doanh phản hồi báo giá và lịch giao phù hợp để khách chốt đơn.",
+    title: "3. NhÃ¡ÂºÂ­n phÃ†Â°Ã†Â¡ng ÃƒÂ¡n",
+    text: "Ã„ÂÃ¡Â»â„¢i kinh doanh phÃ¡ÂºÂ£n hÃ¡Â»â€œi bÃƒÂ¡o giÃƒÂ¡ vÃƒÂ  lÃ¡Â»â€¹ch giao phÃƒÂ¹ hÃ¡Â»Â£p Ã„â€˜Ã¡Â»Æ’ khÃƒÂ¡ch chÃ¡Â»â€˜t Ã„â€˜Ã†Â¡n.",
   },
 ];
 
 const heroStats = [
-  { value: "109+", label: "Khách hàng doanh nghiệp" },
-  { value: "24h", label: "Phản hồi yêu cầu báo giá" },
-  { value: "4", label: "Nhóm khách B2B trọng tâm" },
+  { value: "109+", label: "KhÃƒÂ¡ch hÃƒÂ ng doanh nghiÃ¡Â»â€¡p" },
+  { value: "24h", label: "PhÃ¡ÂºÂ£n hÃ¡Â»â€œi yÃƒÂªu cÃ¡ÂºÂ§u bÃƒÂ¡o giÃƒÂ¡" },
+  { value: "4", label: "NhÃƒÂ³m khÃƒÂ¡ch B2B trÃ¡Â»Âng tÃƒÂ¢m" },
 ];
 
 const galleryImages = [
@@ -63,6 +63,8 @@ const galleryImages = [
   { src: "/images/tps1-gallery-warehouse-people.jpg", alt: "Kho v?n TPS1 th?c t?" },
   { src: "/images/tps1-gallery-factory-visit.jpg", alt: "Ho?t d?ng th?c t? TPS1" },
 ];
+const heroWarehouseWide = `${brandAssets.warehouseWide}?v=20260522-1`;
+const heroCoverFood = `${brandAssets.coverFood}?v=20260522-1`;
 
 export default function HomePage() {
   return (
@@ -72,23 +74,23 @@ export default function HomePage() {
           <div className="home-hero__copy">
             <div className="home-hero__brand">
               <Image src={brandAssets.logoTransparent} alt={siteConfig.name} width={190} height={64} priority />
-              <span className="home-hero__brand-tag">Cung cấp thực phẩm B2B tại Đồng Nai và khu vực lân cận</span>
+              <span className="home-hero__brand-tag">Cung cÃ¡ÂºÂ¥p thÃ¡Â»Â±c phÃ¡ÂºÂ©m B2B tÃ¡ÂºÂ¡i Ã„ÂÃ¡Â»â€œng Nai vÃƒÂ  khu vÃ¡Â»Â±c lÃƒÂ¢n cÃ¡ÂºÂ­n</span>
             </div>
-            <div className="eyebrow eyebrow-on-dark">Thực Phẩm Số Một</div>
+            <div className="eyebrow eyebrow-on-dark">ThÃ¡Â»Â±c PhÃ¡ÂºÂ©m SÃ¡Â»â€˜ MÃ¡Â»â„¢t</div>
             <h1 className="home-hero__title">
-              Đối tác cung ứng thực phẩm cho
-              <span>bếp ăn tập thể, nhà máy và suất ăn công nghiệp</span>
+              Ã„ÂÃ¡Â»â€˜i tÃƒÂ¡c cung Ã¡Â»Â©ng thÃ¡Â»Â±c phÃ¡ÂºÂ©m cho
+              <span>bÃ¡ÂºÂ¿p Ã„Æ’n tÃ¡ÂºÂ­p thÃ¡Â»Æ’, nhÃƒÂ  mÃƒÂ¡y vÃƒÂ  suÃ¡ÂºÂ¥t Ã„Æ’n cÃƒÂ´ng nghiÃ¡Â»â€¡p</span>
             </h1>
             <p className="home-hero__lead">
-              Catalog rõ ràng, quy trình đặt hàng gọn và phản hồi nhanh theo nhu cầu vận hành thực tế của từng đơn vị.
+              Catalog rÃƒÂµ rÃƒÂ ng, quy trÃƒÂ¬nh Ã„â€˜Ã¡ÂºÂ·t hÃƒÂ ng gÃ¡Â»Ân vÃƒÂ  phÃ¡ÂºÂ£n hÃ¡Â»â€œi nhanh theo nhu cÃ¡ÂºÂ§u vÃ¡ÂºÂ­n hÃƒÂ nh thÃ¡Â»Â±c tÃ¡ÂºÂ¿ cÃ¡Â»Â§a tÃ¡Â»Â«ng Ã„â€˜Ã†Â¡n vÃ¡Â»â€¹.
             </p>
 
             <div className="home-hero__actions">
               <Link href="/bao-gia" className="btn-primary btn-on-dark">
-                Yêu cầu báo giá <ArrowRight size={18} />
+                YÃƒÂªu cÃ¡ÂºÂ§u bÃƒÂ¡o giÃƒÂ¡ <ArrowRight size={18} />
               </Link>
               <Link href="/san-pham" className="btn-secondary btn-on-dark-secondary">
-                Xem danh mục sản phẩm <ArrowRight size={18} />
+                Xem danh mÃ¡Â»Â¥c sÃ¡ÂºÂ£n phÃ¡ÂºÂ©m <ArrowRight size={18} />
               </Link>
             </div>
 
@@ -105,15 +107,15 @@ export default function HomePage() {
           <div className="home-hero__visual">
             <div className="home-mosaic">
               <div className="home-mosaic__tile home-mosaic__tile--large">
-                <Image src={brandAssets.warehouseWide} alt="Bộ nhận diện TPS1" fill className="home-mosaic__image" />
+                <Image src={heroWarehouseWide} alt="BÃ¡Â»â„¢ nhÃ¡ÂºÂ­n diÃ¡Â»â€¡n TPS1" fill unoptimized className="home-mosaic__image" />
               </div>
               <div className="home-mosaic__tile">
-                <Image src={brandAssets.coverFood} alt="TPS1 thực tế" fill className="home-mosaic__image" />
+                <Image src={heroCoverFood} alt="TPS1 thÃ¡Â»Â±c tÃ¡ÂºÂ¿" fill unoptimized className="home-mosaic__image" />
               </div>
               <div className="home-mosaic__tile home-mosaic__tile--wide">
                 <Image
                   src={brandAssets.deliveryTruckReal}
-                  alt="Xe giao hàng TPS1 thực tế"
+                  alt="Xe giao hÃƒÂ ng TPS1 thÃ¡Â»Â±c tÃ¡ÂºÂ¿"
                   fill
                   className="home-mosaic__image home-mosaic__image--truck"
                 />
@@ -142,14 +144,14 @@ export default function HomePage() {
         <div className="container-shell">
           <div className="section-split">
             <div className="section-heading">
-              <div className="eyebrow">Danh mục sản phẩm</div>
-              <h2 className="section-heading__title">Nhóm sản phẩm sắp xếp theo cách khách B2B thường mua.</h2>
+              <div className="eyebrow">Danh mÃ¡Â»Â¥c sÃ¡ÂºÂ£n phÃ¡ÂºÂ©m</div>
+              <h2 className="section-heading__title">NhÃƒÂ³m sÃ¡ÂºÂ£n phÃ¡ÂºÂ©m sÃ¡ÂºÂ¯p xÃ¡ÂºÂ¿p theo cÃƒÂ¡ch khÃƒÂ¡ch B2B thÃ†Â°Ã¡Â»Âng mua.</h2>
               <p className="section-heading__description">
-                Chọn nhóm hàng phù hợp và gửi yêu cầu trong một luồng thống nhất để đội ngũ xử lý nhanh hơn.
+                ChÃ¡Â»Ân nhÃƒÂ³m hÃƒÂ ng phÃƒÂ¹ hÃ¡Â»Â£p vÃƒÂ  gÃ¡Â»Â­i yÃƒÂªu cÃ¡ÂºÂ§u trong mÃ¡Â»â„¢t luÃ¡Â»â€œng thÃ¡Â»â€˜ng nhÃ¡ÂºÂ¥t Ã„â€˜Ã¡Â»Æ’ Ã„â€˜Ã¡Â»â„¢i ngÃ…Â© xÃ¡Â»Â­ lÃƒÂ½ nhanh hÃ†Â¡n.
               </p>
             </div>
             <Link href="/san-pham" className="text-link">
-              Xem toàn bộ sản phẩm <ArrowRight size={16} />
+              Xem toÃƒÂ n bÃ¡Â»â„¢ sÃ¡ÂºÂ£n phÃ¡ÂºÂ©m <ArrowRight size={16} />
             </Link>
           </div>
 
@@ -172,8 +174,8 @@ export default function HomePage() {
 
       <section className="home-solution container-shell section-pad">
         <div className="section-heading">
-          <div className="eyebrow">Quy trình làm việc</div>
-          <h2 className="section-heading__title">Một quy trình đơn giản để khách dễ đặt hàng và dễ chốt phương án.</h2>
+          <div className="eyebrow">Quy trÃƒÂ¬nh lÃƒÂ m viÃ¡Â»â€¡c</div>
+          <h2 className="section-heading__title">MÃ¡Â»â„¢t quy trÃƒÂ¬nh Ã„â€˜Ã†Â¡n giÃ¡ÂºÂ£n Ã„â€˜Ã¡Â»Æ’ khÃƒÂ¡ch dÃ¡Â»â€¦ Ã„â€˜Ã¡ÂºÂ·t hÃƒÂ ng vÃƒÂ  dÃ¡Â»â€¦ chÃ¡Â»â€˜t phÃ†Â°Ã†Â¡ng ÃƒÂ¡n.</h2>
         </div>
 
         <div className="solution-grid">
@@ -191,11 +193,11 @@ export default function HomePage() {
         <div className="container-shell">
           <div className="section-split">
             <div className="section-heading">
-              <div className="eyebrow">Khách hàng tiêu biểu</div>
-              <h2 className="section-heading__title">Đang phục vụ nhiều đơn vị trong nhóm khách B2B tại khu vực công nghiệp.</h2>
+              <div className="eyebrow">KhÃƒÂ¡ch hÃƒÂ ng tiÃƒÂªu biÃ¡Â»Æ’u</div>
+              <h2 className="section-heading__title">Ã„Âang phÃ¡Â»Â¥c vÃ¡Â»Â¥ nhiÃ¡Â»Âu Ã„â€˜Ã†Â¡n vÃ¡Â»â€¹ trong nhÃƒÂ³m khÃƒÂ¡ch B2B tÃ¡ÂºÂ¡i khu vÃ¡Â»Â±c cÃƒÂ´ng nghiÃ¡Â»â€¡p.</h2>
             </div>
             <Link href="/bao-gia" className="text-link">
-              Gửi yêu cầu mới <ArrowRight size={16} />
+              GÃ¡Â»Â­i yÃƒÂªu cÃ¡ÂºÂ§u mÃ¡Â»â€ºi <ArrowRight size={16} />
             </Link>
           </div>
 
@@ -210,10 +212,10 @@ export default function HomePage() {
       <section className="container-shell section-pad">
         <div className="home-gallery">
           <div className="home-gallery__copy">
-            <div className="eyebrow">Hình ảnh thực tế</div>
-            <h2 className="section-heading__title">Kho vận, giao nhận và vận hành bếp từ dữ liệu thực tế của TPS1.</h2>
+            <div className="eyebrow">HÃƒÂ¬nh Ã¡ÂºÂ£nh thÃ¡Â»Â±c tÃ¡ÂºÂ¿</div>
+            <h2 className="section-heading__title">Kho vÃ¡ÂºÂ­n, giao nhÃ¡ÂºÂ­n vÃƒÂ  vÃ¡ÂºÂ­n hÃƒÂ nh bÃ¡ÂºÂ¿p tÃ¡Â»Â« dÃ¡Â»Â¯ liÃ¡Â»â€¡u thÃ¡Â»Â±c tÃ¡ÂºÂ¿ cÃ¡Â»Â§a TPS1.</h2>
             <p className="section-heading__description">
-              Hình ảnh trên website là tư liệu thật của doanh nghiệp để khách hàng đánh giá năng lực rõ ràng hơn.
+              HÃƒÂ¬nh Ã¡ÂºÂ£nh trÃƒÂªn website lÃƒÂ  tÃ†Â° liÃ¡Â»â€¡u thÃ¡ÂºÂ­t cÃ¡Â»Â§a doanh nghiÃ¡Â»â€¡p Ã„â€˜Ã¡Â»Æ’ khÃƒÂ¡ch hÃƒÂ ng Ã„â€˜ÃƒÂ¡nh giÃƒÂ¡ nÃ„Æ’ng lÃ¡Â»Â±c rÃƒÂµ rÃƒÂ ng hÃ†Â¡n.
             </p>
           </div>
 
@@ -230,12 +232,12 @@ export default function HomePage() {
       <section className="home-cta">
         <div className="container-shell home-cta__card">
           <div>
-            <div className="eyebrow eyebrow-on-dark">Sẵn sàng nhận yêu cầu</div>
-            <h2>Gửi danh mục cần mua để đội ngũ TPS1 phản hồi phương án phù hợp.</h2>
-            <p>Nhập thông tin đơn vị, nhóm hàng và thời gian cần giao. Đội kinh doanh sẽ liên hệ để chốt báo giá và lịch giao.</p>
+            <div className="eyebrow eyebrow-on-dark">SÃ¡ÂºÂµn sÃƒÂ ng nhÃ¡ÂºÂ­n yÃƒÂªu cÃ¡ÂºÂ§u</div>
+            <h2>GÃ¡Â»Â­i danh mÃ¡Â»Â¥c cÃ¡ÂºÂ§n mua Ã„â€˜Ã¡Â»Æ’ Ã„â€˜Ã¡Â»â„¢i ngÃ…Â© TPS1 phÃ¡ÂºÂ£n hÃ¡Â»â€œi phÃ†Â°Ã†Â¡ng ÃƒÂ¡n phÃƒÂ¹ hÃ¡Â»Â£p.</h2>
+            <p>NhÃ¡ÂºÂ­p thÃƒÂ´ng tin Ã„â€˜Ã†Â¡n vÃ¡Â»â€¹, nhÃƒÂ³m hÃƒÂ ng vÃƒÂ  thÃ¡Â»Âi gian cÃ¡ÂºÂ§n giao. Ã„ÂÃ¡Â»â„¢i kinh doanh sÃ¡ÂºÂ½ liÃƒÂªn hÃ¡Â»â€¡ Ã„â€˜Ã¡Â»Æ’ chÃ¡Â»â€˜t bÃƒÂ¡o giÃƒÂ¡ vÃƒÂ  lÃ¡Â»â€¹ch giao.</p>
           </div>
           <Link href="/bao-gia" className="btn-primary btn-on-dark">
-            Mở form báo giá <ArrowRight size={18} />
+            MÃ¡Â»Å¸ form bÃƒÂ¡o giÃƒÂ¡ <ArrowRight size={18} />
           </Link>
         </div>
       </section>
