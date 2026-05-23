@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "migrate:supabase": "node scripts/migrate-json-to-supabase.mjs",
     "postbuild": "next-sitemap"
   },
   "keywords": [],

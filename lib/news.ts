@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { z } from "zod";
+import { deleteSupabaseItem, isSupabaseContentEnabled, readSupabaseItems, saveSupabaseItems } from "@/lib/supabase-content-store";
 
 const newsArticleSchema = z.object({
   slug: z.string().min(1).optional(),
@@ -110,6 +111,18 @@ async function readJsonFile() {
 }
 
 export async function readNewsArticles(): Promise<NewsArticle[]> {
+  if (isSupabaseContentEnabled()) {
+    try {
+      const rows = await readSupabaseItems<NewsArticle>("news");
+      const parsed = z.array(newsArticleSchema).safeParse(rows ?? []);
+      if (parsed.success && parsed.data.length) {
+        return sortArticles(parsed.data.map(normalizeArticle));
+      }
+    } catch (error) {
+      console.error("Failed to read news from Supabase. Falling back to JSON/defaults.", error);
+    }
+  }
+
   try {
     const rawArticles = await readJsonFile();
     const parsed = z.array(newsArticleSchema).safeParse(rawArticles);
@@ -129,6 +142,17 @@ export async function readNewsArticle(slug: string): Promise<NewsArticle | null>
 }
 
 export async function saveNewsArticles(articles: NewsArticle[]) {
+  if (isSupabaseContentEnabled()) {
+    const sorted = sortArticles(articles);
+    await saveSupabaseItems("news", sorted, {
+      getSlug: (item) => item.slug,
+      getTitle: (item) => item.title,
+      getPublishedAt: (item) => item.publishedAt,
+      getFeatured: (item) => item.featured,
+    });
+    return;
+  }
+
   await fs.mkdir(path.dirname(newsFile), { recursive: true });
   await fs.writeFile(newsFile, JSON.stringify({ articles: sortArticles(articles) }, null, 2), "utf8");
 }
@@ -143,6 +167,10 @@ export async function upsertNewsArticle(input: z.infer<typeof newsArticleSchema>
 }
 
 export async function deleteNewsArticle(slug: string) {
+  if (isSupabaseContentEnabled()) {
+    return deleteSupabaseItem("news", slug);
+  }
+
   const articles = await readNewsArticles();
   const next = articles.filter((article) => article.slug !== slug);
   await saveNewsArticles(next);

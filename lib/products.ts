@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { z } from "zod";
 import { products as defaultProducts, type ContentItem, findBySlug } from "@/lib/content";
+import { isSupabaseContentEnabled, readSupabaseItems, saveSupabaseItems } from "@/lib/supabase-content-store";
 
 const productSchema = z.object({
   slug: z.string().min(1),
@@ -44,6 +45,18 @@ async function readRawProducts() {
 }
 
 export async function readManagedProducts(): Promise<ManagedProduct[]> {
+  if (isSupabaseContentEnabled()) {
+    try {
+      const rows = await readSupabaseItems<ManagedProduct>("products");
+      const parsed = z.array(productSchema).safeParse(rows ?? []);
+      if (parsed.success && parsed.data.length) {
+        return parsed.data;
+      }
+    } catch (error) {
+      console.error("Failed to read products from Supabase. Falling back to JSON/defaults.", error);
+    }
+  }
+
   try {
     const raw = await readRawProducts();
     const parsed = z.array(productSchema).safeParse(raw);
@@ -57,6 +70,14 @@ export async function readManagedProducts(): Promise<ManagedProduct[]> {
 }
 
 export async function saveManagedProducts(products: ManagedProduct[]) {
+  if (isSupabaseContentEnabled()) {
+    await saveSupabaseItems("products", products, {
+      getSlug: (item) => item.slug,
+      getTitle: (item) => item.title,
+    });
+    return;
+  }
+
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify({ products }, null, 2), "utf8");
 }

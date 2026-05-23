@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { z } from "zod";
 import { posts as defaultKnowledgeSource } from "@/lib/content";
+import { deleteSupabaseItem, isSupabaseContentEnabled, readSupabaseItems, saveSupabaseItems } from "@/lib/supabase-content-store";
 
 const knowledgeSectionSchema = z.object({
   heading: z.string().min(1),
@@ -74,6 +75,18 @@ async function readJsonFile() {
 }
 
 export async function readKnowledgeArticles(): Promise<KnowledgeArticle[]> {
+  if (isSupabaseContentEnabled()) {
+    try {
+      const rows = await readSupabaseItems<KnowledgeArticle>("knowledge");
+      const parsed = z.array(knowledgeItemSchema).safeParse(rows ?? []);
+      if (parsed.success && parsed.data.length) {
+        return parsed.data.map(normalizeKnowledgeArticle);
+      }
+    } catch (error) {
+      console.error("Failed to read knowledge from Supabase. Falling back to JSON/defaults.", error);
+    }
+  }
+
   try {
     const rawArticles = await readJsonFile();
     const parsed = z.array(knowledgeItemSchema).safeParse(rawArticles);
@@ -93,6 +106,14 @@ export async function readKnowledgeArticle(slug: string): Promise<KnowledgeArtic
 }
 
 export async function saveKnowledgeArticles(articles: KnowledgeArticle[]) {
+  if (isSupabaseContentEnabled()) {
+    await saveSupabaseItems("knowledge", articles, {
+      getSlug: (item) => item.slug,
+      getTitle: (item) => item.title,
+    });
+    return;
+  }
+
   await fs.mkdir(path.dirname(knowledgeFile), { recursive: true });
   await fs.writeFile(knowledgeFile, JSON.stringify({ articles }, null, 2), "utf8");
 }
@@ -107,9 +128,12 @@ export async function upsertKnowledgeArticle(input: z.infer<typeof knowledgeItem
 }
 
 export async function deleteKnowledgeArticle(slug: string) {
+  if (isSupabaseContentEnabled()) {
+    return deleteSupabaseItem("knowledge", slug);
+  }
+
   const articles = await readKnowledgeArticles();
   const next = articles.filter((article) => article.slug !== slug);
   await saveKnowledgeArticles(next);
   return next.length !== articles.length;
 }
-
