@@ -19,6 +19,10 @@ export const metadata: Metadata = {
     template: "%s | Thuc Pham So 1",
   },
   description: siteConfig.description,
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: siteConfig.name,
     description: siteConfig.description,
