@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { leadSchema } from "@/lib/validation";
+import { quoteSchema } from "@/lib/validation";
 import { siteConfig } from "@/lib/site";
 
 const QUOTE_NOTICE_COOKIE = "tps1_quote_notice_v1";
@@ -46,7 +46,11 @@ function errorNotice(message: string) {
 
 export async function POST(req: Request) {
   const body = await readLeadPayload(req);
-  const parsed = leadSchema.safeParse(body);
+  const normalizedBody =
+    body && typeof body === "object" && !Array.isArray(body)
+      ? { inquiryType: "buyer", ...body }
+      : body;
+  const parsed = quoteSchema.safeParse(normalizedBody);
 
   if (!parsed.success) {
     const notice = errorNotice("Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại thông tin hoặc gọi hotline để được hỗ trợ ngay.");
@@ -78,12 +82,17 @@ export async function POST(req: Request) {
     );
   }
 
+  const { inquiryType, ...leadData } = parsed.data;
   const payload = {
-    ...parsed.data,
+    vaiTro: inquiryType === "supplier" ? "Nhà cung cấp" : "Người mua",
+    loaiForm: "Báo giá / chào hàng",
+    kenh: "Website",
+    inquiryType,
+    ...leadData,
     site: siteConfig.domain,
     source: `${siteConfig.domain}/bao-gia`,
     submittedAt: new Date().toISOString(),
-    selectedCount: parsed.data.selectedItems?.length ?? 0,
+    selectedCount: leadData.selectedItems?.length ?? 0,
   };
 
   const response = await fetch(webhookUrl, {
@@ -157,9 +166,20 @@ export async function POST(req: Request) {
     kind: "success" as const,
     summary: {
       name: parsed.data.name,
-      facilityType: parsed.data.facilityType,
-      interestedIn: parsed.data.interestedIn,
-      deliveryArea: parsed.data.deliveryArea,
+      company: parsed.data.company?.trim() || "Chưa ghi công ty",
+      inquiryType: parsed.data.inquiryType,
+      primaryNeed:
+        parsed.data.inquiryType === "supplier"
+          ? parsed.data.offeredProducts || "Chào hàng chưa ghi rõ"
+          : parsed.data.interestedIn || "Nhóm hàng chưa ghi rõ",
+      secondaryNeed:
+        parsed.data.inquiryType === "supplier"
+          ? parsed.data.supplyArea
+            ? `Khu vực cung ứng: ${parsed.data.supplyArea}`
+            : "Khu vực cung ứng: chưa ghi"
+          : parsed.data.deliveryArea
+            ? `Khu vực giao: ${parsed.data.deliveryArea}`
+            : "Khu vực giao: chưa ghi",
     },
   };
 

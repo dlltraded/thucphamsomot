@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Menu, Phone, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { navItems, siteConfig } from "@/lib/site";
@@ -12,12 +12,8 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
-
   return (
-    <header className="site-header">
+    <header key={pathname} className="site-header">
       <div className="container-shell site-header__inner">
         <Link href="/" className="site-brand" aria-label="Thuc Pham So Mot">
           <span className="site-brand__mark">
@@ -70,7 +66,7 @@ export function SiteHeader() {
               onClick={() => setMenuOpen(false)}
             >
               <span>{item.label}</span>
-              {item.href === "/bao-gia" ? <span className="site-mobile-nav__hint">Đặt hàng / báo giá</span> : null}
+              {item.href === "/bao-gia" ? <span className="site-mobile-nav__hint">Gửi yêu cầu / báo giá</span> : null}
             </Link>
           ))}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BookOpenText, LockKeyhole, Newspaper, Package, ShieldCheck, Loader2 } from "lucide-react";
 import { ADMIN_TOKEN_STORAGE_KEY } from "@/lib/admin-token";
 import { NewsAdmin } from "@/components/news-admin";
@@ -26,7 +26,7 @@ type AdminWorkspaceProps = {
 type TabKey = "news" | "products" | "knowledge";
 
 export function AdminWorkspace({ initialArticles, initialProducts, initialKnowledge }: AdminWorkspaceProps) {
-  const [tokenInput, setTokenInput] = useState("");
+  const [tokenInput, setTokenInput] = useState(() => readStoredToken());
   const [token, setToken] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("news");
   const [unlocked, setUnlocked] = useState(false);
@@ -64,14 +64,6 @@ export function AdminWorkspace({ initialArticles, initialProducts, initialKnowle
       setIsValidating(false);
     }
   }
-
-  useEffect(() => {
-    const savedToken = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
-    if (savedToken) {
-      setTokenInput(savedToken);
-      validateToken(savedToken);
-    }
-  }, []);
 
   function persistToken(value: string) {
     setTokenInput(value);
@@ -181,4 +173,12 @@ export function AdminWorkspace({ initialArticles, initialProducts, initialKnowle
       )}
     </section>
   );
+}
+
+function readStoredToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
 }

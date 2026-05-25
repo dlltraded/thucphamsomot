@@ -57,10 +57,11 @@ function createInitialForm(): NewsForm {
 }
 
 export function NewsAdmin({ initialArticles = [], adminToken, hideTokenInput = false }: NewsAdminProps) {
-  const [token, setToken] = useState(adminToken ?? "");
+  const [token, setToken] = useState(() => adminToken ?? readStoredToken());
   const [articles, setArticles] = useState<NewsArticle[]>(initialArticles);
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const [form, setForm] = useState<NewsForm>(createInitialForm);
+  const initialArticle = initialArticles[0] ?? null;
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialArticle?.slug ?? null);
+  const [form, setForm] = useState<NewsForm>(() => (initialArticle ? toForm(initialArticle) : createInitialForm()));
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -70,35 +71,9 @@ export function NewsAdmin({ initialArticles = [], adminToken, hideTokenInput = f
   );
 
   useEffect(() => {
-    if (adminToken) {
-      setToken(adminToken);
-      return;
-    }
-
-    const savedToken = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
-    setToken(savedToken);
-  }, [adminToken]);
-
-  useEffect(() => {
     void loadArticles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (selectedArticle) {
-      setForm({
-        slug: selectedArticle.slug,
-        title: selectedArticle.title,
-        excerpt: selectedArticle.excerpt,
-        category: selectedArticle.category,
-        author: selectedArticle.author,
-        publishedAt: toDatetimeLocal(selectedArticle.publishedAt),
-        readingTime: selectedArticle.readingTime,
-        coverImage: selectedArticle.coverImage,
-        content: selectedArticle.content,
-        featured: selectedArticle.featured ?? false,
-      });
-    }
-  }, [selectedArticle]);
 
   async function loadArticles() {
     setLoading(true);
@@ -107,12 +82,32 @@ export function NewsAdmin({ initialArticles = [], adminToken, hideTokenInput = f
       const data = (await res.json()) as { articles?: NewsArticle[] };
       const next = data.articles ?? [];
       setArticles(next);
-      if (!selectedSlug && next.length) {
-        setSelectedSlug(next[0].slug);
+      const nextSelected = next.find((article) => article.slug === selectedSlug) ?? next[0] ?? null;
+      if (nextSelected) {
+        applyArticle(nextSelected);
+      } else {
+        setSelectedSlug(null);
+        setForm(createInitialForm());
       }
     } finally {
       setLoading(false);
     }
+  }
+
+  function applyArticle(article: NewsArticle) {
+    setSelectedSlug(article.slug);
+    setForm({
+      slug: article.slug,
+      title: article.title,
+      excerpt: article.excerpt,
+      category: article.category,
+      author: article.author,
+      publishedAt: toDatetimeLocal(article.publishedAt),
+      readingTime: article.readingTime,
+      coverImage: article.coverImage,
+      content: article.content,
+      featured: article.featured ?? false,
+    });
   }
 
   function persistToken(value: string) {
@@ -154,10 +149,10 @@ export function NewsAdmin({ initialArticles = [], adminToken, hideTokenInput = f
 
     const data = (await res.json()) as { article?: NewsArticle };
     setMessage("Đã lưu bài viết.");
-    await loadArticles();
     if (data.article) {
-      setSelectedSlug(data.article.slug);
+      applyArticle(data.article);
     }
+    await loadArticles();
   }
 
   async function removeArticle(slug: string) {
@@ -219,9 +214,7 @@ export function NewsAdmin({ initialArticles = [], adminToken, hideTokenInput = f
                 key={article.slug}
                 type="button"
                 className={`admin-list__item${article.slug === selectedSlug ? " is-active" : ""}`}
-                onClick={() => {
-                  setSelectedSlug(article.slug);
-                }}
+                onClick={() => applyArticle(article)}
               >
                 <span>
                   <strong>{article.title}</strong>
@@ -370,4 +363,27 @@ function Field({ label, value, onChange, type = "text", asSelect, options }: Fie
       )}
     </div>
   );
+}
+
+function toForm(article: NewsArticle): NewsForm {
+  return {
+    slug: article.slug,
+    title: article.title,
+    excerpt: article.excerpt,
+    category: article.category,
+    author: article.author,
+    publishedAt: toDatetimeLocal(article.publishedAt),
+    readingTime: article.readingTime,
+    coverImage: article.coverImage,
+    content: article.content,
+    featured: article.featured ?? false,
+  };
+}
+
+function readStoredToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
 }

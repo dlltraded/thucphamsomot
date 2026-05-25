@@ -22,7 +22,7 @@ export const siteConfig = {
 };
 
 export const navItems = [
-  { label: "Đặt Hàng", href: "/bao-gia" },
+  { label: "Gửi Yêu Cầu", href: "/bao-gia" },
   { label: "Giới thiệu", href: "/gioi-thieu" },
   { label: "Sản phẩm", href: "/san-pham" },
   { label: "Tin tức", href: "/tin-tuc" },

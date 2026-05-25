@@ -98,10 +98,11 @@ function toPayload(form: KnowledgeForm) {
 }
 
 export function KnowledgeAdmin({ initialArticles = [], adminToken, hideTokenInput = false }: KnowledgeAdminProps) {
-  const [token, setToken] = useState(adminToken ?? "");
+  const [token, setToken] = useState(() => adminToken ?? readStoredToken());
   const [articles, setArticles] = useState<KnowledgeArticle[]>(initialArticles);
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const [form, setForm] = useState<KnowledgeForm>(createInitialForm);
+  const initialArticle = initialArticles[0] ?? null;
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialArticle?.slug ?? null);
+  const [form, setForm] = useState<KnowledgeForm>(() => (initialArticle ? toForm(initialArticle) : createInitialForm()));
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -111,25 +112,9 @@ export function KnowledgeAdmin({ initialArticles = [], adminToken, hideTokenInpu
   );
 
   useEffect(() => {
-    if (adminToken) {
-      setToken(adminToken);
-      return;
-    }
-
-    const savedToken = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
-    setToken(savedToken);
-  }, [adminToken]);
-
-  useEffect(() => {
     void loadArticles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (selectedArticle) {
-      setForm(toForm(selectedArticle));
-    }
-  }, [selectedArticle]);
 
   async function loadArticles() {
     setLoading(true);
@@ -138,12 +123,21 @@ export function KnowledgeAdmin({ initialArticles = [], adminToken, hideTokenInpu
       const data = (await res.json()) as { articles?: KnowledgeArticle[] };
       const next = data.articles ?? [];
       setArticles(next);
-      if (!selectedSlug && next.length) {
-        setSelectedSlug(next[0].slug);
+      const nextSelected = next.find((article) => article.slug === selectedSlug) ?? next[0] ?? null;
+      if (nextSelected) {
+        applyArticle(nextSelected);
+      } else {
+        setSelectedSlug(null);
+        setForm(createInitialForm());
       }
     } finally {
       setLoading(false);
     }
+  }
+
+  function applyArticle(article: KnowledgeArticle) {
+    setSelectedSlug(article.slug);
+    setForm(toForm(article));
   }
 
   function persistToken(value: string) {
@@ -188,10 +182,10 @@ export function KnowledgeAdmin({ initialArticles = [], adminToken, hideTokenInpu
 
     const data = (await res.json()) as { article?: KnowledgeArticle };
     setMessage("Đã lưu bài kiến thức.");
-    await loadArticles();
     if (data.article) {
-      setSelectedSlug(data.article.slug);
+      applyArticle(data.article);
     }
+    await loadArticles();
   }
 
   async function removeArticle(slug: string) {
@@ -251,7 +245,7 @@ export function KnowledgeAdmin({ initialArticles = [], adminToken, hideTokenInpu
                 key={article.slug}
                 type="button"
                 className={`admin-list__item${article.slug === selectedSlug ? " is-active" : ""}`}
-                onClick={() => setSelectedSlug(article.slug)}
+                onClick={() => applyArticle(article)}
               >
                 <span>
                   <strong>{article.title}</strong>
@@ -451,3 +445,10 @@ function Field({ label, value, onChange, type = "text" }: FieldProps) {
   );
 }
 
+function readStoredToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
+}

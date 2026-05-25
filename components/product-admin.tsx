@@ -22,31 +22,24 @@ const sampleCsv = `title,slug,summary,features,image
 Rau cu qua tuoi song,rau-cu-qua-tuoi-song,Nguon rau cu theo mua,kiem soat dau vao|giao dinh ky,/images/tps1-cover-food.jpg`;
 
 export function ProductAdmin({ initialProducts = [], adminToken, hideTokenInput = false }: ProductAdminProps) {
-  const [token, setToken] = useState(adminToken ?? "");
+  const [token, setToken] = useState(() => adminToken ?? readStoredToken());
   const [csv, setCsv] = useState(sampleCsv);
   const [products, setProducts] = useState<ManagedProduct[]>(initialProducts);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedSlug, setSelectedSlug] = useState<string>("");
-  const [editTitle, setEditTitle] = useState("");
-  const [editSummary, setEditSummary] = useState("");
-  const [editImage, setEditImage] = useState("");
-  const [editFeatures, setEditFeatures] = useState("");
+  const initialProduct = initialProducts[0] ?? null;
+  const [selectedSlug, setSelectedSlug] = useState<string>(initialProduct?.slug ?? "");
+  const [editTitle, setEditTitle] = useState(() => initialProduct?.title ?? "");
+  const [editSummary, setEditSummary] = useState(() => initialProduct?.summary ?? "");
+  const [editImage, setEditImage] = useState(() => initialProduct?.image ?? "");
+  const [editFeatures, setEditFeatures] = useState(() => (initialProduct?.features ?? []).join(" | "));
 
   useEffect(() => {
-    if (adminToken) {
-      setToken(adminToken);
-    } else {
-      const savedToken = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
-      setToken(savedToken);
-    }
-
     if (!initialProducts.length) {
       void loadProducts();
-    } else {
-      selectProduct(initialProducts[0].slug, initialProducts);
     }
-  }, [adminToken, initialProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProducts.length]);
 
   async function loadProducts() {
     setLoading(true);
@@ -225,4 +218,12 @@ export function ProductAdmin({ initialProducts = [], adminToken, hideTokenInput 
       </div>
     </section>
   );
+}
+
+function readStoredToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
 }

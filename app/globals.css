@@ -37,7 +37,9 @@ a {
 }
 
 .container-shell {
-  width: min(1180px, calc(100% - 40px));
+  width: 100%;
+  max-width: none;
+  padding-inline: clamp(16px, 3vw, 40px);
   margin-inline: auto;
 }
 
@@ -2549,7 +2551,7 @@ a {
 
 @media (max-width: 768px) {
   .container-shell {
-    width: min(100% - 28px, 1180px);
+    padding-inline: 14px;
   }
 
   .section-pad {
@@ -2837,7 +2839,8 @@ a {
 
   .quote-landing__hero,
   .quote-landing__layout,
-  .quote-landing__grid {
+  .quote-landing__grid,
+  .quote-landing__role-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3901,10 +3904,42 @@ body {
   gap: 8px;
 }
 
+.quote-landing__head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .quote-landing__form-head p {
   margin: 0;
   color: var(--muted-foreground);
   line-height: 1.7;
+}
+
+.quote-landing__lang-switch {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgba(20, 35, 28, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.quote-landing__lang-button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 8px 12px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.quote-landing__lang-button.is-active {
+  background: var(--accent);
+  color: #fff;
 }
 
 .quote-landing__steps {
@@ -3920,6 +3955,113 @@ body {
   color: #2d4b3f;
   font-size: 12px;
   font-weight: 800;
+}
+
+.quote-landing__role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quote-landing__role-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(20, 35, 28, 0.12);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 16px 18px;
+  box-shadow: 0 12px 34px rgba(20, 35, 28, 0.05);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quote-landing__role-card-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quote-landing__role-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(20, 35, 28, 0.08);
+}
+
+.quote-landing__role-card.is-active {
+  border-color: rgba(15, 111, 75, 0.28);
+  background: linear-gradient(135deg, rgba(15, 111, 75, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.quote-landing__role-card input {
+  accent-color: var(--accent);
+  margin: 0;
+}
+
+.quote-landing__role-card strong {
+  color: #133127;
+  font-size: 1rem;
+  line-height: 1.25;
+  font-weight: 900;
+}
+
+.quote-landing__role-card span {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.quote-landing__supplier-panel {
+  display: grid;
+  gap: 18px;
+  border: 1px solid rgba(15, 111, 75, 0.14);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(15, 111, 75, 0.1), transparent 28%),
+    rgba(255, 255, 255, 0.94);
+  padding: 22px;
+  box-shadow: 0 18px 54px rgba(20, 35, 28, 0.08);
+}
+
+.quote-landing__supplier-header {
+  display: grid;
+  gap: 10px;
+}
+
+.quote-landing__supplier-header p {
+  margin: 0;
+  color: var(--muted-foreground);
+  line-height: 1.75;
+}
+
+.quote-landing__supplier-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quote-landing__supplier-steps span {
+  border-radius: 999px;
+  background: rgba(15, 111, 75, 0.08);
+  padding: 7px 10px;
+  color: #2d4b3f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.quote-landing__supplier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.quote-landing__supplier-actions .btn-primary,
+.quote-landing__supplier-actions .btn-secondary {
+  min-width: 220px;
+}
+
+.quote-landing__supplier-hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+  line-height: 1.7;
 }
 
 .quote-landing__grid {
@@ -4109,6 +4251,15 @@ body {
   font-size: 0.98rem;
   line-height: 1.55;
   font-weight: 800;
+}
+
+.portal-submit-status__summary-note {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 @keyframes portal-submit-status-enter {
@@ -4685,9 +4836,13 @@ body {
 }
 
 .site-mobile-nav__link--order {
-  border-color: rgba(199, 55, 47, 0.18);
-  background: rgba(199, 55, 47, 0.08);
-  color: #9f221b;
+  border-color: rgba(15, 111, 75, 0.22);
+  background:
+    linear-gradient(135deg, rgba(15, 111, 75, 0.14), rgba(15, 111, 75, 0.06)),
+    rgba(255, 255, 255, 0.96);
+  color: #0f6f4b;
+  box-shadow: 0 14px 30px rgba(15, 111, 75, 0.12);
+  animation: nav-order-pulse 2.8s ease-in-out infinite;
 }
 
 @media (max-width: 1200px) {
@@ -4706,16 +4861,35 @@ body {
 }
 
 .site-nav__link--order {
-  border: 1px solid rgba(199, 55, 47, 0.18);
-  background: rgba(199, 55, 47, 0.12);
-  color: #b42318;
+  border: 1px solid rgba(15, 111, 75, 0.2);
+  background:
+    linear-gradient(135deg, rgba(15, 111, 75, 0.16), rgba(15, 111, 75, 0.08)),
+    rgba(255, 255, 255, 0.95);
+  color: #0f6f4b;
   position: relative;
   white-space: nowrap;
+  box-shadow: 0 10px 22px rgba(15, 111, 75, 0.12);
+  animation: nav-order-pulse 2.8s ease-in-out infinite;
 }
 
 .site-nav__link--order:hover {
-  background: rgba(199, 55, 47, 0.18);
-  color: #8f1d16;
+  background:
+    linear-gradient(135deg, rgba(15, 111, 75, 0.22), rgba(15, 111, 75, 0.1)),
+    rgba(255, 255, 255, 0.98);
+  color: #0b573b;
+}
+
+@keyframes nav-order-pulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 10px 22px rgba(15, 111, 75, 0.12);
+  }
+
+  50% {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(15, 111, 75, 0.2);
+  }
 }
 
 @media (min-width: 1201px) {
@@ -4906,8 +5080,14 @@ body {
   .product-grid,
   .product-intro,
   .portal-grid,
-  .portal-form__grid {
+  .portal-form__grid,
+  .quote-landing__role-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .quote-landing__head-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .knowledge-feature-card__body h3,
@@ -5037,7 +5217,7 @@ body {
 
 @media (max-width: 480px) {
   .container-shell {
-    width: min(100% - 16px, 1180px);
+    padding-inline: 12px;
   }
 
   .site-header__inner {
@@ -5144,7 +5324,8 @@ body {
   .product-grid,
   .product-intro,
   .portal-grid,
-  .portal-form__grid {
+  .portal-form__grid,
+  .quote-landing__role-grid {
     grid-template-columns: 1fr;
   }
 
@@ -5253,7 +5434,8 @@ body {
   .product-grid,
   .product-intro,
   .portal-grid,
-  .portal-form__grid {
+  .portal-form__grid,
+  .quote-landing__role-grid {
     grid-template-columns: 1fr;
   }
 
