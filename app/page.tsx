@@ -63,6 +63,8 @@ const galleryImages = [
   { src: "/images/tps1-gallery-factory-visit.jpg", alt: "Hoạt động thực tế TPS1" },
 ];
 
+const partnerLogoPanels = [{ src: "/images/partners/tps1-partner-logos-all.png", alt: "Logo đối tác và khách hàng tiêu biểu TPS1" }];
+
 export default function HomePage() {
   return (
     <main className="home-page">
@@ -224,6 +226,24 @@ export default function HomePage() {
             {galleryImages.map((item, index) => (
               <div key={item.src} className={`home-gallery__card home-gallery__card--${index + 1}`}>
                 <Image src={item.src} alt={item.alt} fill className="home-gallery__image" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-partners">
+        <div className="container-shell">
+          <div className="section-split">
+            <div className="section-heading">
+              <div className="eyebrow">Đối tác & khách hàng</div>
+            </div>
+          </div>
+
+          <div className="home-partners__grid">
+            {partnerLogoPanels.map((item) => (
+              <div key={item.src} className="home-partners__panel">
+                <Image src={item.src} alt={item.alt} fill className="home-partners__image" sizes="(max-width: 960px) 100vw, 1180px" />
               </div>
             ))}
           </div>

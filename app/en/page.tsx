@@ -42,6 +42,8 @@ const heroStats = [
   { value: "5", label: "Core product groups" },
 ];
 
+const partnerLogoPanels = [{ src: "/images/partners/tps1-partner-logos-all.png", alt: "TPS1 representative partner and client logos" }];
+
 export default function EnglishHomePage() {
   return (
     <main className="home-page">
@@ -133,6 +135,24 @@ export default function EnglishHomePage() {
                 <h3>{item}</h3>
                 <p>Suitable for recurring orders, kitchen planning, and B2B quote requests.</p>
               </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-partners">
+        <div className="container-shell">
+          <div className="section-split">
+            <div className="section-heading">
+              <div className="eyebrow">Partners & clients</div>
+            </div>
+          </div>
+
+          <div className="home-partners__grid">
+            {partnerLogoPanels.map((item) => (
+              <div key={item.src} className="home-partners__panel">
+                <Image src={item.src} alt={item.alt} fill className="home-partners__image" sizes="(max-width: 960px) 100vw, 1180px" />
+              </div>
             ))}
           </div>
         </div>
