@@ -33,25 +33,11 @@ export function CompanyProfileWidget() {
   return (
     <>
       <aside className="company-profile-widget" aria-label={text.aria}>
-        <div className="company-profile-widget__badge">
-          <FileText size={15} />
-          {text.badge}
-        </div>
-        <h2>{text.title}</h2>
-        <p>{text.copy}</p>
-        <div className="company-profile-widget__actions">
-          <Link href={siteConfig.profilePagePath} className="company-profile-widget__button">
-            {text.primary} <MoveUpRight size={16} />
-          </Link>
-          <a
-            href={siteConfig.profilePdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="company-profile-widget__button company-profile-widget__button--ghost"
-          >
-            {text.secondary}
-          </a>
-        </div>
+        <Link href={siteConfig.profilePagePath} className="company-profile-widget__button company-profile-widget__button--compact">
+          <FileText size={16} />
+          <span>{locale === "en" ? "Profile" : "HSNL"}</span>
+          <MoveUpRight size={15} />
+        </Link>
       </aside>
 
       <div className={`company-profile-fab${mobileOpen ? " is-open" : ""}`} aria-label={text.aria}>

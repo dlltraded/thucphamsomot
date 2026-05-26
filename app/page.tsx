@@ -4,7 +4,6 @@ import { ArrowRight, Building2, ClipboardList, ShieldCheck, Truck } from "lucide
 import { categories } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
 import { brandAssets, customerHighlights } from "@/lib/brand";
-import { siteConfig } from "@/lib/site";
 
 export const metadata = makeMetadata({
   title: "Thực Phẩm Số Một | Cung cấp thực phẩm B2B tại Đồng Nai",
@@ -71,7 +70,6 @@ export default function HomePage() {
         <div className="container-shell home-hero__grid">
           <div className="home-hero__copy">
             <div className="home-hero__brand">
-              <Image src={brandAssets.logoTransparent} alt={siteConfig.name} width={190} height={64} priority />
               <span className="home-hero__brand-tag">Cung cấp thực phẩm B2B tại Đồng Nai và khu vực lân cận</span>
             </div>
             <div className="eyebrow eyebrow-on-dark">Thực Phẩm Số Một</div>
@@ -105,17 +103,22 @@ export default function HomePage() {
           <div className="home-hero__visual">
             <div className="home-mosaic">
               <div className="home-mosaic__tile home-mosaic__tile--large">
-                <Image src={brandAssets.warehouseWide} alt="Bộ nhận diện TPS1" fill className="home-mosaic__image" />
+                <Image
+                  src={brandAssets.warehousePeople}
+                  alt="Kho vận TPS1"
+                  fill
+                  className="home-mosaic__image home-mosaic__image--warehouse"
+                />
               </div>
               <div className="home-mosaic__tile">
-                <Image src={brandAssets.coverFood} alt="TPS1 thực tế" fill className="home-mosaic__image" />
+                <Image src={brandAssets.quality} alt="Chất lượng sản phẩm TPS1" fill className="home-mosaic__image" />
               </div>
-              <div className="home-mosaic__tile home-mosaic__tile--wide">
+              <div className="home-mosaic__tile">
                 <Image
-                  src={brandAssets.deliveryTruckReal}
-                  alt="Xe giao hàng TPS1 thực tế"
+                  src={brandAssets.deliveryLoading}
+                  alt="Quá trình giao nhận TPS1"
                   fill
-                  className="home-mosaic__image home-mosaic__image--truck"
+                  className="home-mosaic__image home-mosaic__image--loading"
                 />
               </div>
             </div>

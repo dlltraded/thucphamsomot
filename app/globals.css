@@ -1178,33 +1178,62 @@ a {
 }
 
 .social-widget {
+  --floating-widget-size: 48px;
+  --floating-widget-expanded: 132px;
+  --floating-widget-gap: 12px;
   position: fixed;
   bottom: 10px;
   right: 10px;
   z-index: 60;
   display: grid;
-  gap: 10px;
+  justify-items: end;
+  gap: var(--floating-widget-gap);
+  width: var(--floating-widget-expanded);
+}
+
+.social-widget svg {
+  width: 17px;
+  height: 17px;
 }
 
 .social-widget__item {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 108px;
+  gap: 7px;
+  width: var(--floating-widget-size);
+  min-width: 0;
+  height: var(--floating-widget-size);
   border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 8px;
-  padding: 10px 11px;
+  border-radius: 999px;
+  padding: 0;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   box-shadow: 0 16px 34px rgba(20, 35, 28, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.22s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.social-widget__item:hover {
+.social-widget__item:hover,
+.social-widget__item:focus-visible {
+  width: var(--floating-widget-expanded);
   transform: translateY(-2px);
   box-shadow: 0 20px 42px rgba(20, 35, 28, 0.26);
+}
+
+.social-widget__item > span:not(.social-widget__brand-mark) {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.22s ease, opacity 0.16s ease;
+}
+
+.social-widget__item:hover > span:not(.social-widget__brand-mark),
+.social-widget__item:focus-visible > span:not(.social-widget__brand-mark) {
+  max-width: 90px;
+  opacity: 1;
 }
 
 .social-widget__item--phone {
@@ -1223,92 +1252,78 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 19px;
-  height: 19px;
+  width: 17px;
+  height: 17px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.95);
   color: #1877f2;
   font-family: Arial, sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 900;
   line-height: 1;
 }
 
 .company-profile-widget {
+  --floating-widget-size: 48px;
+  --floating-widget-expanded: 132px;
+  --floating-widget-gap: 12px;
   position: fixed;
-  bottom: 8px;
-  left: 8px;
-  right: auto;
-  z-index: 58;
-  display: grid;
-  justify-items: start;
-  gap: 5px;
-  width: min(138px, calc(100vw - 16px));
-  border: 1px solid rgba(15, 122, 77, 0.16);
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at top right, rgba(255, 209, 102, 0.16), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 242, 0.98));
-  padding: 8px;
-  box-shadow: 0 20px 48px rgba(20, 35, 28, 0.14);
-}
-
-.company-profile-widget__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  border-radius: 999px;
-  background: rgba(15, 122, 77, 0.08);
-  padding: 6px 9px;
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.company-profile-widget h2 {
-  margin: 0;
-  color: #123127;
-  font-size: 0.8rem;
-  line-height: 1.15;
-  font-weight: 900;
-  text-align: left;
-}
-
-.company-profile-widget p {
-  display: none;
-}
-
-.company-profile-widget__actions {
-  display: grid;
-  gap: 5px;
+  right: 10px;
+  bottom: calc(10px + (var(--floating-widget-size) * 3) + (var(--floating-widget-gap) * 3));
+  z-index: 59;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: var(--floating-widget-expanded);
 }
 
 .company-profile-widget__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border-radius: 12px;
-  padding: 8px 9px;
-  background: var(--accent);
+  gap: 7px;
+  width: var(--floating-widget-size);
+  min-width: 0;
+  height: var(--floating-widget-size);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 0;
+  background: linear-gradient(180deg, #149058, #0f7a4d);
   color: #fff;
-  font-size: 0.78rem;
-  font-weight: 800;
-  box-shadow: 0 14px 28px rgba(15, 122, 77, 0.22);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  box-shadow: 0 16px 34px rgba(15, 122, 77, 0.24);
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.22s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.company-profile-widget__button--ghost {
-  display: none;
+.company-profile-widget__button:hover,
+.company-profile-widget__button:focus-visible {
+  width: var(--floating-widget-expanded);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 38px rgba(15, 122, 77, 0.28);
 }
 
-.company-profile-widget__button--ghost {
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--foreground);
-  box-shadow: none;
+.company-profile-widget__button span,
+.company-profile-widget__button svg:last-child {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.22s ease, opacity 0.16s ease;
+}
+
+.company-profile-widget__button:hover span,
+.company-profile-widget__button:focus-visible span,
+.company-profile-widget__button:hover svg:last-child,
+.company-profile-widget__button:focus-visible svg:last-child {
+  max-width: 72px;
+  opacity: 1;
+}
+
+.company-profile-widget__button--compact {
+  min-width: 0;
 }
 
 .company-profile-fab {
@@ -3363,8 +3378,12 @@ body {
   object-position: center;
 }
 
-.home-mosaic__image--truck {
-  object-position: center 54%;
+.home-mosaic__image--warehouse {
+  object-position: center 42%;
+}
+
+.home-mosaic__image--loading {
+  object-position: center 44%;
 }
 
 @media (max-width: 1200px) {
@@ -5549,6 +5568,7 @@ body {
   .social-widget {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-items: stretch;
     width: calc(100% - 20px);
     right: 10px;
     bottom: 14px;
@@ -5556,10 +5576,17 @@ body {
   }
 
   .social-widget__item {
+    width: 100%;
     min-width: 0;
-    padding: 11px 10px;
-    font-size: 12px;
-    border-radius: 14px;
+    height: 42px;
+    padding: 9px 8px;
+    font-size: 11px;
+    border-radius: 12px;
+  }
+
+  .social-widget__item > span:not(.social-widget__brand-mark) {
+    max-width: none;
+    opacity: 1;
   }
 
   .social-widget__item span {
@@ -5657,8 +5684,8 @@ body {
   }
 
   .company-profile-widget {
-    bottom: 84px;
-    width: min(220px, calc(100vw - 16px));
+    right: 12px;
+    bottom: 180px;
   }
 
   .company-profile-page__frame {
