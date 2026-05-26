@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { FileText, MoveUpRight } from "lucide-react";
+import { ChevronUp, FileText, MoveUpRight, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { siteConfig, type Locale } from "@/lib/site";
 
@@ -26,30 +27,72 @@ const profileText = {
 
 export function CompanyProfileWidget() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const locale: Locale = pathname.startsWith("/en") ? "en" : "vi";
   const text = profileText[locale];
+  const mobileLabel = mobileOpen ? (locale === "en" ? "Close profile" : "Đóng hồ sơ") : text.badge;
 
   return (
-    <aside className="company-profile-widget" aria-label={text.aria}>
-      <div className="company-profile-widget__badge">
-        <FileText size={15} />
-        {text.badge}
-      </div>
-      <h2>{text.title}</h2>
-      <p>{text.copy}</p>
-      <div className="company-profile-widget__actions">
-        <Link href={siteConfig.profilePagePath} className="company-profile-widget__button">
-          {text.primary} <MoveUpRight size={16} />
-        </Link>
-        <a
-          href={siteConfig.profilePdfUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="company-profile-widget__button company-profile-widget__button--ghost"
+    <>
+      <aside className="company-profile-widget" aria-label={text.aria}>
+        <div className="company-profile-widget__badge">
+          <FileText size={15} />
+          {text.badge}
+        </div>
+        <h2>{text.title}</h2>
+        <p>{text.copy}</p>
+        <div className="company-profile-widget__actions">
+          <Link href={siteConfig.profilePagePath} className="company-profile-widget__button">
+            {text.primary} <MoveUpRight size={16} />
+          </Link>
+          <a
+            href={siteConfig.profilePdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="company-profile-widget__button company-profile-widget__button--ghost"
+          >
+            {text.secondary}
+          </a>
+        </div>
+      </aside>
+
+      <div className={`company-profile-fab${mobileOpen ? " is-open" : ""}`} aria-label={text.aria}>
+        <button
+          type="button"
+          className="company-profile-fab__trigger"
+          aria-expanded={mobileOpen}
+          aria-controls="company-profile-fab-panel"
+          onClick={() => setMobileOpen((value) => !value)}
         >
-          {text.secondary}
-        </a>
+          <span className="company-profile-fab__icon" aria-hidden="true">
+            {mobileOpen ? <X size={16} /> : <FileText size={16} />}
+          </span>
+          <span className="company-profile-fab__label">{mobileLabel}</span>
+          <ChevronUp className="company-profile-fab__chevron" size={15} />
+        </button>
+
+        <div id="company-profile-fab-panel" className="company-profile-fab__panel">
+          <div className="company-profile-fab__badge">
+            <FileText size={14} />
+            {text.badge}
+          </div>
+          <h2>{text.title}</h2>
+          <p>{text.copy}</p>
+          <div className="company-profile-fab__actions">
+            <Link href={siteConfig.profilePagePath} className="company-profile-fab__button" onClick={() => setMobileOpen(false)}>
+              {text.primary} <MoveUpRight size={16} />
+            </Link>
+            <a
+              href={siteConfig.profilePdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="company-profile-fab__button company-profile-fab__button--ghost"
+            >
+              {text.secondary}
+            </a>
+          </div>
+        </div>
       </div>
-    </aside>
+    </>
   );
 }
