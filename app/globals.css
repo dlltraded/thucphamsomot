@@ -3693,7 +3693,8 @@ body {
 .home-partners__image {
   object-fit: contain;
   object-position: center;
-  padding: clamp(14px, 2.4vw, 30px);
+  padding: clamp(6px, 1.2vw, 16px);
+  transform: scale(1.08);
 }
 
 .home-cta {
@@ -5918,13 +5919,14 @@ body {
   }
 
   .home-partners__panel {
-    min-height: 180px;
-    aspect-ratio: 16 / 8.8;
+    min-height: 150px;
+    aspect-ratio: 16 / 7.2;
     border-radius: 20px;
   }
 
   .home-partners__image {
-    padding: 10px;
+    padding: 0;
+    transform: scale(1.18);
   }
 
   .site-brand__mark {
