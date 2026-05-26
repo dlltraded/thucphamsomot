@@ -1,5 +1,8 @@
 export type Locale = "vi" | "en";
 
+const primaryPhoneDigits = "0898902222";
+const primaryPhoneDisplay = primaryPhoneDigits.replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
+
 export const siteConfig = {
   name: "Thực Phẩm Số Một",
   englishName: "Thuc Pham So Mot",
@@ -10,9 +13,9 @@ export const siteConfig = {
     "Nhà cung cấp thực phẩm cho bếp ăn tập thể, suất ăn công nghiệp, trường học, bệnh viện, nhà hàng tại Đồng Nai và khu vực lân cận.",
   englishDescription:
     "A B2B food supplier for canteens, industrial catering, schools, hospitals, restaurants, and hospitality operators in Dong Nai and nearby areas.",
-  phone: "089 890 2222",
+  phone: primaryPhoneDisplay,
   email: "contact@thucphamsomot.vn",
-  zalo: "0898902222",
+  zalo: primaryPhoneDigits,
   facebook: "https://www.facebook.com/thucphamsomot.vn",
   address: "Đồng Nai, Việt Nam",
   englishAddress: "Dong Nai, Vietnam",
