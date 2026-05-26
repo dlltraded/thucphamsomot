@@ -32,8 +32,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: new URL(siteConfig.shareImage, siteConfig.url).toString(),
-        width: 3000,
-        height: 1688,
+        width: 1200,
+        height: 630,
         alt: siteConfig.name,
       },
     ],

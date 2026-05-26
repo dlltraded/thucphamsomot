@@ -16,7 +16,7 @@ export const siteConfig = {
   facebook: "https://www.facebook.com/thucphamsomot.vn",
   address: "Đồng Nai, Việt Nam",
   englishAddress: "Dong Nai, Vietnam",
-  shareImage: "https://thucphamsomot.vercel.app/images/tps1-cover-food.jpg",
+  shareImage: "/images/tps1-share-thumbnail.png",
   profilePagePath: "/ho-so-nang-luc",
   profilePdfUrl: "https://drive.google.com/file/d/1uJ7gCVsCRsXMAZAZLKMcFbgv5um6--8L/view?usp=sharing",
   profilePreviewUrl: "https://drive.google.com/file/d/1uJ7gCVsCRsXMAZAZLKMcFbgv5um6--8L/preview",
