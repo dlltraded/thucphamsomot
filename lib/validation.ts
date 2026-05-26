@@ -32,8 +32,40 @@ export const quoteSchema = leadCoreSchema.extend({
   deliveryFrequency: z.string().optional().or(z.literal("")),
   deliveryArea: z.string().optional().or(z.literal("")),
   needBy: z.string().optional().or(z.literal("")),
+  pagePath: z.string().optional().or(z.literal("")),
   supplierType: z.string().optional().or(z.literal("")),
-  offeredProducts: z.string().optional().or(z.literal("")),
+  supplierNameVi: z.string().optional().or(z.literal("")),
+  supplierNameEn: z.string().optional().or(z.literal("")),
+  goodsServices: z.string().optional().or(z.literal("")),
+  registeredAddress: z.string().optional().or(z.literal("")),
+  officeAddress: z.string().optional().or(z.literal("")),
+  factoryAddress: z.string().optional().or(z.literal("")),
+  incorporationPlace: z.string().optional().or(z.literal("")),
+  officePhone: z.string().optional().or(z.literal("")),
+  officeFax: z.string().optional().or(z.literal("")),
+  factoryPhone: z.string().optional().or(z.literal("")),
+  factoryFax: z.string().optional().or(z.literal("")),
+  website: z.string().optional().or(z.literal("")),
+  taxCode: z.string().optional().or(z.literal("")),
+  investmentCapital: z.string().optional().or(z.literal("")),
+  yearsInBusiness: z.string().optional().or(z.literal("")),
+  under6Months: z.string().optional().or(z.literal("")),
+  employeeCount: z.string().optional().or(z.literal("")),
+  topCustomers: z.string().optional().or(z.literal("")),
+  contactPersonName: z.string().optional().or(z.literal("")),
+  contactTitle: z.string().optional().or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
+  contactEmail: z.string().optional().or(z.literal("")),
+  bankAccountHolder: z.string().optional().or(z.literal("")),
+  bankAccountNo: z.string().optional().or(z.literal("")),
+  bankNameBranch: z.string().optional().or(z.literal("")),
+  currency: z.string().optional().or(z.literal("")),
+  bankAddress: z.string().optional().or(z.literal("")),
+  swiftCode: z.string().optional().or(z.literal("")),
+  cityCountry: z.string().optional().or(z.literal("")),
+  iban: z.string().optional().or(z.literal("")),
+  correspondentBank: z.string().optional().or(z.literal("")),
+  requiredDocuments: z.string().optional().or(z.literal("")),
   supplyCapacity: z.string().optional().or(z.literal("")),
   supplyArea: z.string().optional().or(z.literal("")),
   certifications: z.string().optional().or(z.literal("")),
@@ -84,10 +116,10 @@ export const quoteSchema = leadCoreSchema.extend({
         message: "Vui lòng chọn loại nhà cung cấp",
       });
     }
-    if (!data.offeredProducts) {
+    if (!data.goodsServices) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["offeredProducts"],
+        path: ["goodsServices"],
         message: "Vui lòng cho biết anh/chị muốn chào hàng gì",
       });
     }
@@ -96,6 +128,20 @@ export const quoteSchema = leadCoreSchema.extend({
         code: z.ZodIssueCode.custom,
         path: ["supplyArea"],
         message: "Vui lòng nhập khu vực cung ứng",
+      });
+    }
+    if (!data.contactPersonName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["contactPersonName"],
+        message: "Vui lòng nhập người liên hệ",
+      });
+    }
+    if (!data.contactPhone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["contactPhone"],
+        message: "Vui lòng nhập số điện thoại liên hệ",
       });
     }
   }

@@ -4,9 +4,9 @@ import { PageShell } from "@/components/page-shell";
 import { QuotePortal } from "@/components/quote-portal";
 
 export const metadata = makeMetadata({
-  title: "Báo giá & chào hàng | Quote",
-  description: "Người mua điền form online, nhà cung cấp điền form trên web bằng tiếng Việt.",
-  path: "/bao-gia",
+  title: "Quote form | English",
+  description: "Buyers can submit requests online, and suppliers can pitch through the form in English entry point.",
+  path: "/en/bao-gia",
 });
 
 const QUOTE_NOTICE_COOKIE = "tps1_quote_notice_v1";
@@ -27,7 +27,7 @@ type QuoteNotice =
       message: string;
     };
 
-export default async function QuotePage() {
+export default async function EnglishQuotePage() {
   const cookieStore = await cookies();
   const raw = cookieStore.get(QUOTE_NOTICE_COOKIE)?.value;
 
@@ -52,8 +52,8 @@ export default async function QuotePage() {
   }
 
   return (
-    <PageShell eyebrow="Báo giá" title="Gửi nhu cầu mua hàng hoặc chào hàng" compact>
-      <QuotePortal initialNotice={initialNotice} locale="vi" />
+    <PageShell eyebrow="Quote form" title="Send a buying request or supplier pitch" compact locale="en">
+      <QuotePortal initialNotice={initialNotice} locale="en" />
     </PageShell>
   );
 }

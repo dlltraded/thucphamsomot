@@ -5,11 +5,19 @@ import { siteConfig } from "@/lib/site";
 
 const staticPaths = [
   "/",
+  "/en",
+  "/en/about",
+  "/en/products",
+  "/en/ingredients",
+  "/en/recipes",
+  "/en/news",
+  "/en/contact",
   "/gioi-thieu",
   "/san-pham",
   "/kien-thuc",
   "/lien-he",
   "/bao-gia",
+  "/en/bao-gia",
   "/ho-so-nang-luc",
 ];
 

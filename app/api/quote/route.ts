@@ -83,6 +83,7 @@ export async function POST(req: Request) {
   }
 
   const { inquiryType, ...leadData } = parsed.data;
+  const pagePath = typeof leadData.pagePath === "string" && leadData.pagePath.trim() ? leadData.pagePath.trim() : "/bao-gia";
   const payload = {
     vaiTro: inquiryType === "supplier" ? "Nhà cung cấp" : "Người mua",
     loaiForm: "Báo giá / chào hàng",
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
     inquiryType,
     ...leadData,
     site: siteConfig.domain,
-    source: `${siteConfig.domain}/bao-gia`,
+    source: `${siteConfig.domain}${pagePath.startsWith("/") ? pagePath : `/${pagePath}`}`,
     submittedAt: new Date().toISOString(),
     selectedCount: leadData.selectedItems?.length ?? 0,
   };
@@ -170,7 +171,7 @@ export async function POST(req: Request) {
       inquiryType: parsed.data.inquiryType,
       primaryNeed:
         parsed.data.inquiryType === "supplier"
-          ? parsed.data.offeredProducts || "Chào hàng chưa ghi rõ"
+          ? parsed.data.goodsServices || "Chào hàng chưa ghi rõ"
           : parsed.data.interestedIn || "Nhóm hàng chưa ghi rõ",
       secondaryNeed:
         parsed.data.inquiryType === "supplier"

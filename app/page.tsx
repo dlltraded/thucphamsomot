@@ -17,7 +17,7 @@ const servicePillars = [
   {
     icon: ShieldCheck,
     title: "Nguồn hàng rõ ràng",
-    text: "Danh mục theo nhóm hàng bếp dùng hàng ngày, dễ so sánh và dễ ra quyết định.",
+    text: "Danh mục theo nhóm hàng bếp dùng hằng ngày, dễ so sánh và dễ ra quyết định.",
   },
   {
     icon: Truck,
