@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronUp, FileText, MoveUpRight, X } from "lucide-react";
+import { FileText, MoveUpRight, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { siteConfig, type Locale } from "@/lib/site";
 
@@ -30,8 +30,6 @@ export function CompanyProfileWidget() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const locale: Locale = pathname.startsWith("/en") ? "en" : "vi";
   const text = profileText[locale];
-  const mobileLabel = mobileOpen ? (locale === "en" ? "Close profile" : "Đóng hồ sơ") : text.badge;
-
   return (
     <>
       <aside className="company-profile-widget" aria-label={text.aria}>
@@ -67,8 +65,7 @@ export function CompanyProfileWidget() {
           <span className="company-profile-fab__icon" aria-hidden="true">
             {mobileOpen ? <X size={16} /> : <FileText size={16} />}
           </span>
-          <span className="company-profile-fab__label">{mobileLabel}</span>
-          <ChevronUp className="company-profile-fab__chevron" size={15} />
+          <span className="company-profile-fab__sr-only">{mobileOpen ? (locale === "en" ? "Close profile" : "Đóng hồ sơ") : text.badge}</span>
         </button>
 
         <div id="company-profile-fab-panel" className="company-profile-fab__panel">
@@ -79,16 +76,13 @@ export function CompanyProfileWidget() {
           <h2>{text.title}</h2>
           <p>{text.copy}</p>
           <div className="company-profile-fab__actions">
-            <Link href={siteConfig.profilePagePath} className="company-profile-fab__button" onClick={() => setMobileOpen(false)}>
-              {text.primary} <MoveUpRight size={16} />
-            </Link>
             <a
-              href={siteConfig.profilePdfUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="company-profile-fab__button company-profile-fab__button--ghost"
+              href="/documents/PROFILE_TPS1_SONGNGU_lite.pdf"
+              download="PROFILE_TPS1_SONGNGU_lite.pdf"
+              className="company-profile-fab__button"
+              onClick={() => setMobileOpen(false)}
             >
-              {text.secondary}
+              {locale === "en" ? "Download company profile" : "Tải company profile"} <MoveUpRight size={16} />
             </a>
           </div>
         </div>

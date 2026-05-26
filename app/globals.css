@@ -1313,26 +1313,26 @@ a {
 
 .company-profile-fab {
   position: fixed;
-  right: 8px;
-  bottom: 84px;
+  right: 12px;
+  bottom: 96px;
   z-index: 58;
   display: none;
-  width: min(320px, calc(100vw - 16px));
+  width: auto;
   color: inherit;
 }
 
 .company-profile-fab__trigger {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   border: 1px solid rgba(15, 122, 77, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.96);
-  padding: 10px 12px;
+  padding: 0;
   color: #123127;
   box-shadow: 0 16px 40px rgba(20, 35, 28, 0.12);
-  text-align: left;
 }
 
 .company-profile-fab__icon {
@@ -1347,30 +1347,25 @@ a {
   color: var(--accent);
 }
 
-.company-profile-fab__label {
-  min-width: 0;
-  flex: 1 1 auto;
+.company-profile-fab__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-overflow: ellipsis;
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
-}
-
-.company-profile-fab__chevron {
-  flex: 0 0 auto;
-  color: var(--muted-foreground);
-  transition: transform 0.2s ease;
-}
-
-.company-profile-fab.is-open .company-profile-fab__chevron {
-  transform: rotate(180deg);
+  border: 0;
 }
 
 .company-profile-fab__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: min(280px, calc(100vw - 20px));
   display: grid;
   gap: 10px;
-  margin-top: 8px;
   overflow: hidden;
   max-height: 0;
   border: 1px solid rgba(20, 35, 28, 0.08);
@@ -1402,11 +1397,6 @@ a {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
-  }
-
-  .company-profile-fab:hover .company-profile-fab__chevron,
-  .company-profile-fab:focus-within .company-profile-fab__chevron {
-    transform: rotate(180deg);
   }
 }
 
@@ -5577,12 +5567,16 @@ body {
   }
 
   .company-profile-widget {
-    display: none;
-  }
+      display: none;
+    }
 
   .company-profile-fab {
-    display: block;
-  }
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      width: auto;
+      max-width: calc(100vw - 20px);
+    }
 
   .site-footer__inner,
   .site-footer__map,
@@ -5619,8 +5613,8 @@ body {
   }
 
   .company-profile-fab {
-    right: 10px;
-    bottom: 84px;
+    right: 12px;
+    bottom: 108px;
   }
 }
 
