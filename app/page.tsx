@@ -67,6 +67,21 @@ const partnerLogoPanels = [{ src: "/images/partners/tps1-partner-logos-all.png",
 
 const localPages = [
   {
+    href: "/cung-cap-thuc-pham-tp-hcm",
+    title: "Cung cấp thực phẩm TP.HCM",
+    text: "Phục vụ đơn vị ở TP.HCM cần giao theo tuyến, báo giá rõ và nguồn hàng ổn định cho bếp ăn, nhà máy và bệnh viện.",
+  },
+  {
+    href: "/cung-cap-thuc-pham-binh-duong",
+    title: "Cung cấp thực phẩm Bình Dương",
+    text: "Hỗ trợ khách tại Bình Dương cần giao định kỳ, danh mục rõ và phương án báo giá nhanh cho đơn vị vận hành đều.",
+  },
+  {
+    href: "/cung-cap-thuc-pham-ba-ria-vung-tau",
+    title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu",
+    text: "Phù hợp đơn vị ở Bà Rịa - Vũng Tàu cần nguồn hàng ổn định, giao theo lịch và dễ chốt danh mục.",
+  },
+  {
     href: "/cung-cap-thuc-pham-dong-nai",
     title: "Cung cấp thực phẩm Đồng Nai",
     text: "Phục vụ đơn vị cần nguồn thực phẩm định kỳ cho bếp ăn, nhà máy, trường học và bệnh viện tại Đồng Nai.",
@@ -273,7 +288,10 @@ export default function HomePage() {
           <div className="section-split">
             <div className="section-heading">
               <div className="eyebrow">Khu vực phục vụ</div>
-              <h2 className="section-heading__title">Đồng Nai, Biên Hòa, Nhơn Trạch</h2>
+              <h2 className="section-heading__title">Đồng Nai, Biên Hòa và các khu vực lân cận</h2>
+              <p className="section-heading__description">
+                Phục vụ thực tế cả TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu khi lịch giao, tuyến đường và nhu cầu đơn hàng phù hợp.
+              </p>
             </div>
             <Link href="/bao-gia" className="text-link">
               Gửi nhu cầu báo giá <ArrowRight size={16} />

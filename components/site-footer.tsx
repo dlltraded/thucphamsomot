@@ -14,7 +14,7 @@ const footerText = {
     contact: "Liên hệ",
     served: "Đã phục vụ",
     mapTitle: "Bản đồ công ty",
-    mapCopy: "Xem vị trí giao dịch và khu vực phục vụ thực tế của TPS1 tại Đồng Nai.",
+    mapCopy: "Xem vị trí giao dịch và khu vực phục vụ thực tế của TPS1 tại Đồng Nai, TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
     mapLink: "Mở Google Maps",
     mapIframeTitle: "Bản đồ Thực Phẩm Số Một",
     quoteHref: "/bao-gia",

@@ -22,6 +22,9 @@ const staticPaths = [
   "/cung-cap-thuc-pham-dong-nai",
   "/cung-cap-thuc-pham-bien-hoa",
   "/cung-cap-thuc-pham-nhon-trach",
+  "/cung-cap-thuc-pham-tp-hcm",
+  "/cung-cap-thuc-pham-binh-duong",
+  "/cung-cap-thuc-pham-ba-ria-vung-tau",
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
