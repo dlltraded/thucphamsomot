@@ -19,6 +19,9 @@ const staticPaths = [
   "/bao-gia",
   "/en/bao-gia",
   "/ho-so-nang-luc",
+  "/cung-cap-thuc-pham-dong-nai",
+  "/cung-cap-thuc-pham-bien-hoa",
+  "/cung-cap-thuc-pham-nhon-trach",
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

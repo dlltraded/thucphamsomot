@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Building2, ClipboardList, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, Building2, ClipboardList, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { categories } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
 import { brandAssets, customerHighlights } from "@/lib/brand";
@@ -64,6 +64,24 @@ const galleryImages = [
 ];
 
 const partnerLogoPanels = [{ src: "/images/partners/tps1-partner-logos-all.png", alt: "Logo đối tác và khách hàng tiêu biểu TPS1" }];
+
+const localPages = [
+  {
+    href: "/cung-cap-thuc-pham-dong-nai",
+    title: "Cung cấp thực phẩm Đồng Nai",
+    text: "Phục vụ đơn vị cần nguồn thực phẩm định kỳ cho bếp ăn, nhà máy, trường học và bệnh viện tại Đồng Nai.",
+  },
+  {
+    href: "/cung-cap-thuc-pham-bien-hoa",
+    title: "Cung cấp thực phẩm Biên Hòa",
+    text: "Hỗ trợ khách tại Biên Hòa lên danh mục hàng, lịch giao và báo giá theo nhu cầu thực tế.",
+  },
+  {
+    href: "/cung-cap-thuc-pham-nhon-trach",
+    title: "Cung cấp thực phẩm Nhơn Trạch",
+    text: "Phù hợp đơn vị trong khu công nghiệp cần giao hàng ổn định theo ca, theo ngày hoặc theo tuần.",
+  },
+];
 
 export default function HomePage() {
   return (
@@ -245,6 +263,35 @@ export default function HomePage() {
               <div key={item.src} className="home-partners__panel">
                 <Image src={item.src} alt={item.alt} fill className="home-partners__image" sizes="(max-width: 960px) 100vw, 1180px" />
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-local">
+        <div className="container-shell section-pad">
+          <div className="section-split">
+            <div className="section-heading">
+              <div className="eyebrow">Khu vực phục vụ</div>
+              <h2 className="section-heading__title">Đồng Nai, Biên Hòa, Nhơn Trạch</h2>
+            </div>
+            <Link href="/bao-gia" className="text-link">
+              Gửi nhu cầu báo giá <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          <div className="home-local__grid">
+            {localPages.map((item) => (
+              <Link key={item.href} href={item.href} className="home-local__card">
+                <div className="home-local__icon">
+                  <MapPin size={18} />
+                </div>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+                <span className="home-local__link">
+                  Xem trang <ArrowRight size={16} />
+                </span>
+              </Link>
             ))}
           </div>
         </div>

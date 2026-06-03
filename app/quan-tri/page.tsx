@@ -11,6 +11,7 @@ export const metadata = makeMetadata({
   title: "Quản trị nội dung",
   description: "Trang quản trị để đăng và chỉnh sửa tin tức, kiến thức và nội dung hữu ích cho website TPS1.",
   path: "/quan-tri",
+  robots: { index: false, follow: false },
 });
 
 export default async function AdminPage() {

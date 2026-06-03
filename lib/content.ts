@@ -395,6 +395,58 @@ export const posts: ContentItem[] = [
       },
     ],
   },
+  {
+    slug: "checklist-gui-yeu-cau-bao-gia-nhanh",
+    title: "Checklist gửi yêu cầu báo giá nhanh cho canteen và suất ăn công nghiệp",
+    description: "Danh sách thông tin cần chuẩn bị để nhận báo giá nhanh và không bị hỏi lại nhiều lần.",
+    sections: [
+      {
+        heading: "Muốn báo giá nhanh thì phải phân cấp thông tin ngay từ đầu",
+        body:
+          "Khách hàng càng viết rõ nhóm hàng, số lượng, địa điểm giao và tần suất giao thì đội bán hàng càng dễ ra phương án sát nhu cầu.",
+        items: ["Nhóm hàng cần mua", "Số lượng dự kiến", "Địa điểm giao", "Thời gian cần hàng"],
+      },
+    ],
+  },
+  {
+    slug: "cach-chon-thuc-pham-cho-bep-an-tap-the",
+    title: "Cách chọn thực phẩm cho bếp ăn tập thể để giảm hao hụt",
+    description: "Cách chọn nhóm hàng, tỉ lệ hao hụt và tiêu chí nhận hàng phù hợp với bếp quy mô lớn.",
+    sections: [
+      {
+        heading: "Hao hụt tế nhị là vấn đề vận hành, không chỉ là vấn đề mua hàng",
+        body:
+          "Bếp ăn tập thể cần đo lường tỷ lệ hao hụt từ khâu cân nhận hàng, sơ chế, lưu kho cho đến quản lý menu hằng ngày.",
+        items: ["Chọn đầu vào đồng đều", "Lệnh giao ổn định", "Kiểm tra theo cảm quan và quy cách"],
+      },
+    ],
+  },
+  {
+    slug: "quy-trinh-nhan-hang-thuc-pham-tai-bep-cong-nghiep",
+    title: "Quy trình nhận hàng thực phẩm tại bếp công nghiệp",
+    description: "Một quy trình nhận hàng rõ ràng giúp bếp giảm sai sót, giảm trả hàng và dễ kiểm soát chất lượng đầu vào.",
+    sections: [
+      {
+        heading: "Nhận hàng phải đi cùng chứng từ và tiêu chí đánh giá",
+        body:
+          "Nhóm nhận hàng cần biết quy cách, số lượng, nhiệt độ, tình trạng bao bì và hạn dùng để xử lý nhanh ngay từ lúc xe vào cổng.",
+        items: ["Kiểm tra bao bì", "Đối chiếu phiếu giao", "Chấp nhận hoặc từ chối theo nguyên tắc"],
+      },
+    ],
+  },
+  {
+    slug: "cach-lua-chon-nha-cung-cap-thuc-pham-dong-nai",
+    title: "Cách chọn nhà cung cấp thực phẩm tại Đồng Nai",
+    description: "Những tiêu chí phải có khi so sánh nhà cung cấp thực phẩm tại Đồng Nai và khu vực lân cận.",
+    sections: [
+      {
+        heading: "Đừng chỉ chọn theo giá",
+        body:
+          "Giá thấp chưa chắc rẻ. Cần đánh giá cùng lúc nguồn hàng, lịch giao, kế hoạch tồn kho và năng lực xử lý khi có trục trặc.",
+        items: ["Năng lực giao", "Hồ sơ và truy xuất", "Khả năng tư vấn danh mục"],
+      },
+    ],
+  },
 ];
 
 export const policies: ContentItem[] = [

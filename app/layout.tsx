@@ -9,14 +9,15 @@ import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CompanyProfileWidget } from "@/components/company-profile-widget";
+import { SeoJsonLd } from "@/components/seo-json-ld";
 import { SocialWidget } from "@/components/social-widget";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: "Thuc Pham So 1",
-    template: "%s | Thuc Pham So 1",
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
   icons: {
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi">
       <body>
+        <SeoJsonLd />
         <SiteHeader />
         {children}
         <CompanyProfileWidget />
