@@ -10,6 +10,8 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { brandAssets } from "@/lib/brand";
+import { getKnowledgeCover } from "@/lib/content-media";
 import { makeMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 import { readKnowledgeArticles } from "@/lib/knowledge";
@@ -37,20 +39,17 @@ const knowledgePillars = [
   {
     icon: NotebookPen,
     title: "Dẫn tới hành động",
-    text: "Mỗi bài viết đều có mục tiêu rõ: giúp người đọc chuẩn bị thông tin để đặt mua hoặc xin báo giá.",
+    text: "Mỗi bài đều có mục tiêu rõ: giúp người đọc chuẩn bị thông tin để đặt mua hoặc xin báo giá.",
     gradient: "linear-gradient(135deg, rgba(199, 55, 47, 0.16), rgba(168, 85, 247, 0.16))",
   },
 ];
-
-const heroImage =
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1400&q=80";
-const featuredImage =
-  "https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1100&q=80";
 
 export default async function KnowledgePage() {
   const articles = await readKnowledgeArticles();
   const featuredPost = articles[0];
   const secondaryPosts = articles.slice(1, 4);
+  const heroImage = brandAssets.warehouseWide;
+  const featuredImage = featuredPost ? getKnowledgeCover(featuredPost.slug) : brandAssets.coverFood;
   const heroStats = [
     { value: `${articles.length}+`, label: "Chủ đề đang có" },
     { value: "3", label: "Nhóm nội dung chính" },
@@ -64,16 +63,15 @@ export default async function KnowledgePage() {
           <div className="eyebrow">Kiến thức</div>
           <h1 className="knowledge-hero__title">Kiến thức chọn nguồn hàng cho bếp ăn và suất ăn công nghiệp.</h1>
           <p className="knowledge-hero__lead">
-            Tổng hợp các hướng dẫn giúp người phụ trách bếp chọn nhà cung cấp, lên menu, kiểm tra chất lượng và chuẩn
-            bị thông tin trước khi xin báo giá.
+            Tổng hợp các hướng dẫn giúp người phụ trách bếp chọn nhà cung cấp, lên menu, kiểm tra chất lượng và chuẩn bị thông tin trước khi xin báo giá.
           </p>
           <div className="hero-actions">
             <Link href="/bao-gia" className="btn-primary">
               Nhận báo giá <ArrowRight size={18} />
             </Link>
-              <Link href={featuredPost ? `/kien-thuc/${featuredPost.slug}` : "/bao-gia"} className="btn-secondary">
-                Đọc bài nổi bật <BookOpenText size={18} />
-              </Link>
+            <Link href={featuredPost ? `/kien-thuc/${featuredPost.slug}` : "/bao-gia"} className="btn-secondary">
+              Đọc bài nổi bật <BookOpenText size={18} />
+            </Link>
           </div>
 
           <div className="knowledge-strip" aria-label="Chủ đề nổi bật">
@@ -96,7 +94,7 @@ export default async function KnowledgePage() {
           <div className="knowledge-hero__image-frame">
             <Image
               src={heroImage}
-              alt="Không gian bếp và món ăn minh hoạ cho trang kiến thức"
+              alt="Kho vận TPS1 và hoạt động thực tế"
               fill
               priority
               sizes="(max-width: 768px) 100vw, 48vw"
@@ -120,7 +118,7 @@ export default async function KnowledgePage() {
             </div>
             <div className="knowledge-visual-card knowledge-visual-card--image">
               <Image
-                src={featuredImage}
+                src={brandAssets.kitchen}
                 alt="Không gian bếp và bàn ăn minh hoạ"
                 fill
                 sizes="(max-width: 768px) 100vw, 24vw"
@@ -142,8 +140,7 @@ export default async function KnowledgePage() {
             <div className="eyebrow">Cách đọc trang</div>
             <h2 className="knowledge-section-title">Ba nhóm câu hỏi thường gặp khi chuẩn bị mua hàng.</h2>
             <p className="subcopy">
-              Khách B2B thường cần biết nên mua gì, kiểm tra chất lượng ra sao và cần gửi thông tin nào để được báo giá
-              nhanh.
+              Khách B2B thường cần biết nên mua gì, kiểm tra chất lượng ra sao và cần gửi thông tin nào để được báo giá nhanh.
             </p>
           </div>
         </div>
@@ -196,21 +193,29 @@ export default async function KnowledgePage() {
           </Link>
 
           <div className="knowledge-side-list">
-            {secondaryPosts.map((post, index) => (
-              <Link
-                key={post.slug}
-                href={`/kien-thuc/${post.slug}`}
-                className={`knowledge-side-card knowledge-side-card--${index + 1}`}
-              >
-                <div className="knowledge-side-card__index">0{index + 2}</div>
-                <h3>{post.title}</h3>
-                <p>{post.description}</p>
-                <div className="knowledge-side-card__meta">
-                  <span>Đọc trong vài phút</span>
-                  <ArrowRight size={16} />
-                </div>
-              </Link>
-            ))}
+            {secondaryPosts.map((post, index) => {
+              const cover = getKnowledgeCover(post.slug);
+              return (
+                <Link key={post.slug} href={`/kien-thuc/${post.slug}`} className={`knowledge-side-card knowledge-side-card--${index + 1}`}>
+                  <div className="knowledge-side-card__media">
+                    <Image
+                      src={cover}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 28vw"
+                      className="knowledge-side-card__image"
+                    />
+                  </div>
+                  <div className="knowledge-side-card__index">0{index + 2}</div>
+                  <h3>{post.title}</h3>
+                  <p>{post.description}</p>
+                  <div className="knowledge-side-card__meta">
+                    <span>Đọc trong vài phút</span>
+                    <ArrowRight size={16} />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -227,21 +232,29 @@ export default async function KnowledgePage() {
         </div>
 
         <div className="knowledge-post-grid">
-          {articles.map((post, index) => (
-            <Link
-              key={post.slug}
-              href={`/kien-thuc/${post.slug}`}
-              className={`knowledge-post-card knowledge-post-card--${(index % 4) + 1}`}
-            >
-              <div className="knowledge-post-card__index">0{index + 1}</div>
-              <h3>{post.title}</h3>
-              <p>{post.description}</p>
-              <div className="knowledge-post-card__footer">
-                <span>{index === 0 ? "Bài nền tảng" : "Bài hướng dẫn"}</span>
-                <ArrowRight size={16} />
-              </div>
-            </Link>
-          ))}
+          {articles.map((post, index) => {
+            const cover = getKnowledgeCover(post.slug);
+            return (
+              <Link key={post.slug} href={`/kien-thuc/${post.slug}`} className={`knowledge-post-card knowledge-post-card--${(index % 4) + 1}`}>
+                <div className="knowledge-post-card__media">
+                  <Image
+                    src={cover}
+                    alt={post.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 24vw"
+                    className="knowledge-post-card__image"
+                  />
+                </div>
+                <div className="knowledge-post-card__index">0{index + 1}</div>
+                <h3>{post.title}</h3>
+                <p>{post.description}</p>
+                <div className="knowledge-post-card__footer">
+                  <span>{index === 0 ? "Bài nền tảng" : "Bài hướng dẫn"}</span>
+                  <ArrowRight size={16} />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -251,8 +264,7 @@ export default async function KnowledgePage() {
             <div className="eyebrow eyebrow-on-dark">Cần tư vấn danh mục?</div>
             <h2>Gửi nhu cầu để được gợi ý nhóm hàng, quy cách giao và thông tin báo giá phù hợp.</h2>
             <p>
-              Gửi yêu cầu qua {siteConfig.email} hoặc đi tiếp sang trang báo giá để đội ngũ chốt đúng thông tin cho
-              bếp ăn, nhà hàng hoặc suất ăn công nghiệp.
+              Gửi yêu cầu qua {siteConfig.email} hoặc đi tiếp sang trang báo giá để đội ngũ chốt đúng thông tin cho bếp ăn, nhà hàng hoặc suất ăn công nghiệp.
             </p>
           </div>
           <Link href="/bao-gia" className="btn-primary btn-on-dark">

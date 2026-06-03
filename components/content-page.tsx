@@ -12,6 +12,12 @@ type ContentPageProps = {
   bullets?: string[];
   sections?: ContentSection[];
   faqs?: FaqItem[];
+  heroMedia?: {
+    src: string;
+    alt: string;
+    caption: string;
+    note: string;
+  };
   ctaHref?: string;
   ctaLabel?: string;
   quoteItem?: {
@@ -29,6 +35,7 @@ export function ContentPage({
   bullets = [],
   sections = [],
   faqs = [],
+  heroMedia,
   ctaHref = "/bao-gia",
   ctaLabel = "Mở form báo giá",
   quoteItem,
@@ -52,6 +59,25 @@ export function ContentPage({
         </div>
 
         <aside className="content-detail__aside">
+          {heroMedia ? (
+            <div className="content-detail__media">
+              <div className="content-detail__media-frame">
+                <Image
+                  src={heroMedia.src}
+                  alt={heroMedia.alt}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 34vw"
+                  className="content-detail__media-image"
+                />
+                <div className="content-detail__media-overlay" />
+                <div className="content-detail__media-copy">
+                  <span>{heroMedia.caption}</span>
+                  <strong>{title}</strong>
+                  <p>{heroMedia.note}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="content-detail__aside-card content-detail__aside-card--accent">
             <ClipboardCheck size={18} />
             <strong>Thông tin cần chuẩn bị</strong>

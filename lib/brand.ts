@@ -8,6 +8,8 @@ export const brandAssets = {
   deliveryTruckReal: "/images/tps1-real-delivery-truck.jpg",
   quality: "/images/tps1-quality.jpg",
   kitchen: "/images/tps1-kitchen.jpg",
+  vegetables: "/images/tps1-vegetables.jpg",
+  frozen: "/images/tps1-frozen.png",
   team: "/images/tps1-team.jpg",
   deliveryLoading: "/images/tps1-delivery-loading.jpg",
   sourceFarm: "/images/tps1-source-farm.jpg",
