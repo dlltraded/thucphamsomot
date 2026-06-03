@@ -63,7 +63,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
           </div>
 
           <div className="news-detail__media">
-            <Image src={article.coverImage} alt={article.title} fill className="news-detail__image" />
+            <Image src={article.coverImage} alt={article.title} fill priority className="news-detail__image" />
           </div>
         </div>
       </section>

@@ -43,22 +43,22 @@ export const siteConfig = {
 
 export const navItemsByLocale: Record<Locale, Array<{ label: string; href: string }>> = {
   vi: [
+    { label: "BÁO GIÁ", href: "/bao-gia" },
     { label: "Giới Thiệu", href: "/gioi-thieu" },
     { label: "Sản Phẩm", href: "/san-pham" },
     { label: "Nguyên Liệu", href: "/nganh-hang/bep-an-tap-the" },
     { label: "Công Thức", href: "/kien-thuc" },
     { label: "Tin Tức", href: "/tin-tuc" },
     { label: "Liên Hệ", href: "/lien-he" },
-    { label: "Gửi Yêu Cầu", href: "/bao-gia" },
   ],
   en: [
+    { label: "QUOTE", href: "/en/bao-gia" },
     { label: "About", href: "/en/about" },
     { label: "Products", href: "/en/products" },
     { label: "Ingredients", href: "/en/ingredients" },
     { label: "Recipes", href: "/en/recipes" },
     { label: "News", href: "/en/news" },
     { label: "Contact", href: "/en/contact" },
-    { label: "Send Request", href: "/en/bao-gia" },
   ],
 };
 

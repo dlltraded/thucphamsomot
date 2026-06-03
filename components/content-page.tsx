@@ -67,6 +67,7 @@ export function ContentPage({
                   alt={heroMedia.alt}
                   fill
                   sizes="(max-width: 768px) 100vw, 34vw"
+                  priority
                   className="content-detail__media-image"
                 />
                 <div className="content-detail__media-overlay" />
@@ -111,6 +112,7 @@ export function ContentPage({
                   alt={section.heading}
                   fill
                   sizes="(max-width: 768px) 100vw, 34vw"
+                  priority={index < 2}
                   className="content-section__image"
                 />
               </div>
