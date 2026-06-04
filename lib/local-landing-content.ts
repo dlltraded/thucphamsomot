@@ -31,9 +31,9 @@ const baseFaqs: FaqItem[] = [
 export const localLandingPages: Record<string, LocalLandingPageConfig> = {
   dongNai: {
     eyebrow: "Đồng Nai",
-    title: "Cung cấp thực phẩm Đồng Nai cho nhu cầu B2B",
+    title: "Cung cấp thực phẩm Đồng Nai cho bếp ăn, nhà máy và trường học",
     description:
-      "Trang đích local cho nhóm khách cần nguồn hàng định kỳ, báo giá nhanh và danh mục phù hợp bếp ăn, nhà máy và trường học.",
+      "Trang đích local cho nhóm khách cần nguồn hàng định kỳ, báo giá nhanh và danh mục phù hợp bếp ăn, nhà máy, trường học và bệnh viện.",
     intro:
       "Đồng Nai là khu vực có nhu cầu mua hàng lặp lại cao, nên trang này cần giúp người đọc hiểu ngay cách giao, nhóm hàng phù hợp và đường đi từ xem trang đến gửi báo giá.",
     chips: ["Giao định kỳ", "Biên Hòa, Nhơn Trạch, Long Thành", "Danh mục + báo giá"],
@@ -75,13 +75,15 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
           "Các keyword phù hợp gồm cung cấp thực phẩm Đồng Nai, nhà cung cấp thực phẩm Đồng Nai, báo giá thực phẩm định kỳ và thực phẩm cho bếp ăn tập thể Đồng Nai.",
       },
     ],
-    ctaLabel: "Gửi yêu cầu báo giá",
+    ctaLabel: "BÁO GIÁ",
     quoteSlug: "thuc-pham-dong-nai",
     quoteTitle: "Cung cấp thực phẩm Đồng Nai",
     quoteSummary: "Báo giá cho nhu cầu mua định kỳ tại Đồng Nai.",
     relatedLinks: [
       { href: "/cung-cap-thuc-pham-bien-hoa", label: "Cung cấp thực phẩm Biên Hòa" },
       { href: "/cung-cap-thuc-pham-nhon-trach", label: "Cung cấp thực phẩm Nhơn Trạch" },
+      { href: "/cung-cap-thuc-pham-binh-duong", label: "Cung cấp thực phẩm Bình Dương" },
+      { href: "/cung-cap-thuc-pham-tp-hcm", label: "Cung cấp thực phẩm TP.HCM" },
       { href: "/kien-thuc/bao-gia-thuc-pham-cho-bep-an-tap-the-o-bien-hoa", label: "Báo giá thực phẩm cho bếp ăn tập thể ở Biên Hòa" },
       { href: "/san-pham", label: "Xem danh mục sản phẩm" },
       { href: "/bao-gia", label: "Mở form báo giá" },
@@ -89,9 +91,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
   },
   bienHoa: {
     eyebrow: "Biên Hòa",
-    title: "Cung cấp thực phẩm Biên Hòa",
+    title: "Cung cấp thực phẩm Biên Hòa cho bếp ăn tập thể và nhà máy",
     description:
-      "Trang đích local cho khách cần nguồn hàng định kỳ tại Biên Hòa, ưu tiên khách hỏi mua thật và quy trình báo giá ngắn.",
+      "Trang đích local cho khách cần nguồn hàng định kỳ tại Biên Hòa, ưu tiên khách hỏi mua thật và quy trình báo giá ngắn cho bếp ăn, nhà máy và đơn vị suất ăn.",
     intro:
       "Biên Hòa là cụm tìm kiếm hẹp hơn Đồng Nai, nên trang này cần đi thẳng vào nhu cầu giao trong thành phố, nhóm khách B2B và cách chốt báo giá nhanh.",
     chips: ["Biên Hòa", "Nguồn hàng rõ", "Mua hàng B2B"],
@@ -128,22 +130,23 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
           "Không. Trang này nên giữ một nhu cầu chính là cung cấp thực phẩm tại Biên Hòa, còn trang Đồng Nai là cụm rộng hơn.",
       },
     ],
-    ctaLabel: "Nhận báo giá",
+    ctaLabel: "BÁO GIÁ",
     quoteSlug: "thuc-pham-bien-hoa",
     quoteTitle: "Cung cấp thực phẩm Biên Hòa",
     quoteSummary: "Nhu cầu mua thực phẩm định kỳ tại Biên Hòa.",
     relatedLinks: [
       { href: "/cung-cap-thuc-pham-dong-nai", label: "Cung cấp thực phẩm Đồng Nai" },
       { href: "/cung-cap-thuc-pham-binh-duong", label: "Cung cấp thực phẩm Bình Dương" },
+      { href: "/cung-cap-thuc-pham-tp-hcm", label: "Cung cấp thực phẩm TP.HCM" },
       { href: "/lien-he", label: "Liên hệ nhanh" },
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
   },
   binhDuong: {
     eyebrow: "Bình Dương",
-    title: "Cung cấp thực phẩm Bình Dương",
+    title: "Cung cấp thực phẩm Bình Dương cho bếp ăn và nhà máy",
     description:
-      "Trang đích local cho khách cần nguồn hàng định kỳ tại Bình Dương, ưu tiên giao đều và phản hồi báo giá nhanh.",
+      "Trang đích local cho khách cần nguồn hàng định kỳ tại Bình Dương, ưu tiên giao đều và phản hồi báo giá nhanh cho bếp ăn, nhà máy và đơn vị suất ăn.",
     intro:
       "Bình Dương có nhiều đơn vị vận hành theo lịch cố định, nên trang này cần làm rõ nhịp giao, danh mục hàng và bước chuyển sang báo giá.",
     chips: ["Giao định kỳ", "Khách B2B", "Danh mục rõ"],
@@ -179,7 +182,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
           "Có. Đây là hai cụm tìm kiếm khác nhau và nên có landing page riêng để tránh loãng nội dung.",
       },
     ],
-    ctaLabel: "Nhận báo giá",
+    ctaLabel: "BÁO GIÁ",
     quoteSlug: "thuc-pham-binh-duong",
     quoteTitle: "Cung cấp thực phẩm Bình Dương",
     quoteSummary: "Nhu cầu mua thực phẩm định kỳ tại Bình Dương.",
@@ -193,9 +196,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
   },
   nhonTrach: {
     eyebrow: "Nhơn Trạch",
-    title: "Cung cấp thực phẩm Nhơn Trạch",
+    title: "Cung cấp thực phẩm Nhơn Trạch cho khu công nghiệp và bếp ăn",
     description:
-      "Trang đích local cho nhóm khách ở Nhơn Trạch cần nguồn hàng định kỳ và phản hồi báo giá ngắn gọn.",
+      "Trang đích local cho nhóm khách ở Nhơn Trạch cần nguồn hàng định kỳ, phản hồi báo giá ngắn gọn và giao phù hợp khu công nghiệp.",
     intro:
       "Nhơn Trạch có nhiều nhu cầu mua theo ca, theo chuyến và theo hợp đồng, nên trang này cần nói rõ bối cảnh vận hành thay vì mô tả chung chung.",
     chips: ["Khu công nghiệp", "Hợp đồng định kỳ", "Khách B2B"],
@@ -232,7 +235,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
           "Không nên. Nên giữ trọng tâm là nguồn thực phẩm, còn suất ăn công nghiệp chỉ là bối cảnh sử dụng.",
       },
     ],
-    ctaLabel: "Yêu cầu báo giá",
+    ctaLabel: "BÁO GIÁ",
     quoteSlug: "thuc-pham-nhon-trach",
     quoteTitle: "Cung cấp thực phẩm Nhơn Trạch",
     quoteSummary: "Nhu cầu mua thực phẩm định kỳ tại Nhơn Trạch.",
@@ -247,9 +250,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
   },
   baRiaVungTau: {
     eyebrow: "Bà Rịa - Vũng Tàu",
-    title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu",
+    title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho doanh nghiệp và bếp ăn",
     description:
-      "Trang đích local cho khách cần nguồn hàng định kỳ tại Bà Rịa - Vũng Tàu, ưu tiên giao đều và báo giá rõ.",
+      "Trang đích local cho khách cần nguồn hàng định kỳ tại Bà Rịa - Vũng Tàu, ưu tiên giao đều và báo giá rõ cho doanh nghiệp, bếp ăn và đơn vị suất ăn.",
     intro:
       "Khu vực này phù hợp với các đơn vị vận hành đều, nên trang cần nói rõ cách phục vụ, nhóm hàng phù hợp và đường đi sang báo giá.",
     chips: ["Giao theo lịch", "Khách B2B", "Báo giá rõ"],
@@ -286,7 +289,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
           "Có. Đây là cụm địa phương riêng, tách ra sẽ dễ tối ưu truy vấn và đo chuyển đổi hơn.",
       },
     ],
-    ctaLabel: "Gửi yêu cầu báo giá",
+    ctaLabel: "BÁO GIÁ",
     quoteSlug: "thuc-pham-ba-ria-vung-tau",
     quoteTitle: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu",
     quoteSummary: "Nhu cầu mua thực phẩm định kỳ tại Bà Rịa - Vũng Tàu.",
