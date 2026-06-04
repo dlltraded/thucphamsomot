@@ -17,7 +17,7 @@ const sections = [
   {
     heading: "TP.HCM phù hợp cho đơn vị cần nguồn hàng theo tuyến",
     body:
-      "Trang này phục vụ các khách hàng ở TP.HCM cần nhà cung cấp giao theo tuyến, theo khung giờ và theo lịch nhận hàng đã thống nhất trước. Mục tiêu là giúp họ lấy báo giá nhanh mà vẫn có đủ thông tin để ra quyết định.",
+      "Trang này phục vụ các khách hàng ở TP.HCM cần nhà cung cấp giao theo tuyến, theo khung giờ và theo lịch nhận hàng đã thống nhất trước. Khách có thể lấy báo giá nhanh mà vẫn có đủ thông tin để ra quyết định.",
     items: ["Giao theo tuyến phù hợp", "Số lượng linh hoạt", "Báo giá rõ ngay từ đầu"],
   },
   {
@@ -55,14 +55,14 @@ export default function TpHcmLandingPage() {
     <PageShell
       eyebrow="TP.HCM"
       title="Cung cấp thực phẩm TP.HCM"
-      description="Trang đích local cho khách cần nguồn hàng định kỳ tại TP.HCM, ưu tiên giao theo tuyến và báo giá nhanh."
+      description="Phục vụ khách tại TP.HCM cần nguồn hàng định kỳ, giao theo tuyến và báo giá nhanh."
       compact
     >
       <SeoJsonLd />
       <div className="section-heading" style={{ marginBottom: 20 }}>
         <div className="eyebrow">TP.HCM</div>
         <p className="section-heading__description" style={{ marginTop: 10 }}>
-          Phù hợp khách ở TP.HCM cần nguồn hàng đều, giao theo lịch và có báo giá rõ ràng.
+          Phù hợp khách ở TP.HCM cần nguồn hàng đều, giao theo lịch và báo giá rõ ràng.
         </p>
       </div>
       <div className="content-detail__chips">
@@ -98,7 +98,7 @@ export default function TpHcmLandingPage() {
           <div className="content-section__eyebrow">Nội dung liên quan</div>
           <h2>Bài hỗ trợ cho TP.HCM</h2>
           <p>
-            Trang TP.HCM nên có một lớp nội dung vệ tinh để khách đi từ nhu cầu địa phương sang bài phân tích rồi sang form báo giá.
+            Có thêm bài vệ tinh để khách đi từ nhu cầu địa phương sang bài phân tích rồi sang form báo giá.
           </p>
           <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 14 }}>
             <Link

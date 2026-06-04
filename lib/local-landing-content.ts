@@ -17,14 +17,14 @@ export type LocalLandingPageConfig = {
 
 const baseFaqs: FaqItem[] = [
   {
-    question: "Trang local này dùng để làm gì?",
+    question: "Trang này dành cho ai?",
     answer:
-      "Trang được viết cho nhu cầu tìm kiếm địa phương, giúp người mua thấy rõ khu vực phục vụ, nhóm hàng phù hợp và cách gửi yêu cầu báo giá nhanh.",
+      "Trang này phù hợp với khách cần mua thực phẩm theo khu vực, muốn xem nhanh khu vực phục vụ, nhóm hàng phù hợp và cách gửi yêu cầu báo giá.",
   },
   {
-    question: "Khách nên làm gì sau khi đọc trang?",
+    question: "Sau khi đọc xong nên làm gì?",
     answer:
-      "Nên chuyển sang form báo giá hoặc xem danh mục sản phẩm liên quan để chốt nhóm hàng, số lượng và lịch giao thay vì chỉ dừng ở mức đọc thông tin.",
+      "Có thể chuyển sang form báo giá hoặc xem danh mục sản phẩm liên quan để chốt nhóm hàng, số lượng và lịch giao.",
   },
 ];
 
@@ -33,7 +33,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     eyebrow: "Đồng Nai",
     title: "Cung cấp thực phẩm Đồng Nai cho bếp ăn, nhà máy và trường học",
     description:
-      "Trang đích local cho nhóm khách cần nguồn hàng định kỳ, báo giá nhanh và danh mục phù hợp bếp ăn, nhà máy, trường học và bệnh viện.",
+      "Phù hợp với nhóm khách cần nguồn hàng định kỳ, báo giá nhanh và danh mục phù hợp cho bếp ăn, nhà máy, trường học và bệnh viện.",
     intro:
       "Phục vụ đơn vị ở Đồng Nai cần nguồn thực phẩm ổn định, giao đều và báo giá nhanh.",
     chips: ["Giao định kỳ", "Biên Hòa, Nhơn Trạch, Long Thành", "Danh mục + báo giá"],
@@ -93,7 +93,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     eyebrow: "Biên Hòa",
     title: "Cung cấp thực phẩm Biên Hòa cho bếp ăn tập thể và nhà máy",
     description:
-      "Trang đích local cho khách cần nguồn hàng định kỳ tại Biên Hòa, ưu tiên khách hỏi mua thật và quy trình báo giá ngắn cho bếp ăn, nhà máy và đơn vị suất ăn.",
+      "Phù hợp với khách cần nguồn hàng định kỳ tại Biên Hòa, ưu tiên báo giá ngắn cho bếp ăn, nhà máy và đơn vị suất ăn.",
     intro:
       "Phục vụ khách tại Biên Hòa cần giao theo tuyến, danh mục rõ và báo giá nhanh.",
     chips: ["Biên Hòa", "Nguồn hàng rõ", "Mua hàng B2B"],
@@ -146,7 +146,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     eyebrow: "Bình Dương",
     title: "Cung cấp thực phẩm Bình Dương cho bếp ăn và nhà máy",
     description:
-      "Trang đích local cho khách cần nguồn hàng định kỳ tại Bình Dương, ưu tiên giao đều và phản hồi báo giá nhanh cho bếp ăn, nhà máy và đơn vị suất ăn.",
+      "Phù hợp với khách cần nguồn hàng định kỳ tại Bình Dương, ưu tiên giao đều và phản hồi báo giá nhanh cho bếp ăn, nhà máy và đơn vị suất ăn.",
     intro:
       "Phục vụ đơn vị ở Bình Dương cần giao định kỳ, danh mục rõ và lịch nhận hàng ổn định.",
     chips: ["Giao định kỳ", "Khách B2B", "Danh mục rõ"],
@@ -198,7 +198,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     eyebrow: "Nhơn Trạch",
     title: "Cung cấp thực phẩm Nhơn Trạch cho khu công nghiệp và bếp ăn",
     description:
-      "Trang đích local cho nhóm khách ở Nhơn Trạch cần nguồn hàng định kỳ, phản hồi báo giá ngắn gọn và giao phù hợp khu công nghiệp.",
+      "Phù hợp với nhóm khách ở Nhơn Trạch cần nguồn hàng định kỳ, phản hồi báo giá ngắn gọn và giao phù hợp khu công nghiệp.",
     intro:
       "Phục vụ khu công nghiệp Nhơn Trạch với nhu cầu mua theo ca, theo ngày và theo tuần.",
     chips: ["Khu công nghiệp", "Hợp đồng định kỳ", "Khách B2B"],
@@ -218,7 +218,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       {
         heading: "Gửi báo giá đúng nhu cầu",
         body:
-          "Mục tiêu là giúp khách đi nhanh sang form báo giá, hồ sơ năng lực và những trang hàng hóa đúng nhóm cần mua.",
+          "Khách có thể đi nhanh sang form báo giá, hồ sơ năng lực và những trang hàng hóa đúng nhóm cần mua.",
         items: ["Dẫn về báo giá", "Tăng tin cậy", "Giảm việc khách phải tìm lại"],
       },
     ],
@@ -252,7 +252,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     eyebrow: "Bà Rịa - Vũng Tàu",
     title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho doanh nghiệp và bếp ăn",
     description:
-      "Trang đích local cho khách cần nguồn hàng định kỳ tại Bà Rịa - Vũng Tàu, ưu tiên giao đều và báo giá rõ cho doanh nghiệp, bếp ăn và đơn vị suất ăn.",
+      "Phù hợp với khách cần nguồn hàng định kỳ tại Bà Rịa - Vũng Tàu, ưu tiên giao đều và báo giá rõ cho doanh nghiệp, bếp ăn và đơn vị suất ăn.",
     intro:
       "Phục vụ đơn vị ở Bà Rịa - Vũng Tàu cần nguồn hàng ổn định, giao theo lịch và báo giá rõ.",
     chips: ["Giao theo lịch", "Khách B2B", "Báo giá rõ"],

@@ -85,8 +85,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
         ))}
         <section className="content-section" style={{ marginTop: 28 }}>
           <div className="content-section__body">
-            <div className="content-section__eyebrow">Đường đi tiếp theo</div>
-            <h2>Trang nên xem sau khi đọc bài tin tức này.</h2>
+            <div className="content-section__eyebrow">Xem tiếp</div>
+            <h2>Xem tiếp nội dung liên quan.</h2>
             <p>
               Các liên kết dưới đây giúp người đọc đi từ nội dung tin tức sang danh mục, bài kiến thức và form báo giá để không bị dừng ở mức đọc tin.
             </p>
@@ -110,9 +110,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
 
 function getRelatedNewsLinks(slug: string) {
   const common = [
-    { href: "/kien-thuc", label: "Xem Kiến thức", description: "Các bài hướng dẫn nền tảng về mua hàng và vận hành." },
-    { href: "/san-pham", label: "Xem sản phẩm", description: "Danh mục để đi tiếp sang nhóm hàng và quy cách." },
-    { href: "/bao-gia", label: "BÁO GIÁ", description: "Chuyển sang form báo giá để chốt nhu cầu." },
+    { href: "/kien-thuc", label: "Xem Kiến thức", description: "Bài viết về mua hàng, menu và vận hành." },
+    { href: "/san-pham", label: "Xem sản phẩm", description: "Danh mục nhóm hàng và quy cách cụ thể." },
+    { href: "/bao-gia", label: "BÁO GIÁ", description: "Gửi nhu cầu để nhận phản hồi nhanh." },
   ];
 
   if (slug.includes("nha-may") || slug.includes("cong-nghiep")) {

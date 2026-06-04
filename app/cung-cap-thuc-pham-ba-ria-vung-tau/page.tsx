@@ -21,7 +21,7 @@ export default function BaRiaVungTauLandingPage() {
           <div className="content-section__eyebrow">Nội dung liên quan</div>
           <h2>Bài hỗ trợ cho Bà Rịa - Vũng Tàu</h2>
           <p>
-            Trang địa phương này nên có một lớp bài vệ tinh để người đọc đi từ nhu cầu khu vực sang bài phân tích rồi mới sang form báo giá.
+            Có thêm bài vệ tinh để người đọc đi từ nhu cầu khu vực sang bài phân tích rồi mới sang form báo giá.
           </p>
           <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 14 }}>
             <Link
