@@ -9,6 +9,8 @@ const knowledgeCoverBySlug: Record<string, string> = {
   "cach-chon-thuc-pham-cho-bep-an-tap-the": brandAssets.coverFood,
   "quy-trinh-nhan-hang-thuc-pham-tai-bep-cong-nghiep": brandAssets.deliveryLoading,
   "cach-lua-chon-nha-cung-cap-thuc-pham-dong-nai": brandAssets.sourceFarm,
+  "bao-gia-thuc-pham-cho-bep-an-tap-the-o-bien-hoa": brandAssets.team,
+  "cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-dong-nai": brandAssets.warehousePeople,
 };
 
 export function getKnowledgeCover(slug: string) {

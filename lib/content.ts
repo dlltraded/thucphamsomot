@@ -503,6 +503,58 @@ export const posts: ContentItem[] = [
     ],
     faqs: sharedFaqs,
   },
+  {
+    slug: "bao-gia-thuc-pham-cho-bep-an-tap-the-o-bien-hoa",
+    title: "Báo giá thực phẩm cho bếp ăn tập thể ở Biên Hòa",
+    description: "Cách chuẩn bị thông tin báo giá để bếp ăn tập thể tại Biên Hòa nhận phản hồi nhanh và đúng quy cách.",
+    sections: [
+      {
+        heading: "Biên Hòa cần form báo giá ngắn nhưng đủ dữ liệu",
+        body:
+          "Khách ở Biên Hòa thường muốn biết giá nhanh nhưng vẫn cần thông tin rõ về nhóm hàng, số lượng, lịch giao và yêu cầu sơ chế. Một form tốt phải gom được hết các dữ liệu này ngay từ đầu để giảm trao đổi ngược.",
+        items: ["Tên đơn vị và đầu mối nhận báo giá", "Nhóm hàng cần mua", "Số lượng dự kiến và lịch giao"],
+      },
+      {
+        heading: "Những lỗi làm chậm báo giá",
+        body:
+          "Báo giá thường chậm khi khách ghi quá chung chung, không tách nhóm hàng, không nêu địa điểm giao hoặc không ghi rõ mức độ linh hoạt về quy cách. Với bếp ăn tập thể, mỗi chi tiết thiếu sẽ kéo thêm một vòng hỏi lại.",
+        items: ["Thiếu quy cách nhận hàng", "Thiếu khu vực giao", "Thiếu lịch giao hoặc đầu mối duyệt"],
+      },
+      {
+        heading: "Cách dẫn khách từ trang địa phương sang form",
+        body:
+          "Trang địa phương của Biên Hòa nên có CTA báo giá nổi bật, sau đó dẫn sang form và bài viết hỗ trợ như checklist báo giá nhanh. Khi đường đi rõ, khách dễ chốt hơn và đội kinh doanh cũng phản hồi nhanh hơn.",
+        items: ["CTA nổi bật", "Link sang trang báo giá", "Liên kết sang bài hỗ trợ cùng cụm"],
+      },
+    ],
+    faqs: sharedFaqs,
+  },
+  {
+    slug: "cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-dong-nai",
+    title: "Cách chọn nhà cung cấp thực phẩm cho nhà máy ở Đồng Nai",
+    description: "Checklist để nhà máy tại Đồng Nai chọn được nhà cung cấp ổn định, giao đúng tuyến và xử lý phát sinh rõ ràng.",
+    sections: [
+      {
+        heading: "Nhà máy cần nhà cung cấp giao đúng nhịp",
+        body:
+          "Nhà máy ở Đồng Nai thường vận hành theo ca nên nhà cung cấp thực phẩm phải giao đúng giờ, đúng tuyến và đủ quy cách. Nếu chậm một nhịp là cả ca bếp hoặc cả tuyến vận hành có thể bị ảnh hưởng.",
+        items: ["Giao theo ca hoặc theo ngày", "Có đầu mối phản hồi rõ ràng", "Lịch giao phù hợp với nhịp vận hành nhà máy"],
+      },
+      {
+        heading: "Tiêu chí nên kiểm tra trước khi ký",
+        body:
+          "Ngoài giá, nhà máy cần kiểm tra nguồn hàng, quy cách đóng gói, khả năng cung ứng lặp lại và cách xử lý khi có phát sinh thiếu hàng hoặc đổi menu. Đây là các điểm quyết định độ ổn định dài hạn.",
+        items: ["Nguồn hàng rõ", "Quy cách thống nhất", "Khả năng cung ứng lặp lại", "Quy trình đổi trả/thiếu hàng"],
+      },
+      {
+        heading: "Nối bài này về landing page Đồng Nai",
+        body:
+          "Bài hỗ trợ này nên trỏ về landing page Đồng Nai và trang sản phẩm để khách có thể đi từ bài đọc sang báo giá chỉ trong một đến hai cú click.",
+        items: ["Link về Đồng Nai", "Link về sản phẩm", "Link về form báo giá"],
+      },
+    ],
+    faqs: sharedFaqs,
+  },
 ];
 
 export const policies: ContentItem[] = [

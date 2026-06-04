@@ -82,6 +82,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     relatedLinks: [
       { href: "/cung-cap-thuc-pham-bien-hoa", label: "Cung cấp thực phẩm Biên Hòa" },
       { href: "/cung-cap-thuc-pham-nhon-trach", label: "Cung cấp thực phẩm Nhơn Trạch" },
+      { href: "/kien-thuc/bao-gia-thuc-pham-cho-bep-an-tap-the-o-bien-hoa", label: "Báo giá thực phẩm cho bếp ăn tập thể ở Biên Hòa" },
       { href: "/san-pham", label: "Xem danh mục sản phẩm" },
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
@@ -237,6 +238,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     relatedLinks: [
       { href: "/cung-cap-thuc-pham-dong-nai", label: "Cung cấp thực phẩm Đồng Nai" },
       { href: "/cung-cap-thuc-pham-bien-hoa", label: "Cung cấp thực phẩm Biên Hòa" },
+      { href: "/kien-thuc/cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-dong-nai", label: "Chọn nhà cung cấp thực phẩm cho nhà máy ở Đồng Nai" },
       { href: "/san-pham", label: "Xem danh mục sản phẩm" },
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
