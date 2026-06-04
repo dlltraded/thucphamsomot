@@ -30,7 +30,7 @@ export default async function NewsPage() {
             </p>
             <div className="news-hero__actions">
               <Link href="/bao-gia" className="btn-primary btn-on-dark">
-                Gửi yêu cầu báo giá <ArrowRight size={18} />
+                BÁO GIÁ <ArrowRight size={18} />
               </Link>
               <Link href="/san-pham" className="btn-secondary btn-on-dark-secondary">
                 Xem catalog <ArrowRight size={18} />
@@ -77,7 +77,7 @@ export default async function NewsPage() {
             <h2 className="section-heading__title">Nội dung ngắn gọn, dễ đọc, dễ dùng cho khách hàng B2B.</h2>
           </div>
           <Link href="/bao-gia" className="text-link">
-            Mở form báo giá <ArrowRight size={16} />
+            BÁO GIÁ <ArrowRight size={16} />
           </Link>
         </div>
 

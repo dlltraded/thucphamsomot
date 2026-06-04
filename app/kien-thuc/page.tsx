@@ -44,6 +44,15 @@ const knowledgePillars = [
   },
 ];
 
+const localKnowledgeLinks = [
+  { href: "/cung-cap-thuc-pham-dong-nai", title: "Cung cấp thực phẩm Đồng Nai" },
+  { href: "/cung-cap-thuc-pham-bien-hoa", title: "Cung cấp thực phẩm Biên Hòa" },
+  { href: "/cung-cap-thuc-pham-binh-duong", title: "Cung cấp thực phẩm Bình Dương" },
+  { href: "/cung-cap-thuc-pham-nhon-trach", title: "Cung cấp thực phẩm Nhơn Trạch" },
+  { href: "/cung-cap-thuc-pham-tp-hcm", title: "Cung cấp thực phẩm TP.HCM" },
+  { href: "/cung-cap-thuc-pham-ba-ria-vung-tau", title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu" },
+];
+
 export default async function KnowledgePage() {
   const articles = await readKnowledgeArticles();
   const featuredPost = articles[0];
@@ -67,7 +76,7 @@ export default async function KnowledgePage() {
           </p>
           <div className="hero-actions">
             <Link href="/bao-gia" className="btn-primary">
-              Nhận báo giá <ArrowRight size={18} />
+              BÁO GIÁ <ArrowRight size={18} />
             </Link>
             <Link href={featuredPost ? `/kien-thuc/${featuredPost.slug}` : "/bao-gia"} className="btn-secondary">
               Đọc bài nổi bật <BookOpenText size={18} />
@@ -223,6 +232,44 @@ export default async function KnowledgePage() {
       <section className="container-shell section-pad">
         <div className="section-split">
           <div>
+            <div className="eyebrow">Theo khu vực</div>
+            <h2 className="knowledge-section-title">Bài đọc bám theo địa bàn phục vụ thực tế.</h2>
+            <p className="subcopy">
+              Người đọc đang tìm theo địa điểm thường cần thêm một bước nữa trước khi gửi yêu cầu. Các liên kết dưới đây giúp họ đi đúng landing page khu vực.
+            </p>
+          </div>
+          <Link href="/san-pham" className="text-link">
+            Xem sản phẩm <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        <div className="knowledge-post-grid">
+          {localKnowledgeLinks.map((item, index) => (
+            <Link key={item.href} href={item.href} className={`knowledge-post-card knowledge-post-card--${(index % 4) + 1}`}>
+              <div className="knowledge-post-card__media">
+                <Image
+                  src={heroImage}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 24vw"
+                  className="knowledge-post-card__image"
+                />
+              </div>
+              <div className="knowledge-post-card__index">L{index + 1}</div>
+              <h3>{item.title}</h3>
+              <p>Bài khu vực giúp người đọc chốt nhu cầu mua hàng nhanh hơn trước khi chuyển sang báo giá.</p>
+              <div className="knowledge-post-card__footer">
+                <span>Trang địa phương</span>
+                <ArrowRight size={16} />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="container-shell section-pad">
+        <div className="section-split">
+          <div>
             <div className="eyebrow">Toàn bộ bài viết</div>
             <h2 className="knowledge-section-title">Tất cả hướng dẫn đang có cho bếp mua định kỳ.</h2>
           </div>
@@ -268,7 +315,7 @@ export default async function KnowledgePage() {
             </p>
           </div>
           <Link href="/bao-gia" className="btn-primary btn-on-dark">
-            Gửi yêu cầu <ArrowRight size={18} />
+            BÁO GIÁ <ArrowRight size={18} />
           </Link>
         </div>
       </section>
