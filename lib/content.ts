@@ -609,6 +609,60 @@ export const posts: ContentItem[] = [
     ],
     faqs: sharedFaqs,
   },
+  {
+    slug: "cach-chon-nha-cung-cap-thuc-pham-cho-khu-cong-nghiep-nhon-trach",
+    title: "Cách chọn nhà cung cấp thực phẩm cho khu công nghiệp Nhơn Trạch",
+    description:
+      "Checklist để đơn vị ở Nhơn Trạch đánh giá khả năng giao theo ca, theo tuyến và theo hợp đồng dài hạn trước khi ký nhà cung cấp.",
+    sections: [
+      {
+        heading: "Nhơn Trạch cần nhà cung cấp bám đúng nhịp vận hành",
+        body:
+          "Khu công nghiệp Nhơn Trạch thường vận hành theo ca nên nhà cung cấp phải giao đúng giờ, đúng quy cách và phản hồi rõ khi phát sinh. Chỉ cần lệch một khung giao là cả kế hoạch bếp hoặc tuyến phục vụ có thể bị ảnh hưởng.",
+        items: ["Giao theo ca hoặc theo ngày", "Có đầu mối phản hồi rõ", "Lịch giao ăn khớp với nhịp vận hành"],
+      },
+      {
+        heading: "Những tiêu chí nên kiểm tra trước khi ký",
+        body:
+          "Ngoài giá, khách hàng cần kiểm tra nguồn hàng, quy cách đóng gói, khả năng giao lặp lại và cách xử lý khi có thiếu hàng hoặc đổi menu. Đây là những điểm quyết định sự ổn định lâu dài của hợp đồng.",
+        items: ["Nguồn hàng rõ", "Quy cách thống nhất", "Khả năng cung ứng lặp lại", "Quy trình đổi trả/thiếu hàng"],
+      },
+      {
+        heading: "Nối bài này về landing page Nhơn Trạch",
+        body:
+          "Bài hỗ trợ nên trỏ về landing page Nhơn Trạch và trang sản phẩm để khách đi từ bài đọc sang báo giá chỉ trong một đến hai cú click. Cấu trúc đó giúp cụm truy vấn địa phương mạnh hơn và giữ người đọc ở lại lâu hơn.",
+        items: ["Link về Nhơn Trạch", "Link về sản phẩm", "Link về form báo giá"],
+      },
+    ],
+    faqs: sharedFaqs,
+  },
+  {
+    slug: "bao-gia-thuc-pham-cho-bep-an-tap-the-o-ba-ria-vung-tau",
+    title: "Báo giá thực phẩm cho bếp ăn tập thể ở Bà Rịa - Vũng Tàu",
+    description:
+      "Checklist thông tin giúp đơn vị ở Bà Rịa - Vũng Tàu gửi yêu cầu báo giá gọn hơn, rõ hơn và nhận phản hồi nhanh hơn.",
+    sections: [
+      {
+        heading: "Bà Rịa - Vũng Tàu cần form báo giá ngắn nhưng đủ dữ liệu",
+        body:
+          "Khách ở Bà Rịa - Vũng Tàu thường muốn báo giá nhanh cho bếp ăn, nhà máy hoặc suất ăn cố định. Vì vậy form cần gom sẵn nhóm hàng, số lượng dự kiến, lịch giao, khu vực giao và đầu mối duyệt để giảm vòng hỏi lại.",
+        items: ["Tên đơn vị và người liên hệ", "Nhóm hàng cần mua", "Số lượng dự kiến và lịch giao"],
+      },
+      {
+        heading: "Những lỗi làm chậm phản hồi báo giá",
+        body:
+          "Báo giá thường chậm khi khách mô tả quá chung chung, không nêu quy cách nhận hàng, không tách khu giao hoặc không cho biết mức độ linh hoạt của menu. Với bếp ăn tập thể, mỗi chi tiết thiếu sẽ kéo thêm một vòng xác nhận.",
+        items: ["Thiếu quy cách nhận hàng", "Thiếu tuyến giao", "Thiếu đầu mối duyệt đơn"],
+      },
+      {
+        heading: "Cách dẫn khách từ bài đọc sang form",
+        body:
+          "Trang hoặc bài địa phương nên có CTA báo giá nổi bật, sau đó dẫn sang form và các bài hỗ trợ liên quan để người đọc đi tiếp mà không bị đứt mạch. Khi đường đi ngắn, tỷ lệ chốt thường tốt hơn.",
+        items: ["CTA rõ ở đầu và cuối", "Link sang form báo giá", "Link sang bài hỗ trợ cùng cụm"],
+      },
+    ],
+    faqs: sharedFaqs,
+  },
 ];
 
 export const policies: ContentItem[] = [

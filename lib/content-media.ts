@@ -13,6 +13,8 @@ const knowledgeCoverBySlug: Record<string, string> = {
   "cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-dong-nai": brandAssets.warehousePeople,
   "bao-gia-thuc-pham-cho-bep-an-tap-the-o-binh-duong": brandAssets.deliveryLoading,
   "cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-tp-hcm": brandAssets.warehouseWide,
+  "cach-chon-nha-cung-cap-thuc-pham-cho-khu-cong-nghiep-nhon-trach": brandAssets.warehousePeople,
+  "bao-gia-thuc-pham-cho-bep-an-tap-the-o-ba-ria-vung-tau": brandAssets.team,
 };
 
 export function getKnowledgeCover(slug: string) {
