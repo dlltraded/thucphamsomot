@@ -555,6 +555,60 @@ export const posts: ContentItem[] = [
     ],
     faqs: sharedFaqs,
   },
+  {
+    slug: "bao-gia-thuc-pham-cho-bep-an-tap-the-o-binh-duong",
+    title: "Báo giá thực phẩm cho bếp ăn tập thể ở Bình Dương",
+    description:
+      "Checklist thông tin giúp đơn vị ở Bình Dương gửi yêu cầu báo giá gọn hơn, rõ hơn và nhận phản hồi nhanh hơn.",
+    sections: [
+      {
+        heading: "Bình Dương cần form báo giá ngắn nhưng đủ dữ liệu",
+        body:
+          "Khách ở Bình Dương thường muốn báo giá nhanh cho bếp ăn, nhà máy hoặc suất ăn cố định. Vì vậy form cần gom sẵn nhóm hàng, số lượng dự kiến, lịch giao, khu vực giao và đầu mối duyệt để giảm vòng hỏi lại.",
+        items: ["Tên đơn vị và người liên hệ", "Nhóm hàng cần mua", "Số lượng dự kiến và lịch giao"],
+      },
+      {
+        heading: "Những lỗi làm chậm phản hồi báo giá",
+        body:
+          "Báo giá thường chậm khi khách mô tả quá chung chung, không nêu quy cách nhận hàng, không tách khu giao hoặc không cho biết mức độ linh hoạt của menu. Với bếp ăn tập thể, mỗi chi tiết thiếu sẽ kéo thêm một vòng xác nhận.",
+        items: ["Thiếu quy cách nhận hàng", "Thiếu tuyến giao", "Thiếu đầu mối duyệt đơn"],
+      },
+      {
+        heading: "Cách dẫn khách từ trang Bình Dương sang form",
+        body:
+          "Trang địa phương nên có CTA báo giá nổi bật, sau đó dẫn sang form và các bài hỗ trợ liên quan để người đọc đi tiếp mà không bị đứt mạch. Khi đường đi ngắn, tỷ lệ chốt thường tốt hơn.",
+        items: ["CTA rõ ở đầu và cuối trang", "Link sang form báo giá", "Link sang bài hỗ trợ cùng cụm"],
+      },
+    ],
+    faqs: sharedFaqs,
+  },
+  {
+    slug: "cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-tp-hcm",
+    title: "Cách chọn nhà cung cấp thực phẩm cho nhà máy ở TP.HCM",
+    description:
+      "Checklist để nhà máy tại TP.HCM đánh giá tuyến giao, khả năng phản hồi và mức độ ổn định trước khi ký nhà cung cấp.",
+    sections: [
+      {
+        heading: "TP.HCM cần nhà cung cấp giao đúng tuyến",
+        body:
+          "Nhà máy ở TP.HCM thường vận hành theo ca nên nhà cung cấp phải giao đúng giờ, đúng tuyến và đúng quy cách. Nếu chậm một nhịp, cả ca bếp hoặc cả tuyến vận hành đều có thể bị ảnh hưởng.",
+        items: ["Giao theo ca hoặc theo ngày", "Có đầu mối phản hồi rõ", "Lịch giao phù hợp với nhịp vận hành nhà máy"],
+      },
+      {
+        heading: "Tiêu chí nên kiểm tra trước khi ký",
+        body:
+          "Ngoài giá, nhà máy cần kiểm tra nguồn hàng, quy cách đóng gói, khả năng cung ứng lặp lại và cách xử lý khi phát sinh thiếu hàng hoặc đổi menu. Đây là các điểm quyết định độ ổn định dài hạn.",
+        items: ["Nguồn hàng rõ", "Quy cách thống nhất", "Khả năng cung ứng lặp lại", "Quy trình đổi trả/thiếu hàng"],
+      },
+      {
+        heading: "Nối bài này về landing page TP.HCM",
+        body:
+          "Bài hỗ trợ này nên trỏ về landing page TP.HCM và trang sản phẩm để khách có thể đi từ bài đọc sang báo giá chỉ trong một đến hai cú click. Cấu trúc đó giúp truy vấn địa phương mạnh hơn và giữ người đọc lâu hơn trong cụm nội dung.",
+        items: ["Link về TP.HCM", "Link về sản phẩm", "Link về form báo giá"],
+      },
+    ],
+    faqs: sharedFaqs,
+  },
 ];
 
 export const policies: ContentItem[] = [

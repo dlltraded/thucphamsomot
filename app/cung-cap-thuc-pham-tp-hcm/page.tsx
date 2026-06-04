@@ -92,6 +92,40 @@ export default function TpHcmLandingPage() {
           Gửi nhu cầu ngay <ArrowRight size={18} />
         </Link>
       </div>
+
+      <section className="content-section" style={{ marginTop: 24 }}>
+        <div className="content-section__body">
+          <div className="content-section__eyebrow">Nội dung liên quan</div>
+          <h2>Bài hỗ trợ cho TP.HCM</h2>
+          <p>
+            Trang TP.HCM nên có một lớp nội dung vệ tinh để khách đi từ nhu cầu địa phương sang bài phân tích rồi sang form báo giá.
+          </p>
+          <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 14 }}>
+            <Link
+              href="/kien-thuc/cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-tp-hcm"
+              className="home-local__card"
+              style={{ minHeight: 0 }}
+            >
+              <h3>Cách chọn nhà cung cấp thực phẩm cho nhà máy ở TP.HCM</h3>
+              <span className="home-local__link">
+                Xem bài <ArrowRight size={16} />
+              </span>
+            </Link>
+            <Link href="/bao-gia" className="home-local__card" style={{ minHeight: 0 }}>
+              <h3>Mở form báo giá</h3>
+              <span className="home-local__link">
+                Gửi nhu cầu <ArrowRight size={16} />
+              </span>
+            </Link>
+            <Link href="/san-pham" className="home-local__card" style={{ minHeight: 0 }}>
+              <h3>Xem danh mục sản phẩm</h3>
+              <span className="home-local__link">
+                Đi tiếp <ArrowRight size={16} />
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
     </PageShell>
   );
 }
