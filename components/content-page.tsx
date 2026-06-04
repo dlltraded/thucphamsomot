@@ -12,6 +12,11 @@ type ContentPageProps = {
   bullets?: string[];
   sections?: ContentSection[];
   faqs?: FaqItem[];
+  relatedLinks?: {
+    href: string;
+    label: string;
+    description: string;
+  }[];
   heroMedia?: {
     src: string;
     alt: string;
@@ -45,6 +50,7 @@ export function ContentPage({
   bullets = [],
   sections = [],
   faqs = [],
+  relatedLinks = [],
   heroMedia,
   ctaHref = "/bao-gia",
   ctaLabel = "Mở form báo giá",
@@ -152,6 +158,29 @@ export function ContentPage({
               <p>{faq.answer}</p>
             </details>
           ))}
+        </section>
+      ) : null}
+
+      {relatedLinks.length > 0 ? (
+        <section className="content-section" style={{ marginTop: 24 }}>
+          <div className="content-section__body">
+            <div className="content-section__eyebrow">Bài liên quan</div>
+            <h2>Đường đi tiếp theo sau khi đọc xong bài này.</h2>
+            <p>
+              Người đọc thường cần thêm một bước nữa trước khi gửi nhu cầu. Các liên kết dưới đây giúp họ đi đúng trang sản phẩm, địa phương hoặc form báo giá.
+            </p>
+            <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginTop: 14 }}>
+              {relatedLinks.map((item) => (
+                <Link key={item.href} href={item.href} className="home-local__card" style={{ minHeight: 0 }}>
+                  <h3>{item.label}</h3>
+                  <p>{item.description}</p>
+                  <span className="home-local__link">
+                    Xem trang <ArrowRight size={16} />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </section>
       ) : null}
 
