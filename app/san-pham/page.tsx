@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Boxes, ClipboardList, Leaf, Truck } from "lucide-react";
+import { ArrowRight, BadgeCheck, Boxes, ClipboardList, Leaf, MapPin, Truck } from "lucide-react";
 import { categories } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
 import { PageShell } from "@/components/page-shell";
@@ -29,6 +29,33 @@ const highlights = [
     icon: BadgeCheck,
     title: "Tư vấn theo menu",
     text: "Có thể gợi ý nhóm hàng thay thế khi mùa vụ, giá hoặc định mức thay đổi.",
+  },
+];
+
+const localCoverageLinks = [
+  { href: "/cung-cap-thuc-pham-dong-nai", title: "Cung cấp thực phẩm Đồng Nai" },
+  { href: "/cung-cap-thuc-pham-bien-hoa", title: "Cung cấp thực phẩm Biên Hòa" },
+  { href: "/cung-cap-thuc-pham-binh-duong", title: "Cung cấp thực phẩm Bình Dương" },
+  { href: "/cung-cap-thuc-pham-nhon-trach", title: "Cung cấp thực phẩm Nhơn Trạch" },
+  { href: "/cung-cap-thuc-pham-tp-hcm", title: "Cung cấp thực phẩm TP.HCM" },
+  { href: "/cung-cap-thuc-pham-ba-ria-vung-tau", title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu" },
+];
+
+const guideLinks = [
+  {
+    href: "/kien-thuc/cach-lap-menu-bep-an-tap-the",
+    title: "Cách lập menu cho bếp ăn tập thể",
+    text: "Bài nền tảng để đi từ menu sang danh mục mua hàng và định mức.",
+  },
+  {
+    href: "/kien-thuc/checklist-gui-yeu-cau-bao-gia-nhanh",
+    title: "Checklist gửi yêu cầu báo giá nhanh",
+    text: "Chuẩn bị đúng thông tin trước khi gửi form để giảm vòng hỏi lại.",
+  },
+  {
+    href: "/kien-thuc/cach-chon-thuc-pham-cho-bep-an-tap-the",
+    title: "Cách chọn thực phẩm cho bếp ăn tập thể",
+    text: "Bài giúp kiểm soát hao hụt và nhận hàng rõ hơn cho bếp quy mô lớn.",
   },
 ];
 
@@ -121,6 +148,57 @@ export default async function SanPhamPage() {
                 {item.title}
               </span>
               <ArrowRight size={16} />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="product-category-band">
+        <div className="product-category-band__intro">
+          <div className="eyebrow">Khu vực phục vụ</div>
+          <h2>Các landing page địa phương giúp khách đi đúng trang theo nhu cầu tìm kiếm.</h2>
+          <p>
+            Nếu khách đang tìm theo địa bàn, những trang này giúp họ chạm đúng thông tin khu vực, lịch giao và cách
+            gửi báo giá mà không phải duyệt lại toàn site.
+          </p>
+        </div>
+
+        <div className="product-category-list">
+          {localCoverageLinks.map((item) => (
+            <Link key={item.href} href={item.href} className="product-category-link">
+              <span>
+                <MapPin size={16} />
+                {item.title}
+              </span>
+              <ArrowRight size={16} />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="product-category-band">
+        <div className="product-category-band__intro">
+          <div className="eyebrow">Bài nên đọc trước khi báo giá</div>
+          <h2>Một vài hướng dẫn nền tảng giúp khách chốt nhu cầu nhanh hơn.</h2>
+          <p>
+            Các bài này gắn trực tiếp với cách lập menu, chuẩn bị thông tin báo giá và chọn nguồn hàng phù hợp cho
+            bếp B2B.
+          </p>
+        </div>
+
+        <div className="product-grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+          {guideLinks.map((item) => (
+            <Link key={item.href} href={item.href} className="product-card">
+              <div className="product-card__body">
+                <div className="pill">Kiến thức</div>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+                <div className="product-card__footer">
+                  <span className="text-link">
+                    Xem bài <ArrowRight size={16} />
+                  </span>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
