@@ -115,7 +115,7 @@ export default async function KnowledgePage() {
                 <Sparkles size={16} />
                 Kiến thức thực tế
               </div>
-              <p>Nội dung viết cho người đang cần ra quyết định mua hàng, không phải chỉ đọc cho biết.</p>
+              <p>Nội dung gọn, sát nhu cầu mua hàng và vận hành bếp.</p>
             </div>
           </div>
 
@@ -234,9 +234,7 @@ export default async function KnowledgePage() {
           <div>
             <div className="eyebrow">Theo khu vực</div>
             <h2 className="knowledge-section-title">Bài đọc bám theo địa bàn phục vụ thực tế.</h2>
-            <p className="subcopy">
-              Người đọc đang tìm theo địa điểm thường cần thêm một bước nữa trước khi gửi yêu cầu. Các liên kết dưới đây giúp họ đi đúng landing page khu vực.
-            </p>
+            <p className="subcopy">Xem nhanh landing page khu vực để đi tiếp sang báo giá hoặc sản phẩm phù hợp.</p>
           </div>
           <Link href="/san-pham" className="text-link">
             Xem sản phẩm <ArrowRight size={16} />

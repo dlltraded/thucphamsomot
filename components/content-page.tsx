@@ -21,7 +21,7 @@ type ContentPageProps = {
     src: string;
     alt: string;
     caption: string;
-    note: string;
+    note?: string;
   };
   ctaHref?: string;
   ctaLabel?: string;
@@ -90,7 +90,7 @@ export function ContentPage({
                 <div className="content-detail__media-copy">
                   <span>{heroMedia.caption}</span>
                   <strong>{title}</strong>
-                  <p>{heroMedia.note}</p>
+                  {heroMedia.note ? <p>{heroMedia.note}</p> : null}
                 </div>
               </div>
             </div>
@@ -166,9 +166,6 @@ export function ContentPage({
           <div className="content-section__body">
             <div className="content-section__eyebrow">Bài liên quan</div>
             <h2>Đường đi tiếp theo sau khi đọc xong bài này.</h2>
-            <p>
-              Người đọc thường cần thêm một bước nữa trước khi gửi nhu cầu. Các liên kết dưới đây giúp họ đi đúng trang sản phẩm, địa phương hoặc form báo giá.
-            </p>
             <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginTop: 14 }}>
               {relatedLinks.map((item) => (
                 <Link key={item.href} href={item.href} className="home-local__card" style={{ minHeight: 0 }}>

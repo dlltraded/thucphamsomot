@@ -156,12 +156,9 @@ export default async function SanPhamPage() {
       <section className="product-category-band">
         <div className="product-category-band__intro">
           <div className="eyebrow">Khu vực phục vụ</div>
-          <h2>Các landing page địa phương giúp khách đi đúng trang theo nhu cầu tìm kiếm.</h2>
-              <p>
-                Nếu khách đang tìm theo địa bàn, những trang này giúp họ chạm đúng thông tin khu vực, lịch giao và cách
-                gửi báo giá mà không phải duyệt lại toàn site.
-              </p>
-            </div>
+          <h2>Chọn đúng khu vực để xem lịch giao và gửi báo giá nhanh.</h2>
+          <p>Khách ở từng địa bàn có thể xem ngay trang khu vực tương ứng, không phải tìm lại trên toàn site.</p>
+        </div>
 
         <div className="product-category-list">
           {localCoverageLinks.map((item) => (

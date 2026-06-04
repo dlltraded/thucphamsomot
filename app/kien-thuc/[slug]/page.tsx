@@ -53,7 +53,6 @@ export default async function KnowledgeDetailPage({ params }: { params: Promise<
           src: cover,
           alt: item.title,
           caption: "Bài viết có hình minh hoạ thực tế",
-          note: "Nội dung được viết theo tình huống mua hàng và vận hành bếp, không phải bài giới thiệu chung chung.",
         }}
       />
     </PageShell>

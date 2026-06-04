@@ -35,7 +35,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     description:
       "Trang đích local cho nhóm khách cần nguồn hàng định kỳ, báo giá nhanh và danh mục phù hợp bếp ăn, nhà máy, trường học và bệnh viện.",
     intro:
-      "Đồng Nai là khu vực có nhu cầu mua hàng lặp lại cao, nên trang này cần giúp người đọc hiểu ngay cách giao, nhóm hàng phù hợp và đường đi từ xem trang đến gửi báo giá.",
+      "Phục vụ đơn vị ở Đồng Nai cần nguồn thực phẩm ổn định, giao đều và báo giá nhanh.",
     chips: ["Giao định kỳ", "Biên Hòa, Nhơn Trạch, Long Thành", "Danh mục + báo giá"],
     sections: [
       {
@@ -51,9 +51,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
         items: ["Rau củ quả tươi sống", "Thịt cá hải sản tươi sống", "Hàng đông lạnh cho bếp công nghiệp", "Gia vị nhà bếp và thực phẩm chay"],
       },
       {
-        heading: "Đường đi tiếp theo nên rất rõ",
+        heading: "Gửi báo giá ngay khi cần",
         body:
-          "Trang local chỉ hiệu quả khi có đường dẫn tiếp theo thật rõ: form báo giá, hồ sơ năng lực và các trang nhóm hàng liên quan. Khi đó khách không phải tự lần đường từ đầu.",
+          "Sau khi xem trang, khách có thể đi thẳng sang form báo giá, hồ sơ năng lực hoặc các trang nhóm hàng liên quan để chốt nhu cầu nhanh.",
         items: ["CTA báo giá ở đầu và cuối trang", "Liên kết sang sản phẩm và ngành hàng", "FAQ về vùng giao, quy cách và thời gian phản hồi"],
       },
     ],
@@ -95,7 +95,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     description:
       "Trang đích local cho khách cần nguồn hàng định kỳ tại Biên Hòa, ưu tiên khách hỏi mua thật và quy trình báo giá ngắn cho bếp ăn, nhà máy và đơn vị suất ăn.",
     intro:
-      "Biên Hòa là cụm tìm kiếm hẹp hơn Đồng Nai, nên trang này cần đi thẳng vào nhu cầu giao trong thành phố, nhóm khách B2B và cách chốt báo giá nhanh.",
+      "Phục vụ khách tại Biên Hòa cần giao theo tuyến, danh mục rõ và báo giá nhanh.",
     chips: ["Biên Hòa", "Nguồn hàng rõ", "Mua hàng B2B"],
     sections: [
       {
@@ -111,9 +111,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
         items: ["Bếp ăn tập thể", "Nhà máy, khu công nghiệp", "Trường học và bệnh viện"],
       },
       {
-        heading: "Lộ trình chốt đơn",
+        heading: "Gửi báo giá nhanh",
         body:
-          "Trang này nên nối thẳng sang báo giá và các trang liên quan để khách không phải tìm lại từ đầu. Đây là cách tăng chuyển đổi thay vì chỉ giữ lượt xem.",
+          "Sau khi xem trang, khách có thể đi thẳng sang báo giá hoặc xem thêm hồ sơ năng lực và các trang liên quan để chốt nhu cầu nhanh.",
         items: ["CTA rõ", "FAQ ngắn gọn", "Liên kết về hồ sơ năng lực"],
       },
     ],
@@ -148,7 +148,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     description:
       "Trang đích local cho khách cần nguồn hàng định kỳ tại Bình Dương, ưu tiên giao đều và phản hồi báo giá nhanh cho bếp ăn, nhà máy và đơn vị suất ăn.",
     intro:
-      "Bình Dương có nhiều đơn vị vận hành theo lịch cố định, nên trang này cần làm rõ nhịp giao, danh mục hàng và bước chuyển sang báo giá.",
+      "Phục vụ đơn vị ở Bình Dương cần giao định kỳ, danh mục rõ và lịch nhận hàng ổn định.",
     chips: ["Giao định kỳ", "Khách B2B", "Danh mục rõ"],
     sections: [
       {
@@ -164,9 +164,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
         items: ["Rau củ quả", "Thịt cá hải sản", "Hàng đông lạnh", "Gia vị", "Thực phẩm chay"],
       },
       {
-        heading: "Bước tiếp theo sau khi xem trang",
+        heading: "Chốt nhu cầu nhanh",
         body:
-          "Sau khi xem nội dung, khách nên có đường đi thẳng sang form báo giá và hồ sơ năng lực để không phải hỏi lại nhiều vòng. Đây là kiểu trang local chỉ hiệu quả khi tối ưu cho chuyển đổi.",
+          "Sau khi xem trang, khách có thể chuyển thẳng sang form báo giá hoặc hồ sơ năng lực để nhận phản hồi nhanh hơn.",
         items: ["CTA rõ", "Hồ sơ năng lực", "FAQ ngắn về giao hàng"],
       },
     ],
@@ -200,7 +200,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     description:
       "Trang đích local cho nhóm khách ở Nhơn Trạch cần nguồn hàng định kỳ, phản hồi báo giá ngắn gọn và giao phù hợp khu công nghiệp.",
     intro:
-      "Nhơn Trạch có nhiều nhu cầu mua theo ca, theo chuyến và theo hợp đồng, nên trang này cần nói rõ bối cảnh vận hành thay vì mô tả chung chung.",
+      "Phục vụ khu công nghiệp Nhơn Trạch với nhu cầu mua theo ca, theo ngày và theo tuần.",
     chips: ["Khu công nghiệp", "Hợp đồng định kỳ", "Khách B2B"],
     sections: [
       {
@@ -216,9 +216,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
         items: ["KCN Nhơn Trạch", "Bếp ăn tập thể", "Nhà máy, văn phòng, trường học"],
       },
       {
-        heading: "Mục tiêu của trang",
+        heading: "Gửi báo giá đúng nhu cầu",
         body:
-          "Không phải thu hút mọi lượt xem. Mục tiêu là đưa khách đến form báo giá, hồ sơ năng lực và những trang hàng hóa đúng nhóm họ cần mua.",
+          "Mục tiêu là giúp khách đi nhanh sang form báo giá, hồ sơ năng lực và những trang hàng hóa đúng nhóm cần mua.",
         items: ["Dẫn về báo giá", "Tăng tin cậy", "Giảm việc khách phải tìm lại"],
       },
     ],
@@ -254,7 +254,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     description:
       "Trang đích local cho khách cần nguồn hàng định kỳ tại Bà Rịa - Vũng Tàu, ưu tiên giao đều và báo giá rõ cho doanh nghiệp, bếp ăn và đơn vị suất ăn.",
     intro:
-      "Khu vực này phù hợp với các đơn vị vận hành đều, nên trang cần nói rõ cách phục vụ, nhóm hàng phù hợp và đường đi sang báo giá.",
+      "Phục vụ đơn vị ở Bà Rịa - Vũng Tàu cần nguồn hàng ổn định, giao theo lịch và báo giá rõ.",
     chips: ["Giao theo lịch", "Khách B2B", "Báo giá rõ"],
     sections: [
       {
@@ -270,9 +270,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
         items: ["Rau củ quả", "Thịt cá hải sản", "Hàng đông lạnh", "Gia vị nhà bếp", "Thực phẩm chay"],
       },
       {
-        heading: "Cách dẫn sang form báo giá",
+        heading: "Chốt nhu cầu nhanh",
         body:
-          "Sau khi xem trang, khách nên được dẫn thẳng sang form báo giá hoặc hồ sơ năng lực để chốt nhu cầu nhanh. Trang local chỉ hiệu quả khi đường đi tiếp theo rõ ràng.",
+          "Sau khi xem trang, khách có thể đi thẳng sang form báo giá hoặc hồ sơ năng lực để nhận phản hồi nhanh hơn.",
         items: ["CTA báo giá", "Hồ sơ năng lực", "FAQ về giao hàng và vùng phục vụ"],
       },
     ],
