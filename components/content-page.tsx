@@ -27,7 +27,17 @@ type ContentPageProps = {
   };
 };
 
-const sectionImages = [brandAssets.coverFood, brandAssets.kitchen, brandAssets.warehouseWide, brandAssets.team];
+const sectionImages = [
+  brandAssets.coverFood,
+  brandAssets.kitchen,
+  brandAssets.warehouseWide,
+  brandAssets.team,
+  brandAssets.vegetables,
+  brandAssets.deliveryLoading,
+  brandAssets.sourceFarm,
+  brandAssets.quality,
+  brandAssets.deliveryTruckReal,
+];
 
 export function ContentPage({
   title,

@@ -74,6 +74,11 @@ async function readJsonFile() {
   return articles;
 }
 
+function isExpectedStaticFallbackError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("Dynamic server usage") || message.includes("DYNAMIC_SERVER_USAGE");
+}
+
 export async function readKnowledgeArticles(): Promise<KnowledgeArticle[]> {
   if (isSupabaseContentEnabled()) {
     try {
@@ -83,7 +88,9 @@ export async function readKnowledgeArticles(): Promise<KnowledgeArticle[]> {
         return parsed.data.map(normalizeKnowledgeArticle);
       }
     } catch (error) {
-      console.error("Failed to read knowledge from Supabase. Falling back to JSON/defaults.", error);
+      if (!isExpectedStaticFallbackError(error)) {
+        console.error("Failed to read knowledge from Supabase. Falling back to JSON/defaults.", error);
+      }
     }
   }
 

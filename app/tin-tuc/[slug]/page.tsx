@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, Clock3, Tag } from "lucide-react";
 import { makeMetadata } from "@/lib/seo";
 import { formatNewsDate, readNewsArticle, splitNewsContent } from "@/lib/news";
+import { ArticleJsonLd } from "@/components/article-json-ld";
+import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,15 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
   return (
     <main className="news-detail">
       <section className="container-shell news-detail__hero">
+        <ArticleJsonLd
+          type="BlogPosting"
+          title={article.title}
+          description={article.excerpt}
+          url={new URL(`/tin-tuc/${article.slug}`, siteConfig.url).toString()}
+          image={new URL(article.coverImage, siteConfig.url).toString()}
+          author={article.author}
+          datePublished={article.publishedAt}
+        />
         <Link href="/tin-tuc" className="text-link">
           <ArrowLeft size={16} />
           Quay lại tin tức

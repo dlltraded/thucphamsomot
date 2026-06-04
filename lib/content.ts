@@ -345,15 +345,22 @@ export const posts: ContentItem[] = [
   {
     slug: "cach-lap-menu-bep-an-tap-the",
     title: "Cách lập menu cho bếp ăn tập thể",
-    description: "Hướng dẫn giúp tối ưu chi phí, dinh dưỡng và tính ổn định của nguyên liệu.",
+    description: "Hướng dẫn bếp ăn xây menu theo ngân sách, khẩu phần và độ ổn định của nguồn hàng.",
     sections: [
       {
         heading: "Một menu tốt phải đi cùng kế hoạch mua hàng",
         body:
-          "Một menu tốt bắt đầu từ việc xác định đối tượng ăn, định mức nguyên liệu, nhóm món chính, rau, canh, trái cây và lịch giao.",
-        items: ["Xác định ngân sách theo suất", "Chọn nhóm nguyên liệu ổn định", "Dự phòng hàng thay thế"],
+          "Một menu tốt bắt đầu từ việc xác định đối tượng ăn, định mức nguyên liệu, nhóm món chính, rau, canh, trái cây và lịch giao. Khi menu không tách khỏi kế hoạch mua hàng, bếp dễ tính chi phí thật hơn và giảm phát sinh ở khâu nhập hàng.",
+        items: ["Xác định ngân sách theo suất", "Chọn nhóm nguyên liệu ổn định", "Dự phòng hàng thay thế khi mùa vụ thay đổi"],
+      },
+      {
+        heading: "Cách chia menu để dễ báo giá",
+        body:
+          "Nên chia menu theo nhóm nguyên liệu có khả năng thay thế, theo nhịp giao và theo mức độ ưu tiên của từng món. Làm như vậy giúp đội mua hàng báo giá nhanh hơn và giảm nhầm lẫn giữa các ca bếp.",
+        items: ["Nhóm món cố định", "Nhóm nguyên liệu linh hoạt", "Nhóm hàng cần báo trước nhiều ngày"],
       },
     ],
+    faqs: sharedFaqs,
   },
   {
     slug: "cach-chon-nha-cung-cap-thuc-pham",
@@ -363,10 +370,17 @@ export const posts: ContentItem[] = [
       {
         heading: "Những tiêu chí cần kiểm tra",
         body:
-          "Khách có thể đánh giá nhà cung cấp qua nguồn hàng, chứng từ, khả năng giao đúng giờ, quy trình xử lý phát sinh và năng lực tư vấn menu.",
+          "Khách có thể đánh giá nhà cung cấp qua nguồn hàng, chứng từ, khả năng giao đúng giờ, quy trình xử lý phát sinh và năng lực tư vấn menu. Với đơn hàng lặp lại, sự ổn định quan trọng hơn cảm giác rẻ ban đầu.",
         items: ["Nguồn hàng rõ", "Lịch giao ổn định", "Có quy trình đổi trả", "Phản hồi nhanh khi thiếu hàng"],
       },
+      {
+        heading: "Cách kiểm tra thực tế trước khi ký dài hạn",
+        body:
+          "Nên nhìn vào quy trình báo giá, cách phản hồi đơn phát sinh và chất lượng hàng ở lần giao đầu. Nếu ba điểm này đã mượt, khả năng vận hành dài hạn thường cao hơn.",
+        items: ["Kiểm tra thời gian phản hồi", "Quan sát cách đóng gói và kiểm hàng", "Xem họ xử lý thay đổi menu như thế nào"],
+      },
     ],
+    faqs: sharedFaqs,
   },
   {
     slug: "tieu-chuan-chon-rau-cu-qua",
@@ -376,10 +390,17 @@ export const posts: ContentItem[] = [
       {
         heading: "Từ độ tươi đến tỷ lệ hao hụt",
         body:
-          "Bếp quy mô lớn cần kiểm tra màu sắc, độ giòn, quy cách đóng gói, nhiệt độ bảo quản, thời gian giao và cách giảm hao hụt khi sơ chế.",
+          "Bếp quy mô lớn cần kiểm tra màu sắc, độ giòn, quy cách đóng gói, nhiệt độ bảo quản, thời gian giao và cách giảm hao hụt khi sơ chế. Chỉ cần đầu vào lệch nhẹ, tỷ lệ thất thoát đã tăng rõ ở khâu chuẩn bị.",
         items: ["Kiểm tra cảm quan", "Nhận hàng đúng giờ", "Sơ chế và lưu kho hợp lý"],
       },
+      {
+        heading: "Tiêu chuẩn nhận hàng nên ghi thành checklist",
+        body:
+          "Checklist giúp bếp không phụ thuộc vào cảm tính người nhận hàng. Khi từng tiêu chí được viết rõ, việc đối chiếu giữa các ca làm việc cũng minh bạch hơn.",
+        items: ["Quy cách theo nhóm hàng", "Tình trạng bao bì", "Hạn dùng và nhiệt độ giao"],
+      },
     ],
+    faqs: sharedFaqs,
   },
   {
     slug: "phuong-phap-cap-dong-thuc-pham",
@@ -390,10 +411,17 @@ export const posts: ContentItem[] = [
       {
         heading: "Cấp đông không chỉ là đưa vào tủ lạnh",
         body:
-          "Cấp đông giúp thực phẩm đi vào trạng thái đông nhanh, sau đó bảo quản trong kho lạnh để giữ chất lượng trước khi dùng.",
+          "Cấp đông giúp thực phẩm đi vào trạng thái đông nhanh, sau đó bảo quản trong kho lạnh để giữ chất lượng trước khi dùng. Nếu quy trình chuẩn, bếp có thể chủ động tồn kho mà không làm giảm chất lượng cảm quan quá nhiều.",
         items: ["Giữ độ tươi và cấu trúc thực phẩm", "Hạn chế vi khuẩn phát triển", "Chủ động tồn kho cho đơn hàng lớn"],
       },
+      {
+        heading: "Khi nào bếp nên ưu tiên hàng đông lạnh",
+        body:
+          "Nhóm hàng đông lạnh phù hợp khi bếp cần kế hoạch mua theo tuần hoặc theo tháng, hoặc khi menu cần độ ổn định cao hơn độ linh hoạt của hàng tươi.",
+        items: ["Hợp với vận hành theo kế hoạch", "Giảm rủi ro đứt nguồn hàng", "Dễ chuẩn hóa định lượng"],
+      },
     ],
+    faqs: sharedFaqs,
   },
   {
     slug: "checklist-gui-yeu-cau-bao-gia-nhanh",
@@ -403,10 +431,17 @@ export const posts: ContentItem[] = [
       {
         heading: "Muốn báo giá nhanh thì phải phân cấp thông tin ngay từ đầu",
         body:
-          "Khách hàng càng viết rõ nhóm hàng, số lượng, địa điểm giao và tần suất giao thì đội bán hàng càng dễ ra phương án sát nhu cầu.",
+          "Khách hàng càng viết rõ nhóm hàng, số lượng, địa điểm giao và tần suất giao thì đội bán hàng càng dễ ra phương án sát nhu cầu. Form càng ít câu hỏi phụ thì tốc độ phản hồi càng cao.",
         items: ["Nhóm hàng cần mua", "Số lượng dự kiến", "Địa điểm giao", "Thời gian cần hàng"],
       },
+      {
+        heading: "Thông tin nên thêm nếu mua định kỳ",
+        body:
+          "Nếu khách mua lặp lại, nên ghi thêm mức độ thay đổi được chấp nhận, thời gian nhận hàng, đầu mối phụ trách và các mặt hàng cần báo trước nhiều ngày.",
+        items: ["Mức độ linh hoạt về quy cách", "Khung giờ nhận hàng", "Người liên hệ phụ trách đơn"],
+      },
     ],
+    faqs: sharedFaqs,
   },
   {
     slug: "cach-chon-thuc-pham-cho-bep-an-tap-the",
@@ -416,10 +451,17 @@ export const posts: ContentItem[] = [
       {
         heading: "Hao hụt tế nhị là vấn đề vận hành, không chỉ là vấn đề mua hàng",
         body:
-          "Bếp ăn tập thể cần đo lường tỷ lệ hao hụt từ khâu cân nhận hàng, sơ chế, lưu kho cho đến quản lý menu hằng ngày.",
+          "Bếp ăn tập thể cần đo lường tỷ lệ hao hụt từ khâu cân nhận hàng, sơ chế, lưu kho cho đến quản lý menu hằng ngày. Nếu không kiểm soát ngay từ đầu, hao hụt sẽ lan sang cả chi phí nhân công và chi phí tồn kho.",
         items: ["Chọn đầu vào đồng đều", "Lệnh giao ổn định", "Kiểm tra theo cảm quan và quy cách"],
       },
+      {
+        heading: "Cách giảm hao hụt bằng cách mua đúng nhóm hàng",
+        body:
+          "Không phải mặt hàng nào cũng cần mua theo kiểu giống nhau. Có nhóm nên mua tươi hàng ngày, có nhóm nên mua theo kế hoạch và có nhóm phù hợp để tồn kho ngắn ngày.",
+        items: ["Tách nhóm hàng theo tốc độ sử dụng", "Giao đúng khung giờ sơ chế", "Giảm mua dư chỉ để phòng thiếu"],
+      },
     ],
+    faqs: sharedFaqs,
   },
   {
     slug: "quy-trinh-nhan-hang-thuc-pham-tai-bep-cong-nghiep",
@@ -429,10 +471,17 @@ export const posts: ContentItem[] = [
       {
         heading: "Nhận hàng phải đi cùng chứng từ và tiêu chí đánh giá",
         body:
-          "Nhóm nhận hàng cần biết quy cách, số lượng, nhiệt độ, tình trạng bao bì và hạn dùng để xử lý nhanh ngay từ lúc xe vào cổng.",
+          "Nhóm nhận hàng cần biết quy cách, số lượng, nhiệt độ, tình trạng bao bì và hạn dùng để xử lý nhanh ngay từ lúc xe vào cổng. Khi một checklist rõ ràng đã tồn tại, bếp giảm được rất nhiều tranh cãi sau giao nhận.",
         items: ["Kiểm tra bao bì", "Đối chiếu phiếu giao", "Chấp nhận hoặc từ chối theo nguyên tắc"],
       },
+      {
+        heading: "Sau khi nhận hàng cần làm gì",
+        body:
+          "Hàng đã nhận cần được phân luồng nhanh vào sơ chế, kho mát, kho lạnh hoặc khu sử dụng ngay. Cách xử lý sau nhận hàng quyết định trực tiếp chất lượng đầu bếp nhìn thấy.",
+        items: ["Phân loại ngay theo nhóm", "Ghi nhận sai lệch nếu có", "Báo cho đầu mối cung ứng trong ngày"],
+      },
     ],
+    faqs: sharedFaqs,
   },
   {
     slug: "cach-lua-chon-nha-cung-cap-thuc-pham-dong-nai",
@@ -442,10 +491,17 @@ export const posts: ContentItem[] = [
       {
         heading: "Đừng chỉ chọn theo giá",
         body:
-          "Giá thấp chưa chắc rẻ. Cần đánh giá cùng lúc nguồn hàng, lịch giao, kế hoạch tồn kho và năng lực xử lý khi có trục trặc.",
+          "Giá thấp chưa chắc rẻ. Cần đánh giá cùng lúc nguồn hàng, lịch giao, kế hoạch tồn kho và năng lực xử lý khi có trục trặc. Với khách mua định kỳ, mức độ ổn định thường là yếu tố quyết định cuối cùng.",
         items: ["Năng lực giao", "Hồ sơ và truy xuất", "Khả năng tư vấn danh mục"],
       },
+      {
+        heading: "Đồng Nai là thị trường cần giao đúng tuyến",
+        body:
+          "Khi chọn nhà cung cấp ở Đồng Nai, khách nên nhìn cả tuyến giao, khu công nghiệp và khả năng hỗ trợ các khu lân cận như Biên Hòa, Nhơn Trạch, Long Thành và Trảng Bom.",
+        items: ["Có khả năng giao theo tuyến", "Phản hồi nhanh khi thay đổi địa điểm", "Tối ưu được lịch giao lặp lại"],
+      },
     ],
+    faqs: sharedFaqs,
   },
 ];
 

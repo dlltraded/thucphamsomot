@@ -258,7 +258,7 @@ export default function HomePage() {
           <div className="home-gallery__grid">
             {galleryImages.map((item, index) => (
               <div key={item.src} className={`home-gallery__card home-gallery__card--${index + 1}`}>
-                <Image src={item.src} alt={item.alt} fill className="home-gallery__image" />
+                <Image src={item.src} alt={item.alt} fill priority className="home-gallery__image" />
               </div>
             ))}
           </div>
@@ -276,7 +276,14 @@ export default function HomePage() {
           <div className="home-partners__grid">
             {partnerLogoPanels.map((item) => (
               <div key={item.src} className="home-partners__panel">
-                <Image src={item.src} alt={item.alt} fill className="home-partners__image" sizes="(max-width: 960px) 100vw, 1180px" />
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  fill
+                  priority
+                  className="home-partners__image"
+                  sizes="(max-width: 960px) 100vw, 1180px"
+                />
               </div>
             ))}
           </div>

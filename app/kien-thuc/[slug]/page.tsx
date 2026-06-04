@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentPage } from "@/components/content-page";
+import { ArticleJsonLd } from "@/components/article-json-ld";
 import { PageShell } from "@/components/page-shell";
 import { getKnowledgeCover } from "@/lib/content-media";
 import { readKnowledgeArticle, readKnowledgeArticles } from "@/lib/knowledge";
+import { siteConfig } from "@/lib/site";
 import { makeMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
@@ -32,6 +34,14 @@ export default async function KnowledgeDetailPage({ params }: { params: Promise<
 
   return (
     <PageShell eyebrow="Kiến thức" title={item.title} description={description}>
+      <ArticleJsonLd
+        type="BlogPosting"
+        title={item.title}
+        description={description}
+        url={new URL(`/kien-thuc/${item.slug}`, siteConfig.url).toString()}
+        image={new URL(cover, siteConfig.url).toString()}
+        author={siteConfig.name}
+      />
       <ContentPage
         title={item.title}
         description={description}
