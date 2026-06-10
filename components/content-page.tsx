@@ -165,7 +165,7 @@ export function ContentPage({
         <section className="content-section" style={{ marginTop: 24 }}>
           <div className="content-section__body">
             <div className="content-section__eyebrow">Bài liên quan</div>
-            <h2>Đường đi tiếp theo sau khi đọc xong bài này.</h2>
+            <h2>Xem tiếp nội dung phù hợp.</h2>
             <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginTop: 14 }}>
               {relatedLinks.map((item) => (
                 <Link key={item.href} href={item.href} className="home-local__card" style={{ minHeight: 0 }}>

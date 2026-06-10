@@ -45,7 +45,7 @@ const guideLinks = [
   {
     href: "/kien-thuc/cach-lap-menu-bep-an-tap-the",
     title: "Cách lập menu cho bếp ăn tập thể",
-    text: "Bài nền tảng để đi từ menu sang danh mục mua hàng và định mức.",
+    text: "Bài viết giúp chuyển từ menu sang danh mục mua hàng và định mức.",
   },
   {
     href: "/kien-thuc/checklist-gui-yeu-cau-bao-gia-nhanh",
@@ -132,10 +132,10 @@ export default async function SanPhamPage() {
 
       <section className="product-category-band">
         <div className="product-category-band__intro">
-          <div className="eyebrow">Danh mục nền tảng</div>
+          <div className="eyebrow">Danh mục sản phẩm</div>
           <h2>Đi từ nhóm hàng lớn đến nhu cầu mua cụ thể của từng bếp.</h2>
           <p>
-            Nếu khách chưa có danh sách SKU cố định, có thể bắt đầu từ danh mục nền tảng rồi bổ sung số lượng, lịch giao và
+            Nếu khách chưa có danh sách SKU cố định, có thể bắt đầu từ danh mục này rồi bổ sung số lượng, lịch giao và
             quy cách đóng gói.
           </p>
         </div>
@@ -157,7 +157,7 @@ export default async function SanPhamPage() {
         <div className="product-category-band__intro">
           <div className="eyebrow">Khu vực phục vụ</div>
           <h2>Chọn đúng khu vực để xem lịch giao và gửi báo giá nhanh.</h2>
-          <p>Khách ở từng địa bàn có thể xem ngay trang khu vực tương ứng, không phải tìm lại trên toàn site.</p>
+          <p>Khách ở từng địa bàn có thể vào đúng trang khu vực tương ứng, xem lịch giao và gửi báo giá nhanh.</p>
         </div>
 
         <div className="product-category-list">
@@ -176,9 +176,9 @@ export default async function SanPhamPage() {
       <section className="product-category-band">
         <div className="product-category-band__intro">
           <div className="eyebrow">Bài nên đọc trước khi báo giá</div>
-          <h2>Một vài hướng dẫn nền tảng giúp khách chốt nhu cầu nhanh hơn.</h2>
+          <h2>Một vài bài viết giúp khách chốt nhu cầu nhanh hơn.</h2>
           <p>
-            Các bài này gắn trực tiếp với cách lập menu, chuẩn bị thông tin báo giá và chọn nguồn hàng phù hợp cho
+            Các bài này giúp chuẩn bị menu, thông tin báo giá và chọn nguồn hàng phù hợp cho
             bếp B2B.
           </p>
         </div>

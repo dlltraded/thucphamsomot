@@ -167,6 +167,7 @@ export async function POST(req: Request) {
     kind: "success" as const,
     summary: {
       name: parsed.data.name,
+      phone: parsed.data.phone,
       company: parsed.data.company?.trim() || "Chưa ghi công ty",
       inquiryType: parsed.data.inquiryType,
       primaryNeed:

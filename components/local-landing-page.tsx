@@ -53,7 +53,7 @@ export function LocalLandingPage({ config }: LocalLandingPageProps) {
         <section className="content-section" style={{ marginTop: 24 }}>
           <div className="content-section__body">
             <div className="content-section__eyebrow">Trang liên quan</div>
-            <h2>Các điểm đi tiếp sau khi xem trang địa phương.</h2>
+            <h2>Xem thêm nội dung liên quan.</h2>
             <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginTop: 14 }}>
               {config.relatedLinks.map((item) => (
                 <Link key={item.href} href={item.href} className="home-local__card" style={{ minHeight: 0 }}>

@@ -3,7 +3,7 @@
 import { useEffect, useState, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, Sparkles } from "lucide-react";
+import { Send, Sparkles, MessageCircle } from "lucide-react";
 import { quoteSchema, type QuoteLeadInput } from "@/lib/validation";
 import { siteConfig, type Locale } from "@/lib/site";
 
@@ -203,6 +203,7 @@ const LAST_NOTICE_KEY = "tps1-quote-last-notice-v5";
 
 type QuoteSummary = {
   name: string;
+  phone?: string;
   company: string;
   inquiryType: InquiryType;
   primaryNeed: string;
@@ -227,14 +228,13 @@ type QuotePortalProps = {
 export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortalProps) {
   const text = UI[locale];
   const getError = (message?: string) => translateValidationError(message, locale);
-  const initialSummary = initialNotice?.kind === "success" ? initialNotice.summary : readLastSuccessState();
-  const initialStoredNotice =
-    initialNotice?.kind === "success" ? null : initialNotice?.kind === "error" ? initialNotice : readLastNoticeState();
 
-  const [submittedSummary, setSubmittedSummary] = useState<QuoteSummary | null>(initialSummary);
-  const [submitted, setSubmitted] = useState(Boolean(initialSummary));
+  const [submittedSummary, setSubmittedSummary] = useState<QuoteSummary | null>(
+    initialNotice?.kind === "success" ? initialNotice.summary : null
+  );
+  const [submitted, setSubmitted] = useState(initialNotice?.kind === "success");
   const [submitError, setSubmitError] = useState<string | null>(
-    initialStoredNotice?.kind === "error" ? initialStoredNotice.message : null,
+    initialNotice?.kind === "error" ? initialNotice.message : null
   );
   const [isSending, setIsSending] = useState(false);
 
@@ -246,6 +246,20 @@ export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortal
 
     if (initialNotice?.kind === "error") {
       saveNoticeState(initialNotice);
+      return;
+    }
+
+    // Load from localStorage only on client-side mount to prevent SSR hydration mismatch
+    const lastSuccess = readLastSuccessState();
+    if (lastSuccess) {
+      setSubmittedSummary(lastSuccess);
+      setSubmitted(true);
+      return;
+    }
+
+    const lastNotice = readLastNoticeState();
+    if (lastNotice?.kind === "error") {
+      setSubmitError(lastNotice.message);
     }
   }, [initialNotice]);
 
@@ -421,6 +435,113 @@ export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortal
     });
     setSubmitted(true);
   };
+
+  if (submitted && submittedSummary) {
+    return (
+      <div className="quote-thank-you">
+        <div className="quote-thank-you__card">
+          <div className="quote-thank-you__check-wrapper">
+            <div className="quote-thank-you__checkmark-ring"></div>
+            <div className="quote-thank-you__checkmark-circle">
+              <svg className="quote-thank-you__checkmark-svg" viewBox="0 0 52 52">
+                <circle className="quote-thank-you__checkmark-circle-path" cx="26" cy="26" r="25" fill="none" />
+                <path className="quote-thank-you__checkmark-check-path" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              </svg>
+            </div>
+          </div>
+          
+          <div className="quote-thank-you__badge">
+            <Sparkles size={16} />
+            {locale === "en" ? "SUBMITTED SUCCESSFULLY" : "GỬI YÊU CẦU THÀNH CÔNG"}
+          </div>
+
+          <h2 className="quote-thank-you__title">
+            {submittedSummary.inquiryType === "supplier"
+              ? (locale === "en" ? "Thank You for Pitching!" : "Cảm Ơn Đối Tác Đã Chào Hàng!")
+              : (locale === "en" ? "Inquiry Received Successfully!" : "Nhu Cầu Báo Giá Đã Được Tiếp Nhận!")}
+          </h2>
+
+          <div className="quote-thank-you__body">
+            <p>
+              {locale === "en" ? (
+                <>
+                  Thank you <strong>{submittedSummary.name}</strong> from <strong>{submittedSummary.company}</strong> for choosing <strong>Thực Phẩm Số Một (TPS1)</strong>. We have registered your request for <em>{submittedSummary.primaryNeed}</em>.
+                </>
+              ) : (
+                <>
+                  Chân thành cảm ơn anh/chị <strong>{submittedSummary.name}</strong> đại diện cho <strong>{submittedSummary.company}</strong> đã tin tưởng lựa chọn <strong>Thực Phẩm Số Một (TPS1)</strong>. Chúng tôi đã ghi nhận thành công yêu cầu cung cấp mặt hàng <em>{submittedSummary.primaryNeed}</em>.
+                </>
+              )}
+            </p>
+          </div>
+
+          <div className="quote-thank-you__promise">
+            <div className="quote-thank-you__promise-icon">⚡</div>
+            <div className="quote-thank-you__promise-text">
+              {locale === "en" ? (
+                <>
+                  <strong>B2B Service Promise:</strong> Our dedicated consultant will contact you at <strong>{submittedSummary.phone || siteConfig.phone}</strong> within <strong>15 minutes</strong> (during business hours) to provide a detailed quote and onboarding support.
+                </>
+              ) : (
+                <>
+                  <strong>Cam kết dịch vụ B2B:</strong> Chuyên viên tư vấn của Thực Phẩm Số Một sẽ chủ động liên hệ trực tiếp với anh/chị qua số điện thoại <strong>{submittedSummary.phone || siteConfig.phone}</strong> trong vòng <strong>15 phút</strong> (giờ hành chính) để báo giá chi tiết và hỗ trợ quy trình lên đơn hàng.
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="quote-thank-you__summary">
+            <span className="quote-thank-you__summary-label">
+              {locale === "en" ? "Submission Details" : "Tóm tắt thông tin đã gửi"}
+            </span>
+            <div className="quote-thank-you__summary-details">
+              <div>
+                <strong>{locale === "en" ? "Type:" : "Vai trò:"}</strong> {roleLabel(submittedSummary.inquiryType, text)}
+              </div>
+              <div>
+                <strong>{locale === "en" ? "Primary:" : "Yêu cầu chính:"}</strong> {submittedSummary.primaryNeed}
+              </div>
+              <div>
+                <strong>{locale === "en" ? "Location/Detail:" : "Khu vực/Chi tiết:"}</strong> {submittedSummary.secondaryNeed}
+              </div>
+            </div>
+          </div>
+
+          <div className="quote-thank-you__actions">
+            <a href="/" className="btn-secondary quote-thank-you__btn">
+              {locale === "en" ? "Back to Homepage" : "Về Trang Chủ"}
+            </a>
+            <a 
+              href={`https://zalo.me/${siteConfig.zalo}`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-primary quote-thank-you__btn quote-thank-you__btn--zalo"
+            >
+              <MessageCircle size={18} />
+              {locale === "en" ? "Zalo Chat (Urgent)" : "Chat Zalo (Khẩn Cấp)"}
+            </a>
+            <a href="/san-pham" className="btn-secondary quote-thank-you__btn">
+              {locale === "en" ? "View Products" : "Xem Sản Phẩm"}
+            </a>
+          </div>
+
+          <button 
+            type="button" 
+            onClick={() => {
+              setSubmitted(false);
+              setSubmittedSummary(null);
+              if (typeof window !== "undefined") {
+                window.localStorage.removeItem(LAST_SUCCESS_KEY);
+              }
+            }} 
+            className="quote-thank-you__new-request"
+          >
+            {locale === "en" ? "Submit Another Request" : "Gửi yêu cầu báo giá mới"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -689,6 +810,7 @@ function buildSummary(values: QuoteLeadInput, locale: Locale): QuoteSummary {
 
   return {
     name: values.name,
+    phone: values.phone,
     company: values.company?.trim() || text.common.companyFallback,
     inquiryType: values.inquiryType,
     primaryNeed:
@@ -807,6 +929,7 @@ function readLastSuccessState(): QuoteSummary | null {
     if (parsed?.name && parsed?.inquiryType && parsed?.primaryNeed && parsed?.secondaryNeed) {
       return {
         name: parsed.name,
+        phone: parsed.phone || "",
         company: parsed.company || UI.vi.common.companyFallback,
         inquiryType: parsed.inquiryType,
         primaryNeed: parsed.primaryNeed,

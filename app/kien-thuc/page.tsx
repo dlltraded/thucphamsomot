@@ -39,7 +39,7 @@ const knowledgePillars = [
   {
     icon: NotebookPen,
     title: "Dẫn tới hành động",
-    text: "Mỗi bài đều có mục tiêu rõ: giúp người đọc chuẩn bị thông tin để đặt mua hoặc xin báo giá.",
+    text: "Mỗi bài đều giúp người đọc chuẩn bị thông tin để đặt mua hoặc xin báo giá.",
     gradient: "linear-gradient(135deg, rgba(199, 55, 47, 0.16), rgba(168, 85, 247, 0.16))",
   },
 ];
@@ -122,8 +122,8 @@ export default async function KnowledgePage() {
           <div className="knowledge-visual-grid">
             <div className="knowledge-visual-card knowledge-visual-card--gradient">
               <CalendarDays size={18} />
-              <strong>Đọc theo nhịp mua hàng</strong>
-              <span>Theo mùa, theo menu, theo bài toán vận hành của bếp.</span>
+              <strong>Xem theo nhu cầu mua hàng</strong>
+              <span>Theo mùa, theo menu và theo bài toán vận hành của bếp.</span>
             </div>
             <div className="knowledge-visual-card knowledge-visual-card--image">
               <Image
@@ -233,7 +233,7 @@ export default async function KnowledgePage() {
         <div className="section-split">
           <div>
             <div className="eyebrow">Theo khu vực</div>
-            <h2 className="knowledge-section-title">Bài đọc bám theo địa bàn phục vụ thực tế.</h2>
+            <h2 className="knowledge-section-title">Bài đọc theo khu vực phục vụ.</h2>
             <p className="subcopy">Xem nhanh landing page khu vực để đi tiếp sang báo giá hoặc sản phẩm phù hợp.</p>
           </div>
           <Link href="/san-pham" className="text-link">
@@ -294,7 +294,7 @@ export default async function KnowledgePage() {
                 <h3>{post.title}</h3>
                 <p>{post.description}</p>
                 <div className="knowledge-post-card__footer">
-                  <span>{index === 0 ? "Bài nền tảng" : "Bài hướng dẫn"}</span>
+                  <span>{index === 0 ? "Bài nên đọc" : "Bài viết liên quan"}</span>
                   <ArrowRight size={16} />
                 </div>
               </Link>

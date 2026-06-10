@@ -52,7 +52,7 @@ export default async function KnowledgeDetailPage({ params }: { params: Promise<
         heroMedia={{
           src: cover,
           alt: item.title,
-          caption: "Bài viết có hình minh hoạ thực tế",
+          caption: "Ảnh minh hoạ thực tế",
         }}
       />
     </PageShell>
@@ -61,8 +61,8 @@ export default async function KnowledgeDetailPage({ params }: { params: Promise<
 
 function getRelatedKnowledgeLinks(slug: string) {
   const common = [
-    { href: "/bao-gia", label: "Mở form báo giá", description: "Gửi nhu cầu để đội ngũ chốt danh mục và lịch giao." },
-    { href: "/san-pham", label: "Xem danh mục sản phẩm", description: "Đi từ bài đọc sang nhóm hàng và quy cách cụ thể." },
+    { href: "/bao-gia", label: "Mở form báo giá", description: "Gửi nhu cầu để nhận phản hồi nhanh." },
+    { href: "/san-pham", label: "Xem danh mục sản phẩm", description: "Xem nhóm hàng và quy cách cụ thể." },
   ];
 
   if (slug.includes("dong-nai")) {
@@ -114,7 +114,7 @@ function getRelatedKnowledgeLinks(slug: string) {
   }
 
   return [
-    { href: "/kien-thuc", label: "Quay lại Kiến thức", description: "Xem thêm các bài hướng dẫn nền tảng khác." },
+    { href: "/kien-thuc", label: "Quay lại Kiến thức", description: "Xem thêm bài viết khác." },
     ...common,
   ];
 }
