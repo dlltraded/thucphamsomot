@@ -39,6 +39,7 @@
     const noteInput = document.getElementById('quote-note-input');
 
     const resetBtn = document.getElementById('quote-reset-btn');
+    const saveBtn = document.getElementById('quote-save-btn');
     const copyZaloBtn = document.getElementById('quote-copy-zalo-btn');
     const printBtn = document.getElementById('quote-print-btn');
     const previewContainer = document.getElementById('quote-preview-container');
@@ -166,6 +167,22 @@
         if (confirm("Bạn có chắc chắn muốn đặt lại và xóa toàn bộ sản phẩm đang soạn?")) {
           resetQuoteBuilder();
         }
+      });
+    }
+
+    // 5b. Nút Tạo/Lưu báo giá
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        if (!activeQuote.leadId) {
+          showToastNotification('Vui lòng chọn khách hàng trước khi lưu báo giá.');
+          return;
+        }
+        if (activeQuote.items.length === 0) {
+          const acceptEmpty = confirm('Báo giá chưa có sản phẩm. Anh vẫn muốn tạo bản nháp chứ?');
+          if (!acceptEmpty) return;
+        }
+        saveCurrentQuoteToState();
+        showToastNotification('Đã tạo/lưu báo giá.');
       });
     }
 
