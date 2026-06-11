@@ -9,6 +9,7 @@
     items: [],
     discount: 0,
     shipping: 0,
+    vatRate: 8,
     deposit: 0,
     note: '',
     status: 'draft',
@@ -41,6 +42,7 @@
     
     const discountInput = document.getElementById('quote-discount-input');
     const shippingInput = document.getElementById('quote-shipping-input');
+    const vatRateInput = document.getElementById('quote-vat-rate-input');
     const depositInput = document.getElementById('quote-deposit-input');
     const noteInput = document.getElementById('quote-note-input');
 
@@ -166,6 +168,13 @@
     if (shippingInput) {
       shippingInput.addEventListener('input', () => {
         activeQuote.shipping = Math.max(0, parseInt(shippingInput.value) || 0);
+        calculateTotals();
+        saveCurrentQuoteToState();
+      });
+    }
+    if (vatRateInput) {
+      vatRateInput.addEventListener('change', () => {
+        activeQuote.vatRate = [0, 8, 10].includes(parseInt(vatRateInput.value, 10)) ? parseInt(vatRateInput.value, 10) : 8;
         calculateTotals();
         saveCurrentQuoteToState();
       });
@@ -498,7 +507,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${printTitle}</title>
-  <link rel="stylesheet" href="./css/style.css?v=20">
+  <link rel="stylesheet" href="./css/style.css?v=21">
   <style>
     @page {
       size: A4;
@@ -617,6 +626,7 @@
         items: [...(existingQuote.items || [])],
         discount: existingQuote.discount || 0,
         shipping: existingQuote.shipping || 0,
+        vatRate: [0, 8, 10].includes(parseInt(existingQuote.vatRate, 10)) ? parseInt(existingQuote.vatRate, 10) : 0,
         deposit: existingQuote.deposit || 0,
         note: existingQuote.note || '',
         status: existingQuote.status || 'draft',
@@ -638,6 +648,7 @@
         items: [],
         discount: 0,
         shipping: 0,
+        vatRate: 8,
         deposit: 0,
         note: '',
         status: 'draft',
@@ -654,6 +665,7 @@
     // Đồng bộ form Editor
     document.getElementById('quote-discount-input').value = activeQuote.discount;
     document.getElementById('quote-shipping-input').value = activeQuote.shipping;
+    document.getElementById('quote-vat-rate-input').value = String([0, 8, 10].includes(parseInt(activeQuote.vatRate, 10)) ? parseInt(activeQuote.vatRate, 10) : 8);
     document.getElementById('quote-deposit-input').value = activeQuote.deposit;
     document.getElementById('quote-note-input').value = activeQuote.note;
     
@@ -698,6 +710,7 @@
       items: [],
       discount: 0,
       shipping: 0,
+      vatRate: 8,
       deposit: 0,
       note: '',
       status: 'draft',
@@ -716,6 +729,7 @@
     
     document.getElementById('quote-discount-input').value = 0;
     document.getElementById('quote-shipping-input').value = 0;
+    document.getElementById('quote-vat-rate-input').value = 8;
     document.getElementById('quote-deposit-input').value = 0;
     document.getElementById('quote-note-input').value = '';
     document.getElementById('price-type-wholesale').checked = true;
@@ -834,12 +848,18 @@
     const items = quote.items || [];
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const discountAmount = (subtotal * (quote.discount || 0)) / 100;
-    const grandTotal = subtotal - discountAmount + (quote.shipping || 0);
+    const vatRate = [0, 8, 10].includes(parseInt(quote.vatRate, 10)) ? parseInt(quote.vatRate, 10) : 0;
+    const totalBeforeVat = subtotal - discountAmount + (quote.shipping || 0);
+    const vatAmount = (totalBeforeVat * vatRate) / 100;
+    const grandTotal = totalBeforeVat + vatAmount;
     const balance = grandTotal - (quote.deposit || 0);
 
     return {
       subtotal,
       discountAmount,
+      totalBeforeVat,
+      vatRate,
+      vatAmount,
       grandTotal,
       balance
     };
@@ -853,9 +873,18 @@
     document.getElementById('inv-subtotal').innerText = formatCurrency(totals.subtotal);
     document.getElementById('inv-discount').innerText = `-${formatCurrency(totals.discountAmount)} (${activeQuote.discount}%)`;
     document.getElementById('inv-shipping').innerText = formatCurrency(activeQuote.shipping);
+    const vatLabel = totals.vatRate > 0 ? ` (${totals.vatRate}%)` : ' (Không VAT)';
+    document.getElementById('inv-pre-vat').innerText = formatCurrency(totals.totalBeforeVat);
+    document.getElementById('inv-vat').innerText = `${formatCurrency(totals.vatAmount)}${vatLabel}`;
     document.getElementById('inv-grandtotal').innerText = formatCurrency(totals.grandTotal);
     document.getElementById('inv-deposit').innerText = formatCurrency(activeQuote.deposit);
     document.getElementById('inv-balance').innerText = formatCurrency(totals.balance);
+    const totalBeforeVatDisplay = document.getElementById('quote-total-before-vat-display');
+    const vatAmountDisplay = document.getElementById('quote-vat-amount-display');
+    const grandTotalDisplay = document.getElementById('quote-grandtotal-display');
+    if (totalBeforeVatDisplay) totalBeforeVatDisplay.innerText = formatCurrency(totals.totalBeforeVat);
+    if (vatAmountDisplay) vatAmountDisplay.innerText = `${formatCurrency(totals.vatAmount)}${vatLabel}`;
+    if (grandTotalDisplay) grandTotalDisplay.innerText = formatCurrency(totals.grandTotal);
 
     // Render bảng sản phẩm lên hóa đơn in
     const invTbody = document.getElementById('invoice-items-body');
@@ -905,12 +934,15 @@
       items: activeQuote.items,
       discount: activeQuote.discount,
       shipping: activeQuote.shipping,
+      vatRate: [0, 8, 10].includes(parseInt(activeQuote.vatRate, 10)) ? parseInt(activeQuote.vatRate, 10) : 0,
       deposit: activeQuote.deposit,
       note: activeQuote.note,
       status: existingQuote?.status || 'draft',
       result: existingQuote?.result || '',
       subtotal: totals.subtotal,
       discountAmount: totals.discountAmount,
+      totalBeforeVat: totals.totalBeforeVat,
+      vatAmount: totals.vatAmount,
       grandTotal: totals.grandTotal,
       balance: totals.balance,
       createdAt: existingQuote?.createdAt || now,
@@ -1306,6 +1338,9 @@
         <div class="quote-history-meta">
           <p><strong>Chiết khấu:</strong> ${quote.discount || 0}%</p>
           <p><strong>Phí vận chuyển:</strong> ${formatCurrency(quote.shipping || 0)}</p>
+          <p><strong>VAT:</strong> ${[0, 8, 10].includes(parseInt(quote.vatRate, 10)) ? (parseInt(quote.vatRate, 10) > 0 ? `${parseInt(quote.vatRate, 10)}%` : 'Không VAT') : 'Không VAT'}</p>
+          <p><strong>Thành tiền trước VAT:</strong> ${formatCurrency(quote.totalBeforeVat || 0)}</p>
+          <p><strong>Tiền VAT:</strong> ${formatCurrency(quote.vatAmount || 0)}</p>
           <p><strong>Đã cọc:</strong> ${formatCurrency(quote.deposit || 0)}</p>
           <p><strong>Còn lại:</strong> ${formatCurrency(quote.balance || 0)}</p>
           <p><strong>Sản phẩm:</strong> ${(quote.items || []).length}</p>
@@ -1338,7 +1373,10 @@
     const items = activeQuote.items || [];
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const discountAmt = (subtotal * activeQuote.discount) / 100;
-    const grandTotal = subtotal - discountAmt + activeQuote.shipping;
+    const totalBeforeVat = subtotal - discountAmt + activeQuote.shipping;
+    const vatRate = [0, 8, 10].includes(parseInt(activeQuote.vatRate, 10)) ? parseInt(activeQuote.vatRate, 10) : 0;
+    const vatAmt = (totalBeforeVat * vatRate) / 100;
+    const grandTotal = totalBeforeVat + vatAmt;
     const balance = grandTotal - activeQuote.deposit;
 
     let itemsLines = "";
@@ -1363,6 +1401,8 @@ ${itemsLines}
 - *Cộng tiền hàng:* ${formatCurrency(subtotal)}
 - *Chiết khấu:* -${formatCurrency(discountAmt)} (${activeQuote.discount}%)
 - *Phí vận chuyển:* ${formatCurrency(activeQuote.shipping)}
+- *Thành tiền (trước VAT):* ${formatCurrency(totalBeforeVat)}
+- *VAT (${vatRate > 0 ? `${vatRate}%` : 'Không VAT'}):* ${formatCurrency(vatAmt)}
 - *TỔNG THANH TOÁN:* *${formatCurrency(grandTotal)}*
 - *Đã tạm ứng/đặt cọc:* ${formatCurrency(activeQuote.deposit)}
 - *Số tiền còn lại cần thanh toán:* *${formatCurrency(balance)}*
