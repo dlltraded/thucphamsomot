@@ -77,6 +77,8 @@ function initAppState() {
     quoteCode: q.quoteCode || null,
     ...q
   }));
+  state.quotes = state.quotes.filter(q => !q.deletedAt && !q.deleted_at);
+  localStorage.setItem('tps1_quotes', JSON.stringify(state.quotes));
 
   if (storedSettings) {
     state.syncSettings = JSON.parse(storedSettings);

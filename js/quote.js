@@ -447,7 +447,7 @@
     if (!lead) return;
 
     // Tìm kiếm xem đã có quote nào cho lead này chưa
-    const existingQuote = state.quotes.find(q => q.leadId === leadId && !q.deletedAt);
+    const existingQuote = state.quotes.find(q => q.leadId === leadId);
 
     if (existingQuote) {
       activeQuote = {
@@ -704,7 +704,7 @@
   function saveCurrentQuoteToState() {
     if (!activeQuote.leadId) return;
 
-    const existingIdx = state.quotes.findIndex(q => q.leadId === activeQuote.leadId && !q.deletedAt);
+    const existingIdx = state.quotes.findIndex(q => q.leadId === activeQuote.leadId);
     const lead = state.leads.find(l => l.id === activeQuote.leadId);
     const now = new Date().toISOString();
     const existingQuote = existingIdx !== -1 ? state.quotes[existingIdx] : null;
@@ -781,7 +781,6 @@
     const statusFilter = document.getElementById('quote-management-status-filter')?.value || '';
 
     const quotes = [...(state.quotes || [])]
-      .filter(quote => !quote.deletedAt)
       .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
 
     const filteredQuotes = quotes.filter(quote => {
@@ -881,7 +880,7 @@
   };
 
   window.markSavedQuoteResult = function(leadId, status) {
-    const quote = state.quotes.find(q => q.leadId === leadId && !q.deletedAt);
+    const quote = state.quotes.find(q => q.leadId === leadId);
     if (!quote) return;
     openQuoteStatusModal(quote.id);
     const selectEl = document.getElementById('quote-status-select');
@@ -896,11 +895,17 @@
       return;
     }
 
-    state.quotes = state.quotes.map(q => q.id === quoteId ? {
-      ...q,
-      deletedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    } : q);
+    if (window.supabaseModule && typeof window.supabaseModule.deleteQuoteByLocalId === 'function') {
+      try {
+        await window.supabaseModule.deleteQuoteByLocalId(quote.id);
+      } catch (err) {
+        console.error('Lỗi xóa báo giá Supabase:', err);
+        showToastNotification(`Không xóa được trên Supabase: ${err.message}`);
+        return;
+      }
+    }
+
+    state.quotes = state.quotes.filter(q => q.id !== quoteId);
     const leadIdx = state.leads.findIndex(l => l.id === quote.leadId);
     if (leadIdx !== -1 && Array.isArray(state.leads[leadIdx].quotes)) {
       state.leads[leadIdx].quotes = state.leads[leadIdx].quotes.filter(q => q !== quote.id);
@@ -913,17 +918,6 @@
     }
 
     renderSavedQuotesList();
-
-    if (window.supabaseModule && typeof window.supabaseModule.deleteQuoteByLocalId === 'function') {
-      try {
-        await window.supabaseModule.deleteQuoteByLocalId(quote.id);
-      } catch (err) {
-        console.error('Lỗi xóa báo giá Supabase:', err);
-        showToastNotification(`Đã xóa local, nhưng Supabase lỗi: ${err.message}`);
-        return;
-      }
-    }
-
     showToastNotification('Đã xóa báo giá.');
   };
 

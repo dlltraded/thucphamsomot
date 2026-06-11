@@ -56,8 +56,7 @@ create table public.quotes (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   sent_at timestamptz,
-  closed_at timestamptz,
-  deleted_at timestamptz
+  closed_at timestamptz
 );
 
 create table public.quote_history (
@@ -78,7 +77,6 @@ create table public.quote_history (
 
 create index quotes_lead_id_idx on public.quotes (lead_id);
 create index quotes_status_idx on public.quotes (status);
-create index quotes_deleted_at_idx on public.quotes (deleted_at);
 create index quote_history_quote_idx on public.quote_history (local_quote_id);
 create index quote_history_lead_idx on public.quote_history (lead_id);
 create index products_category_idx on public.products (category);
@@ -144,7 +142,7 @@ drop policy if exists "quotes_select_all" on public.quotes;
 create policy "quotes_select_all"
 on public.quotes
 for select
-using (deleted_at is null);
+using (true);
 
 drop policy if exists "quotes_insert_all" on public.quotes;
 create policy "quotes_insert_all"
@@ -158,6 +156,12 @@ on public.quotes
 for update
 using (true)
 with check (true);
+
+drop policy if exists "quotes_delete_all" on public.quotes;
+create policy "quotes_delete_all"
+on public.quotes
+for delete
+using (true);
 
 drop policy if exists "quote_history_select_all" on public.quote_history;
 create policy "quote_history_select_all"
