@@ -53,6 +53,10 @@
     const quoteHistoryModalTitle = document.getElementById('quote-history-modal-title');
     const quoteHistoryModalClose = document.getElementById('quote-history-modal-close');
     const quoteHistoryModalOverlay = document.getElementById('quote-history-modal-overlay');
+    const quoteStatusModalClose = document.getElementById('quote-status-modal-close');
+    const quoteStatusModalOverlay = document.getElementById('quote-status-modal-overlay');
+    const quoteStatusCancelBtn = document.getElementById('quote-status-cancel-btn');
+    const quoteStatusSaveBtn = document.getElementById('quote-status-save-btn');
 
     // 1. Khi chọn khách hàng
     if (leadSelector) {
@@ -264,6 +268,22 @@
 
     if (quoteHistoryModalOverlay) {
       quoteHistoryModalOverlay.addEventListener('click', closeQuoteHistoryModal);
+    }
+
+    if (quoteStatusModalClose) {
+      quoteStatusModalClose.addEventListener('click', closeQuoteStatusModal);
+    }
+
+    if (quoteStatusModalOverlay) {
+      quoteStatusModalOverlay.addEventListener('click', closeQuoteStatusModal);
+    }
+
+    if (quoteStatusCancelBtn) {
+      quoteStatusCancelBtn.addEventListener('click', closeQuoteStatusModal);
+    }
+
+    if (quoteStatusSaveBtn) {
+      quoteStatusSaveBtn.addEventListener('click', confirmQuoteStatusUpdate);
     }
 
     renderSavedQuotesList();
@@ -815,8 +835,7 @@
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
             <button class="btn btn-secondary btn-xs" onclick="openSavedQuote('${quote.leadId}')">Mở sửa</button>
             <button class="btn btn-secondary btn-xs" onclick="openQuoteHistory('${quote.id}')">Lịch sử</button>
-            <button class="btn btn-secondary btn-xs" onclick="markSavedQuoteResult('${quote.leadId}', 'won')" style="color:#10B981; border-color:rgba(16,185,129,0.25);">Chốt</button>
-            <button class="btn btn-secondary btn-xs" onclick="markSavedQuoteResult('${quote.leadId}', 'lost')" style="color:#EF4444; border-color:rgba(239,68,68,0.25);">Hủy</button>
+            <button class="btn btn-primary btn-xs" onclick="openQuoteStatusModal('${quote.id}')" style="padding: 4px 10px;">Đổi trạng thái</button>
             <button class="btn btn-secondary btn-xs" onclick="deleteSavedQuote('${quote.id}')" style="color:#F97316; border-color:rgba(249,115,22,0.25);">Xóa</button>
           </div>
         </td>
@@ -841,10 +860,11 @@
   };
 
   window.markSavedQuoteResult = function(leadId, status) {
-    const lead = state.leads.find(l => l.id === leadId);
-    if (!lead) return;
-    updateLeadField(leadId, 'status', status, { skipDrawer: true });
-    renderSavedQuotesList();
+    const quote = state.quotes.find(q => q.leadId === leadId);
+    if (!quote) return;
+    openQuoteStatusModal(quote.id);
+    const selectEl = document.getElementById('quote-status-select');
+    if (selectEl) selectEl.value = status;
   };
 
   window.deleteSavedQuote = async function(quoteId) {
@@ -883,6 +903,124 @@
     const modal = document.getElementById('quote-history-modal');
     if (modal) modal.classList.add('hidden');
   }
+
+  function closeQuoteStatusModal() {
+    const modal = document.getElementById('quote-status-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  let pendingStatusUpdate = {
+    quoteId: null,
+    leadId: null
+  };
+
+  function openQuoteStatusModal(quoteId) {
+    const quote = state.quotes.find(q => q.id === quoteId);
+    if (!quote) return;
+
+    const lead = state.leads.find(l => l.id === quote.leadId);
+    const modal = document.getElementById('quote-status-modal');
+    const titleEl = document.getElementById('quote-status-modal-title');
+    const descEl = document.getElementById('quote-status-modal-desc');
+    const selectEl = document.getElementById('quote-status-select');
+    const confirmEl = document.getElementById('quote-status-confirm-checkbox');
+    if (!modal || !titleEl || !descEl || !selectEl || !confirmEl) return;
+
+    pendingStatusUpdate = {
+      quoteId: quote.id,
+      leadId: quote.leadId
+    };
+
+    titleEl.innerText = `Cập nhật trạng thái ${quote.quoteCode || quote.id}`;
+    descEl.innerText = `Khách hàng: ${lead ? lead.name : 'Đã xóa lead'} | Trạng thái hiện tại: ${quote.status || 'draft'}`;
+    selectEl.value = quote.status || 'draft';
+    confirmEl.checked = false;
+    modal.classList.remove('hidden');
+  }
+
+  window.openQuoteStatusModal = openQuoteStatusModal;
+
+  function applyQuoteStatusUpdate(quoteId, status) {
+    const quoteIdx = state.quotes.findIndex(q => q.id === quoteId);
+    if (quoteIdx === -1) return;
+
+    const quote = state.quotes[quoteIdx];
+    const lead = state.leads.find(l => l.id === quote.leadId);
+    const now = new Date().toISOString();
+    const previousStatus = quote.status || 'draft';
+
+    quote.status = status;
+    quote.updatedAt = now;
+    quote.history = Array.isArray(quote.history) ? quote.history : [];
+    quote.history.push({
+      at: now,
+      action: 'status_change',
+      from: previousStatus,
+      to: status,
+      note: 'Cập nhật trạng thái từ bảng quản lý báo giá'
+    });
+
+    if (status === 'quoted' && !quote.sentAt) quote.sentAt = now;
+    if (status === 'won' || status === 'lost') {
+      quote.closedAt = now;
+      quote.result = status;
+    } else if (previousStatus === 'won' || previousStatus === 'lost') {
+      quote.result = '';
+    }
+
+    if (lead) {
+      const leadIdx = state.leads.findIndex(l => l.id === lead.id);
+      if (leadIdx !== -1) {
+        state.leads[leadIdx].status = status;
+        state.leads[leadIdx].updatedAt = now;
+        state.leads[leadIdx].notes = Array.isArray(state.leads[leadIdx].notes) ? state.leads[leadIdx].notes : [];
+        state.leads[leadIdx].notes.push({
+          timestamp: now,
+          author: 'Hệ thống',
+          text: `Đã cập nhật trạng thái báo giá sang <strong>${status}</strong>`
+        });
+      }
+    }
+
+    saveState('quotes');
+    saveState('leads');
+    renderSavedQuotesList();
+
+    if (window.supabaseModule && typeof window.supabaseModule.syncQuote === 'function') {
+      const leadSnapshot = lead ? {
+        id: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        email: lead.email || '',
+        category: lead.category || '',
+        source: lead.source || '',
+        status
+      } : null;
+      window.supabaseModule.syncQuote(quote, leadSnapshot, previousStatus)
+        .catch(err => console.error('Lỗi đồng bộ trạng thái báo giá Supabase:', err));
+    }
+
+    if (window.supabaseModule && lead && typeof window.supabaseModule.syncLeadStatus === 'function') {
+      window.supabaseModule.syncLeadStatus(lead, previousStatus, status, 'Cập nhật từ bảng quản lý báo giá')
+        .catch(err => console.error('Lỗi syncLeadStatus Supabase:', err));
+    }
+  }
+
+  window.confirmQuoteStatusUpdate = function() {
+    const selectEl = document.getElementById('quote-status-select');
+    const confirmEl = document.getElementById('quote-status-confirm-checkbox');
+    if (!selectEl || !confirmEl) return;
+
+    if (!confirmEl.checked) {
+      showToastNotification('Vui lòng tick xác nhận trước khi cập nhật trạng thái.');
+      return;
+    }
+
+    if (!pendingStatusUpdate.quoteId) return;
+    applyQuoteStatusUpdate(pendingStatusUpdate.quoteId, selectEl.value);
+    closeQuoteStatusModal();
+    showToastNotification('Đã cập nhật trạng thái báo giá.');
+  };
 
   window.openQuoteHistory = function(quoteId) {
     const quote = state.quotes.find(q => q.id === quoteId || q.leadId === quoteId);

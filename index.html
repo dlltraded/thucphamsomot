@@ -1222,6 +1222,41 @@ function doPost(e) {
     </div>
   </div>
 
+  <!-- QUOTE STATUS UPDATE MODAL -->
+  <div id="quote-status-modal" class="modal hidden">
+    <div class="modal-overlay" id="quote-status-modal-overlay"></div>
+    <div class="modal-container" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 id="quote-status-modal-title">Cập nhật trạng thái báo giá</h3>
+        <button id="quote-status-modal-close" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p id="quote-status-modal-desc" class="desc-text" style="margin-bottom: 16px;">Chọn trạng thái mới rồi xác nhận để cập nhật.</p>
+        <div class="form-group">
+          <label for="quote-status-select">Trạng thái mới</label>
+          <select id="quote-status-select" class="form-control">
+            <option value="draft">Nháp</option>
+            <option value="quoted">Đã báo giá</option>
+            <option value="sent">Đã gửi</option>
+            <option value="negotiating">Thương lượng</option>
+            <option value="won">Chốt đơn</option>
+            <option value="lost">Thất bại</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-row" for="quote-status-confirm-checkbox">
+            <input type="checkbox" id="quote-status-confirm-checkbox">
+            <span>Tôi xác nhận trạng thái này là chính xác</span>
+          </label>
+        </div>
+        <div class="sync-actions-group" style="justify-content:flex-end;">
+          <button id="quote-status-cancel-btn" class="btn btn-secondary">Hủy</button>
+          <button id="quote-status-save-btn" class="btn btn-primary">Cập nhật trạng thái</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- CDN Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
