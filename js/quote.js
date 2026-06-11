@@ -21,6 +21,12 @@
     quoteCode: ''
   };
 
+  let pendingDeleteQuote = {
+    quoteId: null,
+    leadId: null,
+    quoteCode: ''
+  };
+
   // Khởi tạo các sự kiện liên quan khi load trang
   document.addEventListener('DOMContentLoaded', () => {
     setupQuoteListeners();
@@ -58,6 +64,12 @@
     const quoteStatusModalOverlay = document.getElementById('quote-status-modal-overlay');
     const quoteStatusCancelBtn = document.getElementById('quote-status-cancel-btn');
     const quoteStatusSaveBtn = document.getElementById('quote-status-save-btn');
+    const quoteDeleteModal = document.getElementById('quote-delete-modal');
+    const quoteDeleteModalOverlay = document.getElementById('quote-delete-modal-overlay');
+    const quoteDeleteModalClose = document.getElementById('quote-delete-modal-close');
+    const quoteDeleteCancelBtn = document.getElementById('quote-delete-cancel-btn');
+    const quoteDeleteConfirmBtn = document.getElementById('quote-delete-confirm-btn');
+    const quoteDeleteConfirmCheckbox = document.getElementById('quote-delete-confirm-checkbox');
 
     // 1. Khi chọn khách hàng
     if (leadSelector) {
@@ -279,6 +291,36 @@
       });
     }
 
+    if (savedQuotesBody) {
+      savedQuotesBody.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-quote-action]');
+        if (!button) return;
+
+        const action = button.dataset.quoteAction;
+        const quoteId = button.dataset.quoteId || '';
+        const leadId = button.dataset.quoteLeadId || '';
+
+        if (action === 'open' && leadId) {
+          window.openSavedQuote(leadId);
+          return;
+        }
+
+        if (action === 'history' && quoteId) {
+          window.openQuoteHistory(quoteId);
+          return;
+        }
+
+        if (action === 'status' && quoteId) {
+          openQuoteStatusModal(quoteId);
+          return;
+        }
+
+        if (action === 'delete' && quoteId) {
+          window.deleteSavedQuote(quoteId);
+        }
+      });
+    }
+
     if (quoteHistoryModalClose) {
       quoteHistoryModalClose.addEventListener('click', closeQuoteHistoryModal);
     }
@@ -301,6 +343,31 @@
 
     if (quoteStatusSaveBtn) {
       quoteStatusSaveBtn.addEventListener('click', confirmQuoteStatusUpdate);
+    }
+
+    if (quoteDeleteConfirmCheckbox && quoteDeleteConfirmBtn) {
+      quoteDeleteConfirmCheckbox.addEventListener('change', () => {
+        quoteDeleteConfirmBtn.disabled = !quoteDeleteConfirmCheckbox.checked;
+      });
+    }
+
+    if (quoteDeleteConfirmBtn) {
+      quoteDeleteConfirmBtn.addEventListener('click', () => {
+        if (!pendingDeleteQuote.quoteId) return;
+        performDeleteSavedQuote(pendingDeleteQuote.quoteId);
+      });
+    }
+
+    if (quoteDeleteCancelBtn) {
+      quoteDeleteCancelBtn.addEventListener('click', closeQuoteDeleteModal);
+    }
+
+    if (quoteDeleteModalClose) {
+      quoteDeleteModalClose.addEventListener('click', closeQuoteDeleteModal);
+    }
+
+    if (quoteDeleteModalOverlay) {
+      quoteDeleteModalOverlay.addEventListener('click', closeQuoteDeleteModal);
     }
 
     renderSavedQuotesList();
@@ -338,7 +405,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${printTitle}</title>
-  <link rel="stylesheet" href="./css/style.css?v=17">
+  <link rel="stylesheet" href="./css/style.css?v=20">
   <style>
     @page {
       size: A4;
@@ -853,10 +920,10 @@
         <td data-label="Sản phẩm">${(quote.items || []).length}</td>
         <td>
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-            <button class="btn btn-secondary btn-xs" onclick="openSavedQuote('${quote.leadId}')">Mở sửa</button>
-            <button class="btn btn-secondary btn-xs" onclick="openQuoteHistory('${quote.id}')">Lịch sử</button>
-            <button class="btn btn-primary btn-xs" onclick="openQuoteStatusModal('${quote.id}')" style="padding: 4px 10px;">Đổi trạng thái</button>
-            <button class="btn btn-secondary btn-xs" onclick="deleteSavedQuote('${quote.id}')" style="color:#F97316; border-color:rgba(249,115,22,0.25);">Xóa</button>
+            <button class="btn btn-secondary btn-xs" type="button" data-quote-action="open" data-quote-lead-id="${quote.leadId}">Mở sửa</button>
+            <button class="btn btn-secondary btn-xs" type="button" data-quote-action="history" data-quote-id="${quote.id}">Lịch sử</button>
+            <button class="btn btn-primary btn-xs" type="button" data-quote-action="status" data-quote-id="${quote.id}" style="padding: 4px 10px;">Đổi trạng thái</button>
+            <button class="btn btn-danger btn-xs" type="button" data-quote-action="delete" data-quote-id="${quote.id}">Xóa</button>
           </div>
         </td>
       `;
@@ -887,22 +954,64 @@
     if (selectEl) selectEl.value = status;
   };
 
-  window.deleteSavedQuote = async function(quoteId) {
+  window.deleteSavedQuote = function(quoteId) {
+    openQuoteDeleteModal(quoteId);
+  };
+
+  function openQuoteDeleteModal(quoteId) {
     const quote = state.quotes.find(q => q.id === quoteId);
     if (!quote) return;
 
-    if (!confirm(`Xóa báo giá ${quote.quoteCode || quote.id}? Hành động này không thể hoàn tác.`)) {
+    pendingDeleteQuote.quoteId = quote.id;
+    pendingDeleteQuote.leadId = quote.leadId;
+    pendingDeleteQuote.quoteCode = quote.quoteCode || quote.id;
+
+    const modal = document.getElementById('quote-delete-modal');
+    const titleEl = document.getElementById('quote-delete-modal-title');
+    const descEl = document.getElementById('quote-delete-modal-desc');
+    const checkboxEl = document.getElementById('quote-delete-confirm-checkbox');
+    const confirmEl = document.getElementById('quote-delete-confirm-btn');
+
+    const lead = state.leads.find(l => l.id === quote.leadId);
+    if (titleEl) titleEl.innerText = `Xác nhận xóa ${pendingDeleteQuote.quoteCode}`;
+    if (descEl) {
+      descEl.innerText = `Báo giá của ${lead ? lead.name : 'khách hàng này'} sẽ bị xóa khỏi quản lý và Supabase. Hành động này không thể hoàn tác.`;
+    }
+    if (checkboxEl) checkboxEl.checked = false;
+    if (confirmEl) confirmEl.disabled = true;
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function closeQuoteDeleteModal() {
+    const modal = document.getElementById('quote-delete-modal');
+    const checkboxEl = document.getElementById('quote-delete-confirm-checkbox');
+    const confirmEl = document.getElementById('quote-delete-confirm-btn');
+    pendingDeleteQuote.quoteId = null;
+    pendingDeleteQuote.leadId = null;
+    pendingDeleteQuote.quoteCode = '';
+    if (checkboxEl) checkboxEl.checked = false;
+    if (confirmEl) confirmEl.disabled = true;
+    if (modal) modal.classList.add('hidden');
+  }
+
+  async function performDeleteSavedQuote(quoteId) {
+    const quote = state.quotes.find(q => q.id === quoteId);
+    if (!quote) {
+      closeQuoteDeleteModal();
       return;
     }
 
-    if (window.supabaseModule && typeof window.supabaseModule.deleteQuoteByLocalId === 'function') {
-      try {
-        await window.supabaseModule.deleteQuoteByLocalId(quote.id);
-      } catch (err) {
-        console.error('Lỗi xóa báo giá Supabase:', err);
-        showToastNotification(`Không xóa được trên Supabase: ${err.message}`);
-        return;
-      }
+    if (!window.supabaseModule || typeof window.supabaseModule.deleteQuoteByLocalId !== 'function') {
+      showToastNotification('Supabase chưa sẵn sàng, không thể xóa đồng bộ.');
+      return;
+    }
+
+    try {
+      await window.supabaseModule.deleteQuoteByLocalId(quote.id);
+    } catch (err) {
+      console.error('Lỗi xóa báo giá Supabase:', err);
+      showToastNotification(`Không xóa được trên Supabase: ${err.message}`);
+      return;
     }
 
     state.quotes = state.quotes.filter(q => q.id !== quoteId);
@@ -918,8 +1027,9 @@
     }
 
     renderSavedQuotesList();
+    closeQuoteDeleteModal();
     showToastNotification('Đã xóa báo giá.');
-  };
+  }
 
   function closeQuoteHistoryModal() {
     const modal = document.getElementById('quote-history-modal');

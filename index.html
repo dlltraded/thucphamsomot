@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Custom Style -->
-  <link rel="stylesheet" href="./css/style.css?v=17">
+  <link rel="stylesheet" href="./css/style.css?v=20">
 </head>
 <body>
 
@@ -1253,6 +1253,30 @@ function doPost(e) {
         <div class="sync-actions-group" style="justify-content:flex-end;">
           <button id="quote-status-cancel-btn" class="btn btn-secondary">Hủy</button>
           <button id="quote-status-save-btn" class="btn btn-primary">Cập nhật trạng thái</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUOTE DELETE CONFIRM MODAL -->
+  <div id="quote-delete-modal" class="modal hidden">
+    <div class="modal-overlay" id="quote-delete-modal-overlay"></div>
+    <div class="modal-container" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 id="quote-delete-modal-title">Xác nhận xóa báo giá</h3>
+        <button id="quote-delete-modal-close" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p id="quote-delete-modal-desc" class="desc-text" style="margin-bottom: 16px;">
+          Bạn sắp xóa một báo giá khỏi quản lý và Supabase. Hành động này không thể hoàn tác.
+        </p>
+        <label class="checkbox-row" for="quote-delete-confirm-checkbox">
+          <input type="checkbox" id="quote-delete-confirm-checkbox">
+          <span>Tôi xác nhận muốn xóa báo giá này vĩnh viễn</span>
+        </label>
+        <div class="modal-footer">
+          <button id="quote-delete-cancel-btn" class="btn btn-secondary">Hủy</button>
+          <button id="quote-delete-confirm-btn" class="btn btn-danger" disabled>Xóa báo giá</button>
         </div>
       </div>
     </div>

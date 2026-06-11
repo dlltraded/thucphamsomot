@@ -247,6 +247,24 @@ a:hover {
   background-color: #047857;
 }
 
+.btn-danger {
+  background-color: #dc2626;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.btn-danger:disabled {
+  background-color: rgba(220, 38, 38, 0.45);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 .btn-block {
   width: 100%;
 }
