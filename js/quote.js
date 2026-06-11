@@ -10,7 +10,15 @@
     discount: 0,
     shipping: 0,
     deposit: 0,
-    note: ''
+    note: '',
+    status: 'draft',
+    result: '',
+    createdAt: null,
+    updatedAt: null,
+    sentAt: null,
+    closedAt: null,
+    history: [],
+    quoteCode: ''
   };
 
   // Khởi tạo các sự kiện liên quan khi load trang
@@ -36,6 +44,7 @@
     const previewContainer = document.getElementById('quote-preview-container');
     const previewPrintBtn = document.getElementById('quote-preview-print-btn');
     const previewCloseBtn = document.getElementById('quote-preview-close-btn');
+    const savedQuotesBody = document.getElementById('saved-quotes-body');
 
     // 1. Khi chọn khách hàng
     if (leadSelector) {
@@ -219,6 +228,8 @@
         }
       });
     }
+
+    renderSavedQuotesList();
   }
 
   function openQuotePreview() {
@@ -253,7 +264,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${printTitle}</title>
-  <link rel="stylesheet" href="./css/style.css?v=15">
+  <link rel="stylesheet" href="./css/style.css?v=16">
   <style>
     @page {
       size: A4;
@@ -373,7 +384,15 @@
         discount: existingQuote.discount || 0,
         shipping: existingQuote.shipping || 0,
         deposit: existingQuote.deposit || 0,
-        note: existingQuote.note || ''
+        note: existingQuote.note || '',
+        status: existingQuote.status || 'draft',
+        result: existingQuote.result || '',
+        createdAt: existingQuote.createdAt || null,
+        updatedAt: existingQuote.updatedAt || null,
+        sentAt: existingQuote.sentAt || null,
+        closedAt: existingQuote.closedAt || null,
+        history: [...(existingQuote.history || [])],
+        quoteCode: existingQuote.quoteCode || `BG-${lead.id.replace('lead_', '')}`
       };
     } else {
       // Tạo quote mới hoàn toàn cho lead
@@ -386,7 +405,15 @@
         discount: 0,
         shipping: 0,
         deposit: 0,
-        note: ''
+        note: '',
+        status: 'draft',
+        result: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        sentAt: null,
+        closedAt: null,
+        history: [],
+        quoteCode: `BG-${lead.id.replace('lead_', '')}`
       };
     }
 
@@ -425,6 +452,7 @@
     // Render bảng sản phẩm & tính tiền
     renderQuoteEditorTable();
     calculateTotals();
+    renderSavedQuotesList();
   }
 
   // Đặt lại trình báo giá về rỗng
@@ -437,7 +465,15 @@
       discount: 0,
       shipping: 0,
       deposit: 0,
-      note: ''
+      note: '',
+      status: 'draft',
+      result: '',
+      createdAt: null,
+      updatedAt: null,
+      sentAt: null,
+      closedAt: null,
+      history: [],
+      quoteCode: ''
     };
 
     document.getElementById('quote-lead-selector').value = '';
@@ -461,6 +497,7 @@
 
     renderQuoteEditorTable();
     calculateTotals();
+    renderSavedQuotesList();
   }
 
   // Cập nhật lại đơn giá khi đổi nút chọn Sỉ/Lẻ
@@ -532,28 +569,32 @@
     saveCurrentQuoteToState();
   };
 
+  function calculateQuoteFinancials(quote) {
+    const items = quote.items || [];
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const discountAmount = (subtotal * (quote.discount || 0)) / 100;
+    const grandTotal = subtotal - discountAmount + (quote.shipping || 0);
+    const balance = grandTotal - (quote.deposit || 0);
+
+    return {
+      subtotal,
+      discountAmount,
+      grandTotal,
+      balance
+    };
+  }
+
   // Tính toán tổng số tiền và render lên hóa đơn preview bên phải
   function calculateTotals() {
-    // 1. Cộng tiền hàng
-    const items = activeQuote.items || [];
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    
-    // 2. Chiết khấu
-    const discountAmt = (subtotal * activeQuote.discount) / 100;
-    
-    // 3. Tổng cộng thanh toán
-    const grandTotal = subtotal - discountAmt + activeQuote.shipping;
-    
-    // 4. Tiền cọc và còn lại
-    const balance = grandTotal - activeQuote.deposit;
+    const totals = calculateQuoteFinancials(activeQuote);
 
     // Đổ số liệu lên hóa đơn in
-    document.getElementById('inv-subtotal').innerText = formatCurrency(subtotal);
-    document.getElementById('inv-discount').innerText = `-${formatCurrency(discountAmt)} (${activeQuote.discount}%)`;
+    document.getElementById('inv-subtotal').innerText = formatCurrency(totals.subtotal);
+    document.getElementById('inv-discount').innerText = `-${formatCurrency(totals.discountAmount)} (${activeQuote.discount}%)`;
     document.getElementById('inv-shipping').innerText = formatCurrency(activeQuote.shipping);
-    document.getElementById('inv-grandtotal').innerText = formatCurrency(grandTotal);
+    document.getElementById('inv-grandtotal').innerText = formatCurrency(totals.grandTotal);
     document.getElementById('inv-deposit').innerText = formatCurrency(activeQuote.deposit);
-    document.getElementById('inv-balance').innerText = formatCurrency(balance);
+    document.getElementById('inv-balance').innerText = formatCurrency(totals.balance);
 
     // Render bảng sản phẩm lên hóa đơn in
     const invTbody = document.getElementById('invoice-items-body');
@@ -581,6 +622,8 @@
       `;
       invTbody.appendChild(tr);
     });
+
+    return totals;
   }
 
   // Lưu báo giá đang sửa đổi vào State tổng cục và lưu LocalStorage
@@ -588,17 +631,32 @@
     if (!activeQuote.leadId) return;
 
     const existingIdx = state.quotes.findIndex(q => q.leadId === activeQuote.leadId);
+    const lead = state.leads.find(l => l.id === activeQuote.leadId);
+    const now = new Date().toISOString();
+    const existingQuote = existingIdx !== -1 ? state.quotes[existingIdx] : null;
+    const totals = calculateQuoteFinancials(activeQuote);
     
     const quoteDataToSave = {
       id: activeQuote.id,
       leadId: activeQuote.leadId,
+      quoteCode: activeQuote.quoteCode || `BG-${activeQuote.leadId.replace('lead_', '')}`,
       priceType: activeQuote.priceType,
       items: activeQuote.items,
       discount: activeQuote.discount,
       shipping: activeQuote.shipping,
       deposit: activeQuote.deposit,
       note: activeQuote.note,
-      createdAt: existingIdx !== -1 ? state.quotes[existingIdx].createdAt : new Date().toISOString()
+      status: existingQuote?.status || 'draft',
+      result: existingQuote?.result || '',
+      subtotal: totals.subtotal,
+      discountAmount: totals.discountAmount,
+      grandTotal: totals.grandTotal,
+      balance: totals.balance,
+      createdAt: existingQuote?.createdAt || now,
+      updatedAt: now,
+      sentAt: existingQuote?.sentAt || null,
+      closedAt: existingQuote?.closedAt || null,
+      history: existingQuote?.history || []
     };
 
     if (existingIdx !== -1) {
@@ -614,7 +672,93 @@
     }
 
     saveState('quotes');
+    renderSavedQuotesList();
+
+    if (window.supabaseModule && typeof window.supabaseModule.syncQuote === 'function') {
+      const leadSnapshot = lead ? {
+        id: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        email: lead.email || '',
+        category: lead.category || '',
+        source: lead.source || '',
+        status: lead.status || ''
+      } : null;
+      const previousStatus = existingQuote?.status || 'draft';
+      window.supabaseModule.syncQuote(quoteDataToSave, leadSnapshot, previousStatus)
+        .catch(err => console.error('Lỗi đồng bộ báo giá Supabase:', err));
+    }
   }
+
+  function renderSavedQuotesList() {
+    const tbody = document.getElementById('saved-quotes-body');
+    const countEl = document.getElementById('saved-quotes-count');
+    if (!tbody) return;
+
+    const quotes = [...(state.quotes || [])].sort((a, b) => {
+      return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+    });
+
+    if (countEl) {
+      countEl.innerText = `${quotes.length} báo giá`;
+    }
+
+    tbody.innerHTML = '';
+
+    if (quotes.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center" style="color: var(--text-muted); padding: 24px 0;">Chưa có báo giá nào được lưu.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    quotes.slice(0, 20).forEach(quote => {
+      const lead = state.leads.find(l => l.id === quote.leadId);
+      const statusLabel = {
+        draft: '<span class="badge badge-blue">Nháp</span>',
+        sent: '<span class="badge badge-amber">Đã gửi</span>',
+        quoted: '<span class="badge badge-purple">Đã báo giá</span>',
+        negotiating: '<span class="badge badge-pink">Thương lượng</span>',
+        won: '<span class="badge badge-emerald">Chốt đơn</span>',
+        lost: '<span class="badge badge-rose">Thất bại</span>'
+      }[quote.status || 'draft'] || quote.status || 'draft';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td data-label="Mã báo giá"><strong>${quote.quoteCode || `BG-${(quote.leadId || '').replace('lead_', '')}`}</strong></td>
+        <td data-label="Khách hàng">${lead ? lead.name : 'Đã xóa lead'}</td>
+        <td data-label="Tổng cộng" class="text-right">${formatCurrency(quote.grandTotal || 0)}</td>
+        <td data-label="Trạng thái">${statusLabel}</td>
+        <td data-label="Cập nhật">${formatDateShort(quote.updatedAt || quote.createdAt || new Date().toISOString())}</td>
+        <td>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn btn-secondary btn-xs" onclick="openSavedQuote('${quote.leadId}')">Mở</button>
+            <button class="btn btn-secondary btn-xs" onclick="markSavedQuoteResult('${quote.leadId}', 'won')" style="color:#10B981; border-color:rgba(16,185,129,0.25);">Chốt</button>
+            <button class="btn btn-secondary btn-xs" onclick="markSavedQuoteResult('${quote.leadId}', 'lost')" style="color:#EF4444; border-color:rgba(239,68,68,0.25);">Hủy</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  window.openSavedQuote = function(leadId) {
+    const leadSelector = document.getElementById('quote-lead-selector');
+    if (leadSelector) {
+      leadSelector.value = leadId;
+    }
+    loadQuoteForLead(leadId);
+    openQuotePreview();
+  };
+
+  window.markSavedQuoteResult = function(leadId, status) {
+    const lead = state.leads.find(l => l.id === leadId);
+    if (!lead) return;
+    updateLeadField(leadId, 'status', status);
+    renderSavedQuotesList();
+  };
 
   // TẠO NỘI DUNG VĂN BẢN GỬI QUA ZALO
   function generateZaloQuoteText(lead) {
@@ -669,9 +813,15 @@ Website: https://thucphamsomot.vn`;
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount).replace('₫', 'đ');
   }
 
+  function formatDateShort(isoString) {
+    const date = new Date(isoString);
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+  }
+
   // Export module để sử dụng toàn cục
   window.quoteModule = {
     initQuoteBuilder: initQuoteBuilder,
-    loadQuoteForLead: loadQuoteForLead
+    loadQuoteForLead: loadQuoteForLead,
+    renderSavedQuotesList: renderSavedQuotesList
   };
 })();

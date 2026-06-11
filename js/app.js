@@ -12,6 +12,7 @@ let state = {
     status: 'idle'
   }
 };
+window.state = state;
 
 const SYSTEM_PASSWORD = '19871988';
 let currentActiveTab = 'tab-dashboard';
@@ -61,6 +62,21 @@ function initAppState() {
     state.quotes = DEFAULT_QUOTES;
     localStorage.setItem('tps1_quotes', JSON.stringify(state.quotes));
   }
+
+  state.quotes = state.quotes.map(q => ({
+    status: 'draft',
+    result: null,
+    subtotal: 0,
+    discountAmount: 0,
+    grandTotal: 0,
+    balance: 0,
+    updatedAt: q.createdAt || new Date().toISOString(),
+    sentAt: null,
+    closedAt: null,
+    history: [],
+    quoteCode: q.quoteCode || null,
+    ...q
+  }));
 
   if (storedSettings) {
     state.syncSettings = JSON.parse(storedSettings);
@@ -697,6 +713,7 @@ window.updateLeadField = function(leadId, field, value) {
   const leadIndex = state.leads.findIndex(l => l.id === leadId);
   if (leadIndex === -1) return;
 
+  const previousValue = state.leads[leadIndex][field];
   state.leads[leadIndex][field] = value;
   state.leads[leadIndex].updatedAt = new Date().toISOString();
   saveState('leads');
@@ -710,6 +727,38 @@ window.updateLeadField = function(leadId, field, value) {
     // Đồng bộ trạng thái lên Google Sheets
     if (window.sheetsModule && typeof window.sheetsModule.syncWriteGoogleSheets === 'function') {
       window.sheetsModule.syncWriteGoogleSheets('update_status', { phone: state.leads[leadIndex].phone, status: value });
+    }
+
+    // Đồng bộ trạng thái sang các báo giá liên quan
+    const relatedQuotes = state.quotes.filter(q => q.leadId === leadId);
+    if (relatedQuotes.length > 0) {
+      const now = new Date().toISOString();
+      relatedQuotes.forEach(quote => {
+        quote.status = value;
+        quote.updatedAt = now;
+        quote.history = Array.isArray(quote.history) ? quote.history : [];
+        quote.history.push({
+          at: now,
+          action: 'lead_status_change',
+          from: previousValue || null,
+          to: value,
+          note: logText || ''
+        });
+        if (value === 'quoted' && !quote.sentAt) quote.sentAt = now;
+        if (value === 'won' || value === 'lost') {
+          quote.closedAt = now;
+          quote.result = value;
+        }
+      });
+      saveState('quotes');
+      if (window.quoteModule && typeof window.quoteModule.renderSavedQuotesList === 'function') {
+        window.quoteModule.renderSavedQuotesList();
+      }
+      if (window.supabaseModule && typeof window.supabaseModule.syncLeadStatus === 'function') {
+        const leadSnapshot = state.leads[leadIndex];
+        window.supabaseModule.syncLeadStatus(leadSnapshot, previousValue || 'draft', value, logText)
+          .catch(err => console.error('Lỗi syncLeadStatus Supabase:', err));
+      }
     }
   } else if (field === 'category') {
     const catLabels = { wholesale_restaurant: 'Sỉ - Nhà hàng', wholesale_agency: 'Sỉ - Đại lý', retail_vip: 'Lẻ - VIP', retail_regular: 'Lẻ - Thường' };
