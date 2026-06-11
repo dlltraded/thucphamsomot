@@ -257,7 +257,7 @@
   <style>
     @page {
       size: A4;
-      margin: 10mm;
+      margin: 14mm 12mm;
     }
     html, body {
       margin: 0;
@@ -273,7 +273,7 @@
     .print-shell {
       width: 100%;
       box-sizing: border-box;
-      padding: 0;
+      padding: 0 12mm;
     }
     .invoice-paper {
       width: 100%;
@@ -281,13 +281,19 @@
       box-shadow: none !important;
       border: none !important;
       border-radius: 0 !important;
-      padding: 0 !important;
+      padding: 10mm 0 !important;
       margin: 0 !important;
       background: #fff !important;
       color: #000 !important;
     }
     .invoice-table-responsive {
       overflow: visible !important;
+    }
+    .invoice-header {
+      margin-bottom: 16px;
+    }
+    .invoice-footer-notes {
+      margin-bottom: 24px;
     }
     a {
       color: inherit;
