@@ -1,0 +1,18 @@
+{
+  "name": "TPS1 Lead Manager",
+  "short_name": "TPS1 Leads",
+  "description": "Hệ thống Quản lý Leads & Báo Giá Thực phẩm số 1",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0B130E",
+  "theme_color": "#0B130E",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
