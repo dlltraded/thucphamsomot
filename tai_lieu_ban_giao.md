@@ -7,7 +7,7 @@ Tài liệu này tổng hợp toàn bộ thông tin hệ thống, các tính nă
 
 ## 1. THÔNG TIN HỆ THỐNG & ĐƯỜNG DẪN QUAN TRỌNG
 
-- **Mã Pin/Mã khóa mở ứng dụng:** `893491` (Được cấu hình cứng tại biến `SYSTEM_PASSWORD` trong file [app.js](file:///d:/thuc_pham_so_mot/js/app.js)).
+- **Mã Pin/Mã khóa mở ứng dụng:** `19871988` (Được cấu hình cứng tại biến `SYSTEM_PASSWORD` trong file [app.js](file:///d:/thuc_pham_so_mot/js/app.js)).
 - **Cổng chạy ứng dụng cục bộ:** `http://localhost:8080/`
 - **Cấu trúc mã nguồn chính:**
   - [index.html](file:///d:/thuc_pham_so_mot/index.html): File giao diện HTML chính của ứng dụng. Chứa các layout Dashboard, Kanban, Leads List, Quote Builder và cấu trúc mã nguồn hướng dẫn Google Apps Script.

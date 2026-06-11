@@ -13,7 +13,7 @@ let state = {
   }
 };
 
-const SYSTEM_PASSWORD = '893491';
+const SYSTEM_PASSWORD = '19871988';
 let currentActiveTab = 'tab-dashboard';
 
 // 2. Khởi tạo khi tải trang
@@ -137,6 +137,7 @@ function setupAuthListeners() {
       }
       passwordInput.value = '';
       checkAuthentication();
+      window.dispatchEvent(new Event('tps1-authenticated'));
     } else {
       errorMsg.classList.remove('hidden');
       passwordInput.focus();
@@ -848,15 +849,17 @@ function initPwaInstallPrompt() {
   let deferredPrompt = null;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const onIndexPage = window.location.pathname === '/' || /\/index\.html$/i.test(window.location.pathname);
-  const isDismissed = localStorage.getItem('tps1_pwa_dismissed') === 'true';
-  const isSeen = localStorage.getItem('tps1_pwa_seen') === 'true';
-  const canShowPwaBanner = onIndexPage && !isStandalone && !isDismissed && !isSeen;
+  const isMobile = window.matchMedia('(max-width: 768px)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const pwaSeenKey = 'tps1_pwa_seen_v2';
+  const pwaDismissedKey = 'tps1_pwa_dismissed_v2';
+  const isDismissed = localStorage.getItem(pwaDismissedKey) === 'true';
+  const isSeen = localStorage.getItem(pwaSeenKey) === 'true';
+  const canShowPwaBanner = onIndexPage && isMobile && !isStandalone && !isDismissed && !isSeen && !isAuthenticated();
 
   // HÀM HIỂN THỊ BANNER
   function showPwaBanner(type) {
     if (!canShowPwaBanner) return;
-
-    localStorage.setItem('tps1_pwa_seen', 'true');
+    localStorage.setItem(pwaSeenKey, 'true');
     pwaBanner.classList.remove('hidden');
     pwaBanner.classList.remove('ios-style');
     
@@ -880,6 +883,8 @@ function initPwaInstallPrompt() {
       pwaBanner.classList.add('hidden');
     }, 400); // Khớp thời gian transition CSS
   }
+
+  window.addEventListener('tps1-authenticated', hidePwaBanner);
 
   // 1. DÀNH CHO ANDROID / CHROME / WINDOWS / MAC
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -921,8 +926,7 @@ function initPwaInstallPrompt() {
   // Sự kiện nút Đóng banner click
   if (dismissBtn) {
     dismissBtn.addEventListener('click', () => {
-      localStorage.setItem('tps1_pwa_dismissed', 'true');
-      localStorage.setItem('tps1_pwa_seen', 'true');
+      localStorage.setItem(pwaDismissedKey, 'true');
       hidePwaBanner();
     });
   }
