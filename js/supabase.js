@@ -154,6 +154,7 @@
       updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
       sentAt: row.sent_at || row.sentAt || null,
       closedAt: row.closed_at || row.closedAt || null,
+      deletedAt: row.deleted_at || row.deletedAt || null,
       history
     };
   }
@@ -165,6 +166,7 @@
       client
         .from('quotes')
         .select('*')
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false }),
       client
         .from('quote_history')
@@ -324,7 +326,10 @@
     if (!ensureReady()) return { ok: false, skipped: true };
     const { error } = await client
       .from('quotes')
-      .delete()
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
       .eq('local_quote_id', localQuoteId);
     if (error) {
       updateStatus('error', error.message);
@@ -351,6 +356,10 @@
         const existing = merged.get(quote.id);
         if (!existing) {
           merged.set(quote.id, quote);
+          return;
+        }
+
+        if (existing.deletedAt && !quote.deletedAt) {
           return;
         }
 
@@ -460,7 +469,8 @@
       created_at: quoteRecord.createdAt || new Date().toISOString(),
       updated_at: quoteRecord.updatedAt || new Date().toISOString(),
       sent_at: quoteRecord.sentAt || null,
-      closed_at: quoteRecord.closedAt || null
+      closed_at: quoteRecord.closedAt || null,
+      deleted_at: quoteRecord.deletedAt || null
     };
   }
 
