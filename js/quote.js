@@ -33,6 +33,9 @@
     const resetBtn = document.getElementById('quote-reset-btn');
     const copyZaloBtn = document.getElementById('quote-copy-zalo-btn');
     const printBtn = document.getElementById('quote-print-btn');
+    const previewContainer = document.getElementById('quote-preview-container');
+    const previewPrintBtn = document.getElementById('quote-preview-print-btn');
+    const previewCloseBtn = document.getElementById('quote-preview-close-btn');
 
     // 1. Khi chọn khách hàng
     if (leadSelector) {
@@ -193,9 +196,41 @@
           updateLeadField(lead.id, 'status', 'quoted');
         }
 
+        openQuotePreview();
+      });
+    }
+
+    if (previewPrintBtn) {
+      previewPrintBtn.addEventListener('click', () => {
         printQuoteInvoice();
       });
     }
+
+    if (previewCloseBtn) {
+      previewCloseBtn.addEventListener('click', () => {
+        closeQuotePreview();
+      });
+    }
+
+    if (previewContainer) {
+      previewContainer.addEventListener('click', (e) => {
+        if (e.target === previewContainer) {
+          closeQuotePreview();
+        }
+      });
+    }
+  }
+
+  function openQuotePreview() {
+    const previewContainer = document.getElementById('quote-preview-container');
+    if (!previewContainer) return;
+    previewContainer.classList.add('preview-open');
+  }
+
+  function closeQuotePreview() {
+    const previewContainer = document.getElementById('quote-preview-container');
+    if (!previewContainer) return;
+    previewContainer.classList.remove('preview-open');
   }
 
   function printQuoteInvoice() {
@@ -218,7 +253,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${printTitle}</title>
-  <link rel="stylesheet" href="./css/style.css?v=14">
+  <link rel="stylesheet" href="./css/style.css?v=15">
   <style>
     @page {
       size: A4;

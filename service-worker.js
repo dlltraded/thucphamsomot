@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tps1-lead-manager-v19';
+const CACHE_NAME = 'tps1-lead-manager-v20';
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,7 @@ const ASSETS = [
   './assets/icon-512.png',
   './assets/apple-touch-icon.png',
   './bg.png',
-  './css/style.css?v=14',
+  './css/style.css?v=15',
   './js/app.js',
   './js/data.js',
   './js/kanban.js',

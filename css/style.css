@@ -1231,6 +1231,40 @@ a:hover {
   flex: 1 1 500px;
   max-width: 800px;
   min-width: 0;
+  display: none;
+}
+
+.quote-preview-container.preview-open {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  padding: 24px;
+  background: rgba(3, 7, 5, 0.82);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+
+.quote-preview-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 0 auto 16px auto;
+  width: min(100%, 980px);
+}
+
+.quote-preview-container.preview-open .invoice-paper {
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+.quote-preview-container.preview-open .quote-preview-actions {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 12px 0;
+  background: linear-gradient(to bottom, rgba(3, 7, 5, 0.95), rgba(3, 7, 5, 0.65));
 }
 
 .invoice-paper {
@@ -2105,6 +2139,12 @@ a:hover {
     min-width: 0 !important;
     flex: none !important;
     box-sizing: border-box !important;
+  }
+  .quote-preview-container.preview-open {
+    padding: 16px !important;
+  }
+  .quote-preview-actions {
+    width: 100% !important;
   }
   .settings-card {
     padding: 16px !important;
