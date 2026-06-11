@@ -850,16 +850,16 @@ function initPwaInstallPrompt() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const onIndexPage = window.location.pathname === '/' || /\/index\.html$/i.test(window.location.pathname);
   const isMobile = window.matchMedia('(max-width: 768px)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  const pwaSeenKey = 'tps1_pwa_seen_v2';
-  const pwaDismissedKey = 'tps1_pwa_dismissed_v2';
+  const pwaDismissedKey = 'tps1_pwa_dismissed_v3';
   const isDismissed = localStorage.getItem(pwaDismissedKey) === 'true';
-  const isSeen = localStorage.getItem(pwaSeenKey) === 'true';
-  const canShowPwaBanner = onIndexPage && isMobile && !isStandalone && !isDismissed && !isSeen && !isAuthenticated();
+  const canShowPwaBanner = onIndexPage && isMobile && !isStandalone && !isDismissed && !isAuthenticated();
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  let bannerVisible = false;
 
   // HÀM HIỂN THỊ BANNER
   function showPwaBanner(type) {
     if (!canShowPwaBanner) return;
-    localStorage.setItem(pwaSeenKey, 'true');
+    bannerVisible = true;
     pwaBanner.classList.remove('hidden');
     pwaBanner.classList.remove('ios-style');
     
@@ -878,6 +878,7 @@ function initPwaInstallPrompt() {
 
   // HÀM ẨN BANNER
   function hidePwaBanner() {
+    bannerVisible = false;
     pwaBanner.classList.remove('show');
     setTimeout(() => {
       pwaBanner.classList.add('hidden');
@@ -886,21 +887,40 @@ function initPwaInstallPrompt() {
 
   window.addEventListener('tps1-authenticated', hidePwaBanner);
 
+  // Hiện banner ngay trên màn hình khóa mobile ở index, không đợi prompt event mới lộ.
+  if (canShowPwaBanner) {
+    if (isIOS) {
+      showPwaBanner('ios');
+    } else {
+      showPwaBanner('android');
+    }
+  }
+
   // 1. DÀNH CHO ANDROID / CHROME / WINDOWS / MAC
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    
-    // Chỉ hiển thị banner nếu chưa cài đặt và chưa từng bị tắt
-    if (canShowPwaBanner) {
+    if (installBtn) {
+      installBtn.disabled = false;
+    }
+    if (canShowPwaBanner && !bannerVisible && !isIOS) {
       showPwaBanner('android');
     }
   });
 
   // Sự kiện nút Cài đặt click
   if (installBtn) {
+    installBtn.textContent = isIOS ? 'Hướng dẫn' : 'Cài đặt';
+    installBtn.disabled = !isIOS && !deferredPrompt;
     installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
+      if (!deferredPrompt) {
+        if (isIOS) {
+          showToastNotification('Trên iPhone: bấm nút Chia sẻ của Safari rồi chọn "Thêm vào màn hình chính".');
+        } else {
+          showToastNotification('Trình duyệt chưa sẵn sàng cài ứng dụng. Chờ thêm 1-2 giây rồi bấm lại.');
+        }
+        return;
+      }
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log(`PWA install prompt outcome: ${outcome}`);
@@ -914,14 +934,6 @@ function initPwaInstallPrompt() {
     console.log('TPS1 PWA installed successfully.');
     hidePwaBanner();
   });
-
-  // 2. DÀNH CHO IOS SAFARI (Không có beforeinstallprompt)
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isSafari = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome');
-
-  if (isIOS && canShowPwaBanner) {
-    showPwaBanner('ios');
-  }
 
   // Sự kiện nút Đóng banner click
   if (dismissBtn) {
