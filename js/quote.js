@@ -70,6 +70,12 @@
     const quoteDeleteCancelBtn = document.getElementById('quote-delete-cancel-btn');
     const quoteDeleteConfirmBtn = document.getElementById('quote-delete-confirm-btn');
     const quoteDeleteConfirmCheckbox = document.getElementById('quote-delete-confirm-checkbox');
+    const customProductBtn = document.getElementById('quote-add-custom-product-btn');
+    const customProductModal = document.getElementById('quote-custom-product-modal');
+    const customProductModalOverlay = document.getElementById('quote-custom-product-modal-overlay');
+    const customProductModalClose = document.getElementById('quote-custom-product-modal-close');
+    const customProductCancelBtn = document.getElementById('quote-custom-product-cancel-btn');
+    const customProductSaveBtn = document.getElementById('quote-custom-product-save-btn');
 
     // 1. Khi chọn khách hàng
     if (leadSelector) {
@@ -128,7 +134,9 @@
             name: product.name,
             unit: product.unit,
             price: unitPrice,
-            qty: qtyVal
+            qty: qtyVal,
+            priceSource: 'catalog',
+            isCustom: false
           });
         }
 
@@ -141,6 +149,10 @@
         calculateTotals();
         saveCurrentQuoteToState();
       });
+    }
+
+    if (customProductBtn) {
+      customProductBtn.addEventListener('click', openCustomProductModal);
     }
 
     // 4. Lắng nghe thay đổi chiết khấu, vận chuyển, cọc và ghi chú
@@ -370,6 +382,22 @@
       quoteDeleteModalOverlay.addEventListener('click', closeQuoteDeleteModal);
     }
 
+    if (customProductSaveBtn) {
+      customProductSaveBtn.addEventListener('click', handleCustomProductSave);
+    }
+
+    if (customProductCancelBtn) {
+      customProductCancelBtn.addEventListener('click', closeCustomProductModal);
+    }
+
+    if (customProductModalClose) {
+      customProductModalClose.addEventListener('click', closeCustomProductModal);
+    }
+
+    if (customProductModalOverlay) {
+      customProductModalOverlay.addEventListener('click', closeCustomProductModal);
+    }
+
     renderSavedQuotesList();
   }
 
@@ -383,6 +411,71 @@
     const previewContainer = document.getElementById('quote-preview-container');
     if (!previewContainer) return;
     previewContainer.classList.remove('preview-open');
+  }
+
+  function openCustomProductModal() {
+    const modal = document.getElementById('quote-custom-product-modal');
+    const nameInput = document.getElementById('quote-custom-name-input');
+    const unitInput = document.getElementById('quote-custom-unit-input');
+    const priceInput = document.getElementById('quote-custom-price-input');
+    const qtyInput = document.getElementById('quote-custom-qty-input');
+
+    if (nameInput) nameInput.value = '';
+    if (unitInput) unitInput.value = 'Kg';
+    if (priceInput) priceInput.value = '';
+    if (qtyInput) qtyInput.value = 1;
+    if (modal) modal.classList.remove('hidden');
+    if (nameInput) nameInput.focus();
+  }
+
+  function closeCustomProductModal() {
+    const modal = document.getElementById('quote-custom-product-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function handleCustomProductSave() {
+    const nameInput = document.getElementById('quote-custom-name-input');
+    const unitInput = document.getElementById('quote-custom-unit-input');
+    const priceInput = document.getElementById('quote-custom-price-input');
+    const qtyInput = document.getElementById('quote-custom-qty-input');
+
+    const name = nameInput?.value.trim() || '';
+    const unit = unitInput?.value.trim() || '';
+    const price = parseFloat(priceInput?.value || '');
+    const qty = parseFloat(qtyInput?.value || '1');
+
+    if (!name) {
+      showToastNotification('Vui lòng nhập tên sản phẩm.');
+      return;
+    }
+    if (!unit) {
+      showToastNotification('Vui lòng nhập đơn vị tính.');
+      return;
+    }
+    if (isNaN(price) || price < 0) {
+      showToastNotification('Vui lòng nhập giá bán hợp lệ.');
+      return;
+    }
+    if (isNaN(qty) || qty <= 0) {
+      showToastNotification('Vui lòng nhập số lượng lớn hơn 0.');
+      return;
+    }
+
+    activeQuote.items.push({
+      productId: `custom_${Date.now()}`,
+      name,
+      unit,
+      price,
+      qty,
+      isCustom: true,
+      priceSource: 'manual'
+    });
+
+    renderQuoteEditorTable();
+    calculateTotals();
+    saveCurrentQuoteToState();
+    closeCustomProductModal();
+    showToastNotification('Đã thêm sản phẩm mới vào báo giá.');
   }
 
   function printQuoteInvoice() {
@@ -626,6 +719,7 @@
     document.getElementById('quote-deposit-input').value = 0;
     document.getElementById('quote-note-input').value = '';
     document.getElementById('price-type-wholesale').checked = true;
+    closeCustomProductModal();
 
     // Trả mẫu hóa đơn về trống
     document.getElementById('inv-cust-name').innerText = 'Chưa chọn';
@@ -645,7 +739,7 @@
   function recalculateSelectedItemsPrices() {
     activeQuote.items.forEach(item => {
       const product = state.products.find(p => p.id === item.productId);
-      if (product) {
+      if (product && item.priceSource !== 'manual' && !item.isCustom) {
         item.price = activeQuote.priceType === 'wholesale' ? product.price_wholesale : product.price_retail;
       }
     });
@@ -667,10 +761,26 @@
     }
 
     activeQuote.items.forEach((item, index) => {
+      const isCustomItem = !!item.isCustom || String(item.productId || '').startsWith('custom_');
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td data-label="Sản phẩm"><strong>${item.name}</strong></td>
-        <td data-label="Đơn giá" class="text-right">${formatCurrency(item.price)}</td>
+        <td data-label="Sản phẩm">
+          <strong>${item.name}</strong>
+          <div class="quote-item-meta">
+            ${isCustomItem ? '<span class="quote-item-badge">Tự nhập</span>' : ''}
+            <span class="text-muted" style="font-size:11px;">${item.unit || 'Kg'}</span>
+          </div>
+        </td>
+        <td data-label="Đơn giá" class="text-right">
+          <input
+            type="number"
+            class="form-control quote-price-input"
+            min="0"
+            step="1000"
+            value="${Number(item.price || 0)}"
+            onchange="updateItemPrice(${index}, this.value)"
+          >
+        </td>
         <td data-label="Số lượng" class="text-center">
           <div class="qty-btn-group">
             <button class="btn btn-secondary btn-xs" onclick="updateItemQty(${index}, -1)" style="padding: 2px 6px;">-</button>
@@ -700,6 +810,16 @@
       calculateTotals();
       saveCurrentQuoteToState();
     }
+  };
+
+  window.updateItemPrice = function(index, rawValue) {
+    if (!activeQuote.items[index]) return;
+    const nextPrice = Math.max(0, parseFloat(rawValue) || 0);
+    activeQuote.items[index].price = nextPrice;
+    activeQuote.items[index].priceSource = 'manual';
+    renderQuoteEditorTable();
+    calculateTotals();
+    saveCurrentQuoteToState();
   };
 
   // Hàm xóa sản phẩm khỏi bảng Editor

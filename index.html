@@ -421,6 +421,12 @@
                     <input type="number" id="quote-qty-input" min="1" step="any" placeholder="SL..." class="form-control text-center">
                     <button id="quote-add-item-btn" class="btn btn-emerald"><i class="fa-solid fa-plus"></i></button>
                   </div>
+                  <div class="add-product-actions">
+                    <button id="quote-add-custom-product-btn" type="button" class="btn btn-secondary btn-sm">
+                      <i class="fa-solid fa-plus"></i> Sản phẩm mới / giá riêng
+                    </button>
+                    <p class="add-product-hint">Có thể thêm sản phẩm không có trong danh mục và chỉnh giá trực tiếp ở từng dòng.</p>
+                  </div>
                 </div>
 
                 <!-- Product items list in Quote -->
@@ -1277,6 +1283,41 @@ function doPost(e) {
         <div class="modal-footer">
           <button id="quote-delete-cancel-btn" class="btn btn-secondary">Hủy</button>
           <button id="quote-delete-confirm-btn" class="btn btn-danger" disabled>Xóa báo giá</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUOTE CUSTOM PRODUCT MODAL -->
+  <div id="quote-custom-product-modal" class="modal hidden">
+    <div class="modal-overlay" id="quote-custom-product-modal-overlay"></div>
+    <div class="modal-container" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3>Thêm sản phẩm mới vào báo giá</h3>
+        <button id="quote-custom-product-modal-close" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="quote-custom-name-input">Tên sản phẩm</label>
+          <input type="text" id="quote-custom-name-input" class="form-control" placeholder="Ví dụ: Chả cá thác lác loại 1">
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="quote-custom-unit-input">Đơn vị</label>
+            <input type="text" id="quote-custom-unit-input" class="form-control" placeholder="Kg / Con / Hộp">
+          </div>
+          <div class="form-group flex-1">
+            <label for="quote-custom-price-input">Giá bán</label>
+            <input type="number" id="quote-custom-price-input" class="form-control" min="0" step="1000" placeholder="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="quote-custom-qty-input">Số lượng</label>
+          <input type="number" id="quote-custom-qty-input" class="form-control" min="0.1" step="any" value="1">
+        </div>
+        <div class="modal-footer">
+          <button id="quote-custom-product-cancel-btn" class="btn btn-secondary" type="button">Hủy</button>
+          <button id="quote-custom-product-save-btn" class="btn btn-danger" type="button">Thêm vào báo giá</button>
         </div>
       </div>
     </div>
