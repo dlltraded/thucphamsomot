@@ -843,6 +843,7 @@ function initPwaInstallPrompt() {
   const installBtn = document.getElementById('pwa-install-btn');
   const dismissBtn = document.getElementById('pwa-dismiss-btn');
   const bannerDesc = document.getElementById('pwa-banner-desc');
+  const lockScreen = document.getElementById('lock-screen');
   
   if (!pwaBanner) return;
 
@@ -850,9 +851,8 @@ function initPwaInstallPrompt() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const onIndexPage = window.location.pathname === '/' || /\/index\.html$/i.test(window.location.pathname);
   const isMobile = window.matchMedia('(max-width: 768px)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  const pwaDismissedKey = 'tps1_pwa_dismissed_v3';
-  const isDismissed = localStorage.getItem(pwaDismissedKey) === 'true';
-  const canShowPwaBanner = onIndexPage && isMobile && !isStandalone && !isDismissed && !isAuthenticated();
+  const isLockScreenVisible = !!lockScreen && !lockScreen.classList.contains('hidden');
+  const canShowPwaBanner = onIndexPage && isMobile && isLockScreenVisible && !isStandalone;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   let bannerVisible = false;
 
@@ -860,6 +860,9 @@ function initPwaInstallPrompt() {
   function showPwaBanner(type) {
     if (!canShowPwaBanner) return;
     bannerVisible = true;
+    if (installBtn) {
+      installBtn.disabled = false;
+    }
     pwaBanner.classList.remove('hidden');
     pwaBanner.classList.remove('ios-style');
     
@@ -911,7 +914,7 @@ function initPwaInstallPrompt() {
   // Sự kiện nút Cài đặt click
   if (installBtn) {
     installBtn.textContent = isIOS ? 'Hướng dẫn' : 'Cài đặt';
-    installBtn.disabled = !isIOS && !deferredPrompt;
+    installBtn.disabled = false;
     installBtn.addEventListener('click', async () => {
       if (!deferredPrompt) {
         if (isIOS) {
@@ -938,7 +941,6 @@ function initPwaInstallPrompt() {
   // Sự kiện nút Đóng banner click
   if (dismissBtn) {
     dismissBtn.addEventListener('click', () => {
-      localStorage.setItem(pwaDismissedKey, 'true');
       hidePwaBanner();
     });
   }
