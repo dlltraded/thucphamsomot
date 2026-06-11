@@ -2207,9 +2207,24 @@ a:hover {
   .app-header,
   .quote-editor-card,
   .tab-content-container > :not(#tab-quote),
-  .quote-actions-row,
-  .main-wrapper {
+  .quote-actions-row {
     display: none !important;
+  }
+
+  .main-wrapper {
+    display: block !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+  }
+
+  .tab-content-container {
+    padding: 0 !important;
+  }
+
+  #tab-quote {
+    display: block !important;
+    width: 100% !important;
   }
 
   .quote-builder-layout {
