@@ -3,8 +3,8 @@
   const STATUS_KEY = 'tps1_supabase_status';
   const DEFAULT_CONFIG = {
     url: 'https://yntgxollwjemyidizhnn.supabase.co',
-    anonKey: '',
-    enabled: false
+    anonKey: 'sb_publishable_BhQX_aNaD5wzocEp7MXD_Q_DA4kOAZn',
+    enabled: true
   };
 
   let client = null;
@@ -14,7 +14,11 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return { ...DEFAULT_CONFIG };
-      return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      const merged = { ...DEFAULT_CONFIG, ...parsed };
+      if (!merged.anonKey) merged.anonKey = DEFAULT_CONFIG.anonKey;
+      if (!Object.prototype.hasOwnProperty.call(parsed, 'enabled')) merged.enabled = true;
+      return merged;
     } catch (err) {
       console.warn('Không đọc được cấu hình Supabase:', err);
       return { ...DEFAULT_CONFIG };
@@ -48,6 +52,9 @@
     try {
       client = window.supabase.createClient(config.url, config.anonKey);
       updateStatus('ready');
+      setTimeout(() => {
+        hydrateQuotesFromSupabase().catch(err => console.error('Lỗi hydrate Supabase:', err));
+      }, 0);
       return client;
     } catch (err) {
       console.error('Không khởi tạo được Supabase client:', err);
@@ -105,6 +112,123 @@
     const quoteCountEl = document.getElementById('supabase-quotes-count');
     if (quoteCountEl && window.state && Array.isArray(window.state.quotes)) {
       quoteCountEl.innerText = window.state.quotes.length;
+    }
+  }
+
+  function normalizeRemoteQuote(row, historyRows) {
+    const quoteCode = row.quote_code || row.quoteCode || '';
+    const history = (historyRows || [])
+      .map(item => ({
+        at: item.created_at || item.createdAt || new Date().toISOString(),
+        action: item.action || 'status_change',
+        from: item.from_status || item.fromStatus || null,
+        to: item.to_status || item.toStatus || null,
+        note: item.note || '',
+        payload: item.payload || {}
+      }))
+      .sort((a, b) => new Date(a.at) - new Date(b.at));
+
+    return {
+      id: row.local_quote_id || row.id || `quote_${Date.now()}`,
+      leadId: row.lead_id || row.leadId || '',
+      quoteCode: quoteCode || `BG-${String(row.lead_id || row.leadId || '').replace('lead_', '')}`,
+      priceType: row.price_type || row.priceType || 'wholesale',
+      items: Array.isArray(row.items) ? row.items : [],
+      discount: Number(row.discount_percent ?? row.discount ?? 0),
+      shipping: Number(row.shipping_amount ?? row.shipping ?? 0),
+      deposit: Number(row.deposit_amount ?? row.deposit ?? 0),
+      note: row.note || '',
+      status: row.status || 'draft',
+      result: row.result || '',
+      subtotal: Number(row.subtotal ?? 0),
+      discountAmount: Number(row.discount_amount ?? 0),
+      grandTotal: Number(row.grand_total ?? 0),
+      balance: Number(row.balance_amount ?? 0),
+      createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+      updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
+      sentAt: row.sent_at || row.sentAt || null,
+      closedAt: row.closed_at || row.closedAt || null,
+      history
+    };
+  }
+
+  async function fetchQuotesFromSupabase() {
+    if (!ensureReady()) return { ok: false, skipped: true };
+
+    const [{ data: quotesData, error: quotesError }, { data: historyData, error: historyError }] = await Promise.all([
+      client
+        .from('quotes')
+        .select('*')
+        .order('updated_at', { ascending: false }),
+      client
+        .from('quote_history')
+        .select('*')
+        .order('created_at', { ascending: true })
+    ]);
+
+    if (quotesError) {
+      updateStatus('error', quotesError.message);
+      throw quotesError;
+    }
+    if (historyError) {
+      console.warn('Không tải được lịch sử báo giá Supabase:', historyError);
+    }
+
+    const historyMap = new Map();
+    (historyData || []).forEach(row => {
+      const key = row.local_quote_id;
+      if (!historyMap.has(key)) historyMap.set(key, []);
+      historyMap.get(key).push(row);
+    });
+
+    const remoteQuotes = (quotesData || []).map(row => normalizeRemoteQuote(row, historyMap.get(row.local_quote_id) || []));
+    return { ok: true, quotes: remoteQuotes };
+  }
+
+  async function hydrateQuotesFromSupabase() {
+    if (!ensureReady()) return { ok: false, skipped: true };
+
+    try {
+      const { quotes: remoteQuotes } = await fetchQuotesFromSupabase();
+      const localQuotes = Array.isArray(window.state?.quotes) ? window.state.quotes : [];
+      const merged = new Map();
+
+      localQuotes.forEach(quote => {
+        if (quote && quote.id) merged.set(quote.id, quote);
+      });
+
+      remoteQuotes.forEach(quote => {
+        const existing = merged.get(quote.id);
+        if (!existing) {
+          merged.set(quote.id, quote);
+          return;
+        }
+
+        const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+        const remoteTime = new Date(quote.updatedAt || quote.createdAt || 0).getTime();
+        if (remoteTime >= existingTime) {
+          merged.set(quote.id, {
+            ...existing,
+            ...quote,
+            history: Array.isArray(quote.history) && quote.history.length > 0
+              ? quote.history
+              : (Array.isArray(existing.history) ? existing.history : [])
+          });
+        }
+      });
+
+      window.state.quotes = Array.from(merged.values());
+      localStorage.setItem('tps1_quotes', JSON.stringify(window.state.quotes));
+      refreshSettingsForm();
+      if (window.quoteModule && typeof window.quoteModule.renderSavedQuotesList === 'function') {
+        window.quoteModule.renderSavedQuotesList();
+      }
+      updateStatus('ready', `Đã tải ${remoteQuotes.length} báo giá từ Supabase`);
+      return { ok: true, count: remoteQuotes.length };
+    } catch (err) {
+      console.error('Lỗi tải báo giá từ Supabase:', err);
+      updateStatus('error', err.message);
+      return { ok: false, error: err };
     }
   }
 
@@ -272,7 +396,8 @@
         try {
           const { error } = await client.from('quotes').select('id', { count: 'exact', head: true });
           if (error) throw error;
-          updateStatus('ready', 'Kiểm tra kết nối thành công');
+          const pullResult = await hydrateQuotesFromSupabase();
+          updateStatus('ready', pullResult?.count != null ? `Kiểm tra OK, tải ${pullResult.count} báo giá` : 'Kiểm tra kết nối thành công');
           showToastNotification('Kết nối Supabase ổn.');
         } catch (err) {
           updateStatus('error', err.message);
@@ -297,6 +422,8 @@
     syncQuote,
     syncLeadStatus,
     insertHistory,
+    fetchQuotesFromSupabase,
+    hydrateQuotesFromSupabase,
     refreshSettingsForm,
     updateStatus
   };
