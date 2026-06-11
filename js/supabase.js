@@ -53,6 +53,7 @@
       client = window.supabase.createClient(config.url, config.anonKey);
       updateStatus('ready');
       setTimeout(() => {
+        hydrateProductsFromSupabase().catch(err => console.error('Lỗi hydrate sản phẩm Supabase:', err));
         hydrateQuotesFromSupabase().catch(err => console.error('Lỗi hydrate Supabase:', err));
       }, 0);
       return client;
@@ -112,6 +113,11 @@
     const quoteCountEl = document.getElementById('supabase-quotes-count');
     if (quoteCountEl && window.state && Array.isArray(window.state.quotes)) {
       quoteCountEl.innerText = window.state.quotes.length;
+    }
+
+    const productCountEl = document.getElementById('supabase-products-count');
+    if (productCountEl && window.state && Array.isArray(window.state.products)) {
+      productCountEl.innerText = window.state.products.length;
     }
   }
 
@@ -183,6 +189,135 @@
 
     const remoteQuotes = (quotesData || []).map(row => normalizeRemoteQuote(row, historyMap.get(row.local_quote_id) || []));
     return { ok: true, quotes: remoteQuotes };
+  }
+
+  function normalizeRemoteProduct(row) {
+    return {
+      id: row.local_product_id || row.id || `prod_${Date.now()}`,
+      sku: row.sku || '',
+      name: row.name || '',
+      unit: row.unit || 'Kg',
+      category: row.category || '',
+      subCategory: row.sub_category || '',
+      packSize: row.pack_size || '',
+      price_wholesale: Number(row.price_wholesale ?? 0),
+      price_retail: Number(row.price_retail ?? 0),
+      supplier: row.supplier || '',
+      origin: row.origin || '',
+      active: row.active !== false,
+      tags: Array.isArray(row.tags) ? row.tags : [],
+      notes: row.notes || '',
+      createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+      updatedAt: row.updated_at || row.updatedAt || new Date().toISOString()
+    };
+  }
+
+  async function fetchProductsFromSupabase() {
+    if (!ensureReady()) return { ok: false, skipped: true };
+
+    const { data, error } = await client
+      .from('products')
+      .select('*')
+      .order('category', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      updateStatus('error', error.message);
+      throw error;
+    }
+
+    const products = (data || []).map(normalizeRemoteProduct);
+    return { ok: true, products };
+  }
+
+  async function hydrateProductsFromSupabase() {
+    if (!ensureReady()) return { ok: false, skipped: true };
+
+    try {
+      const { products: remoteProducts } = await fetchProductsFromSupabase();
+      const localProducts = Array.isArray(window.state?.products) ? window.state.products : [];
+      const merged = new Map();
+
+      localProducts.forEach(product => {
+        if (product && product.id) merged.set(product.id, product);
+      });
+
+      remoteProducts.forEach(product => {
+        const existing = merged.get(product.id);
+        if (!existing) {
+          merged.set(product.id, product);
+          return;
+        }
+
+        const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+        const remoteTime = new Date(product.updatedAt || product.createdAt || 0).getTime();
+        if (remoteTime >= existingTime) {
+          merged.set(product.id, {
+            ...existing,
+            ...product
+          });
+        }
+      });
+
+      window.state.products = Array.from(merged.values());
+      localStorage.setItem('tps1_products', JSON.stringify(window.state.products));
+      refreshSettingsForm();
+      updateStatus('ready', `Đã tải ${remoteProducts.length} sản phẩm từ Supabase`);
+      return { ok: true, count: remoteProducts.length };
+    } catch (err) {
+      console.error('Lỗi tải sản phẩm từ Supabase:', err);
+      updateStatus('error', err.message);
+      return { ok: false, error: err };
+    }
+  }
+
+  function buildProductPayload(product) {
+    return {
+      local_product_id: product.id,
+      sku: product.sku || null,
+      name: product.name || '',
+      category: product.category || '',
+      sub_category: product.subCategory || product.sub_category || null,
+      unit: product.unit || 'Kg',
+      pack_size: product.packSize || product.pack_size || null,
+      price_wholesale: Number(product.price_wholesale ?? product.priceWholesale ?? 0),
+      price_retail: Number(product.price_retail ?? product.priceRetail ?? 0),
+      supplier: product.supplier || null,
+      origin: product.origin || null,
+      active: product.active !== false,
+      tags: Array.isArray(product.tags) ? product.tags : [],
+      notes: product.notes || null,
+      created_at: product.createdAt || product.created_at || new Date().toISOString(),
+      updated_at: product.updatedAt || product.updated_at || new Date().toISOString()
+    };
+  }
+
+  async function syncProduct(product) {
+    if (!ensureReady()) return { ok: false, skipped: true };
+    const payload = buildProductPayload(product);
+    const { error } = await client
+      .from('products')
+      .upsert(payload, { onConflict: 'local_product_id' });
+    if (error) {
+      updateStatus('error', error.message);
+      throw error;
+    }
+    updateStatus('ready');
+    return { ok: true };
+  }
+
+  async function syncProductsBatch(products) {
+    if (!ensureReady()) return { ok: false, skipped: true };
+    const payload = (products || []).map(buildProductPayload);
+    const { error } = await client
+      .from('products')
+      .upsert(payload, { onConflict: 'local_product_id' });
+    if (error) {
+      updateStatus('error', error.message);
+      throw error;
+    }
+    updateStatus('ready');
+    return { ok: true, count: payload.length };
   }
 
   async function hydrateQuotesFromSupabase() {
@@ -368,6 +503,7 @@
 
   function bindSettingsForm() {
     const saveBtn = document.getElementById('supabase-save-btn');
+    const pullBtn = document.getElementById('supabase-pull-btn');
     const testBtn = document.getElementById('supabase-test-btn');
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
@@ -387,6 +523,28 @@
       });
     }
 
+    if (pullBtn) {
+      pullBtn.addEventListener('click', async () => {
+        if (!ensureReady()) {
+          showToastNotification('Supabase chưa sẵn sàng. Hãy lưu URL và anon key trước.');
+          return;
+        }
+        try {
+          const [quotesPull, productsPull] = await Promise.all([
+            hydrateQuotesFromSupabase(),
+            hydrateProductsFromSupabase()
+          ]);
+          const quoteCount = quotesPull?.count || 0;
+          const productCount = productsPull?.count || 0;
+          updateStatus('ready', `Đã tải ${quoteCount} báo giá và ${productCount} sản phẩm`);
+          showToastNotification('Đã kéo dữ liệu từ Supabase về.');
+        } catch (err) {
+          updateStatus('error', err.message);
+          showToastNotification(`Lỗi Supabase: ${err.message}`);
+        }
+      });
+    }
+
     if (testBtn) {
       testBtn.addEventListener('click', async () => {
         if (!ensureReady()) {
@@ -396,8 +554,11 @@
         try {
           const { error } = await client.from('quotes').select('id', { count: 'exact', head: true });
           if (error) throw error;
-          const pullResult = await hydrateQuotesFromSupabase();
-          updateStatus('ready', pullResult?.count != null ? `Kiểm tra OK, tải ${pullResult.count} báo giá` : 'Kiểm tra kết nối thành công');
+          const [quotePull, productPull] = await Promise.all([
+            hydrateQuotesFromSupabase(),
+            hydrateProductsFromSupabase()
+          ]);
+          updateStatus('ready', `Kiểm tra OK, tải ${quotePull?.count || 0} báo giá và ${productPull?.count || 0} sản phẩm`);
           showToastNotification('Kết nối Supabase ổn.');
         } catch (err) {
           updateStatus('error', err.message);
@@ -424,6 +585,10 @@
     insertHistory,
     fetchQuotesFromSupabase,
     hydrateQuotesFromSupabase,
+    fetchProductsFromSupabase,
+    hydrateProductsFromSupabase,
+    syncProduct,
+    syncProductsBatch,
     refreshSettingsForm,
     updateStatus
   };
