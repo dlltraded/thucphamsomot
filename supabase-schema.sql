@@ -99,6 +99,11 @@ alter table public.products enable row level security;
 alter table public.quotes enable row level security;
 alter table public.quote_history enable row level security;
 
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on table public.products to anon, authenticated;
+grant select, insert, update, delete on table public.quotes to anon, authenticated;
+grant select, insert, update, delete on table public.quote_history to anon, authenticated;
+
 drop policy if exists "products_select_all" on public.products;
 create policy "products_select_all"
 on public.products

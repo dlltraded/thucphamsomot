@@ -743,7 +743,10 @@
       } : null;
       const previousStatus = existingQuote?.status || 'draft';
       window.supabaseModule.syncQuote(quoteDataToSave, leadSnapshot, previousStatus)
-        .catch(err => console.error('Lỗi đồng bộ báo giá Supabase:', err));
+        .catch(err => {
+          console.error('Lỗi đồng bộ báo giá Supabase:', err);
+          showToastNotification(`Không lưu được lên Supabase: ${err.message}`);
+        });
     }
   }
 
@@ -875,6 +878,16 @@
       return;
     }
 
+    if (window.supabaseModule && typeof window.supabaseModule.deleteQuoteByLocalId === 'function') {
+      try {
+        await window.supabaseModule.deleteQuoteByLocalId(quote.id);
+      } catch (err) {
+        console.error('Lỗi xóa báo giá Supabase:', err);
+        showToastNotification(`Không xóa được trên Supabase: ${err.message}`);
+        return;
+      }
+    }
+
     state.quotes = state.quotes.filter(q => q.id !== quoteId);
     const leadIdx = state.leads.findIndex(l => l.id === quote.leadId);
     if (leadIdx !== -1 && Array.isArray(state.leads[leadIdx].quotes)) {
@@ -888,15 +901,7 @@
     }
 
     renderSavedQuotesList();
-
-    if (window.supabaseModule && typeof window.supabaseModule.deleteQuoteByLocalId === 'function') {
-      window.supabaseModule.deleteQuoteByLocalId(quote.id)
-        .then(() => showToastNotification('Đã xóa báo giá trên Supabase.'))
-        .catch(err => {
-          console.error('Lỗi xóa báo giá Supabase:', err);
-          showToastNotification(`Đã xóa local, nhưng Supabase lỗi: ${err.message}`);
-        });
-    }
+    showToastNotification('Đã xóa báo giá trên Supabase và local.');
   };
 
   function closeQuoteHistoryModal() {
