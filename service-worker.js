@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tps1-lead-manager-v18';
+const CACHE_NAME = 'tps1-lead-manager-v19';
 const ASSETS = [
   './',
   './index.html',

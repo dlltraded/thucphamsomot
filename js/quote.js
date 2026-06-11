@@ -193,9 +193,95 @@
           updateLeadField(lead.id, 'status', 'quoted');
         }
 
-        window.print();
+        printQuoteInvoice();
       });
     }
+  }
+
+  function printQuoteInvoice() {
+    const invoicePaper = document.getElementById('invoice-paper');
+    if (!invoicePaper) {
+      alert('Không tìm thấy mẫu báo giá để in!');
+      return;
+    }
+
+    const printTitle = 'TPS1-Admin - Báo giá';
+    const printWindow = window.open('', '_blank', 'width=1100,height=1400');
+    if (!printWindow) {
+      alert('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup rồi thử lại.');
+      return;
+    }
+
+    const printHtml = `<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${printTitle}</title>
+  <link rel="stylesheet" href="./css/style.css?v=14">
+  <style>
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #000;
+    }
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-family: var(--font-family);
+    }
+    .print-shell {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0;
+    }
+    .invoice-paper {
+      width: 100%;
+      max-width: 100%;
+      box-shadow: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      background: #fff !important;
+      color: #000 !important;
+    }
+    .invoice-table-responsive {
+      overflow: visible !important;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-shell">
+    ${invoicePaper.outerHTML}
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      document.title = ${JSON.stringify(printTitle)};
+      setTimeout(() => {
+        window.focus();
+        window.print();
+      }, 300);
+    });
+    window.addEventListener('afterprint', () => {
+      window.close();
+    });
+  </script>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
   }
 
   // Khởi tạo tab Lên đơn báo giá
