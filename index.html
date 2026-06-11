@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Custom Style -->
-  <link rel="stylesheet" href="./css/style.css?v=16">
+  <link rel="stylesheet" href="./css/style.css?v=17">
 </head>
 <body>
 
@@ -85,6 +85,9 @@
             </li>
             <li class="nav-item" data-tab="tab-quote">
               <a href="javascript:void(0)"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Lên Đơn & Báo Giá</span></a>
+            </li>
+            <li class="nav-item" data-tab="tab-quote-management">
+              <a href="javascript:void(0)"><i class="fa-solid fa-folder-open"></i> <span>Quản Lý Báo Giá</span></a>
             </li>
             <li class="nav-item" data-tab="tab-settings">
               <a href="javascript:void(0)"><i class="fa-solid fa-sliders"></i> <span>Cấu Hình Sheets</span></a>
@@ -469,31 +472,6 @@
                   <button id="quote-print-btn" class="btn btn-primary"><i class="fa-solid fa-print"></i> In báo giá (PDF)</button>
                 </div>
 
-                <div class="table-card quote-history-card">
-                  <div class="table-card-header">
-                    <h4>Báo giá đã lưu & theo dõi</h4>
-                    <span class="text-muted" id="saved-quotes-count">0 báo giá</span>
-                  </div>
-                  <div class="table-responsive">
-                    <table class="data-table quote-history-table">
-                      <thead>
-                        <tr>
-                          <th>Mã báo giá</th>
-                          <th>Khách hàng</th>
-                          <th class="text-right">Tổng cộng</th>
-                          <th>Trạng thái</th>
-                          <th>Cập nhật</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody id="saved-quotes-body">
-                        <tr>
-                          <td colspan="6" class="text-center" style="color: var(--text-muted); padding: 24px 0;">Chưa có báo giá nào được lưu.</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </div>
 
               <!-- Right Side: Invoice Visual Preview -->
@@ -602,6 +580,75 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: QUOTE MANAGEMENT -->
+          <div id="tab-quote-management" class="tab-panel">
+            <div class="table-card quote-management-hero">
+              <div class="card-header">
+                <h3>Quản Lý Báo Giá</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button id="quote-management-refresh-btn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate"></i> Đồng bộ từ Supabase</button>
+                  <span class="badge badge-blue" id="quote-management-count">0 báo giá</span>
+                </div>
+              </div>
+              <div class="quote-management-stats">
+                <div class="mini-stat">
+                  <span>Tổng báo giá</span>
+                  <strong id="quote-mgmt-total">0</strong>
+                </div>
+                <div class="mini-stat">
+                  <span>Đã gửi</span>
+                  <strong id="quote-mgmt-sent">0</strong>
+                </div>
+                <div class="mini-stat">
+                  <span>Chốt đơn</span>
+                  <strong id="quote-mgmt-won">0</strong>
+                </div>
+                <div class="mini-stat">
+                  <span>Thất bại</span>
+                  <strong id="quote-mgmt-lost">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card quote-management-card">
+              <div class="card-header">
+                <h3>Danh sách báo giá đã lưu</h3>
+                <div class="quote-management-filters">
+                  <input type="text" id="quote-management-search" class="form-control" placeholder="Tìm mã, khách hàng, SĐT...">
+                  <select id="quote-management-status-filter" class="form-control">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="draft">Nháp</option>
+                    <option value="quoted">Đã báo giá</option>
+                    <option value="sent">Đã gửi</option>
+                    <option value="negotiating">Thương lượng</option>
+                    <option value="won">Chốt đơn</option>
+                    <option value="lost">Thất bại</option>
+                  </select>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table quote-management-table">
+                  <thead>
+                    <tr>
+                      <th>Mã báo giá</th>
+                      <th>Khách hàng</th>
+                      <th class="text-right">Tổng cộng</th>
+                      <th>Trạng thái</th>
+                      <th>Cập nhật</th>
+                      <th>Sản phẩm</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="saved-quotes-body">
+                    <tr>
+                      <td colspan="7" class="text-center" style="color: var(--text-muted); padding: 24px 0;">Chưa có báo giá nào được lưu.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1157,6 +1204,20 @@ function doPost(e) {
       <div style="display: flex; gap: 12px; justify-content: center;">
         <button id="logout-cancel-btn" class="btn btn-secondary" style="flex: 1;">Hủy</button>
         <button id="logout-confirm-btn" class="btn btn-primary" style="background-color: #EF4444; color: white; flex: 1; border: none;">Đăng Xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUOTE HISTORY MODAL -->
+  <div id="quote-history-modal" class="modal hidden">
+    <div class="modal-overlay" id="quote-history-modal-overlay"></div>
+    <div class="modal-container quote-history-modal-box" style="max-width: 860px;">
+      <div class="modal-header">
+        <h3 id="quote-history-modal-title">Chi tiết báo giá</h3>
+        <button id="quote-history-modal-close" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="quote-history-modal-body">
+        <!-- Dynamic -->
       </div>
     </div>
   </div>

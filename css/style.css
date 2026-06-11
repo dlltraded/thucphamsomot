@@ -865,6 +865,110 @@ a:hover {
   margin-top: 4px;
 }
 
+.quote-management-hero {
+  margin-bottom: 18px;
+}
+
+.quote-management-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.mini-stat {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mini-stat span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.mini-stat strong {
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.quote-management-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.quote-management-filters .form-control {
+  min-width: 220px;
+}
+
+.quote-history-modal-box {
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.quote-history-modal-box .modal-body {
+  overflow-y: auto;
+}
+
+.quote-history-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.quote-history-meta {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.quote-history-meta p {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.quote-history-section h4 {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.quote-history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quote-history-item {
+  border-left: 2px solid var(--primary);
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 12px 12px 0;
+}
+
+.quote-history-item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.quote-history-item-body p {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
 .card-header {
   padding: 20px;
   border-bottom: 1px solid var(--border-color);
@@ -1981,6 +2085,20 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
+  .quote-management-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 16px 16px;
+  }
+
+  .quote-management-filters {
+    width: 100%;
+  }
+
+  .quote-management-filters .form-control {
+    min-width: 0;
+    width: 100%;
+  }
+
   .app-header {
     padding: 0 16px;
   }
@@ -2255,6 +2373,10 @@ a:hover {
 
 @media (max-width: 480px) {
   .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-management-stats {
     grid-template-columns: 1fr;
   }
   

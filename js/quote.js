@@ -45,6 +45,14 @@
     const previewPrintBtn = document.getElementById('quote-preview-print-btn');
     const previewCloseBtn = document.getElementById('quote-preview-close-btn');
     const savedQuotesBody = document.getElementById('saved-quotes-body');
+    const quoteMgmtSearch = document.getElementById('quote-management-search');
+    const quoteMgmtStatusFilter = document.getElementById('quote-management-status-filter');
+    const quoteMgmtRefreshBtn = document.getElementById('quote-management-refresh-btn');
+    const quoteHistoryModal = document.getElementById('quote-history-modal');
+    const quoteHistoryModalBody = document.getElementById('quote-history-modal-body');
+    const quoteHistoryModalTitle = document.getElementById('quote-history-modal-title');
+    const quoteHistoryModalClose = document.getElementById('quote-history-modal-close');
+    const quoteHistoryModalOverlay = document.getElementById('quote-history-modal-overlay');
 
     // 1. Khi chọn khách hàng
     if (leadSelector) {
@@ -229,6 +237,35 @@
       });
     }
 
+    if (quoteMgmtSearch) {
+      quoteMgmtSearch.addEventListener('input', () => renderSavedQuotesList());
+    }
+
+    if (quoteMgmtStatusFilter) {
+      quoteMgmtStatusFilter.addEventListener('change', () => renderSavedQuotesList());
+    }
+
+    if (quoteMgmtRefreshBtn) {
+      quoteMgmtRefreshBtn.addEventListener('click', async () => {
+        if (window.supabaseModule && typeof window.supabaseModule.hydrateQuotesFromSupabase === 'function') {
+          await window.supabaseModule.hydrateQuotesFromSupabase().catch(err => console.error('Lỗi kéo báo giá:', err));
+        }
+        if (window.supabaseModule && typeof window.supabaseModule.hydrateProductsFromSupabase === 'function') {
+          await window.supabaseModule.hydrateProductsFromSupabase().catch(err => console.error('Lỗi kéo sản phẩm:', err));
+        }
+        renderSavedQuotesList();
+        showToastNotification('Đã đồng bộ dữ liệu báo giá từ Supabase.');
+      });
+    }
+
+    if (quoteHistoryModalClose) {
+      quoteHistoryModalClose.addEventListener('click', closeQuoteHistoryModal);
+    }
+
+    if (quoteHistoryModalOverlay) {
+      quoteHistoryModalOverlay.addEventListener('click', closeQuoteHistoryModal);
+    }
+
     renderSavedQuotesList();
   }
 
@@ -264,7 +301,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${printTitle}</title>
-  <link rel="stylesheet" href="./css/style.css?v=16">
+  <link rel="stylesheet" href="./css/style.css?v=17">
   <style>
     @page {
       size: A4;
@@ -693,28 +730,66 @@
   function renderSavedQuotesList() {
     const tbody = document.getElementById('saved-quotes-body');
     const countEl = document.getElementById('saved-quotes-count');
+    const totalEl = document.getElementById('quote-mgmt-total');
+    const sentEl = document.getElementById('quote-mgmt-sent');
+    const wonEl = document.getElementById('quote-mgmt-won');
+    const lostEl = document.getElementById('quote-mgmt-lost');
+    const quoteCountBadge = document.getElementById('quote-management-count');
     if (!tbody) return;
 
-    const quotes = [...(state.quotes || [])].sort((a, b) => {
-      return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+    const searchValue = document.getElementById('quote-management-search')?.value.trim().toLowerCase() || '';
+    const statusFilter = document.getElementById('quote-management-status-filter')?.value || '';
+
+    const quotes = [...(state.quotes || [])]
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+
+    const filteredQuotes = quotes.filter(quote => {
+      const lead = state.leads.find(l => l.id === quote.leadId);
+      const haystack = [
+        quote.quoteCode || '',
+        quote.leadId || '',
+        lead?.name || '',
+        lead?.phone || '',
+        lead?.email || '',
+        quote.note || ''
+      ].join(' ').toLowerCase();
+      const statusOk = !statusFilter || (quote.status || 'draft') === statusFilter;
+      const searchOk = !searchValue || haystack.includes(searchValue);
+      return statusOk && searchOk;
     });
 
+    const stats = quotes.reduce((acc, quote) => {
+      acc.total += 1;
+      if (quote.status === 'sent') acc.sent += 1;
+      if (quote.status === 'won') acc.won += 1;
+      if (quote.status === 'lost') acc.lost += 1;
+      return acc;
+    }, { total: 0, sent: 0, won: 0, lost: 0 });
+
+    if (totalEl) totalEl.innerText = stats.total;
+    if (sentEl) sentEl.innerText = stats.sent;
+    if (wonEl) wonEl.innerText = stats.won;
+    if (lostEl) lostEl.innerText = stats.lost;
+
     if (countEl) {
-      countEl.innerText = `${quotes.length} báo giá`;
+      countEl.innerText = `${filteredQuotes.length} báo giá`;
+    }
+    if (quoteCountBadge) {
+      quoteCountBadge.innerText = `${filteredQuotes.length}/${stats.total} báo giá`;
     }
 
     tbody.innerHTML = '';
 
-    if (quotes.length === 0) {
+    if (filteredQuotes.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="text-center" style="color: var(--text-muted); padding: 24px 0;">Chưa có báo giá nào được lưu.</td>
+          <td colspan="7" class="text-center" style="color: var(--text-muted); padding: 24px 0;">Không có báo giá nào phù hợp bộ lọc hiện tại.</td>
         </tr>
       `;
       return;
     }
 
-    quotes.slice(0, 20).forEach(quote => {
+    filteredQuotes.slice(0, 100).forEach(quote => {
       const lead = state.leads.find(l => l.id === quote.leadId);
       const statusLabel = {
         draft: '<span class="badge badge-blue">Nháp</span>',
@@ -728,15 +803,21 @@
       const row = document.createElement('tr');
       row.innerHTML = `
         <td data-label="Mã báo giá"><strong>${quote.quoteCode || `BG-${(quote.leadId || '').replace('lead_', '')}`}</strong></td>
-        <td data-label="Khách hàng">${lead ? lead.name : 'Đã xóa lead'}</td>
+        <td data-label="Khách hàng">
+          <div><strong>${lead ? lead.name : 'Đã xóa lead'}</strong></div>
+          <div class="text-muted" style="font-size:12px;">${lead ? lead.phone : quote.leadId}</div>
+        </td>
         <td data-label="Tổng cộng" class="text-right">${formatCurrency(quote.grandTotal || 0)}</td>
         <td data-label="Trạng thái">${statusLabel}</td>
         <td data-label="Cập nhật">${formatDateShort(quote.updatedAt || quote.createdAt || new Date().toISOString())}</td>
+        <td data-label="Sản phẩm">${(quote.items || []).length}</td>
         <td>
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-            <button class="btn btn-secondary btn-xs" onclick="openSavedQuote('${quote.leadId}')">Mở</button>
+            <button class="btn btn-secondary btn-xs" onclick="openSavedQuote('${quote.leadId}')">Mở sửa</button>
+            <button class="btn btn-secondary btn-xs" onclick="openQuoteHistory('${quote.id}')">Lịch sử</button>
             <button class="btn btn-secondary btn-xs" onclick="markSavedQuoteResult('${quote.leadId}', 'won')" style="color:#10B981; border-color:rgba(16,185,129,0.25);">Chốt</button>
             <button class="btn btn-secondary btn-xs" onclick="markSavedQuoteResult('${quote.leadId}', 'lost')" style="color:#EF4444; border-color:rgba(239,68,68,0.25);">Hủy</button>
+            <button class="btn btn-secondary btn-xs" onclick="deleteSavedQuote('${quote.id}')" style="color:#F97316; border-color:rgba(249,115,22,0.25);">Xóa</button>
           </div>
         </td>
       `;
@@ -745,19 +826,121 @@
   }
 
   window.openSavedQuote = function(leadId) {
-    const leadSelector = document.getElementById('quote-lead-selector');
-    if (leadSelector) {
-      leadSelector.value = leadId;
+    const quoteTabLink = document.querySelector('.sidebar-nav .nav-item[data-tab="tab-quote"] a');
+    if (quoteTabLink) {
+      quoteTabLink.click();
     }
-    loadQuoteForLead(leadId);
-    openQuotePreview();
+    requestAnimationFrame(() => {
+      const leadSelector = document.getElementById('quote-lead-selector');
+      if (leadSelector) {
+        leadSelector.value = leadId;
+      }
+      loadQuoteForLead(leadId);
+      openQuotePreview();
+    });
   };
 
   window.markSavedQuoteResult = function(leadId, status) {
     const lead = state.leads.find(l => l.id === leadId);
     if (!lead) return;
-    updateLeadField(leadId, 'status', status);
+    updateLeadField(leadId, 'status', status, { skipDrawer: true });
     renderSavedQuotesList();
+  };
+
+  window.deleteSavedQuote = async function(quoteId) {
+    const quote = state.quotes.find(q => q.id === quoteId);
+    if (!quote) return;
+
+    if (!confirm(`Xóa báo giá ${quote.quoteCode || quote.id}? Hành động này không thể hoàn tác.`)) {
+      return;
+    }
+
+    state.quotes = state.quotes.filter(q => q.id !== quoteId);
+    const leadIdx = state.leads.findIndex(l => l.id === quote.leadId);
+    if (leadIdx !== -1 && Array.isArray(state.leads[leadIdx].quotes)) {
+      state.leads[leadIdx].quotes = state.leads[leadIdx].quotes.filter(q => q !== quote.id);
+    }
+    saveState('quotes');
+    saveState('leads');
+
+    if (activeQuote.id === quote.id || activeQuote.leadId === quote.leadId) {
+      resetQuoteBuilder();
+    }
+
+    renderSavedQuotesList();
+
+    if (window.supabaseModule && typeof window.supabaseModule.deleteQuoteByLocalId === 'function') {
+      window.supabaseModule.deleteQuoteByLocalId(quote.id)
+        .then(() => showToastNotification('Đã xóa báo giá trên Supabase.'))
+        .catch(err => {
+          console.error('Lỗi xóa báo giá Supabase:', err);
+          showToastNotification(`Đã xóa local, nhưng Supabase lỗi: ${err.message}`);
+        });
+    }
+  };
+
+  function closeQuoteHistoryModal() {
+    const modal = document.getElementById('quote-history-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  window.openQuoteHistory = function(quoteId) {
+    const quote = state.quotes.find(q => q.id === quoteId || q.leadId === quoteId);
+    if (!quote) return;
+
+    const lead = state.leads.find(l => l.id === quote.leadId);
+    const modal = document.getElementById('quote-history-modal');
+    const titleEl = document.getElementById('quote-history-modal-title');
+    const bodyEl = document.getElementById('quote-history-modal-body');
+    if (!modal || !titleEl || !bodyEl) return;
+
+    const statusLabel = {
+      draft: 'Nháp',
+      sent: 'Đã gửi',
+      quoted: 'Đã báo giá',
+      negotiating: 'Thương lượng',
+      won: 'Chốt đơn',
+      lost: 'Thất bại'
+    }[quote.status || 'draft'] || quote.status || 'draft';
+
+    titleEl.innerText = `Chi tiết báo giá ${quote.quoteCode || quote.id}`;
+    bodyEl.innerHTML = `
+      <div class="quote-history-detail-grid">
+        <div class="quote-history-meta">
+          <p><strong>Khách hàng:</strong> ${lead ? lead.name : 'Đã xóa lead'}</p>
+          <p><strong>SĐT:</strong> ${lead ? lead.phone : '---'}</p>
+          <p><strong>Trạng thái:</strong> ${statusLabel}</p>
+          <p><strong>Tổng cộng:</strong> ${formatCurrency(quote.grandTotal || 0)}</p>
+          <p><strong>Cập nhật:</strong> ${formatDateShort(quote.updatedAt || quote.createdAt || new Date().toISOString())}</p>
+        </div>
+        <div class="quote-history-meta">
+          <p><strong>Chiết khấu:</strong> ${quote.discount || 0}%</p>
+          <p><strong>Phí vận chuyển:</strong> ${formatCurrency(quote.shipping || 0)}</p>
+          <p><strong>Đã cọc:</strong> ${formatCurrency(quote.deposit || 0)}</p>
+          <p><strong>Còn lại:</strong> ${formatCurrency(quote.balance || 0)}</p>
+          <p><strong>Sản phẩm:</strong> ${(quote.items || []).length}</p>
+        </div>
+      </div>
+      <div class="quote-history-section">
+        <h4>Lịch sử thay đổi</h4>
+        <div class="quote-history-timeline">
+          ${(quote.history || []).length > 0 ? quote.history.map(item => `
+            <div class="quote-history-item">
+              <div class="quote-history-item-head">
+                <strong>${item.action || 'status_change'}</strong>
+                <span>${formatDateShort(item.at || new Date().toISOString())}</span>
+              </div>
+              <div class="quote-history-item-body">
+                <p>Từ: <strong>${item.from || '---'}</strong> -> Đến: <strong>${item.to || '---'}</strong></p>
+                <p>${item.note || ''}</p>
+              </div>
+            </div>
+          `).join('') : '<p class="text-muted">Chưa có lịch sử thay đổi.</p>'}
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
   };
 
   // TẠO NỘI DUNG VĂN BẢN GỬI QUA ZALO

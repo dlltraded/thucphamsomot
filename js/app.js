@@ -325,6 +325,12 @@ function triggerTabRefresh(tabId) {
           window.quoteModule.initQuoteBuilder();
         }
       } catch (e) { console.error("Lỗi initQuoteBuilder:", e); }
+    } else if (tabId === 'tab-quote-management') {
+      try {
+        if (window.quoteModule && typeof window.quoteModule.renderSavedQuotesList === 'function') {
+          window.quoteModule.renderSavedQuotesList();
+        }
+      } catch (e) { console.error("Lỗi renderSavedQuotesList:", e); }
     } else if (tabId === 'tab-settings') {
       try {
         if (window.sheetsModule && typeof window.sheetsModule.initSettingsView === 'function') {
@@ -709,7 +715,7 @@ window.openLeadDrawer = function(leadId) {
 };
 
 // Hàm cập nhật nhanh thuộc tính Lead từ Drawer
-window.updateLeadField = function(leadId, field, value) {
+window.updateLeadField = function(leadId, field, value, options = {}) {
   const leadIndex = state.leads.findIndex(l => l.id === leadId);
   if (leadIndex === -1) return;
 
@@ -783,7 +789,9 @@ window.updateLeadField = function(leadId, field, value) {
   renderRecentLeads();
 
   // Đóng mở lại để cập nhật Timeline Notes
-  openLeadDrawer(leadId);
+  if (!options.skipDrawer) {
+    openLeadDrawer(leadId);
+  }
 };
 
 // Hàm thêm ghi chú mới từ Drawer

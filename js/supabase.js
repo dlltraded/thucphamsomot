@@ -320,6 +320,31 @@
     return { ok: true, count: payload.length };
   }
 
+  async function deleteQuoteByLocalId(localQuoteId) {
+    if (!ensureReady()) return { ok: false, skipped: true };
+
+    const { error: historyError } = await client
+      .from('quote_history')
+      .delete()
+      .eq('local_quote_id', localQuoteId);
+    if (historyError) {
+      updateStatus('error', historyError.message);
+      throw historyError;
+    }
+
+    const { error } = await client
+      .from('quotes')
+      .delete()
+      .eq('local_quote_id', localQuoteId);
+    if (error) {
+      updateStatus('error', error.message);
+      throw error;
+    }
+
+    updateStatus('ready');
+    return { ok: true };
+  }
+
   async function hydrateQuotesFromSupabase() {
     if (!ensureReady()) return { ok: false, skipped: true };
 
@@ -589,6 +614,7 @@
     hydrateProductsFromSupabase,
     syncProduct,
     syncProductsBatch,
+    deleteQuoteByLocalId,
     refreshSettingsForm,
     updateStatus
   };
