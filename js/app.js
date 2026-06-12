@@ -17,6 +17,62 @@ window.state = state;
 const SYSTEM_PASSWORD = '19871988';
 let currentActiveTab = 'tab-dashboard';
 
+const LEAD_STATUS_ORDER = ['new', 'contacting', 'quoting', 'quoted', 'won', 'unqualified', 'canceled'];
+const LEAD_STATUS_META = {
+  new: { label: 'Mới', badge: 'badge-blue', kanban: { border: 'border-blue', count: 'bg-blue' } },
+  contacting: { label: 'Đã liên hệ', badge: 'badge-amber', kanban: { border: 'border-amber', count: 'bg-amber' } },
+  quoting: { label: 'Đang báo giá', badge: 'badge-purple', kanban: { border: 'border-purple', count: 'bg-purple' } },
+  quoted: { label: 'Đã báo giá', badge: 'badge-pink', kanban: { border: 'border-pink', count: 'bg-pink' } },
+  won: { label: 'Đã chốt đơn', badge: 'badge-emerald', kanban: { border: 'border-emerald', count: 'bg-emerald' } },
+  unqualified: { label: 'Không tiềm năng', badge: 'badge-rose', kanban: { border: 'border-rose', count: 'bg-rose' } },
+  canceled: { label: 'Hủy', badge: 'badge-slate', kanban: { border: 'border-slate', count: 'bg-slate' } }
+};
+
+function stripStatusText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeLeadStatus(status) {
+  const normalized = stripStatusText(status);
+  if (!normalized) return 'new';
+
+  if (['new', 'moi', 'moi nhan', 'tiep nhan'].includes(normalized)) return 'new';
+  if (['contacting', 'da lien he', 'lien he', 'lien lac', 'da lien lac', 'contact'].includes(normalized)) return 'contacting';
+  if (['quoting', 'dang bao gia', 'thuong luong', 'negotiating', 'dang cham bao gia'].includes(normalized)) return 'quoting';
+  if (['quoted', 'da bao gia', 'da gui bao gia', 'bao gia'].includes(normalized)) return 'quoted';
+  if (['won', 'da chot don', 'chot don'].includes(normalized)) return 'won';
+  if (['unqualified', 'khong tiem nang', 'lost', 'that bai', 'khong phu hop'].includes(normalized)) return 'unqualified';
+  if (['canceled', 'cancelled', 'huy', 'huy bo', 'huy don'].includes(normalized)) return 'canceled';
+  return 'new';
+}
+
+function getLeadStatusLabel(status) {
+  const key = normalizeLeadStatus(status);
+  return (LEAD_STATUS_META[key] && LEAD_STATUS_META[key].label) || key;
+}
+
+function getLeadStatusBadgeClass(status) {
+  const key = normalizeLeadStatus(status);
+  return (LEAD_STATUS_META[key] && LEAD_STATUS_META[key].badge) || 'badge-blue';
+}
+
+function getLeadStatusKanbanClasses(status) {
+  const key = normalizeLeadStatus(status);
+  return (LEAD_STATUS_META[key] && LEAD_STATUS_META[key].kanban) || LEAD_STATUS_META.new.kanban;
+}
+
+window.normalizeLeadStatus = normalizeLeadStatus;
+window.getLeadStatusLabel = getLeadStatusLabel;
+window.getLeadStatusBadgeClass = getLeadStatusBadgeClass;
+window.getLeadStatusKanbanClasses = getLeadStatusKanbanClasses;
+window.LEAD_STATUS_ORDER = LEAD_STATUS_ORDER;
+
 // 2. Khởi tạo khi tải trang
 document.addEventListener('DOMContentLoaded', () => {
   initAppState();
@@ -55,6 +111,14 @@ function initAppState() {
     state.products = DEFAULT_PRODUCTS;
     localStorage.setItem('tps1_products', JSON.stringify(state.products));
   }
+
+  state.leads = state.leads.map(lead => ({
+    ...lead,
+    status: normalizeLeadStatus(lead.status),
+    notes: Array.isArray(lead.notes) ? lead.notes : [],
+    quotes: Array.isArray(lead.quotes) ? lead.quotes : []
+  }));
+  localStorage.setItem('tps1_leads', JSON.stringify(state.leads));
 
   if (storedQuotes) {
     state.quotes = JSON.parse(storedQuotes);
@@ -378,8 +442,8 @@ function calculateKPIs() {
   const quotes = state.quotes;
 
   const totalLeads = leads.length;
-  const activeLeads = leads.filter(l => l.status === 'contacting' || l.status === 'quoted' || l.status === 'negotiating').length;
-  const wonLeads = leads.filter(l => l.status === 'won').length;
+  const activeLeads = leads.filter(l => ['contacting', 'quoting', 'quoted'].includes(normalizeLeadStatus(l.status))).length;
+  const wonLeads = leads.filter(l => normalizeLeadStatus(l.status) === 'won').length;
   const conversionRate = totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 0;
 
   document.getElementById('kpi-total-leads').innerText = totalLeads;
@@ -403,10 +467,11 @@ function calculateKPIs() {
     let quoteDiscountAmt = (quoteSubtotal * (quote.discount || 0)) / 100;
     let quoteGrandTotal = quoteSubtotal - quoteDiscountAmt + (quote.shipping || 0);
 
-    if (lead.status === 'won') {
+    const leadStatus = normalizeLeadStatus(lead.status);
+    if (leadStatus === 'won') {
       wonRevenue += quoteGrandTotal;
       expectedRevenue += quoteGrandTotal;
-    } else if (lead.status === 'negotiating' || lead.status === 'quoted') {
+    } else if (['quoting', 'quoted'].includes(leadStatus)) {
       pipelineRevenue += quoteGrandTotal;
       expectedRevenue += quoteGrandTotal;
     }
@@ -430,11 +495,11 @@ function renderRecentLeads() {
   sortedLeads.slice(0, 5).forEach(lead => {
     const row = document.createElement('tr');
     
-    // Kiểm tra cảnh báo phản hồi dưới 15 phút (cho các lead trạng thái "Mới nhận" - 'new')
+    // Kiểm tra cảnh báo phản hồi dưới 15 phút (cho các lead trạng thái "Mới" - 'new')
     let timeCellContent = '';
     const minutesSinceCreated = Math.floor((Date.now() - new Date(lead.createdAt)) / (1000 * 60));
     
-    if (lead.status === 'new') {
+    if (normalizeLeadStatus(lead.status) === 'new') {
       if (minutesSinceCreated < 15) {
         urgentCount++;
         timeCellContent = `<span class="time-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${minutesSinceCreated} phút trước (Gọi ngay)</span>`;
@@ -452,14 +517,8 @@ function renderRecentLeads() {
       retail_regular: 'Lẻ - Thường'
     }[lead.category] || 'Chưa phân loại';
 
-    const statusBadge = {
-      new: '<span class="badge badge-blue">Mới nhận</span>',
-      contacting: '<span class="badge badge-amber">Đang liên hệ</span>',
-      quoted: '<span class="badge badge-purple">Đã gửi báo giá</span>',
-      negotiating: '<span class="badge badge-pink">Thương lượng</span>',
-      won: '<span class="badge badge-emerald">Chốt đơn</span>',
-      lost: '<span class="badge badge-rose">Thất bại</span>'
-    }[lead.status] || lead.status;
+    const statusKey = normalizeLeadStatus(lead.status);
+    const statusBadge = `<span class="badge ${getLeadStatusBadgeClass(statusKey)}">${getLeadStatusLabel(statusKey)}</span>`;
 
     row.innerHTML = `
       <td data-label="Khách hàng"><strong>${lead.name}</strong></td>
@@ -584,12 +643,13 @@ window.openLeadDrawer = function(leadId) {
 
   // Format Status
   const statusOptions = `
-    <option value="new" ${lead.status === 'new' ? 'selected' : ''}>Mới nhận</option>
-    <option value="contacting" ${lead.status === 'contacting' ? 'selected' : ''}>Đang liên hệ</option>
-    <option value="quoted" ${lead.status === 'quoted' ? 'selected' : ''}>Đã gửi báo giá</option>
-    <option value="negotiating" ${lead.status === 'negotiating' ? 'selected' : ''}>Thương lượng</option>
-    <option value="won" ${lead.status === 'won' ? 'selected' : ''}>Chốt đơn</option>
-    <option value="lost" ${lead.status === 'lost' ? 'selected' : ''}>Thất bại</option>
+    <option value="new" ${normalizeLeadStatus(lead.status) === 'new' ? 'selected' : ''}>Mới</option>
+    <option value="contacting" ${normalizeLeadStatus(lead.status) === 'contacting' ? 'selected' : ''}>Đã liên hệ</option>
+    <option value="quoting" ${normalizeLeadStatus(lead.status) === 'quoting' ? 'selected' : ''}>Đang báo giá</option>
+    <option value="quoted" ${normalizeLeadStatus(lead.status) === 'quoted' ? 'selected' : ''}>Đã báo giá</option>
+    <option value="won" ${normalizeLeadStatus(lead.status) === 'won' ? 'selected' : ''}>Đã chốt đơn</option>
+    <option value="unqualified" ${normalizeLeadStatus(lead.status) === 'unqualified' ? 'selected' : ''}>Không tiềm năng</option>
+    <option value="canceled" ${normalizeLeadStatus(lead.status) === 'canceled' ? 'selected' : ''}>Hủy</option>
   `;
 
   // Format Priority
@@ -725,51 +785,65 @@ window.updateLeadField = function(leadId, field, value, options = {}) {
   if (leadIndex === -1) return;
 
   const previousValue = state.leads[leadIndex][field];
-  state.leads[leadIndex][field] = value;
+  const normalizedValue = field === 'status' ? normalizeLeadStatus(value) : value;
+  state.leads[leadIndex][field] = normalizedValue;
   state.leads[leadIndex].updatedAt = new Date().toISOString();
   saveState('leads');
   
   // Log note tự động về việc đổi trạng thái
   let logText = "";
   if (field === 'status') {
-    const statusLabels = { new: 'Mới nhận', contacting: 'Đang liên hệ', quoted: 'Đã gửi báo giá', negotiating: 'Thương lượng', won: 'Chốt đơn', lost: 'Thất bại' };
-    logText = `Đã cập nhật quy trình sang: <strong>${statusLabels[value]}</strong>`;
+    logText = `Đã cập nhật quy trình sang: <strong>${getLeadStatusLabel(normalizedValue)}</strong>`;
     
     // Đồng bộ trạng thái lên Google Sheets
     if (window.sheetsModule && typeof window.sheetsModule.syncWriteGoogleSheets === 'function') {
-      window.sheetsModule.syncWriteGoogleSheets('update_status', { phone: state.leads[leadIndex].phone, status: value });
+      window.sheetsModule.syncWriteGoogleSheets('update_status', { phone: state.leads[leadIndex].phone, status: normalizedValue });
     }
 
     // Đồng bộ trạng thái sang các báo giá liên quan
     const relatedQuotes = state.quotes.filter(q => q.leadId === leadId);
     if (relatedQuotes.length > 0) {
       const now = new Date().toISOString();
+      const quoteStatusMap = {
+        quoted: 'quoted',
+        quoting: 'negotiating',
+        won: 'won',
+        unqualified: 'lost',
+        canceled: 'lost'
+      };
       relatedQuotes.forEach(quote => {
-        quote.status = value;
-        quote.updatedAt = now;
-        quote.history = Array.isArray(quote.history) ? quote.history : [];
-        quote.history.push({
-          at: now,
-          action: 'lead_status_change',
-          from: previousValue || null,
-          to: value,
-          note: logText || ''
-        });
-        if (value === 'quoted' && !quote.sentAt) quote.sentAt = now;
-        if (value === 'won' || value === 'lost') {
-          quote.closedAt = now;
-          quote.result = value;
+        const previousQuoteStatus = quote.status || 'draft';
+        const nextQuoteStatus = quoteStatusMap[normalizedValue] || previousQuoteStatus;
+        if (nextQuoteStatus !== previousQuoteStatus) {
+          quote.status = nextQuoteStatus;
+          quote.updatedAt = now;
+          quote.history = Array.isArray(quote.history) ? quote.history : [];
+          quote.history.push({
+            at: now,
+            action: 'lead_status_change',
+            from: previousQuoteStatus,
+            to: nextQuoteStatus,
+            note: logText || ''
+          });
+          if (nextQuoteStatus === 'quoted' && !quote.sentAt) quote.sentAt = now;
+          if (nextQuoteStatus === 'won' || nextQuoteStatus === 'lost') {
+            quote.closedAt = now;
+            quote.result = nextQuoteStatus;
+          } else if (previousQuoteStatus === 'won' || previousQuoteStatus === 'lost') {
+            quote.result = '';
+          }
         }
       });
       saveState('quotes');
       if (window.quoteModule && typeof window.quoteModule.renderSavedQuotesList === 'function') {
         window.quoteModule.renderSavedQuotesList();
       }
-      if (window.supabaseModule && typeof window.supabaseModule.syncLeadStatus === 'function') {
-        const leadSnapshot = state.leads[leadIndex];
-        window.supabaseModule.syncLeadStatus(leadSnapshot, previousValue || 'draft', value, logText)
-          .catch(err => console.error('Lỗi syncLeadStatus Supabase:', err));
-      }
+    }
+
+    if (window.supabaseModule && typeof window.supabaseModule.syncLeadStatus === 'function') {
+      const leadSnapshot = state.leads[leadIndex];
+      window.supabaseModule.syncLeadStatus(leadSnapshot, previousValue || 'draft', normalizedValue, logText)
+        .catch(err => console.error('Lỗi syncLeadStatus Supabase:', err));
     }
   } else if (field === 'category') {
     const catLabels = { wholesale_restaurant: 'Sỉ - Nhà hàng', wholesale_agency: 'Sỉ - Đại lý', retail_vip: 'Lẻ - VIP', retail_regular: 'Lẻ - Thường' };

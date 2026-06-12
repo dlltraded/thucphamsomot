@@ -59,19 +59,20 @@
     const searchVal = document.getElementById('kanban-search-input').value.toLowerCase().trim();
     const categoryVal = document.getElementById('kanban-filter-category').value;
 
-    // Các cột wrapper
-    const colNew = document.getElementById('col-new');
-    const colContacting = document.getElementById('col-contacting');
-    const colQuoted = document.getElementById('col-quoted');
-    const colNegotiating = document.getElementById('col-negotiating');
-    const colWon = document.getElementById('col-won');
-    const colLost = document.getElementById('col-lost');
-
-    // Xóa rỗng các cột
-    [colNew, colContacting, colQuoted, colNegotiating, colWon, colLost].forEach(col => col.innerHTML = '');
+    const statuses = Array.isArray(window.LEAD_STATUS_ORDER) && window.LEAD_STATUS_ORDER.length
+      ? window.LEAD_STATUS_ORDER
+      : ['new', 'contacting', 'quoting', 'quoted', 'won', 'unqualified', 'canceled'];
+    const columns = {};
+    statuses.forEach(status => {
+      columns[status] = document.getElementById(`col-${status}`);
+      if (columns[status]) columns[status].innerHTML = '';
+    });
 
     // Đếm số lượng cột
-    const counts = { new: 0, contacting: 0, quoted: 0, negotiating: 0, won: 0, lost: 0 };
+    const counts = statuses.reduce((acc, status) => {
+      acc[status] = 0;
+      return acc;
+    }, {});
 
     // Lọc leads
     const filteredLeads = state.leads.filter(lead => {
@@ -148,18 +149,12 @@
       });
 
       // Đẩy vào cột tương ứng
-      const targetCol = {
-        new: colNew,
-        contacting: colContacting,
-        quoted: colQuoted,
-        negotiating: colNegotiating,
-        won: colWon,
-        lost: colLost
-      }[lead.status];
+      const statusKey = typeof window.normalizeLeadStatus === 'function' ? window.normalizeLeadStatus(lead.status) : lead.status;
+      const targetCol = columns[statusKey];
 
       if (targetCol) {
         targetCol.appendChild(card);
-        counts[lead.status]++;
+        counts[statusKey]++;
       }
     });
 
@@ -175,26 +170,21 @@
     const leadIndex = state.leads.findIndex(l => l.id === leadId);
     if (leadIndex === -1) return;
 
-    const oldStatus = state.leads[leadIndex].status;
-    if (oldStatus === newStatus) return; // Không thay đổi
+    const normalize = typeof window.normalizeLeadStatus === 'function'
+      ? window.normalizeLeadStatus
+      : (status) => status;
+    const oldStatus = normalize(state.leads[leadIndex].status);
+    const nextStatus = normalize(newStatus);
+    if (oldStatus === nextStatus) return; // Không thay đổi
 
-    state.leads[leadIndex].status = newStatus;
+    state.leads[leadIndex].status = nextStatus;
     state.leads[leadIndex].updatedAt = new Date().toISOString();
 
     // Ghi chú hệ thống tự động
-    const statusLabels = {
-      new: 'Mới nhận',
-      contacting: 'Đang liên hệ',
-      quoted: 'Đã gửi báo giá',
-      negotiating: 'Thương lượng',
-      won: 'Chốt đơn',
-      lost: 'Thất bại'
-    };
-
     state.leads[leadIndex].notes.push({
       timestamp: new Date().toISOString(),
       author: "Hệ thống",
-      text: `Thay đổi quy trình bằng kéo thả: <strong>${statusLabels[oldStatus]}</strong> -> <strong>${statusLabels[newStatus]}</strong>`
+      text: `Thay đổi quy trình bằng kéo thả: <strong>${getLeadStatusLabel(oldStatus)}</strong> -> <strong>${getLeadStatusLabel(nextStatus)}</strong>`
     });
 
     saveState('leads');
@@ -202,11 +192,11 @@
 
     // Đồng bộ trạng thái lên Google Sheets
     if (window.sheetsModule && typeof window.sheetsModule.syncWriteGoogleSheets === 'function') {
-      window.sheetsModule.syncWriteGoogleSheets('update_status', { phone: state.leads[leadIndex].phone, status: newStatus });
+      window.sheetsModule.syncWriteGoogleSheets('update_status', { phone: state.leads[leadIndex].phone, status: nextStatus });
     }
 
     // Hiện toast chúc mừng nếu chốt thành công!
-    if (newStatus === 'won') {
+    if (nextStatus === 'won') {
       showToastNotification(`🎉 Tuyệt vời! Bạn đã chốt thành công đơn hàng cho ${state.leads[leadIndex].name}!`);
     } else {
       showToastNotification(`Đã cập nhật quy trình khách hàng: ${state.leads[leadIndex].name}.`);
@@ -282,7 +272,8 @@
                           lead.phone.includes(searchVal) ||
                           (lead.email && lead.email.toLowerCase().includes(searchVal));
       
-      const matchStatus = !statusVal || lead.status === statusVal;
+      const leadStatus = typeof window.normalizeLeadStatus === 'function' ? window.normalizeLeadStatus(lead.status) : lead.status;
+      const matchStatus = !statusVal || leadStatus === statusVal;
       const matchSource = !sourceVal || lead.source === sourceVal;
       const matchCategory = !categoryVal || lead.category === categoryVal;
 
@@ -322,14 +313,8 @@
         else { priorityClass = 'priority-low'; priorityText = 'Thấp'; }
 
         // Trạng thái badge
-        const statusBadge = {
-          new: '<span class="badge badge-blue">Mới nhận</span>',
-          contacting: '<span class="badge badge-amber">Đang liên hệ</span>',
-          quoted: '<span class="badge badge-purple">Đã gửi báo giá</span>',
-          negotiating: '<span class="badge badge-pink">Thương lượng</span>',
-          won: '<span class="badge badge-emerald">Chốt đơn</span>',
-          lost: '<span class="badge badge-rose">Thất bại</span>'
-        }[lead.status] || lead.status;
+        const statusKey = typeof window.normalizeLeadStatus === 'function' ? window.normalizeLeadStatus(lead.status) : lead.status;
+        const statusBadge = `<span class="badge ${getLeadStatusBadgeClass(statusKey)}">${getLeadStatusLabel(statusKey)}</span>`;
 
         // Phân loại nhóm
         const categoryText = {

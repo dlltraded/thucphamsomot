@@ -33,7 +33,7 @@ const DEFAULT_LEADS = [
     phone: '0912345678',
     email: 'senwang.bienhoa@gmail.com',
     source: 'Google Ads',
-    status: 'negotiating',
+    status: 'quoting',
     priority: 'high',
     category: 'wholesale_restaurant',
     notes: [
@@ -105,7 +105,7 @@ const DEFAULT_LEADS = [
       {
         timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
         author: "Hệ thống",
-        text: "Đã chuyển trạng thái sang Chốt đơn. Đã giao hàng thành công bằng GrabExpress. Khách phản hồi cá hồi tươi, ăn sashimi rất béo ngon."
+        text: "Đã chuyển trạng thái sang Đã chốt đơn. Đã giao hàng thành công bằng GrabExpress. Khách phản hồi cá hồi tươi, ăn sashimi rất béo ngon."
       }
     ],
     quotes: ['quote_1003'],

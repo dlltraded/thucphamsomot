@@ -491,6 +491,17 @@
     try {
       if (!ensureReady()) return { ok: false, skipped: true };
       const relatedQuotes = (window.state?.quotes || []).filter(q => q.leadId === lead.id);
+      const normalizedLeadStatus = typeof window.normalizeLeadStatus === 'function'
+        ? window.normalizeLeadStatus(toStatus)
+        : toStatus;
+      const leadStatusToQuoteStatus = {
+        quoted: 'quoted',
+        quoting: 'negotiating',
+        won: 'won',
+        unqualified: 'lost',
+        canceled: 'lost'
+      };
+      const nextQuoteStatus = leadStatusToQuoteStatus[normalizedLeadStatus] || null;
       const leadSnapshot = {
         id: lead.id,
         name: lead.name,
@@ -501,19 +512,20 @@
       };
 
       await Promise.all(relatedQuotes.map(async (quoteRecord) => {
+        const quoteStatus = nextQuoteStatus || quoteRecord.status || 'draft';
         const updatedQuote = {
           ...quoteRecord,
-          status: toStatus,
+          status: quoteStatus,
           updatedAt: new Date().toISOString(),
-          closedAt: toStatus === 'won' || toStatus === 'lost' ? new Date().toISOString() : quoteRecord.closedAt || null
+          closedAt: quoteStatus === 'won' || quoteStatus === 'lost' ? new Date().toISOString() : quoteRecord.closedAt || null
         };
-        await syncQuote(updatedQuote, leadSnapshot, toStatus);
+        await syncQuote(updatedQuote, leadSnapshot, quoteRecord.status);
         await insertHistory({
           quoteRecord: updatedQuote,
           action: 'lead_status_change',
           fromStatus,
           toStatus,
-          note: note || `Lead đổi trạng thái sang ${toStatus}`
+          note: note || `Lead đổi trạng thái sang ${normalizedLeadStatus}`
         });
       }));
 

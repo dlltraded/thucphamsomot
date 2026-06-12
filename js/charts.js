@@ -20,20 +20,21 @@
     funnelChartInstance = new Chart(funnelCtx, {
       type: 'bar',
       data: {
-        labels: ['Mới Nhận', 'Đang Liên Hệ', 'Đã Gửi Báo Giá', 'Thương Lượng', 'Chốt Đơn', 'Thất Bại'],
+        labels: ['Mới', 'Đã liên hệ', 'Đang báo giá', 'Đã báo giá', 'Đã chốt đơn', 'Không tiềm năng', 'Hủy'],
         datasets: [{
           label: 'Số lượng leads',
-          data: [0, 0, 0, 0, 0, 0],
+          data: [0, 0, 0, 0, 0, 0, 0],
           backgroundColor: [
             'rgba(59, 130, 246, 0.7)',   // Mới - Blue
             'rgba(245, 158, 11, 0.7)',   // Liên hệ - Amber
-            'rgba(139, 92, 246, 0.7)',   // Báo giá - Purple
-            'rgba(236, 72, 153, 0.7)',   // Thương lượng - Pink
+            'rgba(124, 58, 237, 0.7)',   // Đang báo giá - Violet
+            'rgba(139, 92, 246, 0.7)',   // Đã báo giá - Purple
             'rgba(16, 185, 129, 0.7)',   // Chốt đơn - Green
-            'rgba(239, 68, 68, 0.7)'     // Thất bại - Red
+            'rgba(239, 68, 68, 0.7)',    // Không tiềm năng - Red
+            'rgba(71, 85, 105, 0.7)'     // Hủy - Slate
           ],
           borderColor: [
-            '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899', '#10B981', '#EF4444'
+            '#3B82F6', '#F59E0B', '#7C3AED', '#8B5CF6', '#10B981', '#EF4444', '#475569'
           ],
           borderWidth: 1.5,
           borderRadius: 6,
@@ -130,7 +131,13 @@
     if (!funnelChartInstance || !sourceChartInstance) return;
 
     // 1. Tính toán phễu chuyển đổi
-    const funnelCounts = { new: 0, contacting: 0, quoted: 0, negotiating: 0, won: 0, lost: 0 };
+    const funnelStatuses = Array.isArray(window.LEAD_STATUS_ORDER) && window.LEAD_STATUS_ORDER.length
+      ? window.LEAD_STATUS_ORDER
+      : ['new', 'contacting', 'quoting', 'quoted', 'won', 'unqualified', 'canceled'];
+    const funnelCounts = funnelStatuses.reduce((acc, status) => {
+      acc[status] = 0;
+      return acc;
+    }, {});
     
     // 2. Tính toán phân bổ nguồn leads
     const sourceCounts = {
@@ -145,8 +152,9 @@
 
     state.leads.forEach(lead => {
       // Đếm phễu
-      if (funnelCounts[lead.status] !== undefined) {
-        funnelCounts[lead.status]++;
+      const statusKey = typeof window.normalizeLeadStatus === 'function' ? window.normalizeLeadStatus(lead.status) : lead.status;
+      if (funnelCounts[statusKey] !== undefined) {
+        funnelCounts[statusKey]++;
       }
       
       // Đếm nguồn
@@ -162,10 +170,11 @@
     funnelChartInstance.data.datasets[0].data = [
       funnelCounts.new,
       funnelCounts.contacting,
+      funnelCounts.quoting,
       funnelCounts.quoted,
-      funnelCounts.negotiating,
       funnelCounts.won,
-      funnelCounts.lost
+      funnelCounts.unqualified,
+      funnelCounts.canceled
     ];
     funnelChartInstance.update();
 

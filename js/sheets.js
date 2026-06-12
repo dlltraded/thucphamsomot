@@ -3,6 +3,30 @@
 (function() {
   let autoSyncIntervalId = null;
 
+  function normalizeSheetStatus(status) {
+    if (typeof window.normalizeLeadStatus === 'function') {
+      return window.normalizeLeadStatus(status);
+    }
+
+    const normalized = String(status || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!normalized) return 'new';
+    if (['new', 'moi', 'moi nhan', 'tiep nhan'].includes(normalized)) return 'new';
+    if (['contacting', 'da lien he', 'lien he', 'da lien lac', 'contact'].includes(normalized)) return 'contacting';
+    if (['quoting', 'dang bao gia', 'thuong luong', 'negotiating', 'dang cham bao gia'].includes(normalized)) return 'quoting';
+    if (['quoted', 'da bao gia', 'da gui bao gia', 'bao gia'].includes(normalized)) return 'quoted';
+    if (['won', 'da chot don', 'chot don'].includes(normalized)) return 'won';
+    if (['unqualified', 'khong tiem nang', 'lost', 'that bai', 'khong phu hop'].includes(normalized)) return 'unqualified';
+    if (['canceled', 'cancelled', 'huy', 'huy bo', 'huy don'].includes(normalized)) return 'canceled';
+    return 'new';
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initSettingsView();
     setupSyncListeners();
@@ -268,24 +292,26 @@
         }
 
         // Cập nhật trạng thái nếu thay đổi trên Sheets
-        if (mapping.status && currentLead.status !== mapping.status) {
+        const nextStatus = mapping.status ? normalizeSheetStatus(mapping.status) : '';
+        if (nextStatus && currentLead.status !== nextStatus) {
           const oldStatus = currentLead.status;
-          currentLead.status = mapping.status;
+          currentLead.status = nextStatus;
           hasChange = true;
 
           const statusLabels = {
-            new: 'Mới nhận',
-            contacting: 'Đang liên hệ',
-            quoted: 'Đã gửi báo giá',
-            negotiating: 'Thương lượng',
-            won: 'Chốt đơn',
-            lost: 'Thất bại'
+            new: 'Mới',
+            contacting: 'Đã liên hệ',
+            quoting: 'Đang báo giá',
+            quoted: 'Đã báo giá',
+            won: 'Đã chốt đơn',
+            unqualified: 'Không tiềm năng',
+            canceled: 'Hủy'
           };
           
           currentLead.notes.push({
             timestamp: new Date().toISOString(),
             author: "Hệ thống",
-            text: `Đồng bộ trạng thái từ Google Sheets: <strong>${statusLabels[oldStatus] || oldStatus}</strong> -> <strong>${statusLabels[mapping.status]}</strong>`
+            text: `Đồng bộ trạng thái từ Google Sheets: <strong>${statusLabels[normalizeSheetStatus(oldStatus)] || oldStatus}</strong> -> <strong>${statusLabels[nextStatus] || nextStatus}</strong>`
           });
         }
 
@@ -303,14 +329,14 @@
           leadsUpdated++;
         }
       } else {
-        // Chưa tồn tại -> Thêm mới với trạng thái đồng bộ hoặc mặc định "Mới nhận" (new)
+        // Chưa tồn tại -> Thêm mới với trạng thái đồng bộ hoặc mặc định "Mới" (new)
         const newLead = {
           id: 'lead_' + (Date.now() + newLeadsAdded), // Đảm bảo ID không trùng
           name: mapping.name,
           phone: cleanPhone,
           email: mapping.email || '',
           source: mapping.source || 'Website',
-          status: mapping.status || 'new',
+          status: normalizeSheetStatus(mapping.status),
           priority: mapping.priority || 'medium',
           category: mapping.category || 'retail_regular',
           notes: [
@@ -436,18 +462,20 @@
       // Ánh xạ Trạng thái
       else if (lowerKey.includes('trạng thái') || lowerKey.includes('trangthai') || lowerKey === 'status') {
         const val = row[k].toString().toLowerCase().trim();
-        if (val.includes('mới') || val.includes('tiếp nhận') || val.includes('tiep nhan') || val.includes('new')) {
+        if (val.includes('mới') || val.includes('tiep nhan') || val.includes('new')) {
           mapping.status = 'new';
-        } else if (val.includes('liên hệ') || val.includes('lien he') || val.includes('contact')) {
+        } else if (val.includes('đã liên hệ') || val.includes('da lien he') || val.includes('liên hệ') || val.includes('lien he') || val.includes('contact')) {
           mapping.status = 'contacting';
-        } else if (val.includes('báo giá') || val.includes('bao gia') || val.includes('quoted')) {
+        } else if (val.includes('đang báo giá') || val.includes('dang bao gia') || val.includes('quoting')) {
+          mapping.status = 'quoting';
+        } else if (val.includes('đã báo giá') || val.includes('da bao gia') || val.includes('da gui bao gia') || val.includes('quoted') || val.includes('báo giá') || val.includes('bao gia')) {
           mapping.status = 'quoted';
-        } else if (val.includes('thương lượng') || val.includes('thuong luong') || val.includes('negotiat')) {
-          mapping.status = 'negotiating';
-        } else if (val.includes('chốt') || val.includes('chot') || val.includes('won')) {
+        } else if (val.includes('đã chốt đơn') || val.includes('da chot don') || val.includes('chốt') || val.includes('chot') || val.includes('won')) {
           mapping.status = 'won';
-        } else if (val.includes('thất bại') || val.includes('that bai') || val.includes('lost')) {
-          mapping.status = 'lost';
+        } else if (val.includes('không tiềm năng') || val.includes('khong tiem nang') || val.includes('thất bại') || val.includes('that bai') || val.includes('lost')) {
+          mapping.status = 'unqualified';
+        } else if (val.includes('hủy') || val.includes('huy') || val.includes('cancel')) {
+          mapping.status = 'canceled';
         }
       }
       // Ánh xạ Vai trò

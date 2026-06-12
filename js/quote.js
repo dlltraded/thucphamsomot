@@ -237,8 +237,8 @@
           .then(() => {
             showToastNotification("Đã sao chép báo giá Zalo! Bạn có thể dán (Ctrl+V) sang chat box Zalo gửi khách hàng.");
             
-            // Tự động chuyển trạng thái lead sang "Đã gửi báo giá"
-            if (lead.status === 'new' || lead.status === 'contacting') {
+            // Tự động chuyển trạng thái lead sang "Đã báo giá"
+            if (['new', 'contacting', 'quoting'].includes(normalizeLeadStatus(lead.status))) {
               updateLeadField(lead.id, 'status', 'quoted');
             }
           })
@@ -262,8 +262,8 @@
           return;
         }
 
-        // Tự động chuyển trạng thái lead sang "Đã gửi báo giá"
-        if (lead.status === 'new' || lead.status === 'contacting') {
+        // Tự động chuyển trạng thái lead sang "Đã báo giá"
+        if (['new', 'contacting', 'quoting'].includes(normalizeLeadStatus(lead.status))) {
           updateLeadField(lead.id, 'status', 'quoted');
         }
 
@@ -589,7 +589,7 @@
     leadSelector.innerHTML = '<option value="">-- Chọn khách hàng --</option>';
     
     // Đổ danh sách khách hàng hoạt động (không bị thất bại)
-    const activeLeads = state.leads.filter(l => l.status !== 'lost');
+    const activeLeads = state.leads.filter(l => !['unqualified', 'canceled'].includes(normalizeLeadStatus(l.status)));
     activeLeads.forEach(lead => {
       const option = document.createElement('option');
       option.value = lead.id;
@@ -1244,7 +1244,7 @@
       note: 'Cập nhật trạng thái từ bảng quản lý báo giá'
     });
 
-    if (status === 'quoted' && !quote.sentAt) quote.sentAt = now;
+    if ((status === 'quoted' || status === 'sent') && !quote.sentAt) quote.sentAt = now;
     if (status === 'won' || status === 'lost') {
       quote.closedAt = now;
       quote.result = status;
@@ -1255,7 +1255,17 @@
     if (lead) {
       const leadIdx = state.leads.findIndex(l => l.id === lead.id);
       if (leadIdx !== -1) {
-        state.leads[leadIdx].status = status;
+        const leadStatusMap = {
+          sent: 'quoted',
+          quoted: 'quoted',
+          negotiating: 'quoting',
+          won: 'won',
+          lost: 'unqualified'
+        };
+        const nextLeadStatus = leadStatusMap[status];
+        if (nextLeadStatus) {
+          state.leads[leadIdx].status = nextLeadStatus;
+        }
         state.leads[leadIdx].updatedAt = now;
         state.leads[leadIdx].notes = Array.isArray(state.leads[leadIdx].notes) ? state.leads[leadIdx].notes : [];
         state.leads[leadIdx].notes.push({

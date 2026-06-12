@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Custom Style -->
-  <link rel="stylesheet" href="./css/style.css?v=21">
+  <link rel="stylesheet" href="./css/style.css?v=22">
 </head>
 <body>
 
@@ -250,58 +250,67 @@
             </div>
             
             <div class="kanban-board-container" id="kanban-board">
-              <!-- Cột 1: Mới nhận (New) -->
+              <!-- Cột 1: Mới (New) -->
               <div class="kanban-column" data-status="new">
                 <div class="column-header border-blue">
-                  <h4>Mới Nhận</h4>
+                  <h4>Mới</h4>
                   <span class="card-count bg-blue">0</span>
                 </div>
                 <div class="kanban-cards-wrapper" id="col-new"></div>
               </div>
               
-              <!-- Cột 2: Đang liên hệ (Contacting) -->
+              <!-- Cột 2: Đã liên hệ (Contacting) -->
               <div class="kanban-column" data-status="contacting">
                 <div class="column-header border-amber">
-                  <h4>Đang Liên Hệ</h4>
+                  <h4>Đã Liên Hệ</h4>
                   <span class="card-count bg-amber">0</span>
                 </div>
                 <div class="kanban-cards-wrapper" id="col-contacting"></div>
               </div>
               
-              <!-- Cột 3: Gửi báo giá (Quoted) -->
-              <div class="kanban-column" data-status="quoted">
+              <!-- Cột 3: Đang báo giá -->
+              <div class="kanban-column" data-status="quoting">
                 <div class="column-header border-purple">
-                  <h4>Đã Gửi Báo Giá</h4>
+                  <h4>Đang Báo Giá</h4>
                   <span class="card-count bg-purple">0</span>
+                </div>
+                <div class="kanban-cards-wrapper" id="col-quoting"></div>
+              </div>
+              
+              <!-- Cột 4: Đã báo giá -->
+              <div class="kanban-column" data-status="quoted">
+                <div class="column-header border-pink">
+                  <h4>Đã Báo Giá</h4>
+                  <span class="card-count bg-pink">0</span>
                 </div>
                 <div class="kanban-cards-wrapper" id="col-quoted"></div>
               </div>
               
-              <!-- Cột 4: Thương lượng (Negotiating) -->
-              <div class="kanban-column" data-status="negotiating">
-                <div class="column-header border-pink">
-                  <h4>Thương Lượng</h4>
-                  <span class="card-count bg-pink">0</span>
-                </div>
-                <div class="kanban-cards-wrapper" id="col-negotiating"></div>
-              </div>
-              
-              <!-- Cột 5: Chốt đơn (Won) -->
+              <!-- Cột 5: Đã chốt đơn -->
               <div class="kanban-column" data-status="won">
                 <div class="column-header border-emerald">
-                  <h4>Chốt Thành Công</h4>
+                  <h4>Đã Chốt Đơn</h4>
                   <span class="card-count bg-emerald">0</span>
                 </div>
                 <div class="kanban-cards-wrapper" id="col-won"></div>
               </div>
               
-              <!-- Cột 6: Thất bại (Lost) -->
-              <div class="kanban-column" data-status="lost">
+              <!-- Cột 6: Không tiềm năng -->
+              <div class="kanban-column" data-status="unqualified">
                 <div class="column-header border-rose">
-                  <h4>Thất Bại</h4>
+                  <h4>Không Tiềm Năng</h4>
                   <span class="card-count bg-rose">0</span>
                 </div>
-                <div class="kanban-cards-wrapper" id="col-lost"></div>
+                <div class="kanban-cards-wrapper" id="col-unqualified"></div>
+              </div>
+
+              <!-- Cột 7: Hủy -->
+              <div class="kanban-column" data-status="canceled">
+                <div class="column-header border-slate">
+                  <h4>Hủy</h4>
+                  <span class="card-count bg-slate">0</span>
+                </div>
+                <div class="kanban-cards-wrapper" id="col-canceled"></div>
               </div>
             </div>
           </div>
@@ -317,12 +326,13 @@
               <div class="filter-controls">
                 <select id="list-filter-status" class="form-control">
                   <option value="">-- Tất cả trạng thái --</option>
-                  <option value="new">Mới nhận</option>
-                  <option value="contacting">Đang liên hệ</option>
-                  <option value="quoted">Đã gửi báo giá</option>
-                  <option value="negotiating">Thương lượng</option>
-                  <option value="won">Chốt đơn</option>
-                  <option value="lost">Thất bại</option>
+                  <option value="new">Mới</option>
+                  <option value="contacting">Đã liên hệ</option>
+                  <option value="quoting">Đang báo giá</option>
+                  <option value="quoted">Đã báo giá</option>
+                  <option value="won">Đã chốt đơn</option>
+                  <option value="unqualified">Không tiềm năng</option>
+                  <option value="canceled">Hủy</option>
                 </select>
                 
                 <select id="list-filter-source" class="form-control">
@@ -963,12 +973,13 @@ function doPost(e) {
         else if (data.category === "retail_vip") catText = "Khách lẻ - VIP";
         
         // Trạng thái tiếng Việt
-        var statusLabel = "Tiếp nhận";
-        if (data.status === "contacting") statusLabel = "Đang liên hệ";
+        var statusLabel = "Mới";
+        if (data.status === "contacting") statusLabel = "Đã liên hệ";
+        else if (data.status === "quoting") statusLabel = "Đang báo giá";
         else if (data.status === "quoted") statusLabel = "Đã báo giá";
-        else if (data.status === "negotiating") statusLabel = "Thương lượng";
-        else if (data.status === "won") statusLabel = "Chốt đơn";
-        else if (data.status === "lost") statusLabel = "Thất bại";
+        else if (data.status === "won") statusLabel = "Đã chốt đơn";
+        else if (data.status === "unqualified") statusLabel = "Không tiềm năng";
+        else if (data.status === "canceled") statusLabel = "Hủy";
         newRow[colIndexes.status] = statusLabel;
         
         newRow[colIndexes.message] = "Phân loại: " + catText;
@@ -981,12 +992,13 @@ function doPost(e) {
         var targetPhone = data.phone.toString().replace(/[^0-9+]/g, '');
         var newStatus = data.status;
         
-        var statusLabel = "Tiếp nhận";
-        if (newStatus === "contacting") statusLabel = "Đang liên hệ";
+        var statusLabel = "Mới";
+        if (newStatus === "contacting") statusLabel = "Đã liên hệ";
+        else if (newStatus === "quoting") statusLabel = "Đang báo giá";
         else if (newStatus === "quoted") statusLabel = "Đã báo giá";
-        else if (newStatus === "negotiating") statusLabel = "Thương lượng";
-        else if (newStatus === "won") statusLabel = "Chốt đơn";
-        else if (newStatus === "lost") statusLabel = "Thất bại";
+        else if (newStatus === "won") statusLabel = "Đã chốt đơn";
+        else if (newStatus === "unqualified") statusLabel = "Không tiềm năng";
+        else if (newStatus === "canceled") statusLabel = "Hủy";
         
         var updatedCount = 0;
         for (var i = 1; i < rows.length; i++) {
@@ -1033,7 +1045,7 @@ function doPost(e) {
       newRow[colIndexes.facilityType] = payload.facilityType || "";
       newRow[colIndexes.interestedIn] = payload.interestedIn || "";
       newRow[colIndexes.purchaseScale] = payload.purchaseScale || "";
-      newRow[colIndexes.status] = "Tiếp nhận"; // Mặc định trạng thái Mới / Tiếp nhận
+      newRow[colIndexes.status] = "Mới"; // Mặc định trạng thái Mới
       newRow[colIndexes.deliveryFrequency] = payload.deliveryFrequency || "";
       newRow[colIndexes.deliveryArea] = payload.deliveryArea || "";
       newRow[colIndexes.needBy] = payload.needBy || "";
@@ -1193,12 +1205,13 @@ function doPost(e) {
             <div class="form-group flex-1">
               <label for="form-status">Bước quy trình</label>
               <select id="form-status" class="form-control">
-                <option value="new">Mới nhận</option>
-                <option value="contacting">Đang liên hệ</option>
-                <option value="quoted">Đã gửi báo giá</option>
-                <option value="negotiating">Thương lượng</option>
-                <option value="won">Chốt đơn</option>
-                <option value="lost">Thất bại</option>
+                <option value="new">Mới</option>
+                <option value="contacting">Đã liên hệ</option>
+                <option value="quoting">Đang báo giá</option>
+                <option value="quoted">Đã báo giá</option>
+                <option value="won">Đã chốt đơn</option>
+                <option value="unqualified">Không tiềm năng</option>
+                <option value="canceled">Hủy</option>
               </select>
             </div>
           </div>
