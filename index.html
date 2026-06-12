@@ -92,6 +92,9 @@
             <li class="nav-item" data-tab="tab-settings">
               <a href="javascript:void(0)"><i class="fa-solid fa-sliders"></i> <span>Cấu Hình Sheets</span></a>
             </li>
+            <li class="nav-item" data-tab="tab-products">
+              <a href="javascript:void(0)"><i class="fa-solid fa-box-open"></i> <span>Quản Lý Sản Phẩm</span></a>
+            </li>
             <li class="nav-item logout-item" id="logout-btn">
               <a href="javascript:void(0)"><i class="fa-solid fa-power-off"></i> <span>Đăng Xuất (Khóa App)</span></a>
             </li>
@@ -698,6 +701,71 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          <!-- TAB 6: PRODUCTS ADMIN -->
+          <div id="tab-products" class="tab-panel">
+            <!-- Header -->
+            <div class="table-card" style="margin-bottom:16px;">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-box-open"></i> Quản Lý Sản Phẩm</h3>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                  <span class="badge badge-blue" id="prod-admin-count">-- sản phẩm</span>
+                  <button id="prod-admin-reload-btn" class="btn btn-secondary btn-sm">
+                    <i class="fa-solid fa-rotate"></i> Tải lại
+                  </button>
+                </div>
+              </div>
+              <!-- Stats -->
+              <div style="display:flex;gap:16px;padding:12px 0 4px;flex-wrap:wrap;">
+                <div class="mini-stat"><span>Tổng SP</span><strong id="prod-admin-stat-total">--</strong></div>
+                <div class="mini-stat"><span>Đang hiển thị</span><strong id="prod-admin-stat-active">--</strong></div>
+                <div class="mini-stat"><span>Danh mục</span><strong id="prod-admin-stat-cats">--</strong></div>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="leads-filter-container" style="margin-bottom:12px;">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="prod-admin-search" placeholder="Tìm tên sản phẩm, mã SP...">
+              </div>
+              <div class="filter-controls">
+                <select id="prod-admin-cat-filter" class="form-control">
+                  <option value="">-- Tất cả danh mục --</option>
+                </select>
+                <select id="prod-admin-active-filter" class="form-control">
+                  <option value="">-- Tất cả trạng thái --</option>
+                  <option value="active">Đang hiển thị</option>
+                  <option value="inactive">Đã ẩn</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:56px;">Hình</th>
+                      <th>Tên sản phẩm</th>
+                      <th>Danh mục</th>
+                      <th>ĐVT</th>
+                      <th>Giá sỉ</th>
+                      <th>Giá lẻ</th>
+                      <th>Trạng thái</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prod-admin-tbody">
+                    <tr><td colspan="8" class="text-center" style="padding:24px;color:var(--text-muted);">Nhấn vào tab để tải sản phẩm</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- Pagination -->
+              <div class="pagination-container" id="prod-admin-pagination"></div>
             </div>
           </div>
 
@@ -1412,5 +1480,7 @@ function doPost(e) {
       });
     }
   </script>
+  <!-- Products Admin Module -->
+  <script src="./js/products-admin.js?v=1"></script>
 </body>
 </html>
