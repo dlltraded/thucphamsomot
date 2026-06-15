@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Kế hoạch SEO tổng thể - Thực Phẩm Số Một</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --panel-2: #eef3ef;
+      --text: #132018;
+      --muted: #56645c;
+      --line: #d8e0da;
+      --accent: #116149;
+      --accent-2: #1f7a58;
+      --warn: #8b5b12;
+      --soft: #eff6f1;
+      --shadow: 0 10px 24px rgba(11, 25, 19, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef3ef 0%, var(--bg) 160px, var(--bg) 100%);
+      line-height: 1.55;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 56px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #10271f 0%, #184d39 52%, #1e6a4d 100%);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-top {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 6px 10px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0;
+      color: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.06);
+    }
+
+    h1 {
+      margin: 12px 0 10px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.1;
+      letter-spacing: 0;
+      max-width: 14ch;
+    }
+
+    .hero p {
+      max-width: 74ch;
+      margin: 0;
+      color: rgba(255,255,255,0.86);
+    }
+
+    .hero-meta {
+      display: grid;
+      gap: 10px;
+      min-width: 280px;
+    }
+
+    .meta-pill {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .meta-pill strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .meta-pill span {
+      color: rgba(255,255,255,0.75);
+      font-size: 14px;
+    }
+
+    .toc, section {
+      margin-top: 20px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .toc {
+      padding: 18px 20px;
+    }
+
+    .toc h2, section h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 18px;
+    }
+
+    .toc-grid a {
+      color: var(--text);
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: block;
+    }
+
+    .section {
+      padding: 20px;
+    }
+
+    .subtle {
+      color: var(--muted);
+      margin-top: -6px;
+      margin-bottom: 16px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .callout {
+      background: var(--soft);
+      border-left: 4px solid var(--accent);
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin: 14px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: #fbf5e7;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f3f7f4;
+      text-align: left;
+      color: #203127;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      margin: 0 6px 6px 0;
+      border-radius: 999px;
+      background: #edf6f1;
+      border: 1px solid #d5e8dc;
+      font-size: 12px;
+      color: #1f5f46;
+      white-space: nowrap;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    li + li { margin-top: 6px; }
+
+    .kpi-list, .phase-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .kpi, .phase {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .kpi strong, .phase strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .source-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .source {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fcfdfc;
+    }
+
+    .source a {
+      word-break: break-word;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      .grid-2, .grid-3, .toc-grid { grid-template-columns: 1fr; }
+      .hero { padding: 22px; }
+      .wrap { padding: 18px 14px 44px; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <span class="eyebrow">Báo cáo SEO tổng thể</span>
+          <h1>Thực Phẩm Số Một</h1>
+          <p>
+            Mục tiêu của kế hoạch này là đưa website từ trạng thái “web sơ bộ” sang một hệ thống SEO có thể tăng
+            impression, kéo đúng nhóm khách B2B và hỗ trợ chốt báo giá cho bếp ăn tập thể, nhà máy, trường học,
+            bệnh viện, nhà hàng và khách sạn tại Đồng Nai cùng khu vực lân cận.
+          </p>
+        </div>
+        <div class="hero-meta">
+          <div class="meta-pill">
+            <strong>Ngày báo cáo</strong>
+            <span>03/06/2026</span>
+          </div>
+          <div class="meta-pill">
+            <strong>Trọng tâm</strong>
+            <span>SEO local + SEO theo nhu cầu mua B2B + content hub</span>
+          </div>
+          <div class="meta-pill">
+            <strong>Trang gốc</strong>
+            <span>thucphamsomot.vn</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="toc" id="muc-luc">
+      <h2>Mục lục</h2>
+      <div class="toc-grid">
+        <a href="#tong-quan">1. Tổng quan và định vị</a>
+        <a href="#keyword">2. Phân tích keyword</a>
+        <a href="#doi-thu">3. Đối thủ và khoảng trống</a>
+        <a href="#cau-truc">4. Cấu trúc trang cần SEO</a>
+        <a href="#noi-dung">5. Kế hoạch nội dung</a>
+        <a href="#ky-thuat">6. Kỹ thuật SEO</a>
+        <a href="#local">7. Local SEO</a>
+        <a href="#roadmap">8. Roadmap 90 ngày</a>
+        <a href="#kpi">9. KPI và đo lường</a>
+        <a href="#nguon">10. Nguồn tham chiếu</a>
+      </div>
+    </nav>
+
+    <section class="section" id="tong-quan">
+      <h2>1. Tổng quan và định vị</h2>
+      <p class="subtle">
+        Dựa trên cấu trúc route hiện có của site, TPS1 không nên đi theo kiểu web giới thiệu chung chung.
+        Lợi thế thực sự là mô hình B2B catalog + quote, cộng với local-first và content theo ý định mua hàng.
+      </p>
+      <div class="grid-2">
+        <div class="callout">
+          <strong>Điểm mạnh hiện có</strong>
+          <ul>
+            <li>Có các cụm trang rõ ràng: sản phẩm, danh mục, ngành hàng, dịch vụ, kiến thức, tin tức, liên hệ, báo giá.</li>
+            <li>Có song ngữ Việt/Anh, phù hợp mở rộng tệp tìm kiếm và dùng lại nội dung cho nhiều nhóm khách.</li>
+            <li>Có sitemap, robots, canonical metadata và luồng quote chuyên biệt.</li>
+            <li>Đã có dữ liệu nội dung đủ để dựng pillar page và cluster page.</li>
+          </ul>
+        </div>
+        <div class="callout warn">
+          <strong>Điểm cần xử lý tiếp</strong>
+          <ul>
+            <li>Thiếu độ sâu nội dung cho các landing page money-keyword.</li>
+            <li>Thiếu local landing page theo khu vực có nhu cầu cao như Biên Hòa, Nhơn Trạch, Long Thành.</li>
+            <li>Thiếu tín hiệu E-E-A-T: case study, năng lực cung ứng, quy trình, chứng từ, ảnh thực tế, FAQ giàu ngữ cảnh.</li>
+            <li>Cần chuyển nhiều trang từ “giới thiệu sản phẩm” sang “trả lời nhu cầu mua cụ thể”.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="keyword">
+      <h2>2. Phân tích keyword</h2>
+      <p class="subtle">
+        Keyword nên được chia theo 4 tầng: brand, local commercial, product, và informational. Không nên dồn lực
+        vào chỉ một từ khóa lớn như “suất ăn công nghiệp”, vì cạnh tranh cao và có nhiều đối thủ chuyên mảng đó.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nhóm</th>
+            <th>Ý định tìm kiếm</th>
+            <th>Ví dụ keyword</th>
+            <th>Trang đích nên gánh</th>
+            <th>Ưu tiên</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Brand + local</td>
+            <td>Đã biết tên hoặc đang xác minh nhà cung cấp</td>
+            <td>Thực Phẩm Số Một, TPS1, thực phẩm số một Đồng Nai</td>
+            <td>Homepage, hồ sơ năng lực, liên hệ</td>
+            <td>Rất cao</td>
+          </tr>
+          <tr>
+            <td>Local commercial</td>
+            <td>Mua hàng, xin báo giá, chốt đối tác</td>
+            <td>cung cấp thực phẩm Đồng Nai, cung cấp thực phẩm Biên Hòa, nhà cung cấp thực phẩm Nhơn Trạch</td>
+            <td>Homepage, landing page local mới</td>
+            <td>Rất cao</td>
+          </tr>
+          <tr>
+            <td>Ngành hàng</td>
+            <td>Tìm nhà cung cấp theo môi trường vận hành</td>
+            <td>bếp ăn tập thể Đồng Nai, suất ăn công nghiệp Đồng Nai, thực phẩm cho trường học, bệnh viện</td>
+            <td>/nganh-hang/*</td>
+            <td>Cao</td>
+          </tr>
+          <tr>
+            <td>Sản phẩm</td>
+            <td>Tìm nhóm hàng mua thường xuyên</td>
+            <td>rau củ quả tươi sống, thịt cá hải sản, hàng đông lạnh, gia vị nhà bếp, thực phẩm chay</td>
+            <td>/san-pham/*, /danh-muc/*</td>
+            <td>Cao</td>
+          </tr>
+          <tr>
+            <td>Dịch vụ</td>
+            <td>Tìm giải pháp hỗ trợ vận hành</td>
+            <td>tư vấn menu, setup bếp ăn, tính toán dinh dưỡng, cung cấp định kỳ</td>
+            <td>/dich-vu/*</td>
+            <td>Cao</td>
+          </tr>
+          <tr>
+            <td>Informational</td>
+            <td>Học cách mua, chọn, kiểm tra, tối ưu</td>
+            <td>cách chọn nhà cung cấp thực phẩm, checklist báo giá, tiêu chuẩn chọn rau củ, cách lập menu bếp ăn</td>
+            <td>/kien-thuc/*, /tin-tuc/*</td>
+            <td>Cao</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Keyword clusters nên triển khai ngay</strong>
+        <div style="margin-top:8px">
+          <span class="tag">cung cấp thực phẩm Đồng Nai</span>
+          <span class="tag">cung cấp thực phẩm Biên Hòa</span>
+          <span class="tag">cung cấp thực phẩm Nhơn Trạch</span>
+          <span class="tag">thực phẩm cho bếp ăn tập thể</span>
+          <span class="tag">suất ăn công nghiệp Đồng Nai</span>
+          <span class="tag">nhà cung cấp rau củ quả</span>
+          <span class="tag">thực phẩm cho trường học</span>
+          <span class="tag">thực phẩm cho bệnh viện</span>
+          <span class="tag">tư vấn menu bếp ăn</span>
+          <span class="tag">báo giá thực phẩm định kỳ</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h3 style="margin:0 0 10px">Từ khóa money-first</h3>
+          <ul>
+            <li>cung cấp thực phẩm bếp ăn tập thể Đồng Nai</li>
+            <li>nhà cung cấp thực phẩm cho nhà máy Biên Hòa</li>
+            <li>cung cấp rau củ quả cho trường học</li>
+            <li>cung cấp thịt cá hải sản số lượng lớn</li>
+            <li>báo giá thực phẩm định kỳ cho canteen</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin:0 0 10px">Từ khóa hỗ trợ nội dung</h3>
+          <ul>
+            <li>cách chọn nhà cung cấp thực phẩm</li>
+            <li>cách kiểm soát hao hụt rau củ</li>
+            <li>thực đơn bếp ăn tập thể theo tuần</li>
+            <li>quy trình nhận hàng thực phẩm tươi sống</li>
+            <li>tiêu chuẩn an toàn thực phẩm cho bếp lớn</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="doi-thu">
+      <h2>3. Đối thủ và khoảng trống</h2>
+      <p class="subtle">
+        Ở SERP hiện tại, nhiều đối thủ mạnh đang đi theo trục “suất ăn công nghiệp” hơn là “catalog thực phẩm + báo giá”.
+        Đây là khoảng trống để TPS1 đi vào với định vị rõ hơn cho nhóm khách mua nguyên liệu định kỳ.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Đối thủ</th>
+            <th>Góc tiếp cận</th>
+            <th>Điểm mạnh nhìn thấy</th>
+            <th>Khoảng trống để vượt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thanh Trúc Food</td>
+            <td>Suất ăn công nghiệp tại Nhơn Trạch</td>
+            <td>Định vị địa phương rõ, có năng lực phục vụ lớn, nhắm KCN và doanh nghiệp.</td>
+            <td>Thiên về suất ăn; TPS1 có thể lấy góc “nguồn hàng + lập menu + báo giá” thay vì chỉ bán suất ăn.</td>
+          </tr>
+          <tr>
+            <td>BestFoodVN</td>
+            <td>Suất ăn công nghiệp, giá suất ăn</td>
+            <td>Nhiều trang theo mức giá, dễ kéo truy vấn long-tail liên quan chi phí.</td>
+            <td>Thiếu mô hình catalog và nội dung procurement sâu; TPS1 nên thắng bằng cấu trúc trang, FAQ và nội dung tư vấn.</td>
+          </tr>
+          <tr>
+            <td>Dương Khang Phát</td>
+            <td>Suất ăn công nghiệp tại Đồng Nai</td>
+            <td>Nêu kinh nghiệm, KCN cụ thể, dải khách hàng rộng.</td>
+            <td>Đối thủ thiên về service page; TPS1 có thể đẩy local landing page cùng case thực tế và danh mục thực phẩm.</td>
+          </tr>
+          <tr>
+            <td>Thanh Mai</td>
+            <td>Uy tín, an toàn, nguồn gốc rõ ràng</td>
+            <td>Thông điệp hygiene và nguồn nguyên liệu khá mạnh.</td>
+            <td>Cần thêm proof thực tế, tài liệu năng lực và nội dung theo từng nhóm hàng để tránh chung chung.</td>
+          </tr>
+          <tr>
+            <td>Nguyên Đán</td>
+            <td>Cung cấp thực phẩm và suất ăn trọn gói</td>
+            <td>Nêu được danh mục hàng, khách hàng, số suất/ngày.</td>
+            <td>TPS1 có thể vượt bằng trải nghiệm người mua: trang sản phẩm, route báo giá, chia theo ngành hàng và dịch vụ.</td>
+          </tr>
+          <tr>
+            <td>Danh bạ / danh sách quản lý</td>
+            <td>Citation và listing</td>
+            <td>Xuất hiện trong danh sách, dễ tạo trust phụ trợ.</td>
+            <td>Cần tham gia citation local và backlink profile để củng cố tín hiệu địa phương.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <strong>Kết luận cạnh tranh</strong>
+        <p style="margin: 8px 0 0;">
+          Nếu TPS1 cố tranh trực diện với trang “suất ăn công nghiệp” thuần túy, chi phí SEO sẽ cao. Đi đường
+          hiệu quả hơn là: local supplier + B2B catalog + RFQ + content mua hàng. Đây là góc vừa sát business,
+          vừa ít bị đụng vào định vị của các đối thủ đang ăn SERP bằng bài suất ăn hoặc listing.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="cau-truc">
+      <h2>4. Cấu trúc trang cần SEO</h2>
+      <div class="grid-2">
+        <div>
+          <h3 style="margin:0 0 10px">Trang hiện có nên tối ưu sâu</h3>
+          <ul>
+            <li>Homepage: chốt định vị B2B + local + CTA báo giá.</li>
+            <li>/san-pham: trang hub cho nhóm hàng chính, đẩy internal link xuống danh mục.</li>
+            <li>/danh-muc/*: trang money page theo loại hàng.</li>
+            <li>/nganh-hang/*: trang giải bài toán theo bối cảnh mua.</li>
+            <li>/dich-vu/*: trang hỗ trợ chuyển đổi và dẫn về quote.</li>
+            <li>/kien-thuc/* và /tin-tuc/*: kéo traffic đầu phễu và tăng topical authority.</li>
+            <li>/bao-gia: trang chuyển đổi chính.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin:0 0 10px">Trang mới nên bổ sung</h3>
+          <ul>
+            <li>/cung-cap-thuc-pham-dong-nai</li>
+            <li>/cung-cap-thuc-pham-bien-hoa</li>
+            <li>/cung-cap-thuc-pham-nhon-trach</li>
+            <li>/cung-cap-thuc-pham-long-thanh</li>
+            <li>/cung-cap-thuc-pham-trang-bom</li>
+            <li>/thuc-pham-cho-bep-an-tap-the</li>
+            <li>/thuc-pham-cho-truong-hoc</li>
+            <li>/thuc-pham-cho-benh-vien</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Nguyên tắc cấu trúc</strong>
+        <ul>
+          <li>Mỗi trang chỉ gánh một ý định tìm kiếm chính.</li>
+          <li>Tiêu đề trang phải có địa danh hoặc ngữ cảnh mua nếu là landing page local.</li>
+          <li>Mỗi trang dịch vụ/sản phẩm cần FAQ, quy trình, lợi ích, vùng phục vụ, và CTA báo giá.</li>
+          <li>Không để các trang alias hoặc trang mỏng cạnh tranh với trang canonical chính.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="noi-dung">
+      <h2>5. Kế hoạch nội dung</h2>
+      <p class="subtle">
+        Nội dung nên vận hành theo mô hình pillar + cluster. Pillar tạo độ phủ, cluster kéo long-tail và nuôi chuyển đổi.
+      </p>
+
+      <div class="grid-3">
+        <div class="kpi">
+          <strong>Pillar 1: Mua hàng B2B</strong>
+          <div class="small">Cách chọn nhà cung cấp, tiêu chí đánh giá, checklist báo giá, quy trình thử mẫu, hợp đồng, SLA giao hàng.</div>
+        </div>
+        <div class="kpi">
+          <strong>Pillar 2: Vận hành bếp</strong>
+          <div class="small">Lập menu, định lượng, kiểm soát hao hụt, bảo quản, thay thế mùa vụ, tối ưu chi phí mỗi suất.</div>
+        </div>
+        <div class="kpi">
+          <strong>Pillar 3: An toàn và uy tín</strong>
+          <div class="small">Nguồn gốc, truy xuất, giấy tờ, giao nhận, xử lý sự cố, thực hành an toàn thực phẩm.</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nhóm bài</th>
+            <th>Đề tài</th>
+            <th>Vai trò</th>
+            <th>Trang đích / CTA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thu hút</td>
+            <td>Cách chọn nhà cung cấp thực phẩm cho bếp ăn tập thể</td>
+            <td>Tạo traffic đầu phễu và build trust.</td>
+            <td>/bao-gia hoặc /dich-vu/tu-van-menu</td>
+          </tr>
+          <tr>
+            <td>Thu hút</td>
+            <td>Checklist gửi yêu cầu báo giá nhanh cho căn tin và suất ăn công nghiệp</td>
+            <td>Rất sát nhu cầu thực tế, dễ backlink và share nội bộ.</td>
+            <td>/bao-gia</td>
+          </tr>
+          <tr>
+            <td>Thu hút</td>
+            <td>Tiêu chuẩn chọn rau củ quả cho bếp quy mô lớn</td>
+            <td>Đẩy nhóm rau củ và tạo topical authority.</td>
+            <td>/danh-muc/rau-cu-qua</td>
+          </tr>
+          <tr>
+            <td>Nuôi chuyển đổi</td>
+            <td>Cách lập menu cho bếp ăn tập thể</td>
+            <td>Gắn với service tư vấn menu.</td>
+            <td>/dich-vu/tu-van-menu</td>
+          </tr>
+          <tr>
+            <td>Nuôi chuyển đổi</td>
+            <td>Phương pháp cấp đông thực phẩm và lợi ích với bếp công nghiệp</td>
+            <td>Đẩy nhóm hàng đông lạnh và tối ưu tồn kho.</td>
+            <td>/danh-muc/hang-dong-lanh</td>
+          </tr>
+          <tr>
+            <td>Chuyển đổi</td>
+            <td>Case study cấp hàng định kỳ cho nhà máy hoặc trường học tại Đồng Nai</td>
+            <td>Chứng minh năng lực, tăng niềm tin.</td>
+            <td>/ho-so-nang-luc hoặc /bao-gia</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Nhịp xuất bản đề xuất</strong>
+        <ul>
+          <li>2 bài/tuần trong 8 tuần đầu để tạo footprint nhanh.</li>
+          <li>1 landing page local/tuần cho đến khi phủ xong các khu vực trọng điểm.</li>
+          <li>Mỗi bài phải có link về ít nhất 1 trang sản phẩm, 1 trang ngành hàng, và 1 CTA báo giá.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="ky-thuat">
+      <h2>6. Kỹ thuật SEO</h2>
+      <div class="grid-2">
+        <div>
+          <h3 style="margin:0 0 10px">Việc phải làm ngay</h3>
+          <ul>
+            <li>Kiểm tra title, meta description, H1, canonical và OG cho từng route.</li>
+            <li>Chuẩn hóa schema: Organization, LocalBusiness, Product, BreadcrumbList, FAQPage, Article.</li>
+            <li>Kiểm tra indexability của route song ngữ và alias; trang redirect không nên tạo nội dung trùng.</li>
+            <li>Tối ưu ảnh: alt text theo ngữ cảnh, kích thước hợp lý, không để ảnh nặng làm chậm LCP.</li>
+            <li>Rà soát internal linking: homepage -> hub -> detail -> quote.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin:0 0 10px">Nên chuẩn hóa thêm</h3>
+          <ul>
+            <li>Breadcrumb trên mọi trang chi tiết.</li>
+            <li>FAQ block ở cuối trang dịch vụ/sản phẩm/ngành hàng.</li>
+            <li>Open Graph riêng cho trang thương mại và trang kiến thức.</li>
+            <li>Core Web Vitals: giảm script thừa, tải ảnh đúng kích thước, giữ CLS thấp.</li>
+            <li>Trang 404 và trang mỏng phải có lối quay lại hub chính.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <strong>Rủi ro kỹ thuật cần tránh</strong>
+        <p style="margin:8px 0 0;">
+          Nếu tạo quá nhiều trang địa phương hoặc bài viết na ná nhau, site sẽ tự ăn nhau trên cùng một nhóm query.
+          Mỗi trang mới phải có intent riêng, dữ liệu riêng, và internal link rõ ràng.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="local">
+      <h2>7. Local SEO</h2>
+      <div class="grid-2">
+        <div>
+          <h3 style="margin:0 0 10px">Việc cần ưu tiên</h3>
+          <ul>
+            <li>Google Business Profile đầy đủ: tên, danh mục, mô tả, giờ làm việc, ảnh thật, số điện thoại.</li>
+            <li>Đồng nhất NAP: tên doanh nghiệp, địa chỉ, hotline, email trên site và các listing.</li>
+            <li>Xuất hiện ở các nguồn địa phương / danh bạ / hiệp hội / cơ sở dữ liệu ngành.</li>
+            <li>Thu thập review thật từ khách B2B nếu có thể dùng công khai.</li>
+            <li>Đăng nội dung gắn khu vực: Biên Hòa, Nhơn Trạch, Long Thành, Trảng Bom, Dĩ An, Thủ Đức.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin:0 0 10px">Gợi ý landing page local</h3>
+          <ul>
+            <li>Cung cấp thực phẩm tại Biên Hòa</li>
+            <li>Cung cấp thực phẩm tại Nhơn Trạch</li>
+            <li>Cung cấp thực phẩm tại Long Thành</li>
+            <li>Cung cấp thực phẩm cho khu công nghiệp</li>
+            <li>Nhà cung cấp thực phẩm cho bếp ăn tập thể Đồng Nai</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>Local SEO nên đo</strong>
+        <ul>
+          <li>Impression và click theo query có địa danh.</li>
+          <li>Cuộc gọi, nhấp Zalo, gửi form từ trang local.</li>
+          <li>Vị trí trong local pack nếu GBP được tối ưu tốt.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="roadmap">
+      <h2>8. Roadmap 90 ngày</h2>
+      <div class="phase-list">
+        <div class="phase">
+          <strong>Giai đoạn 1: 0-14 ngày</strong>
+          <div class="small">Chốt chiến lược, map keyword, audit trang hiện có, bổ sung title/meta/H1, schema cơ bản, đo lường GA4/GSC.</div>
+        </div>
+        <div class="phase">
+          <strong>Giai đoạn 2: 15-30 ngày</strong>
+          <div class="small">Viết lại homepage, /bao-gia, /san-pham, /danh-muc/*, /nganh-hang/*; thêm FAQ và internal link chuẩn.</div>
+        </div>
+        <div class="phase">
+          <strong>Giai đoạn 3: 31-60 ngày</strong>
+          <div class="small">Xuất bản 8-12 bài kiến thức, 2-4 landing local, 1-2 case study, tối ưu ảnh và chuyển đổi.</div>
+        </div>
+        <div class="phase">
+          <strong>Giai đoạn 4: 61-90 ngày</strong>
+          <div class="small">Xây citation/local link, đẩy review, rà query đang lên, cập nhật trang thắng, cắt trang yếu.</div>
+        </div>
+      </div>
+
+      <table style="margin-top:16px">
+        <thead>
+          <tr>
+            <th>Tuần</th>
+            <th>Việc chính</th>
+            <th>Kết quả mong đợi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1-2</td>
+            <td>Audit kỹ thuật, map keyword, chốt danh sách landing page ưu tiên</td>
+            <td>Có bản kế hoạch SEO chính thức và danh sách việc có thể giao cho team</td>
+          </tr>
+          <tr>
+            <td>3-4</td>
+            <td>Sửa home, quote, services, schema, internal links</td>
+            <td>Tăng chất lượng index và khả năng chuyển đổi</td>
+          </tr>
+          <tr>
+            <td>5-8</td>
+            <td>Xuất bản cluster bài viết và local landing</td>
+            <td>Tăng impression cho nhóm keyword dài và keyword địa phương</td>
+          </tr>
+          <tr>
+            <td>9-12</td>
+            <td>Đẩy citation, review, backlink, refresh nội dung có tín hiệu tốt</td>
+            <td>Ổn định tín hiệu địa phương và bắt đầu tối ưu theo query thực tế</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" id="kpi">
+      <h2>9. KPI và đo lường</h2>
+      <div class="grid-3">
+        <div class="kpi">
+          <strong>Nhận diện</strong>
+          <div class="small">Impressions, số query top 20, số trang được index, số impression local query.</div>
+        </div>
+        <div class="kpi">
+          <strong>Chuyển đổi</strong>
+          <div class="small">Form submit, click Zalo, click gọi, số quote chất lượng, số lead có nhu cầu thật.</div>
+        </div>
+        <div class="kpi">
+          <strong>Chất lượng nội dung</strong>
+          <div class="small">Thời gian ở lại trang, scroll depth, click sang trang dịch vụ/sản phẩm từ bài viết.</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Mẫu quyết định hàng tuần</strong>
+        <ul>
+          <li>Query nào có impression cao nhưng CTR thấp thì sửa title/meta.</li>
+          <li>Trang nào có traffic nhưng không có lead thì sửa CTA và form.</li>
+          <li>Trang nào có lead nhưng keyword sai intent thì chuyển internal link sang trang phù hợp hơn.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="nguon">
+      <h2>10. Nguồn tham chiếu</h2>
+      <p class="subtle">
+        Các nguồn dưới đây được dùng để xác thực bối cảnh cạnh tranh, định vị hiện tại của site, và nhu cầu thị trường địa phương.
+      </p>
+      <div class="source-list">
+        <div class="source">
+          <strong>Site hiện tại</strong><br>
+          <a href="https://thucphamsomot.vn/" target="_blank" rel="noreferrer">https://thucphamsomot.vn/</a>
+        </div>
+        <div class="source">
+          <strong>Thanh Trúc Food</strong><br>
+          <a href="https://thanhtrucfood.com/" target="_blank" rel="noreferrer">https://thanhtrucfood.com/</a>
+        </div>
+        <div class="source">
+          <strong>BestFoodVN</strong><br>
+          <a href="https://bestfoodvn.com/" target="_blank" rel="noreferrer">https://bestfoodvn.com/</a>
+        </div>
+        <div class="source">
+          <strong>Dương Khang Phát</strong><br>
+          <a href="https://suatancongnghiepduongkhangphat.com/cung-cap-suat-an-cong-nghiep" target="_blank" rel="noreferrer">https://suatancongnghiepduongkhangphat.com/cung-cap-suat-an-cong-nghiep</a>
+        </div>
+        <div class="source">
+          <strong>Thanh Mai</strong><br>
+          <a href="https://suatancongnghiepthanhmai.com/cong-ty-suat-an-cong-nghiep-dong-nai" target="_blank" rel="noreferrer">https://suatancongnghiepthanhmai.com/cong-ty-suat-an-cong-nghiep-dong-nai</a>
+        </div>
+        <div class="source">
+          <strong>Nguyên Đán</strong><br>
+          <a href="https://trangvangtructuyen.vn/cong-ty-tnhh-thuc-pham-nguyen-dan.html" target="_blank" rel="noreferrer">https://trangvangtructuyen.vn/cong-ty-tnhh-thuc-pham-nguyen-dan.html</a>
+        </div>
+        <div class="source">
+          <strong>Danh sách cơ sở SACN Đồng Nai Q3/2025</strong><br>
+          <a href="https://dnieza.dongnai.gov.vn/Shared%20Documents/Danh%20sach%20SACN%20Q3.2025.pdf" target="_blank" rel="noreferrer">https://dnieza.dongnai.gov.vn/Shared%20Documents/Danh%20sach%20SACN%20Q3.2025.pdf</a>
+        </div>
+        <div class="source">
+          <strong>Search queries đã tham chiếu</strong><br>
+          Nhóm truy vấn xoay quanh “cung cấp thực phẩm Đồng Nai”, “suất ăn công nghiệp Nhơn Trạch”, “bếp ăn tập thể Đồng Nai”, “nhà cung cấp thực phẩm Biên Hòa”.
+        </div>
+      </div>
+
+      <p class="footer-note">
+        Ghi chú: đây là bản kế hoạch SEO mang tính triển khai. Sau khi chốt hướng, bước tiếp theo nên là chuyển từng nhóm mục thành
+        checklist giao việc cho content, dev, sales và local citations.
+      </p>
+    </section>
+  </div>
+</body>
+</html>
