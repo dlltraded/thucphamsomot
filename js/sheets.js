@@ -419,20 +419,20 @@
     keys.forEach(k => {
       const lowerKey = k.toLowerCase().replace(/_/g, '').trim();
 
-      // Ánh xạ Tên
-      if (lowerKey.includes('tên') || lowerKey.includes('name') || lowerKey === 'khách hàng' || lowerKey === 'khachhang') {
+      // Ánh xạ Tên (camelCase + Vietnamese)
+      if (lowerKey.includes('tên') || lowerKey.includes('name') || lowerKey === 'họ tên' || lowerKey === 'hotên' || lowerKey === 'khách hàng' || lowerKey === 'khachhang') {
         mapping.name = row[k];
       }
-      // Ánh xạ SĐT
-      else if (lowerKey.includes('sđt') || lowerKey.includes('đt') || lowerKey.includes('phone') || lowerKey.includes('thoại')) {
+      // Ánh xạ SĐT (camelCase + Vietnamese)
+      else if (lowerKey.includes('sđt') || lowerKey.includes('đt') || lowerKey.includes('phone') || lowerKey.includes('thoại') || lowerKey === 'số điện thoại') {
         mapping.phone = row[k];
       }
       // Ánh xạ Email
       else if (lowerKey.includes('email') || lowerKey.includes('thư')) {
         mapping.email = row[k];
       }
-      // Ánh xạ Kênh Nguồn
-      else if (lowerKey.includes('nguồn') || lowerKey.includes('source') || lowerKey.includes('kênh')) {
+      // Ánh xạ Kênh Nguồn (camelCase: source, kenh)
+      else if (lowerKey === 'source' || lowerKey === 'nguồn' || lowerKey === 'kenh' || lowerKey === 'kênh') {
         mapping.source = row[k];
       }
       // Ánh xạ Ghi chú gốc
@@ -479,19 +479,19 @@
         }
       }
       // Ánh xạ Vai trò
-      else if (lowerKey === 'vai trò' || lowerKey === 'vaitro' || lowerKey === 'role') {
+      else if (lowerKey === 'vai trò' || lowerKey === 'vaitro' || lowerKey === 'vaitrò' || lowerKey === 'role') {
         mapping.role = row[k];
       }
       // Ánh xạ Loại form
-      else if (lowerKey === 'loại form' || lowerKey === 'loaiform' || lowerKey === 'formtype' || lowerKey === 'form type') {
+      else if (lowerKey === 'loại form' || lowerKey === 'loaiform' || lowerKey === 'formtype' || lowerKey === 'form type' || lowerKey === 'loaiForm'.toLowerCase()) {
         mapping.formType = row[k];
       }
-      // Ánh xạ Kênh liên hệ
-      else if (lowerKey === 'kênh' || lowerKey === 'kenh' || lowerKey === 'channel') {
+      // Ánh xạ Kênh liên hệ (cột D của sheet)
+      else if (lowerKey === 'kenh' || lowerKey === 'channel') {
         mapping.channel = row[k];
       }
       // Ánh xạ Công ty
-      else if (lowerKey === 'company' || lowerKey === 'công ty' || lowerKey === 'congty') {
+      else if (lowerKey === 'company' || lowerKey === 'công ty' || lowerKey === 'congty' || lowerKey === 'công ty / đơn vị') {
         mapping.company = row[k];
       }
       // Ánh xạ Loại hình đơn vị
@@ -499,7 +499,7 @@
         mapping.facilityType = row[k];
       }
       // Ánh xạ Mặt hàng quan tâm
-      else if (lowerKey === 'interested in' || lowerKey === 'interestedin' || lowerKey === 'mặt hàng quan tâm' || lowerKey === 'mathangquantam') {
+      else if (lowerKey === 'interested in' || lowerKey === 'interestedin' || lowerKey === 'mặt hàng quan tâm' || lowerKey === 'mathangquantam' || lowerKey === 'nhóm hàng quan tâm') {
         mapping.interestedIn = row[k];
       }
       // Ánh xạ Quy mô nhu cầu
@@ -519,22 +519,32 @@
         mapping.needBy = row[k];
       }
       // Ánh xạ Tin nhắn / Lời nhắn
-      else if (lowerKey === 'message' || lowerKey === 'nhu cầu' || lowerKey === 'lời nhắn' || lowerKey === 'loinhas') {
+      else if (lowerKey === 'message' || lowerKey === 'mô tả nhu cầu' || lowerKey === 'nhu cầu' || lowerKey === 'lời nhắn') {
         mapping.message = row[k];
       }
-      // Ánh xạ Sản phẩm đã chọn
-      else if (lowerKey === 'selected items' || lowerKey === 'selecteditems' || lowerKey === 'sản phẩm đã chọn' || lowerKey === 'sanphamdachon') {
+      // Ánh xạ Sản phẩm đã chọn (text)
+      else if (lowerKey === 'selected items' || lowerKey === 'selecteditems' || lowerKey === 'selectedproducts' || lowerKey === 'selected products' || lowerKey === 'sản phẩm đã chọn') {
         mapping.selectedItems = row[k];
       }
       // Ánh xạ Số lượng mặt hàng
-      else if (lowerKey === 'selected count' || lowerKey === 'selectedcount' || lowerKey === 'số lượng chọn' || lowerKey === 'soluongchon') {
+      else if (lowerKey === 'selected count' || lowerKey === 'selectedcount' || lowerKey === 'số sản phẩm' || lowerKey === 'soluongchon' || lowerKey === 'số lượng chọn') {
         mapping.selectedCount = row[k];
+      }
+      // Ánh xạ Giỏ hàng (cột mới thay thế Raw Payload)
+      else if (lowerKey === 'giỏ hàng' || lowerKey === 'giohang' || lowerKey === 'cart' || lowerKey === 'cart items') {
+        mapping.cartItems = row[k];
+      }
+      // Giữ backward compat với Raw Payload cũ (nếu còn rows cũ)
+      else if (lowerKey === 'rawpayload' || lowerKey === 'raw payload' || lowerKey === 'raw_payload') {
+        mapping.rawNotes = row[k];
       }
     });
 
     // Cung cấp giá trị fallback cho Kênh MKT nếu trống
     if (!mapping.source) mapping.source = 'Website';
     if (mapping.rawNotes && !mapping.rawNotes.trim()) mapping.rawNotes = '';
+    // cartItems có thể là JSON string hoặc text - giữ nguyên để UI tự format
+    if (mapping.cartItems === undefined) mapping.cartItems = mapping.selectedItems || '';
 
     return mapping;
   }

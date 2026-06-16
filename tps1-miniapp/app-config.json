@@ -1,0 +1,25 @@
+{
+  "app": {
+    "appId": "3486082144280639442",
+    "title": "Thực Phẩm Số Một",
+    "headerTitle": "TPS1 - Đặt Hàng",
+    "headerColor": "#1B7A3D",
+    "textColor": "white",
+    "statusBar": "normal"
+  },
+  "pages": [
+    "/",
+    "/bao-gia",
+    "/san-pham",
+    "/dat-hang",
+    "/gioi-thieu"
+  ],
+  "listSync": [
+    "pages"
+  ],
+  "listCSS": [],
+  "listSyncJS": [
+    "/assets/index-CoRy4CtB.js"
+  ],
+  "listAsyncJS": []
+}

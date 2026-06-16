@@ -177,6 +177,27 @@
     const nextStatus = normalize(newStatus);
     if (oldStatus === nextStatus) return; // Không thay đổi
 
+    // Hiển thị modal xác nhận (từ app.js)
+    if (typeof window.showConfirmStatusModal === 'function') {
+      window.showConfirmStatusModal(nextStatus, 
+        () => {
+          // Xác nhận
+          executeMoveLeadStatus(leadId, nextStatus, oldStatus);
+        },
+        () => {
+          // Hủy bỏ: Redraw lại bảng kanban để đưa card về vị trí cũ
+          renderKanban();
+        }
+      );
+    } else {
+      executeMoveLeadStatus(leadId, nextStatus, oldStatus);
+    }
+  }
+
+  function executeMoveLeadStatus(leadId, nextStatus, oldStatus) {
+    const leadIndex = state.leads.findIndex(l => l.id === leadId);
+    if (leadIndex === -1) return;
+
     state.leads[leadIndex].status = nextStatus;
     state.leads[leadIndex].updatedAt = new Date().toISOString();
 

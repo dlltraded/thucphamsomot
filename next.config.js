@@ -7,6 +7,12 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        // Supabase Storage — ảnh sản phẩm (cùng dùng với miniapp)
+        protocol: "https",
+        hostname: "yntgxollwjemyidizhnn.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
   },
 };

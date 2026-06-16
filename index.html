@@ -1400,6 +1400,27 @@ function doPost(e) {
     </div>
   </div>
 
+  <!-- STATUS CONFIRM MODAL -->
+  <div id="status-confirm-modal" class="modal hidden" style="z-index: 10000;">
+    <div class="modal-overlay" id="status-confirm-modal-overlay"></div>
+    <div class="modal-container" style="max-width: 400px; text-align: center;">
+      <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+        <h3 style="font-size: 1.25rem;">Xác nhận cập nhật quy trình</h3>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 20px; color: var(--text-color);">Bạn có chắc chắn muốn chuyển khách hàng này sang bước: <br><strong id="status-confirm-target" style="color: var(--emerald-color); font-size: 1.1rem; display: block; margin-top: 8px;">...</strong></p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button id="status-confirm-cancel-btn" class="btn btn-secondary" style="flex: 1; padding: 10px;">
+            <i class="fa-solid fa-xmark"></i> Hủy
+          </button>
+          <button id="status-confirm-ok-btn" class="btn btn-emerald" style="flex: 1; padding: 10px;">
+            <i class="fa-solid fa-check"></i> Xác nhận
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- QUOTE CUSTOM PRODUCT MODAL -->
   <div id="quote-custom-product-modal" class="modal hidden">
     <div class="modal-overlay" id="quote-custom-product-modal-overlay"></div>

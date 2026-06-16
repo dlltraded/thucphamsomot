@@ -779,6 +779,39 @@ window.openLeadDrawer = function(leadId) {
   drawerOverlay.classList.remove('hidden');
 };
 
+// Hàm mở Modal Xác nhận cập nhật quy trình
+window.showConfirmStatusModal = function(newStatus, onConfirm, onCancel) {
+  const modal = document.getElementById('status-confirm-modal');
+  const overlay = document.getElementById('status-confirm-modal-overlay');
+  const targetText = document.getElementById('status-confirm-target');
+  const btnOk = document.getElementById('status-confirm-ok-btn');
+  const btnCancel = document.getElementById('status-confirm-cancel-btn');
+
+  targetText.innerText = getLeadStatusLabel(newStatus);
+  modal.classList.remove('hidden');
+
+  const cleanup = () => {
+    modal.classList.add('hidden');
+    btnOk.removeEventListener('click', handleOk);
+    btnCancel.removeEventListener('click', handleCancel);
+    overlay.removeEventListener('click', handleCancel);
+  };
+
+  const handleOk = () => {
+    cleanup();
+    if (onConfirm) onConfirm();
+  };
+
+  const handleCancel = () => {
+    cleanup();
+    if (onCancel) onCancel();
+  };
+
+  btnOk.addEventListener('click', handleOk);
+  btnCancel.addEventListener('click', handleCancel);
+  overlay.addEventListener('click', handleCancel);
+};
+
 // Hàm cập nhật nhanh thuộc tính Lead từ Drawer
 window.updateLeadField = function(leadId, field, value, options = {}) {
   const leadIndex = state.leads.findIndex(l => l.id === leadId);
@@ -786,6 +819,32 @@ window.updateLeadField = function(leadId, field, value, options = {}) {
 
   const previousValue = state.leads[leadIndex][field];
   const normalizedValue = field === 'status' ? normalizeLeadStatus(value) : value;
+
+  // Nếu cập nhật trạng thái, cần hiển thị xác nhận
+  if (field === 'status' && !options.skipConfirm) {
+    window.showConfirmStatusModal(normalizedValue, 
+      () => {
+        // Xác nhận
+        executeLeadFieldUpdate(leadId, field, normalizedValue, previousValue, options);
+      }, 
+      () => {
+        // Hủy bỏ: khôi phục giá trị cũ trên dropdown nếu đang mở drawer
+        const selectEl = document.getElementById('drawer-status');
+        if (selectEl) {
+          selectEl.value = previousValue;
+        }
+      }
+    );
+    return;
+  }
+
+  executeLeadFieldUpdate(leadId, field, normalizedValue, previousValue, options);
+};
+
+function executeLeadFieldUpdate(leadId, field, normalizedValue, previousValue, options) {
+  const leadIndex = state.leads.findIndex(l => l.id === leadId);
+  if (leadIndex === -1) return;
+
   state.leads[leadIndex][field] = normalizedValue;
   state.leads[leadIndex].updatedAt = new Date().toISOString();
   saveState('leads');

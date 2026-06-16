@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Send, Sparkles, MessageCircle } from "lucide-react";
 import { quoteSchema, type QuoteLeadInput } from "@/lib/validation";
 import { siteConfig, type Locale } from "@/lib/site";
+import { useCart } from "@/lib/cart-context";
+import { QuoteCartSummary } from "@/components/quote-cart-summary";
 
 type InquiryType = "buyer" | "supplier";
 
@@ -228,6 +230,7 @@ type QuotePortalProps = {
 export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortalProps) {
   const text = UI[locale];
   const getError = (message?: string) => translateValidationError(message, locale);
+  const { items: cartItems, clear: clearCart } = useCart();
 
   const [submittedSummary, setSubmittedSummary] = useState<QuoteSummary | null>(
     initialNotice?.kind === "success" ? initialNotice.summary : null
@@ -342,11 +345,17 @@ export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortal
     }
 
     const values = getValues();
+    // Build cart items list for the message
+    const cartLines = cartItems.length > 0
+      ? "\n\n📦 Sản phẩm đã chọn:\n" + cartItems
+          .map((it) => `• ${it.title}${it.summary ? ` (${it.summary})` : ""} — SL: ${it.quantity}`)
+          .join("\n")
+      : "";
     const payload = {
       ...values,
       pagePath: window.location.pathname,
-      selectedItems: [],
-      message: buildMessage(values, locale),
+      selectedItems: cartItems.map((it) => ({ slug: it.slug, title: it.title, quantity: it.quantity })),
+      message: buildMessage(values, locale) + cartLines,
     };
 
     try {
@@ -382,6 +391,7 @@ export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortal
     const summary = buildSummary(values, locale);
     setSubmittedSummary(summary);
     saveSuccessState(summary);
+    clearCart(); // Clear cart after successful submission
     reset({
       inquiryType: values.inquiryType,
       name: "",
@@ -661,6 +671,9 @@ export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortal
         </>
       ) : (
         <>
+          {/* Cart summary — sản phẩm đã chọn từ trang /san-pham */}
+          <QuoteCartSummary locale={locale} />
+
           <div className="quote-landing__grid">
             <Field label={text.common.name} error={getError(errors.name?.message)} {...register("name")} />
             <Field label={text.common.phone} error={getError(errors.phone?.message)} {...register("phone")} />

@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CompanyProfileWidget } from "@/components/company-profile-widget";
 import { SeoJsonLd } from "@/components/seo-json-ld";
 import { SocialWidget } from "@/components/social-widget";
+import { CartProvider } from "@/lib/cart-context";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -51,12 +52,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi">
       <body>
-        <SeoJsonLd />
-        <SiteHeader />
-        {children}
-        <CompanyProfileWidget />
-        <SocialWidget />
-        <SiteFooter />
+        <CartProvider>
+          <SeoJsonLd />
+          <SiteHeader />
+          {children}
+          <CompanyProfileWidget />
+          <SocialWidget />
+          <SiteFooter />
+        </CartProvider>
       </body>
     </html>
   );

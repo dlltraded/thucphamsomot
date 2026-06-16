@@ -1,11 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Boxes, ClipboardList, Leaf, MapPin, Truck } from "lucide-react";
+import { ArrowRight, Boxes, BadgeCheck, ClipboardList, Leaf, MapPin, Truck } from "lucide-react";
 import { categories } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
-import { PageShell } from "@/components/page-shell";
-import { QuoteAddButton } from "@/components/quote-add-button";
 import { buildProductImageMap, readManagedProducts } from "@/lib/products";
+import { ProductsGrid } from "./products-grid";
 
 export const metadata = makeMetadata({
   title: "Sản phẩm",
@@ -13,24 +11,6 @@ export const metadata = makeMetadata({
     "Danh mục sản phẩm chính: rau củ quả, thịt cá hải sản, hàng đông lạnh, gia vị và thực phẩm chay cho bếp ăn B2B.",
   path: "/san-pham",
 });
-
-const highlights = [
-  {
-    icon: ClipboardList,
-    title: "Danh mục rõ để chốt phương án nhanh",
-    text: "Chia theo nhóm hàng bếp thường mua, dễ gửi nhu cầu số lượng và quy cách.",
-  },
-  {
-    icon: Truck,
-    title: "Phù hợp giao định kỳ",
-    text: "Ưu tiên lịch giao theo ngày, theo tuần hoặc theo ca nhận hàng của bếp.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Tư vấn theo menu",
-    text: "Có thể gợi ý nhóm hàng thay thế khi mùa vụ, giá hoặc định mức thay đổi.",
-  },
-];
 
 const localCoverageLinks = [
   { href: "/cung-cap-thuc-pham-dong-nai", title: "Cung cấp thực phẩm Đồng Nai" },
@@ -63,73 +43,29 @@ export const dynamic = "force-dynamic";
 
 export default async function SanPhamPage() {
   const products = await readManagedProducts();
-  const productImageBySlug = buildProductImageMap(products);
 
   return (
-    <PageShell
-      eyebrow="Sản phẩm"
-      title="Danh mục thực phẩm cho bếp ăn, nhà hàng và suất ăn công nghiệp"
-      description="Chọn nhanh nhóm hàng cần báo giá: rau củ quả, thịt cá hải sản, hàng đông lạnh, gia vị nhà bếp và thực phẩm chay. Mỗi nhóm được trình bày theo cách khách mua B2B dễ gửi nhu cầu và chốt lịch giao."
-    >
-      <section className="product-intro">
-        {highlights.map((item) => {
-          const Icon = item.icon;
-          return (
-            <article key={item.title} className="product-intro__item">
-              <Icon size={22} />
-              <h2>{item.title}</h2>
-              <p>{item.text}</p>
-            </article>
-          );
-        })}
-      </section>
-
-      <section className="product-showcase">
-        <div className="section-split">
-          <div>
-            <div className="eyebrow">Nhóm hàng chính</div>
-            <h2 className="product-section-title">Các dòng sản phẩm đang phục vụ khách mua số lượng lớn.</h2>
-          </div>
-          <Link href="/bao-gia" className="text-link">
-            BÁO GIÁ <ArrowRight size={16} />
-          </Link>
+    <main className="sp-page">
+      {/* ── Slim compact header ── */}
+      <div className="sp-page__head container-shell">
+        <div className="sp-page__head-left">
+          <div className="eyebrow">Danh mục sản phẩm</div>
+          <h1 className="sp-page__title">Chọn sản phẩm &amp; gửi báo giá</h1>
+          <p className="sp-page__desc">
+            Thêm mặt hàng vào giỏ, sau đó gửi yêu cầu — đội ngũ phản hồi trong 30 phút.
+          </p>
         </div>
-
-        <div className="product-grid">
-          {products.map((item, index) => (
-            <article key={item.slug} className="product-card">
-              <div className="product-card__media">
-                <Image
-                  src={productImageBySlug[item.slug] ?? productImageBySlug["rau-cu-qua-tuoi-song"]}
-                  alt={item.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="product-card__image"
-                />
-                <span className="product-card__index">0{index + 1}</span>
-              </div>
-              <div className="product-card__body">
-                <Link href={`/san-pham/${item.slug}`} className="product-card__title-link">
-                  <h3>{item.title}</h3>
-                </Link>
-                <p>{item.summary}</p>
-                <div className="product-card__features">
-                  {(item.features ?? []).map((feature) => (
-                    <span key={feature}>{feature}</span>
-                  ))}
-                </div>
-                <div className="product-card__footer">
-                  <Link href={`/san-pham/${item.slug}`} className="text-link">
-                    Xem chi tiết <ArrowRight size={16} />
-                  </Link>
-                  <QuoteAddButton product={item} label="Thêm vào báo giá" />
-                </div>
-              </div>
-            </article>
-          ))}
+        <div className="sp-page__badges">
+          <span><ClipboardList size={14} /> Báo giá riêng theo nhóm hàng</span>
+          <span><Truck size={14} /> Giao định kỳ toàn vùng Đông Nam Bộ</span>
+          <span><BadgeCheck size={14} /> Hàng đúng nhóm, giao đúng nhịp</span>
         </div>
-      </section>
+      </div>
 
+      {/* ── SKU Grid từ Supabase ── */}
+      <ProductsGrid />
+
+      {/* ── Danh mục ── */}
       <section className="product-category-band">
         <div className="product-category-band__intro">
           <div className="eyebrow">Danh mục sản phẩm</div>
@@ -139,14 +75,10 @@ export default async function SanPhamPage() {
             quy cách đóng gói.
           </p>
         </div>
-
         <div className="product-category-list">
           {categories.map((item) => (
             <Link key={item.slug} href={`/danh-muc/${item.slug}`} className="product-category-link">
-              <span>
-                <Leaf size={16} />
-                {item.title}
-              </span>
+              <span><Leaf size={16} />{item.title}</span>
               <ArrowRight size={16} />
             </Link>
           ))}
@@ -159,14 +91,10 @@ export default async function SanPhamPage() {
           <h2>Chọn đúng khu vực để xem lịch giao và gửi báo giá nhanh.</h2>
           <p>Khách ở từng địa bàn có thể vào đúng trang khu vực tương ứng, xem lịch giao và gửi báo giá nhanh.</p>
         </div>
-
         <div className="product-category-list">
           {localCoverageLinks.map((item) => (
             <Link key={item.href} href={item.href} className="product-category-link">
-              <span>
-                <MapPin size={16} />
-                {item.title}
-              </span>
+              <span><MapPin size={16} />{item.title}</span>
               <ArrowRight size={16} />
             </Link>
           ))}
@@ -177,12 +105,8 @@ export default async function SanPhamPage() {
         <div className="product-category-band__intro">
           <div className="eyebrow">Bài nên đọc trước khi báo giá</div>
           <h2>Một vài bài viết giúp khách chốt nhu cầu nhanh hơn.</h2>
-          <p>
-            Các bài này giúp chuẩn bị menu, thông tin báo giá và chọn nguồn hàng phù hợp cho
-            bếp B2B.
-          </p>
+          <p>Các bài này giúp chuẩn bị menu, thông tin báo giá và chọn nguồn hàng phù hợp cho bếp B2B.</p>
         </div>
-
         <div className="product-grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
           {guideLinks.map((item) => (
             <Link key={item.href} href={item.href} className="product-card">
@@ -191,9 +115,7 @@ export default async function SanPhamPage() {
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
                 <div className="product-card__footer">
-                  <span className="text-link">
-                    Xem bài <ArrowRight size={16} />
-                  </span>
+                  <span className="text-link">Xem bài <ArrowRight size={16} /></span>
                 </div>
               </div>
             </Link>
@@ -211,6 +133,6 @@ export default async function SanPhamPage() {
           Mở form báo giá <ArrowRight size={18} />
         </Link>
       </section>
-    </PageShell>
+    </main>
   );
 }

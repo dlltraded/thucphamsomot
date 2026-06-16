@@ -86,7 +86,7 @@ export async function POST(req: Request) {
   const pagePath = typeof leadData.pagePath === "string" && leadData.pagePath.trim() ? leadData.pagePath.trim() : "/bao-gia";
   const payload = {
     vaiTro: inquiryType === "supplier" ? "Nhà cung cấp" : "Người mua",
-    loaiForm: "Báo giá / chào hàng",
+    loaiForm: inquiryType === "supplier" ? "chao_hang" : "bao_gia",
     kenh: "Website",
     inquiryType,
     ...leadData,
@@ -94,6 +94,10 @@ export async function POST(req: Request) {
     source: `${siteConfig.domain}${pagePath.startsWith("/") ? pagePath : `/${pagePath}`}`,
     submittedAt: new Date().toISOString(),
     selectedCount: leadData.selectedItems?.length ?? 0,
+    selectedProducts: leadData.selectedItems
+      ?.map((i) => `${i.title}${i.quantity ? ` x${i.quantity}` : ""}`)
+      .join(", ") ?? "",
+    rawPayload: JSON.stringify(parsed.data),
   };
 
   const response = await fetch(webhookUrl, {
