@@ -154,7 +154,8 @@
       // Kiểm tra xem là Web App Apps Script hay Google Sheets link thường
       if (url.includes('script.google.com') && url.includes('/exec')) {
         // Gọi Web App API
-        const response = await fetch(url);
+        const fetchUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error("Không thể kết nối Apps Script API");
         rawData = await response.json();
       } else {
