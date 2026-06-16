@@ -41,6 +41,8 @@ export interface SkuProduct {
   image: string;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get('category') || '';
@@ -87,7 +89,7 @@ export async function GET(req: NextRequest) {
     if (!res.ok) {
       const txt = await res.text();
       console.error('[sku-products] Supabase error:', res.status, txt.slice(0, 200));
-      return NextResponse.json({ error: 'Fetch failed', details: txt }, { status: 502 });
+      return NextResponse.json({ error: 'Fetch failed', details: txt }, { status: 503 });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
