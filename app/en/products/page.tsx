@@ -73,7 +73,7 @@ export default async function EnglishProductsPage() {
         <div className="product-category-list">
           {categories.map((item) => (
             <Link key={item.slug} href={`/en/products`} className="product-category-link">
-              <span><Leaf size={16} />{item.titleEn}</span>
+              <span><Leaf size={16} />{item.title}</span>
               <ArrowRight size={16} />
             </Link>
           ))}
