@@ -374,6 +374,20 @@
       }
     });
 
+    // Nếu đồng bộ toàn thủ công, loại bỏ các Lead có ở máy nhánh nhưng không có trên Google Sheet (đảm bảo 2 bên hoàn toàn giống nhau)
+    if (!isBackground && newDataArray.length > 0) {
+      const sheetPhones = new Set(newDataArray.map(row => {
+        const mapping = mapRowFields(row);
+        return mapping.phone ? mapping.phone.toString().replace(/[^0-9+]/g, '') : null;
+      }).filter(Boolean));
+
+      const initialCount = state.leads.length;
+      state.leads = state.leads.filter(l => sheetPhones.has(l.phone.replace(/[^0-9+]/g, '')));
+      if (initialCount > state.leads.length) {
+        leadsUpdated += (initialCount - state.leads.length);
+      }
+    }
+
     if (newLeadsAdded > 0 || leadsUpdated > 0) {
       saveState('leads');
       

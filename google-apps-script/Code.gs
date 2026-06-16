@@ -411,6 +411,7 @@ function handleAdminAction(action, data) {
       const priMap = { high: "Cao", low: "Thấp" };
       const catIdx = colOf("nhóm khách hàng", "nhóm", "phân loại");
       const priIdx = colOf("mức ưu tiên", "ưu tiên");
+      const timeIdx = colOf("submitted at", "thời gian", "thời gian tạo");
 
       const maxCols = Math.max(sheet.getLastColumn(), LEAD_HEADERS.length);
       const newRow  = new Array(maxCols).fill("");
@@ -420,6 +421,9 @@ function handleAdminAction(action, data) {
       if (sourceIdx >= 0) newRow[sourceIdx] = data.source || "";
       if (catIdx    >= 0) newRow[catIdx]    = catMap[data.category] || "Khách lẻ - Thường";
       if (priIdx    >= 0) newRow[priIdx]    = priMap[data.priority] || "Trung bình";
+      if (timeIdx   >= 0) newRow[timeIdx]   = data.createdAt || new Date().toISOString();
+      if (statusIdx >= 0) newRow[statusIdx] = data.status || "new";
+      
       if (noteIdx   >= 0 && data.notes && data.notes.length > 0) {
         newRow[noteIdx] = data.notes[0].text || "";
       }
