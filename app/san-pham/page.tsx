@@ -65,74 +65,18 @@ export default async function SanPhamPage() {
       {/* ── SKU Grid từ Supabase ── */}
       <ProductsGrid />
 
-      {/* ── Danh mục ── */}
-      <section className="product-category-band">
-        <div className="product-category-band__intro">
-          <div className="eyebrow">Danh mục sản phẩm</div>
-          <h2>Đi từ nhóm hàng lớn đến nhu cầu mua cụ thể của từng bếp.</h2>
-          <p>
-            Nếu khách chưa có danh sách SKU cố định, có thể bắt đầu từ danh mục này rồi bổ sung số lượng, lịch giao và
-            quy cách đóng gói.
-          </p>
-        </div>
-        <div className="product-category-list">
-          {categories.map((item) => (
-            <Link key={item.slug} href={`/danh-muc/${item.slug}`} className="product-category-link">
-              <span><Leaf size={16} />{item.title}</span>
-              <ArrowRight size={16} />
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="product-category-band">
-        <div className="product-category-band__intro">
-          <div className="eyebrow">Khu vực phục vụ</div>
-          <h2>Chọn đúng khu vực để xem lịch giao và gửi báo giá nhanh.</h2>
-          <p>Khách ở từng địa bàn có thể vào đúng trang khu vực tương ứng, xem lịch giao và gửi báo giá nhanh.</p>
-        </div>
-        <div className="product-category-list">
-          {localCoverageLinks.map((item) => (
-            <Link key={item.href} href={item.href} className="product-category-link">
-              <span><MapPin size={16} />{item.title}</span>
-              <ArrowRight size={16} />
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="product-category-band">
-        <div className="product-category-band__intro">
-          <div className="eyebrow">Bài nên đọc trước khi báo giá</div>
-          <h2>Một vài bài viết giúp khách chốt nhu cầu nhanh hơn.</h2>
-          <p>Các bài này giúp chuẩn bị menu, thông tin báo giá và chọn nguồn hàng phù hợp cho bếp B2B.</p>
-        </div>
-        <div className="product-grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
-          {guideLinks.map((item) => (
-            <Link key={item.href} href={item.href} className="product-card">
-              <div className="product-card__body">
-                <div className="pill">Kiến thức</div>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-                <div className="product-card__footer">
-                  <span className="text-link">Xem bài <ArrowRight size={16} /></span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="product-cta">
-        <div>
-          <Boxes size={26} />
-          <h2>Cần báo giá theo danh mục riêng của bếp?</h2>
-          <p>Gửi nhóm hàng, số lượng dự kiến, khu vực giao và tần suất nhận hàng để đội ngũ chuẩn bị phương án phù hợp.</p>
-        </div>
-        <Link href="/bao-gia" className="btn-primary btn-on-dark">
-          Mở form báo giá <ArrowRight size={18} />
-        </Link>
-      </section>
+      <div className="container-shell" style={{ marginTop: '3rem', marginBottom: '3rem' }}>
+        <section className="product-cta" style={{ borderRadius: '1rem' }}>
+          <div>
+            <Boxes size={26} />
+            <h2>Cần báo giá theo danh mục riêng của bếp?</h2>
+            <p>Gửi nhóm hàng, số lượng dự kiến, khu vực giao và tần suất nhận hàng để đội ngũ chuẩn bị phương án phù hợp.</p>
+          </div>
+          <Link href="/bao-gia" className="btn-primary btn-on-dark">
+            Mở form báo giá <ArrowRight size={18} />
+          </Link>
+        </section>
+      </div>
     </main>
   );
 }
