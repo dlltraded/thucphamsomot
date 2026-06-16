@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = process.env.SUPABASE_PRODUCTS_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_PRODUCTS_ANON_KEY || '';
 
 // Mapping: Supabase category name → slug
 const CAT_MAP: Record<string, string> = {
