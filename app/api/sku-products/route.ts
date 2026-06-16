@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
     if (!res.ok) {
       const txt = await res.text();
       console.error('[sku-products] Supabase error:', res.status, txt.slice(0, 200));
-      return NextResponse.json({ error: 'Fetch failed' }, { status: 502 });
+      return NextResponse.json({ error: 'Fetch failed', details: txt }, { status: 502 });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
