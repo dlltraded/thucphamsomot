@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -8,16 +8,116 @@ import {
   Briefcase,
   Phone,
   Mail,
-  Link2,
   Eye,
+  EyeOff,
   Copy,
   Download,
   Check,
   ExternalLink,
   QrCode,
   Plus,
-  Trash2,
+  Lock,
+  LogOut,
+  KeyRound,
 } from "lucide-react";
+
+// ─── Mật khẩu admin ───────────────────────────────────────────────────────────
+const ADMIN_PASSWORD = "19871988";
+const STORAGE_KEY = "tps1_namecard_admin_unlocked";
+
+// ── Lock Screen Component ──────────────────────────────────────────────────────
+function LockScreen({ onUnlock }: { onUnlock: () => void }) {
+  const [value, setValue] = useState("");
+  const [error, setError] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (value === ADMIN_PASSWORD) {
+      localStorage.setItem(STORAGE_KEY, "1");
+      onUnlock();
+    } else {
+      setError(true);
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      setTimeout(() => setError(false), 2000);
+      setValue("");
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#f0faf4] via-white to-[#fff8f2] p-4">
+      <div
+        className={`w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl shadow-[#0B8F3A]/10 ring-1 ring-[#0B8F3A]/15 transition-all ${
+          shake ? "animate-[wiggle_0.4s_ease-in-out]" : ""
+        }`}
+        style={shake ? { animation: "wiggle 0.4s ease-in-out" } : {}}
+      >
+        {/* Logo */}
+        <div className="mb-6 flex justify-center">
+          <div className="relative h-10 w-36">
+            <Image src="/images/tps1-logo-horizontal.png" alt="Logo" fill className="object-contain" />
+          </div>
+        </div>
+
+        {/* Icon */}
+        <div className="mb-5 flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0B8F3A]/10">
+            <KeyRound size={32} className="text-[#0B8F3A]" />
+          </div>
+        </div>
+
+        <div className="mb-6 text-center">
+          <h1 className="text-xl font-black text-[#133127]">Admin Namecard</h1>
+          <p className="mt-1 text-sm text-[#5e6d64]">Nhập mã để tạo e-namecard</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type={showPass ? "text" : "password"}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="Nhập mật khẩu..."
+              autoFocus
+              className={`w-full rounded-xl border px-4 py-3.5 pr-12 text-center text-lg font-bold tracking-widest outline-none transition ${
+                error
+                  ? "border-red-400 bg-red-50 text-red-600 placeholder:text-red-300"
+                  : "border-[#0B8F3A]/25 bg-[#f8fffe] text-[#133127] focus:border-[#0B8F3A] focus:ring-2 focus:ring-[#0B8F3A]/10"
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass(!showPass)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5e6d64] hover:text-[#133127]"
+            >
+              {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-center text-xs font-semibold text-red-500">
+              Mật khẩu không đúng, vui lòng thử lại
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B8F3A] py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-[#097a32] active:scale-95"
+          >
+            <Lock size={16} />
+            Mở khóa
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-[10px] text-[#5e6d64]">
+          Chỉ dành cho nhân sự nội bộ được phân quyền
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ─── Thông tin công ty cố định ────────────────────────────────────────────────
 const COMPANY = {
@@ -132,6 +232,7 @@ function MiniPreview({ data }: { data: FormData }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function NamecardAdminPage() {
+  const [unlocked, setUnlocked] = useState(false);
   const [form, setForm] = useState<FormData>({
     name: "",
     titleVi: "",
@@ -143,6 +244,23 @@ export default function NamecardAdminPage() {
   const [showQR, setShowQR] = useState(false);
   const [cards, setCards] = useState(EXISTING_CARDS);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Kiểm tra session đã đăng nhập chưa
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEY) === "1") {
+      setUnlocked(true);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setUnlocked(false);
+  };
+
+  // Hiển thị lock screen nếu chưa đăng nhập
+  if (!unlocked) {
+    return <LockScreen onUnlock={() => setUnlocked(true)} />;
+  }
 
   const generatedUrl = useMemo(() => buildUrl(form), [form]);
   const isReady = !!(form.name && form.phone);
@@ -209,10 +327,18 @@ export default function NamecardAdminPage() {
             <Image src="/images/tps1-logo-horizontal.png" alt="Logo" fill className="object-contain" />
           </div>
           <div className="h-6 w-px bg-[#0B8F3A]/20" />
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-black text-[#133127]">Tạo E-Namecard</h1>
             <p className="text-xs text-[#5e6d64]">Hệ thống nội bộ — Thực Phẩm Số Một</p>
           </div>
+          <button
+            onClick={handleLogout}
+            title="Đăng xuất"
+            className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-100"
+          >
+            <LogOut size={13} />
+            Đăng xuất
+          </button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
