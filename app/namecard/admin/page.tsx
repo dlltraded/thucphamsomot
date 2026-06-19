@@ -231,8 +231,27 @@ function MiniPreview({ data }: { data: FormData }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-export default function NamecardAdminPage() {
+export default function AdminPageWrapper() {
   const [unlocked, setUnlocked] = useState(false);
+
+  // Kiểm tra session đã đăng nhập chưa
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEY) === "1") {
+      setUnlocked(true);
+    }
+  }, []);
+
+  if (!unlocked) {
+    return <LockScreen onUnlock={() => setUnlocked(true)} />;
+  }
+
+  return <NamecardAdmin onLogout={() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setUnlocked(false);
+  }} />;
+}
+
+function NamecardAdmin({ onLogout }: { onLogout: () => void }) {
   const [form, setForm] = useState<FormData>({
     name: "",
     titleVi: "",
@@ -244,23 +263,6 @@ export default function NamecardAdminPage() {
   const [showQR, setShowQR] = useState(false);
   const [cards, setCards] = useState(EXISTING_CARDS);
   const svgRef = useRef<SVGSVGElement>(null);
-
-  // Kiểm tra session đã đăng nhập chưa
-  useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY) === "1") {
-      setUnlocked(true);
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setUnlocked(false);
-  };
-
-  // Hiển thị lock screen nếu chưa đăng nhập
-  if (!unlocked) {
-    return <LockScreen onUnlock={() => setUnlocked(true)} />;
-  }
 
   const generatedUrl = useMemo(() => buildUrl(form), [form]);
   const isReady = !!(form.name && form.phone);
@@ -302,7 +304,7 @@ export default function NamecardAdminPage() {
     img.src = url;
   }, [form.name]);
 
-  const handleSaveToList = () => {
+  const handleSaveToList = useCallback(() => {
     if (!isReady) return;
     setCards((prev) => [
       ...prev,
@@ -315,8 +317,8 @@ export default function NamecardAdminPage() {
         static: false,
       },
     ]);
-    alert(`Đã lưu vào danh sách! Hãy mở link để xem namecard.`);
-  };
+    alert("Đã lưu vào danh sách! Hãy mở link để xem namecard.");
+  }, [isReady, form, generatedUrl]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#f0faf4] via-white to-[#fff8f2] p-4">
@@ -332,7 +334,7 @@ export default function NamecardAdminPage() {
             <p className="text-xs text-[#5e6d64]">Hệ thống nội bộ — Thực Phẩm Số Một</p>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={onLogout}
             title="Đăng xuất"
             className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-100"
           >
