@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NamecardClient from "./[id]/namecard-client";
 
 interface Props {
   searchParams: Promise<{ name?: string; title?: string; titleEn?: string; phone?: string; email?: string }>;
@@ -18,22 +19,17 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function DynamicNamecardPage({ searchParams }: Props) {
   const p = await searchParams;
 
-  // Map from URL params to PersonData interface used by NamecardClient
+  // Map from URL params to NamecardData interface used by NamecardClient
   const data = {
+    id: "dynamic",
     name: p.name ?? "",
     title_vi: p.title ?? "",
-    title_en: p.titleEn ?? null,
-    phone: p.phone ?? null,
-    email: p.email ?? null,
-    avatar_url: null,
-    bio_vi: null,
-    bio_en: null,
-    zalo_link: p.phone ? `https://zalo.me/${p.phone.replace(/\s/g, "")}` : null,
-    facebook_link: null,
-    linkedin_link: null,
-    is_active: true,
+    title_en: p.titleEn ?? "",
+    phone: p.phone ?? "",
+    email: p.email ?? "",
+    photo_url: "",
+    zalo: p.phone ?? "",
   };
 
-  const { NamecardClient } = await import("./[id]/namecard-client");
-  return <NamecardClient data={data} />;
+  return <NamecardClient data={data} currentUrl="" />;
 }
