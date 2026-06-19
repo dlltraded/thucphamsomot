@@ -41,6 +41,8 @@
   ],
   "exclude": [
     "node_modules",
-    "TPS1"
+    "TPS1",
+    "namecard-app",
+    "tps1-miniapp"
   ]
 }
