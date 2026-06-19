@@ -408,10 +408,54 @@
         toStatus: quoteRecord.status || null,
         note: 'Đồng bộ trạng thái báo giá'
       });
+
+      // Gửi thông báo ZNS báo giá khi trạng thái được chuyển sang "quoted" (Đã báo giá) hoặc "sent" (Đã gửi)
+      const nextStatus = quoteRecord.status || '';
+      const prevStatus = previousStatus || '';
+      if ((nextStatus === 'quoted' || nextStatus === 'sent') && 
+          prevStatus !== 'quoted' && prevStatus !== 'sent') {
+        triggerQuoteZns(quoteRecord, leadSnapshot);
+      }
     }
 
     updateStatus('ready');
     return { ok: true };
+  }
+
+  function triggerQuoteZns(quoteRecord, leadSnapshot) {
+    if (!leadSnapshot || !leadSnapshot.phone) {
+      console.warn('Không thể gửi ZNS: Thiếu thông tin số điện thoại khách hàng');
+      return;
+    }
+
+    // Xác định URL Next.js API theo hostname
+    const backendUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:8080' 
+      : 'https://thucphamsomot.vn';
+
+    console.log(`Đang gọi API gửi ZNS thông báo báo giá cho ${leadSnapshot.phone}...`);
+
+    fetch(`${backendUrl}/api/zalo/send-zns-quote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        phone: leadSnapshot.phone,
+        name: leadSnapshot.name,
+        quoteId: quoteRecord.id,
+        quoteCode: quoteRecord.quoteCode || quoteRecord.id,
+        grandTotal: quoteRecord.grandTotal || quoteRecord.total || 0
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('Kết quả gửi ZNS báo giá:', data);
+        if (data.error === 0 && typeof window.showToastNotification === 'function') {
+          window.showToastNotification(`Đã tự động gửi ZNS báo giá Zalo đến khách hàng ${leadSnapshot.name}!`);
+        }
+      })
+      .catch(err => console.error('Lỗi khi gọi API gửi ZNS báo giá:', err));
   }
 
   async function insertHistory({ quoteRecord, action, fromStatus, toStatus, note, payload }) {

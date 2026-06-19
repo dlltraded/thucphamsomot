@@ -17,6 +17,7 @@ export default function CompanyProfilePage() {
       eyebrow="Hồ sơ năng lực"
       title="Xem nhanh company profile TPS1"
       description="Trang riêng để khách xem hồ sơ năng lực công ty ngay trong site hoặc mở file PDF ở tab mới."
+      compact={true}
     >
       <div className="company-profile-page">
         <div className="company-profile-page__toolbar">

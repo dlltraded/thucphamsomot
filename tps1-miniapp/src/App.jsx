@@ -7,8 +7,6 @@ import AboutPage from './pages/AboutPage';
 import AdminPage from './pages/AdminPage';
 import BottomNav from './components/BottomNav';
 import useUserStore from './stores/user';
-import { useAppStore } from './stores/appState';
-import WelcomePage from './pages/WelcomePage';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -38,15 +36,11 @@ function AppLayout() {
 
 export default function App() {
   const fetchZaloUser = useUserStore((state) => state.fetchZaloUser);
-  const hasSeenWelcome = useAppStore((state) => state.hasSeenWelcome);
 
+  // Thử lấy thông tin user nếu đã có quyền (không popup xin quyền)
   useEffect(() => {
     fetchZaloUser();
   }, [fetchZaloUser]);
-
-  if (!hasSeenWelcome) {
-    return <WelcomePage />;
-  }
 
   return (
     <HashRouter>

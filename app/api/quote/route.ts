@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { quoteSchema } from "@/lib/validation";
 import { siteConfig } from "@/lib/site";
+import { sendZNSTemplate } from "@/lib/zalo";
 
 const QUOTE_NOTICE_COOKIE = "tps1_quote_notice_v1";
 
@@ -188,6 +189,19 @@ export async function POST(req: Request) {
             : "Khu vực giao: chưa ghi",
     },
   };
+
+  // Gửi ZNS xác nhận tiếp nhận yêu cầu trong background
+  if (parsed.data.phone && parsed.data.name) {
+    const ZNS_LEAD_RECEIVED_TEMPLATE_ID = process.env.ZNS_LEAD_RECEIVED_TEMPLATE_ID || '555234';
+    const znsTemplateData = {
+      ten_khach_hang: parsed.data.name,
+      nguon_dang_ky: 'Website TPS1',
+      thoi_gian: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+    };
+    sendZNSTemplate(parsed.data.phone, ZNS_LEAD_RECEIVED_TEMPLATE_ID, znsTemplateData)
+      .then((res) => console.log('Zalo ZNS website quote success response:', res))
+      .catch((err) => console.error('Zalo ZNS website quote error:', err));
+  }
 
   if (!wantsJsonResponse(req)) {
     return quoteRedirectResponse(req, notice);

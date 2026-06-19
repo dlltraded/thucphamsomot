@@ -6,8 +6,10 @@ Last updated: 2026-05-27
 
 - Workspace: `D:\AI_Business\workspace\thuc_pham_so_1`
 - Branch: `main`
-- Remote: `origin https://github.com/dlltraded/thucphamsomot.git`
-- Status before this handoff file: clean and synced with `origin/main`
+- Remotes:
+  - `origin` -> `https://github.com/dlltraded-tps1/quanly.git` (Used for lead management & other internal systems)
+  - `thuphamsomot` -> `https://github.com/dlltraded/thucphamsomot.git` (The MAIN WEBSITE, tracked by Vercel)
+- Status before this handoff file: clean and synced with `thuphamsomot/main`
 - Latest pushed work before this note:
   - `7560fbb Keep partner logos within mobile frame`
   - `d19af06 Scale partner logos on mobile`

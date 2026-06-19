@@ -39,6 +39,10 @@ export async function submitLead(formData) {
       headers: { 'Content-Type': 'text/plain' },
       // text/plain avoids CORS preflight with Apps Script
     });
+    
+    // Gửi ZNS xác nhận yêu cầu từ Mini App
+    triggerMiniAppZns(formData);
+
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Submit lead error:', error);
@@ -49,12 +53,42 @@ export async function submitLead(formData) {
         body: JSON.stringify(payload),
         mode: 'no-cors',
       });
+
+      // Gửi ZNS xác nhận yêu cầu từ Mini App (trường hợp fallback)
+      triggerMiniAppZns(formData);
+
       return { success: true, data: { status: 'sent_no_cors' } };
     } catch (fetchErr) {
       console.error('Fetch fallback error:', fetchErr);
       return { success: false, error: fetchErr.message };
     }
   }
+}
+
+/**
+ * Gọi API backend Next.js để gửi tin nhắn ZNS xác nhận yêu cầu từ Mini App
+ */
+function triggerMiniAppZns(formData) {
+  if (!formData.phone || !formData.name) return;
+
+  const backendUrl = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8080' 
+    : 'https://thucphamsomot.vn';
+
+  fetch(`${backendUrl}/api/zalo/send-zns-lead`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      phone: formData.phone,
+      name: formData.name,
+      source: 'Zalo Mini App',
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => console.log('Zalo ZNS Mini App trigger result:', data))
+    .catch((err) => console.error('Zalo ZNS Mini App trigger error:', err));
 }
 
 /**
