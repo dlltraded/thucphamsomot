@@ -18,16 +18,22 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 export default async function DynamicNamecardPage({ searchParams }: Props) {
   const p = await searchParams;
 
-  // Render on server, pass to client via data attributes
+  // Map from URL params to PersonData interface used by NamecardClient
   const data = {
     name: p.name ?? "",
-    titleVi: p.title ?? "",
-    titleEn: p.titleEn ?? "",
-    phone: p.phone ?? "",
-    email: p.email ?? "",
+    title_vi: p.title ?? "",
+    title_en: p.titleEn ?? null,
+    phone: p.phone ?? null,
+    email: p.email ?? null,
+    avatar_url: null,
+    bio_vi: null,
+    bio_en: null,
+    zalo_link: p.phone ? `https://zalo.me/${p.phone.replace(/\s/g, "")}` : null,
+    facebook_link: null,
+    linkedin_link: null,
+    is_active: true,
   };
 
-  // Redirect to client component
-  const { DynamicNamecard } = await import("./dynamic-namecard");
-  return <DynamicNamecard data={data} />;
+  const { NamecardClient } = await import("./[id]/namecard-client");
+  return <NamecardClient data={data} />;
 }
