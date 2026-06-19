@@ -92,15 +92,23 @@ export default function NamecardClient({
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body{background:${BG};font-family:'Be Vietnam Pro',sans-serif}
+        html,body{margin:0!important;padding:0!important}
+        body{font-family:'Be Vietnam Pro',sans-serif;background:${BG}}
         /* Hide all main site chrome on namecard pages */
         .site-header,.site-footer,.social-widget,.company-profile-widget,
         .cart-badge-btn,.cart-drawer,.cart-badge-count,
         [class*="site-header"],[class*="site-footer"],[class*="social-widget"],
         [class*="company-profile"],[class*="cart-badge"],[class*="cart-drawer"]
         {display:none!important;visibility:hidden!important}
+        /* Namecard wrapper */
         .nc{background:${BG};min-height:100vh;display:flex;justify-content:center}
-        .nw{width:100%;max-width:430px;background:${BG}}
+        .nw{width:100%;max-width:430px;background:${BG};position:relative;z-index:1}
+        /* Desktop: beautiful branded background on the sides */
+        @media(min-width:480px){
+          html,body{background:linear-gradient(145deg,#c8ecd6 0%,#e8f6ee 30%,#f0faf4 50%,#e8f4ef 70%,#d5eee3 100%)!important}
+          .nc{background:transparent;min-height:100vh;align-items:flex-start;padding:24px 0}
+          .nw{border-radius:16px;box-shadow:0 8px 40px rgba(0,152,70,.12),0 2px 8px rgba(0,0,0,.06);overflow:hidden}
+        }
         @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .f0{animation:fu .45s .00s ease both}
         .f1{animation:fu .45s .06s ease both}
