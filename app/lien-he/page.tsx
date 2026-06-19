@@ -17,11 +17,37 @@ export default function ContactPage() {
       description="Để lại thông tin nhu cầu, nhóm hàng, số lượng dự kiến và khu vực giao để đội ngũ tư vấn phương án phù hợp."
     >
       <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="card space-y-4">
-          <p className="text-sm font-semibold text-[#5e6d64]">Hotline</p>
-          <p className="text-2xl font-black text-[#133127]">{siteConfig.phone}</p>
-          <p className="text-sm text-[#5e6d64]">Email: {siteConfig.email}</p>
-          <p className="text-sm text-[#5e6d64]">Khu vực: {siteConfig.localities.join(", ")}</p>
+        <div className="card space-y-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5e6d64] mb-1">Công ty</p>
+            <p className="text-base font-bold text-[#133127]">CÔNG TY TNHH THỰC PHẨM SỐ MỘT</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5e6d64] mb-1">🏢 Văn phòng</p>
+            <p className="text-sm text-[#133127]">{siteConfig.addressFull}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5e6d64] mb-1">☎️ Hotline</p>
+            <p className="text-2xl font-black text-[#133127]">{siteConfig.phone}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5e6d64] mb-1">📱 Zalo / Viber / WhatsApp</p>
+            <p className="text-sm text-[#133127]">{siteConfig.zaloDisplay}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5e6d64] mb-1">📧 Email</p>
+            <p className="text-sm text-[#133127]">{siteConfig.email}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5e6d64] mb-1">🌐 Website</p>
+            <a href={siteConfig.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#133127] underline underline-offset-2">
+              {siteConfig.url}
+            </a>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5e6d64] mb-1">Khu vực phục vụ</p>
+            <p className="text-sm text-[#5e6d64]">{siteConfig.localities.join(", ")}</p>
+          </div>
         </div>
         <LeadForm mode="contact" />
       </div>
