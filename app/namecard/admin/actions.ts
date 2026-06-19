@@ -14,18 +14,6 @@ export interface NamecardData {
   updated_at: string;
 }
 
-export const DEFAULT_DATA: NamecardData = {
-  id: "",
-  name: "",
-  title_vi: "",
-  title_en: "",
-  phone: "",
-  email: "",
-  photo_url: "",
-  zalo: "",
-  updated_at: new Date().toISOString(),
-};
-
 const supabase = createClient(
   process.env.NAMECARD_SUPABASE_URL!,
   process.env.NAMECARD_SUPABASE_ANON_KEY!

@@ -36,10 +36,21 @@ import {
   deleteNamecard,
   uploadPhoto,
   checkIdUnique,
-  DEFAULT_DATA,
   type NamecardData,
   verifyAdminPassword,
 } from "./actions";
+
+const DEFAULT_DATA: NamecardData = {
+  id: "",
+  name: "",
+  title_vi: "",
+  title_en: "",
+  phone: "",
+  email: "",
+  photo_url: "",
+  zalo: "",
+  updated_at: new Date().toISOString(),
+};
 
 // ═══════════════════════════════════════════════════════════════
 // LOCK SCREEN
