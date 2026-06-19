@@ -26,24 +26,34 @@ const CO = {
   tagEn: 'YOUR TRUSTED FOOD SOLUTION PARTNER',
 }
 
-function buildVcf(d: NamecardData) {
-  return [
-    'BEGIN:VCARD','VERSION:3.0',`FN:${d.name}`,`ORG:${CO.vi}`,
-    d.title_vi ? `TITLE:${d.title_vi}` : '',
-    d.phone ? `TEL;TYPE=CELL:${d.phone.replace(/\s/g,'')}` : '',
-    d.email ? `EMAIL:${d.email}` : '',
-    `URL:${CO.websiteUrl}`,
-    `ADR;TYPE=WORK:;;${CO.addrFull};;;Việt Nam`,
-    `NOTE:${CO.tagVi}`,'END:VCARD',
-  ].filter(Boolean).join('\r\n')
-}
+function handleSaveContact() {
+  const isAndroid = /android/i.test(navigator.userAgent)
+  const isIOS = /ipad|iphone|ipod/i.test(navigator.userAgent)
 
-function downloadVcf(d: NamecardData) {
-  const blob = new Blob([buildVcf(d)], { type: 'text/vcard;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'contact-bach-nguyen.vcf'
-  a.click(); URL.revokeObjectURL(a.href)
+  const vcfUrl = '/bach-nguyen.vcf'
+
+  if (isAndroid) {
+    const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${encodeURIComponent('NGUYỄN TIẾN BÁCH')};S.phone=${encodeURIComponent('0908583999')};S.email=${encodeURIComponent('ceo@thucphamsomot.vn')};S.company=${encodeURIComponent('CÔNG TY TNHH THỰC PHẨM SỐ MỘT ĐỒNG NAI')};S.job_title=${encodeURIComponent('Giám Đốc Điều Hành')};S.notes=${encodeURIComponent('Website: https://thucphamsomot.vn\nĐịa chỉ: B19 KP15, P. Tam Hiệp, TP. Biên Hòa, Đồng Nai')};end`
+    
+    // Thử mở Android Intent
+    window.location.href = intentUrl
+
+    // Fallback sau 1.2s nếu không chuyển app được (ví dụ trong in-app browser)
+    setTimeout(() => {
+      window.location.href = vcfUrl
+    }, 1200)
+  } else if (isIOS) {
+    // iOS không hỗ trợ intent -> mở trực tiếp file VCF
+    window.location.href = vcfUrl
+  } else {
+    // Desktop: Tải file VCF
+    const a = document.createElement('a')
+    a.href = vcfUrl
+    a.download = 'bach-nguyen.vcf'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
 }
 
 function Skeleton() {
@@ -185,7 +195,7 @@ export default function NamecardPage() {
           {/* Each button: 10px top + 44px icon + 5px gap + 13px label + 8px bottom = 80px */}
           <div className="f2" style={{ padding: `0 ${P}px 5px`, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7 }}>
             {/* Save */}
-            <button onClick={() => downloadVcf(data)} className="tap"
+            <button onClick={handleSaveContact} className="tap"
               style={{ ...card, border: 'none', padding: '10px 4px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
               <div style={{ width: 46, height: 46, borderRadius: '50%', background: G, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Download size={21} color="#fff" strokeWidth={2.5} />
@@ -209,7 +219,10 @@ export default function NamecardPage() {
               <span style={{ fontSize: 10.5, fontWeight: 700, color: '#374151', textAlign: 'center', lineHeight: 1.2 }}>Mã QR</span>
             </button>
           </div>
-          {/* Buttons total: 80px */}
+          <div className="f2" style={{ padding: `0 ${P}px 8px`, textAlign: 'center' }}>
+            <p style={{ fontSize: 9.5, color: '#6B7280', fontStyle: 'italic', lineHeight: 1.3 }}>Android: mở màn hình thêm liên hệ. iPhone: mở file danh bạ để lưu.</p>
+          </div>
+          {/* Buttons total: 80px + hint text */}
 
           {/* ── CONTACT CARD ───────────────────────────────────── */}
           {/* Each row: 8px top + 32px content + 8px bottom = 48px; 4 rows = 192px */}
