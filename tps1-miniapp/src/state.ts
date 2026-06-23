@@ -162,11 +162,16 @@ export const productsState = atom(async (get) => {
   return data.map((product) => {
     const superCatInfo = mapToSuperCategory(product.category || "");
     const categoryObj = categories.find(c => c.id === superCatInfo.id);
+    const priceW = Number(product.price_wholesale) || 0;
+    const priceR = Number(product.price_retail) || 0;
+    const currentPrice = priceW > 0 ? priceW : priceR;
+    const oldPrice = priceR > 0 ? priceR : currentPrice;
+
     return {
       id: product.id,
       name: product.name,
-      price: product.price_wholesale || 0,
-      originalPrice: product.price_retail || product.price_wholesale || 0,
+      price: currentPrice,
+      originalPrice: oldPrice,
       image: product.image_url || categoryObj?.image || categoryPlaceholder,
       category: categoryObj!,
       categoryId: categoryObj?.id || 'other',
