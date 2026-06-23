@@ -4,6 +4,8 @@ import { ArrowRight, Building2, ClipboardList, MapPin, ShieldCheck, Truck } from
 import { categories } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
 import { brandAssets, customerHighlights } from "@/lib/brand";
+import { HeroSlider } from "@/components/ui/hero-slider";
+import { FadeInUp, StaggerContainer, StaggerItem, ScaleIn } from "@/components/ui/motion-wrapper";
 
 export const metadata = makeMetadata({
   title: "Thực Phẩm Số Một | Cung cấp thực phẩm B2B tại Đồng Nai",
@@ -51,288 +53,214 @@ const processSteps = [
 ];
 
 const heroStats = [
-  { value: "109+", label: "Khách hàng doanh nghiệp" },
-  { value: "24h", label: "Phản hồi yêu cầu báo giá" },
-  { value: "4", label: "Nhóm khách B2B trọng tâm" },
-];
-
-const galleryImages = [
-  { src: brandAssets.warehouseWide, alt: "Kho vận TPS1" },
-  { src: brandAssets.kitchen, alt: "Khu bếp TPS1" },
-  { src: "/images/tps1-gallery-warehouse-people.jpg", alt: "Kho vận TPS1 thực tế" },
-  { src: "/images/tps1-gallery-factory-visit.jpg", alt: "Hoạt động thực tế TPS1" },
+  { value: "109+", label: "Khách hàng B2B" },
+  { value: "24h", label: "Phản hồi báo giá" },
+  { value: "100%", label: "Giao đúng hẹn" },
 ];
 
 const partnerLogoPanels = [{ src: "/images/partners/tps1-partner-logos-all.png", alt: "Logo đối tác và khách hàng tiêu biểu TPS1" }];
 
-const localPages = [
-  {
-    href: "/cung-cap-thuc-pham-tp-hcm",
-    title: "Cung cấp thực phẩm TP.HCM",
-    text: "Phục vụ đơn vị ở TP.HCM cần giao theo tuyến, báo giá rõ và nguồn hàng ổn định cho bếp ăn, nhà máy và bệnh viện.",
-  },
-  {
-    href: "/cung-cap-thuc-pham-binh-duong",
-    title: "Cung cấp thực phẩm Bình Dương",
-    text: "Hỗ trợ khách tại Bình Dương cần giao định kỳ, danh mục rõ và phương án báo giá nhanh cho đơn vị vận hành đều.",
-  },
-  {
-    href: "/cung-cap-thuc-pham-ba-ria-vung-tau",
-    title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu",
-    text: "Phù hợp đơn vị ở Bà Rịa - Vũng Tàu cần nguồn hàng ổn định, giao theo lịch và dễ chốt danh mục.",
-  },
-  {
-    href: "/cung-cap-thuc-pham-dong-nai",
-    title: "Cung cấp thực phẩm Đồng Nai",
-    text: "Phục vụ đơn vị cần nguồn thực phẩm định kỳ cho bếp ăn, nhà máy, trường học và bệnh viện tại Đồng Nai.",
-  },
-  {
-    href: "/cung-cap-thuc-pham-bien-hoa",
-    title: "Cung cấp thực phẩm Biên Hòa",
-    text: "Hỗ trợ khách tại Biên Hòa lên danh mục hàng, lịch giao và báo giá theo nhu cầu thực tế.",
-  },
-  {
-    href: "/cung-cap-thuc-pham-nhon-trach",
-    title: "Cung cấp thực phẩm Nhơn Trạch",
-    text: "Phù hợp đơn vị trong khu công nghiệp cần giao hàng ổn định theo ca, theo ngày hoặc theo tuần.",
-  },
-];
-
 export default function HomePage() {
   return (
-    <main className="home-page">
-      <section className="home-hero">
-        <div className="container-shell home-hero__grid">
-          <div className="home-hero__copy">
-            <div className="home-hero__brand">
-              <span className="home-hero__brand-tag">Cung cấp thực phẩm B2B tại Đồng Nai và khu vực lân cận</span>
+    <main className="home-page overflow-x-hidden">
+      {/* HERO SECTION - DYNAMIC & IMMERSIVE */}
+      <section className="relative w-full min-h-[85vh] flex items-center">
+        <HeroSlider />
+        <div className="container-shell hero-content-wrapper">
+          <FadeInUp className="max-w-3xl glassmorphism-dark p-8 md:p-12 rounded-3xl">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-emerald-300 text-sm font-bold tracking-wide uppercase mb-6">
+              <ShieldCheck size={16} /> Cung cấp thực phẩm B2B
             </div>
-            <div className="eyebrow eyebrow-on-dark">Thực Phẩm Số Một</div>
-            <h1 className="home-hero__title">
-              Đối tác cung ứng thực phẩm cho
-              <span>bếp ăn tập thể, nhà máy và suất ăn công nghiệp</span>
+            <h1 className="hero-dynamic-title">
+              Giải pháp thực phẩm toàn diện cho <span className="text-emerald-400">bếp ăn công nghiệp.</span>
             </h1>
-            <p className="home-hero__lead">
-              Catalog rõ ràng, quy trình đặt hàng gọn và phản hồi nhanh theo nhu cầu vận hành thực tế của từng đơn vị.
+            <p className="hero-dynamic-lead">
+              Đảm bảo nguồn nguyên liệu tươi sạch, đa dạng, giao hàng đúng hẹn và báo giá linh hoạt phù hợp ngân sách vận hành của doanh nghiệp bạn.
             </p>
-
-            <div className="home-hero__actions">
-              <Link href="/bao-gia" className="btn-primary btn-on-dark">
+            <div className="flex flex-wrap gap-4 mt-8">
+              <Link href="/bao-gia" className="btn-primary">
                 Yêu cầu báo giá <ArrowRight size={18} />
               </Link>
-              <Link href="/san-pham" className="btn-secondary btn-on-dark-secondary">
-                Xem danh mục sản phẩm <ArrowRight size={18} />
+              <Link href="/san-pham" className="btn-secondary !bg-white/10 !border-white/20 !text-white hover:!bg-white/20">
+                Xem danh mục <ArrowRight size={18} />
               </Link>
             </div>
-
-            <div className="home-hero__stats">
-              {heroStats.map((item) => (
-                <div key={item.label} className="home-stat">
-                  <strong>{item.value}</strong>
-                  <span>{item.label}</span>
+            <div className="flex gap-8 mt-10 border-t border-white/10 pt-6">
+              {heroStats.map((stat, i) => (
+                <div key={i} className="flex flex-col">
+                  <span className="text-3xl font-black text-white">{stat.value}</span>
+                  <span className="text-sm text-emerald-200">{stat.label}</span>
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="home-hero__visual">
-            <div className="home-mosaic">
-              <div className="home-mosaic__tile home-mosaic__tile--large">
-                <Image
-                  src={brandAssets.warehousePeople}
-                  alt="Kho vận TPS1"
-                  fill
-                  className="home-mosaic__image home-mosaic__image--warehouse"
-                />
-              </div>
-              <div className="home-mosaic__tile">
-                <Image src={brandAssets.quality} alt="Chất lượng sản phẩm TPS1" fill className="home-mosaic__image" />
-              </div>
-              <div className="home-mosaic__tile">
-                <Image
-                  src={brandAssets.deliveryLoading}
-                  alt="Quá trình giao nhận TPS1"
-                  fill
-                  className="home-mosaic__image home-mosaic__image--loading"
-                />
-              </div>
-            </div>
-          </div>
+          </FadeInUp>
         </div>
       </section>
 
-      <section className="home-trust">
-        <div className="container-shell home-trust__grid">
-          {servicePillars.map((item) => {
+      {/* SERVICE PILLARS - STAGGERED FADE IN */}
+      <section className="home-trust section-pad bg-white">
+        <StaggerContainer className="container-shell grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {servicePillars.map((item, i) => {
             const Icon = item.icon;
             return (
-              <article key={item.title} className="home-trust__card">
-                <Icon size={22} />
-                <h2>{item.title}</h2>
-                <p>{item.text}</p>
-              </article>
+              <StaggerItem key={item.title} className="p-8 rounded-2xl bg-gray-50 border border-gray-100 hover:shadow-xl hover:border-emerald-100 transition-all duration-300 group">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 mb-6 group-hover:scale-110 transition-transform">
+                  <Icon size={28} />
+                </div>
+                <h2 className="text-xl font-bold mb-3">{item.title}</h2>
+                <p className="text-gray-600 leading-relaxed">{item.text}</p>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
       </section>
 
-      <section className="home-catalog">
+      {/* CATALOG - BENTO GRID */}
+      <section className="home-catalog section-pad bg-gray-50">
         <div className="container-shell">
-          <div className="section-split">
+          <FadeInUp className="section-split mb-12">
             <div className="section-heading">
               <div className="eyebrow">Danh mục sản phẩm</div>
-              <h2 className="section-heading__title">Nhóm sản phẩm sắp xếp theo cách khách B2B thường mua.</h2>
+              <h2 className="section-heading__title">Đáp ứng mọi nhu cầu nguyên liệu cho bếp ăn.</h2>
               <p className="section-heading__description">
-                Chọn nhóm hàng phù hợp và gửi yêu cầu trong một luồng thống nhất để đội ngũ xử lý nhanh hơn.
+                Được sắp xếp khoa học, giúp bạn dễ dàng tra cứu và lên thực đơn hằng ngày.
               </p>
             </div>
             <Link href="/san-pham" className="text-link">
-              Xem toàn bộ sản phẩm <ArrowRight size={16} />
+              Xem toàn bộ <ArrowRight size={16} />
             </Link>
-          </div>
+          </FadeInUp>
 
-          <div className="home-catalog__grid">
-            {categories.map((item, index) => (
-              <Link key={item.slug} href={`/danh-muc/${item.slug}`} className="category-card category-card--premium">
-                <span className="category-card__index">0{index + 1}</span>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-                <div className="tag-row">
-                  {(item.highlights ?? []).slice(0, 3).map((highlight) => (
-                    <span key={highlight}>{highlight}</span>
-                  ))}
-                </div>
-              </Link>
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            {categories.slice(0, 5).map((item, index) => {
+              // Create a compact and neat bento layout:
+              // Index 0: 6 cols, 2 rows (Left half)
+              // Index 1, 2: 3 cols, 1 row each (Top right)
+              // Index 3, 4: 3 cols, 1 row each (Bottom right)
+              let itemClass = "md:col-span-3 md:row-span-1 min-h-[220px]";
+              if (index === 0) itemClass = "md:col-span-6 md:row-span-2 min-h-[300px] md:min-h-[460px]";
+
+              // Map slug to our generated images
+              const imageMap: Record<string, string> = {
+                "rau-cu-qua": "/images/categories/rau-cu-qua.png",
+                "thit-ca-hai-san": "/images/categories/thit-ca.png",
+                "hang-dong-lanh": "/images/categories/dong-lanh.png",
+                "gia-vi": "/images/categories/gia-vi.png",
+                "thuc-pham-chay": "/images/categories/chay.png",
+              };
+              const bgImage = imageMap[item.slug] || "/images/categories/rau-cu-qua.png";
+
+              return (
+                <StaggerItem key={item.slug} className={`bento-item p-6 md:p-8 flex flex-col justify-end ${itemClass}`}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-transparent z-10" />
+                  <div className="absolute inset-0 z-0">
+                    <Image
+                      src={bgImage}
+                      alt={item.title}
+                      fill
+                      className="object-cover transition-transform duration-700 hover:scale-105"
+                    />
+                  </div>
+                  <div className="relative z-20 text-white">
+                    <span className="text-emerald-400 font-bold mb-1 block text-sm">0{index + 1}</span>
+                    <h3 className="text-xl md:text-2xl font-bold mb-2">{item.title}</h3>
+                    {index === 0 && <p className="text-gray-200 mb-4 text-sm md:text-base max-w-sm">{item.description}</p>}
+                    <div className="flex flex-wrap gap-2 mt-auto">
+                      {(item.highlights ?? []).slice(0, index === 0 ? 3 : 2).map((highlight) => (
+                        <span key={highlight} className="text-[11px] md:text-xs px-2 py-1 rounded bg-white/20 backdrop-blur-md border border-white/10">
+                          {highlight}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <Link href={`/danh-muc/${item.slug}`} className="absolute inset-0 z-30" aria-label={item.title} />
+                </StaggerItem>
+              );
+            })}
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* REAL GALLERY SECTION */}
+      <section className="section-pad bg-white overflow-hidden">
+        <div className="container-shell">
+          <FadeInUp className="text-center max-w-2xl mx-auto mb-16">
+            <div className="eyebrow mb-4">Hình ảnh thực tế</div>
+            <h2 className="section-heading__title">Năng lực vận hành thực tiễn.</h2>
+            <p className="text-gray-600 mt-4">
+              Chúng tôi sở hữu đội ngũ giao nhận chuyên nghiệp và kho vận đáp ứng sản lượng lớn mỗi ngày.
+            </p>
+          </FadeInUp>
+          
+          <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((num) => (
+              <StaggerItem key={num} className={`relative rounded-xl overflow-hidden shadow-lg ${num % 2 === 0 ? 'h-[300px] mt-8' : 'h-[300px]'}`}>
+                <Image 
+                  src={`/images/real-operations/op-${num}.jpg`} 
+                  alt="Hoạt động TPS1" 
+                  fill 
+                  className="object-cover hover:scale-110 transition-transform duration-700" 
+                />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
       <section className="home-solution container-shell section-pad">
-        <div className="section-heading">
+        <FadeInUp className="section-heading text-center mb-12">
           <div className="eyebrow">Quy trình làm việc</div>
-          <h2 className="section-heading__title">Một quy trình đơn giản để khách dễ đặt hàng và dễ chốt phương án.</h2>
-        </div>
+          <h2 className="section-heading__title">Đơn giản, tốc độ và minh bạch.</h2>
+        </FadeInUp>
 
-        <div className="solution-grid">
-          {processSteps.map((step) => (
-            <article key={step.title} className="solution-card">
-              <div className="solution-card__tag">TPS1 Workflow</div>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
-            </article>
+        <StaggerContainer className="grid md:grid-cols-3 gap-8 relative">
+          {/* Decorative connecting line */}
+          <div className="hidden md:block absolute top-[40px] left-[15%] right-[15%] h-[2px] bg-emerald-100 z-0" />
+          
+          {processSteps.map((step, idx) => (
+            <StaggerItem key={step.title} className="relative z-10 text-center">
+              <div className="w-20 h-20 mx-auto rounded-2xl bg-white border-2 border-emerald-500 shadow-xl flex items-center justify-center text-2xl font-black text-emerald-600 mb-6">
+                {idx + 1}
+              </div>
+              <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+              <p className="text-gray-600">{step.text}</p>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </section>
 
-      <section className="home-customers">
-        <div className="container-shell">
-          <div className="section-split">
-            <div className="section-heading">
-              <div className="eyebrow">Khách hàng tiêu biểu</div>
-              <h2 className="section-heading__title">Đang phục vụ nhiều đơn vị trong nhóm khách B2B tại khu vực công nghiệp.</h2>
-            </div>
-            <Link href="/bao-gia" className="text-link">
-              Gửi yêu cầu mới <ArrowRight size={16} />
-            </Link>
+      <section className="home-partners bg-gray-50 section-pad">
+        <FadeInUp className="container-shell text-center">
+          <div className="eyebrow mb-8">Đối tác & Khách hàng tin dùng</div>
+          <div className="relative w-full max-w-7xl mx-auto h-[250px] md:h-[550px] opacity-90 grayscale hover:grayscale-0 transition-all duration-500">
+            <Image
+              src={partnerLogoPanels[0].src}
+              alt="Logos"
+              fill
+              className="object-contain object-center scale-110 md:scale-100"
+            />
           </div>
-
-          <div className="customer-marquee">
-            {customerHighlights.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="container-shell section-pad">
-        <div className="home-gallery">
-          <div className="home-gallery__copy">
-            <div className="eyebrow">Hình ảnh thực tế</div>
-            <h2 className="section-heading__title">Kho vận, giao nhận và vận hành bếp từ dữ liệu thực tế của TPS1.</h2>
-            <p className="section-heading__description">
-              Hình ảnh trên website là tư liệu thật của doanh nghiệp để khách hàng đánh giá năng lực rõ ràng hơn.
-            </p>
-          </div>
-
-          <div className="home-gallery__grid">
-            {galleryImages.map((item, index) => (
-              <div key={item.src} className={`home-gallery__card home-gallery__card--${index + 1}`}>
-                <Image src={item.src} alt={item.alt} fill priority className="home-gallery__image" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="home-partners">
-        <div className="container-shell">
-          <div className="section-split">
-            <div className="section-heading">
-              <div className="eyebrow">Đối tác & khách hàng</div>
-            </div>
-          </div>
-
-          <div className="home-partners__grid">
-            {partnerLogoPanels.map((item) => (
-              <div key={item.src} className="home-partners__panel">
-                <Image
-                  src={item.src}
-                  alt={item.alt}
-                  fill
-                  priority
-                  className="home-partners__image"
-                  sizes="(max-width: 960px) 100vw, 1180px"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="home-local">
-        <div className="container-shell section-pad">
-          <div className="section-split">
-            <div className="section-heading">
-              <div className="eyebrow">Khu vực phục vụ</div>
-              <h2 className="section-heading__title">Đồng Nai, Biên Hòa và các khu vực lân cận</h2>
-              <p className="section-heading__description">
-                Phục vụ thực tế cả TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu khi lịch giao, tuyến đường và nhu cầu đơn hàng phù hợp.
-              </p>
-            </div>
-            <Link href="/bao-gia" className="text-link">
-              Gửi nhu cầu báo giá <ArrowRight size={16} />
-            </Link>
-          </div>
-
-          <div className="home-local__grid">
-            {localPages.map((item) => (
-              <Link key={item.href} href={item.href} className="home-local__card">
-                <div className="home-local__icon">
-                  <MapPin size={18} />
-                </div>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-                <span className="home-local__link">
-                  Xem trang <ArrowRight size={16} />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        </FadeInUp>
       </section>
 
       <section className="home-cta">
-        <div className="container-shell home-cta__card">
-          <div>
-            <div className="eyebrow eyebrow-on-dark">Sẵn sàng nhận yêu cầu</div>
-            <h2>Gửi danh mục cần mua để đội ngũ TPS1 phản hồi phương án phù hợp.</h2>
-            <p>Nhập thông tin đơn vị, nhóm hàng và thời gian cần giao. Đội kinh doanh sẽ liên hệ để chốt báo giá và lịch giao.</p>
+        <ScaleIn className="container-shell">
+          <div className="home-cta__card bg-gradient-to-br from-emerald-900 to-green-950 p-12 md:p-20 rounded-3xl shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="flex-1">
+                <div className="eyebrow eyebrow-on-dark mb-6">Sẵn sàng phục vụ</div>
+                <h2 className="text-4xl font-bold text-white mb-4">Nhận báo giá thực phẩm hôm nay.</h2>
+                <p className="text-emerald-100 text-lg max-w-xl">Đội ngũ chuyên viên của TPS1 sẽ phân tích nhu cầu và gửi bảng giá chi tiết phù hợp nhất với định mức của bếp bạn.</p>
+              </div>
+              <Link href="/bao-gia" className="btn-primary !px-8 !py-5 !text-lg !rounded-xl whitespace-nowrap shadow-emerald-900/50 hover:scale-105">
+                Nhận tư vấn ngay <ArrowRight size={20} />
+              </Link>
+            </div>
           </div>
-          <Link href="/bao-gia" className="btn-primary btn-on-dark">
-            Mở form báo giá <ArrowRight size={18} />
-          </Link>
-        </div>
+        </ScaleIn>
       </section>
     </main>
   );

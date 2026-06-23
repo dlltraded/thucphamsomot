@@ -1,6 +1,8 @@
 import zipfile, xml.etree.ElementTree as ET
+import sys
 
-z = zipfile.ZipFile('Thực Phẩm Số 1.xlsx')
+filename = sys.argv[1] if len(sys.argv) > 1 else 'Thực Phẩm Số 1.xlsx'
+z = zipfile.ZipFile(filename)
 
 # Read shared strings
 ss_xml = z.read('xl/sharedStrings.xml')
@@ -11,8 +13,11 @@ for si in ss_tree.findall('ns:si', ns):
     t_texts = si.findall('.//ns:t', ns)
     strings.append(''.join(t.text or '' for t in t_texts))
 
-# Read sheet1
-sh_xml = z.read('xl/worksheets/sheet1.xml')
+# Read sheet
+import glob
+sheet_files = z.namelist()
+sheet_xml_file = [f for f in sheet_files if f.startswith('xl/worksheets/sheet')][0]
+sh_xml = z.read(sheet_xml_file)
 sh_tree = ET.fromstring(sh_xml)
 rows = sh_tree.findall('.//ns:row', ns)
 

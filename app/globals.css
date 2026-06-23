@@ -7794,3 +7794,98 @@ body {
     bottom: 96px; /* Raise above the bottom contact bar on mobile */
   }
 }
+
+/* PREMIUM UI REDESIGN */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glassmorphism-dark {
+  background: rgba(15, 35, 28, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+}
+
+.bento-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: transform 0.3s cubic-bezier(0.21, 0.47, 0.32, 0.98), box-shadow 0.3s ease;
+}
+.bento-item:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+}
+
+.bento-item-large {
+  grid-column: span 8;
+  grid-row: span 2;
+}
+
+.bento-item-medium {
+  grid-column: span 4;
+  grid-row: span 2;
+}
+
+.bento-item-small {
+  grid-column: span 4;
+  grid-row: span 1;
+}
+
+@media (max-width: 960px) {
+  .bento-item-large, .bento-item-medium, .bento-item-small {
+    grid-column: span 12;
+  }
+}
+
+.hero-slider-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-slider-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(15, 35, 28, 0.9) 0%, rgba(15, 35, 28, 0.6) 50%, rgba(15, 35, 28, 0.3) 100%);
+  z-index: 1;
+}
+
+.hero-content-wrapper {
+  position: relative;
+  z-index: 2;
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+}
+
+.hero-dynamic-title {
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 900;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.hero-dynamic-lead {
+  font-size: clamp(18px, 2vw, 22px);
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 600px;
+  line-height: 1.6;
+}
