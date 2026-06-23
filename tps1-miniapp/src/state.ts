@@ -101,35 +101,21 @@ import catSeafood from "@/static/cat_seafood.png";
 import catVegetables from "@/static/cat_vegetables.png";
 import catTools from "@/static/cat_tools.png";
 
-const getCategoryIcon = (name: string) => {
-  const upperName = name.toUpperCase();
-  if (upperName.includes("TRÁI CÂY")) return catFruits;
-  if (upperName.includes("BÁNH SỮA") || upperName.includes("TRỨNG")) return catBakeryMilk;
-  if (upperName.includes("GIA VỊ")) return catSpices;
-  if (upperName.includes("ĐỒ KHÔ") || upperName.includes("GẠO") || upperName.includes("BÚN")) return catDriedGoods;
-  if (
-    upperName.includes("ĐÔNG LẠNH") ||
-    upperName.includes("CHAY") ||
-    upperName.includes("THỊT") ||
-    upperName.includes("GÀ") ||
-    upperName.includes("VỊT") ||
-    upperName.includes("CP")
-  ) {
-    return catFrozen;
+const mapToSuperCategory = (rawName: string) => {
+  const upper = rawName?.toUpperCase() || "";
+  if (upper.includes("HẢI SẢN")) return { id: "seafood", name: "Hải sản", image: catSeafood, priority: 2 };
+  if (upper.includes("TRÁI CÂY")) return { id: "fruits", name: "Trái cây", image: catFruits, priority: 4 };
+  if (upper.includes("RAU CỦ QUẢ") || upper.includes("RAU CỦ") || upper.includes("RAU")) return { id: "veg", name: "Rau củ quả", image: catVegetables, priority: 3 };
+  if (upper.includes("BÁNH SỮA") || upper.includes("TRỨNG")) return { id: "bakery", name: "Bánh, Trứng & Sữa", image: catBakeryMilk, priority: 5 };
+  if (upper.includes("GIA VỊ")) return { id: "spices", name: "Gia vị", image: catSpices, priority: 6 };
+  if (upper.includes("ĐỒ KHÔ") || upper.includes("GẠO") || upper.includes("BÚN")) return { id: "dried", name: "Đồ khô & Gạo", image: catDriedGoods, priority: 7 };
+  if (upper.includes("CHAY") || upper.includes("ĐK")) return { id: "vegan", name: "Mặt hàng chay", image: catVegetables, priority: 8 }; 
+  if (upper.includes("CÔNG CỤ") || upper.includes("NONFOOD")) return { id: "tools", name: "Công cụ & Vật tư", image: catTools, priority: 9 };
+  // Default for meat and frozen
+  if (upper.includes("THỊT") || upper.includes("ĐÔNG LẠNH") || upper.includes("GÀ") || upper.includes("CP")) {
+    return { id: "meat", name: "Thịt & Đông lạnh", image: catFrozen, priority: 1 };
   }
-  if (upperName.includes("HẢI SẢN")) return catSeafood;
-  if (upperName.includes("RAU CỦ QUẢ") || upperName.includes("RAU CỦ") || upperName.includes("RAU")) return catVegetables;
-  if (upperName.includes("CÔNG CỤ") || upperName.includes("NONFOOD")) return catTools;
-  return categoryPlaceholder;
-};
-
-const getCategoryPriority = (name: string) => {
-  const upper = name?.toUpperCase() || "";
-  if (upper.includes("THỊT") || upper.includes("CÁ") || upper.includes("HẢI SẢN")) return 1;
-  if (upper.includes("RAU CỦ") || upper.includes("TRÁI CÂY")) return 2;
-  if (upper.includes("ĐÔNG LẠNH") || upper.includes("THỰC PHẨM") || upper.includes("CHAY")) return 3;
-  if (upper.includes("GIA VỊ") || upper.includes("ĐỒ KHÔ") || upper.includes("BÁNH")) return 4;
-  return 10;
+  return { id: "other", name: "Khác", image: categoryPlaceholder, priority: 10 };
 };
 
 export const categoriesState = atom(async () => {
@@ -140,18 +126,19 @@ export const categoriesState = atom(async () => {
 
   if (error || !data) return [];
 
-  // Get unique categories
-  const cats = new Set(data.map(p => p.category));
-  const uniqueCats = Array.from(cats).map((name, index) => ({
-    id: String(index),
-    name: name,
-  }));
+  const rawCats = new Set(data.map(p => p.category));
+  const superCatsMap = new Map<string, Category & { priority: number }>();
+  
+  rawCats.forEach(rawName => {
+    const superCat = mapToSuperCategory(rawName);
+    if (!superCatsMap.has(superCat.id)) {
+      superCatsMap.set(superCat.id, superCat);
+    }
+  });
 
-  return uniqueCats.map(({ id, name }) => ({
-    id,
-    name,
-    image: getCategoryIcon(name)
-  })).sort((a, b) => getCategoryPriority(a.name) - getCategoryPriority(b.name)) as Category[];
+  return Array.from(superCatsMap.values())
+    .sort((a, b) => a.priority - b.priority)
+    .map(c => ({ id: c.id, name: c.name, image: c.image })) as Category[];
 });
 
 export const categoriesStateUpwrapped = unwrap(
@@ -173,7 +160,8 @@ export const productsState = atom(async (get) => {
   }
 
   return data.map((product) => {
-    const categoryObj = categories.find(c => c.name === product.category);
+    const superCatInfo = mapToSuperCategory(product.category || "");
+    const categoryObj = categories.find(c => c.id === superCatInfo.id);
     return {
       id: product.id,
       name: product.name,
@@ -181,12 +169,13 @@ export const productsState = atom(async (get) => {
       originalPrice: product.price_retail || product.price_wholesale || 0,
       image: product.image_url || categoryObj?.image || categoryPlaceholder,
       category: categoryObj!,
-      categoryId: categoryObj?.id || '0',
+      categoryId: categoryObj?.id || 'other',
       detail: product.notes || '',
     };
   }).sort((a, b) => {
-    const catDiff = getCategoryPriority(a.category?.name) - getCategoryPriority(b.category?.name);
-    if (catDiff !== 0) return catDiff;
+    const pA = mapToSuperCategory(a.category?.name || "").priority;
+    const pB = mapToSuperCategory(b.category?.name || "").priority;
+    if (pA !== pB) return pA - pB;
     return a.name.localeCompare(b.name);
   });
 });
@@ -301,12 +290,14 @@ export const ordersState = atomFamily((status: OrderStatus) =>
       }
 
       const supabaseOrders: Order[] = (quotes || []).map((q: any) => {
-        let mappedStatus: OrderStatus = "pending";
+        let mappedStatus: OrderStatus = "pending"; // new, contacting, quoting, etc.
         const qStatus = String(q.status || "").toLowerCase();
-        if (qStatus.includes("giao") || qStatus.includes("processing") || qStatus.includes("shipping")) {
-          mappedStatus = "shipping";
-        } else if (qStatus.includes("hoàn thành") || qStatus.includes("closed") || qStatus.includes("thành công") || qStatus.includes("win")) {
-          mappedStatus = "completed";
+        
+        // Admin system uses: new, contacting, quoting, quoted, won, lost, canceled
+        if (qStatus === "quoted" || qStatus === "shipping" || qStatus.includes("giao")) {
+          mappedStatus = "shipping"; // Đã báo giá -> Xem như đang xử lý/giao hàng
+        } else if (qStatus === "won" || qStatus === "completed" || qStatus.includes("hoàn thành") || qStatus.includes("chốt")) {
+          mappedStatus = "completed"; // Đã chốt đơn -> Hoàn thành
         }
 
         return {
