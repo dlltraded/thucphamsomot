@@ -13,6 +13,7 @@ import { SeoJsonLd } from "@/components/seo-json-ld";
 import { SocialWidget } from "@/components/social-widget";
 import { CartProvider } from "@/lib/cart-context";
 import { siteConfig } from "@/lib/site";
+import { FloatingCart } from "@/components/floating-cart";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <CompanyProfileWidget />
           <SocialWidget />
           <SiteFooter />
+          <FloatingCart />
         </CartProvider>
       </body>
     </html>

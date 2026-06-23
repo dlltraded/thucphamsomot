@@ -911,14 +911,8 @@ function buildMessage(values: QuoteLeadInput, locale: Locale) {
 }
 
 function saveSuccessState(summary: QuoteSummary) {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(LAST_SUCCESS_KEY, JSON.stringify(summary));
-    window.localStorage.removeItem(LAST_NOTICE_KEY);
-  } catch {
-    // Ignore storage failures and keep the form usable.
-  }
+  // We no longer persist success state to localStorage to avoid showing the success screen
+  // when the user returns to the page later.
 }
 
 function saveNoticeState(notice: QuoteNotice) {
@@ -932,27 +926,13 @@ function saveNoticeState(notice: QuoteNotice) {
 }
 
 function readLastSuccessState(): QuoteSummary | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const raw = window.localStorage.getItem(LAST_SUCCESS_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<QuoteSummary>;
-
-    if (parsed?.name && parsed?.inquiryType && parsed?.primaryNeed && parsed?.secondaryNeed) {
-      return {
-        name: parsed.name,
-        phone: parsed.phone || "",
-        company: parsed.company || UI.vi.common.companyFallback,
-        inquiryType: parsed.inquiryType,
-        primaryNeed: parsed.primaryNeed,
-        secondaryNeed: parsed.secondaryNeed,
-      };
-    }
-  } catch {
-    // Ignore malformed local state and continue with a clean form.
+  // We no longer read success state from localStorage.
+  // If there's an old one, let's just clear it to clean up the user's browser.
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(LAST_SUCCESS_KEY);
+    } catch {}
   }
-
   return null;
 }
 

@@ -3,7 +3,7 @@ import { z } from "zod";
 const quoteItemSchema = z.object({
   slug: z.string().min(1),
   title: z.string().min(1),
-  quantity: z.number().int().min(1).optional(),
+  quantity: z.number().min(0).optional(),
 });
 
 const leadCoreSchema = z.object({
