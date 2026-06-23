@@ -22,6 +22,7 @@ create table public.products (
   price_retail numeric(14,2) not null default 0,
   supplier text,
   origin text,
+  image_url text,
   active boolean not null default true,
   tags text[] not null default '{}'::text[],
   notes text,

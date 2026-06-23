@@ -2,24 +2,23 @@
   "app": {
     "appId": "3486082144280639442",
     "title": "Thực Phẩm Số Một",
-    "headerTitle": "TPS1 - Đặt Hàng",
-    "headerColor": "#1B7A3D",
     "textColor": "white",
-    "statusBar": "normal"
+    "headerColor": "#1B7A3D",
+    "statusBar": "transparent",
+    "actionBarHidden": true,
+    "hideAndroidBottomNavigationBar": false,
+    "hideIOSSafeAreaBottom": true,
+    "selfControlLoading": false
   },
-  "pages": [
-    "/",
-    "/bao-gia",
-    "/san-pham",
-    "/dat-hang",
-    "/gioi-thieu"
-  ],
-  "listSync": [
-    "pages"
-  ],
   "listCSS": [],
-  "listSyncJS": [
-    "/assets/index-dnm-zO4t.js"
-  ],
-  "listAsyncJS": []
+  "listSyncJS": [],
+  "listAsyncJS": [],
+  "template": {
+    "name": "zaui-market",
+    "apiUrl": "",
+    "oaIDtoOpenChat": "",
+    "logoUrl": "",
+    "shopName": "Thực Phẩm Số Một",
+    "shopAddress": "Đồng Nai"
+  }
 }
