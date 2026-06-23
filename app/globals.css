@@ -7585,6 +7585,201 @@ body {
   font-size: 11px;
   font-weight: 700;
   height: 20px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.qcs__qty button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.qcs__qty span {
+  min-width: 24px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.qcs__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.qcs__note {
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(15, 111, 75, 0.14);
+  font-size: 11.5px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SP-PAGE — trang /san-pham (không dùng PageShell)
+═══════════════════════════════════════════════════════════ */
+
+.sp-page {
+  padding-top: 0;
+}
+
+/* Compact header bar */
+.sp-page__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-top: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-page__head-left {
+  flex: 0 1 auto;
+}
+
+.sp-page__title {
+  margin: 6px 0 8px;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
+}
+
+.sp-page__desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+.sp-page__badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+
+.sp-page__badges span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: rgba(15, 111, 75, 0.06);
+  border: 1px solid rgba(15, 111, 75, 0.14);
+  border-radius: 99px;
+  padding: 4px 12px 4px 10px;
+  white-space: nowrap;
+}
+
+.sp-page__badges svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── Mobile: hoàn toàn dùng block, không flex để tránh stretch ── */
+@media (max-width: 768px) {
+  .sp-page__head {
+    display: block;
+    padding-top: 24px;
+    padding-bottom: 20px;
+  }
+
+  .sp-page__head-left {
+    margin-bottom: 16px;
+  }
+
+  .sp-page__title {
+    font-size: 1.35rem;
+    margin: 4px 0 6px;
+  }
+
+  .sp-page__desc {
+    font-size: 13px;
+  }
+
+  .sp-page__badges {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-self: auto;
+  }
+
+  .sp-page__badges span {
+    font-size: 11px;
+    padding: 3px 10px 3px 8px;
+    white-space: normal;
+  }
+}
+
+/* ─── Floating Cart ──────────────────────────────────────────────────────── */
+
+.floating-cart {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 100;
+  background: #0f6f4b;
+  color: #fff;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(15, 111, 75, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+}
+
+.floating-cart:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(15, 111, 75, 0.5);
+  color: #fff;
+}
+
+.floating-cart__icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-cart__badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  height: 20px;
   min-width: 20px;
   padding: 0 6px;
   border-radius: 10px;
@@ -7592,4 +7787,10 @@ body {
   align-items: center;
   justify-content: center;
   border: 2px solid #fff;
+}
+
+@media (max-width: 768px) {
+  .floating-cart {
+    bottom: 96px; /* Raise above the bottom contact bar on mobile */
+  }
 }

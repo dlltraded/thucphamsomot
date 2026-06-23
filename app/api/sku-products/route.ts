@@ -13,6 +13,7 @@ const CAT_REVERSE: Record<string, string> = {
   'dong-lanh': 'ĐÔNG LẠNH',
   'gia-vi': 'GIA VỊ',
   'gao-mi': 'ĐỒ KHÔ',
+  'cong-cu': 'CÔNG CỤ',
 };
 
 const CAT_IMAGE: Record<string, string> = {
@@ -24,6 +25,7 @@ const CAT_IMAGE: Record<string, string> = {
   'dong-lanh': '/images/tps1-frozen.png',
   'gia-vi': '/images/tps1-spices.png',
   'gao-mi': '/images/tps1-spices.png',
+  'cong-cu': '/images/tps1_tools_placeholder.png',
 };
 
 export interface SkuProduct {
@@ -55,7 +57,7 @@ export async function GET(req: NextRequest) {
   const qs = new URLSearchParams({
     select: 'id,local_product_id,name,category,unit,price_wholesale,image_url',
     active: 'eq.true',
-    order: 'category.asc,name.asc',
+    order: 'category.desc,name.asc',
     limit: String(PAGE_SIZE),
     offset: String(offset),
   });
