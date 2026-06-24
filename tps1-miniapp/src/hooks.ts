@@ -155,7 +155,7 @@ export function useCheckout() {
         email: "",
         company: "",
         source: "Zalo Mini App",
-        message: `Mã đơn: DH${Date.now().toString().slice(-6)}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${totalAmount}đ`,
+        message: `Mã đơn: DH${Date.now().toString().slice(-6)}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${totalAmount}đ\nChi tiết:\n${orderItems.map(i => `${i.name} x${i.quantity} - ${i.price}đ`).join('\n')}`,
         selectedItems: orderItems.map(i => ({ title: i.name, quantity: i.quantity })),
         selectedCount: orderItems.length
       };
