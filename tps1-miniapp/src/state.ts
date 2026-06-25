@@ -76,7 +76,8 @@ export const phoneState = atom(async () => {
   try {
     const { token } = await getPhoneNumber({});
     await new Promise((resolve) => setTimeout(resolve, 500));
-    phone = "0912345678";
+    phone = "0704104104"; // SĐT test thực tế (thay bằng số thật khi deploy production)
+
   } catch (error) {
     console.warn(error);
   }
@@ -103,9 +104,9 @@ import catTools from "@/static/cat_tools.png";
 
 const mapToSuperCategory = (rawName: string) => {
   const upper = rawName?.toUpperCase() || "";
-  if (upper.includes("HẢI SẢN")) return { id: "seafood", name: "Hải sản", image: catSeafood, priority: 2 };
-  if (upper.includes("TRÁI CÂY")) return { id: "fruits", name: "Trái cây", image: catFruits, priority: 4 };
-  if (upper.includes("RAU CỦ QUẢ") || upper.includes("RAU CỦ") || upper.includes("RAU")) return { id: "veg", name: "Rau củ quả", image: catVegetables, priority: 3 };
+  if (upper.includes("RAU CỦ QUẢ") || upper.includes("RAU CỦ") || upper.includes("RAU")) return { id: "veg", name: "Rau củ quả", image: catVegetables, priority: 1 };
+  if (upper.includes("TRÁI CÂY")) return { id: "fruits", name: "Trái cây", image: catFruits, priority: 2 };
+  if (upper.includes("HẢI SẢN")) return { id: "seafood", name: "Hải sản", image: catSeafood, priority: 3 };
   if (upper.includes("BÁNH SỮA") || upper.includes("TRỨNG")) return { id: "bakery", name: "Bánh, Trứng & Sữa", image: catBakeryMilk, priority: 5 };
   if (upper.includes("GIA VỊ")) return { id: "spices", name: "Gia vị", image: catSpices, priority: 6 };
   if (upper.includes("ĐỒ KHÔ") || upper.includes("GẠO") || upper.includes("BÚN")) return { id: "dried", name: "Đồ khô & Gạo", image: catDriedGoods, priority: 7 };
@@ -113,7 +114,7 @@ const mapToSuperCategory = (rawName: string) => {
   if (upper.includes("CÔNG CỤ") || upper.includes("NONFOOD")) return { id: "tools", name: "Công cụ & Vật tư", image: catTools, priority: 9 };
   // Default for meat and frozen
   if (upper.includes("THỊT") || upper.includes("ĐÔNG LẠNH") || upper.includes("GÀ") || upper.includes("CP")) {
-    return { id: "meat", name: "Thịt & Đông lạnh", image: catFrozen, priority: 1 };
+    return { id: "meat", name: "Thịt & Đông lạnh", image: catFrozen, priority: 4 };
   }
   return { id: "other", name: "Khác", image: categoryPlaceholder, priority: 10 };
 };
@@ -303,7 +304,7 @@ export const ordersState = atomFamily((status: OrderStatus) =>
         }
 
         return {
-          id: q.id,
+          id: q.quote_code || q.id,
           status: mappedStatus,
           paymentStatus: "pending",
           createdAt: new Date(q.created_at),
@@ -323,10 +324,7 @@ export const ordersState = atomFamily((status: OrderStatus) =>
         const hoursDiff = (new Date().getTime() - new Date(lo.createdAt).getTime()) / (1000 * 60 * 60);
         if (hoursDiff > 24) return false;
         
-        const isSynced = supabaseOrders.some(so => 
-          so.total === lo.total && 
-          Math.abs(so.createdAt.getTime() - new Date(lo.createdAt).getTime()) < 60 * 60 * 1000
-        );
+        const isSynced = supabaseOrders.some(so => so.id === lo.id);
         return !isSynced;
       });
 

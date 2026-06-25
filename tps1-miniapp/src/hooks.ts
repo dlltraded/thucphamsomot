@@ -156,8 +156,10 @@ export function useCheckout() {
         company: "",
         source: "Zalo Mini App",
         message: `Mã đơn: DH${Date.now().toString().slice(-6)}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${totalAmount}đ\nChi tiết:\n${orderItems.map(i => `${i.name} x${i.quantity} - ${i.price}đ`).join('\n')}`,
-        selectedItems: orderItems.map(i => ({ title: i.name, quantity: i.quantity })),
-        selectedCount: orderItems.length
+        selectedItems: orderItems.map(i => `${i.name} x${i.quantity}`).join(' | '),
+        selectedCount: orderItems.length,
+        miniAppSource: "quote_form",
+        gioHang: JSON.stringify(orderItems.map(i => ({ name: i.name, qty: i.quantity })))
       };
 
       const webhookUrl = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK || "";
