@@ -1,0 +1,1 @@
+const { createClient } = require('@supabase/supabase-js'); const supabase = createClient('https://yntgxollwjemyidizhnn.supabase.co', 'sb_publishable_BhQX_aNaD5wzocEp7MXD_Q_DA4kOAZn'); async function clear() { const { error } = await supabase.from('quotes').delete().not('id', 'is', null); console.log(error || 'Cleared successfully'); } clear();

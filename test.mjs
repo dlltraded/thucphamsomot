@@ -1,0 +1,1 @@
+fetch('https://thucphamsomot.vn/api/payment/create-order-mac', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount: 10000, desc: 'test', method: '{\\" "id\\:\\COD\\,\\isCustom\\:false}', item: '[]' }) }).then(r=>r.json()).then(console.log).catch(console.error);  

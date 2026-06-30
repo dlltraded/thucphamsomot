@@ -217,6 +217,7 @@ export function useCheckout() {
           body: JSON.stringify({
             amount: totalAmount > 0 ? totalAmount : 10000,
             desc: `Thanh toán đơn hàng ${orderCode}`,
+            extradata: "",
             method: JSON.stringify({ id: "COD", isCustom: false }),
             item: JSON.stringify(orderItems.map(it => ({ id: String(it.id), amount: it.price || 10000 })))
           })
@@ -230,6 +231,7 @@ export function useCheckout() {
       await createOrder({
         amount: totalAmount > 0 ? totalAmount : 10000,
         desc: `Thanh toán đơn hàng ${orderCode}`,
+        extradata: "",
         item: orderItems.map(it => ({ id: String(it.id), amount: it.price || 10000 })),
         method: { id: "COD", isCustom: false },
         mac: mac,
