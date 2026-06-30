@@ -1,1 +1,0 @@
-const { createClient } = require('@supabase/supabase-js'); const supabase = createClient('https://yntgxollwjemyidizhnn.supabase.co', 'sb_publishable_BhQX_aNaD5wzocEp7MXD_Q_DA4kOAZn'); async function check() { const { data } = await supabase.from('quotes').select('id'); console.log('Count:', data?.length); } check();
