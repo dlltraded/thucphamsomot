@@ -12,7 +12,7 @@ function OrderSummary(props: { order: Order; full?: boolean }) {
       title={
         <div className="w-full flex justify-between items-center space-x-2 font-normal">
           <span className="text-xs truncate">
-            Thời gian nhận: Từ 16h, 20/1/2025
+            Đặt lúc: {new Date(props.order.createdAt).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
           </span>
           <span
             className={`text-xs ${
@@ -24,6 +24,8 @@ function OrderSummary(props: { order: Order; full?: boolean }) {
             {
               {
                 pending: "Chờ xác nhận",
+                quoted: "Đã báo giá",
+                shipping: "Đang giao hàng",
                 success: "Đã thanh toán",
                 failed: "Thanh toán thất bại",
               }[props.order.paymentStatus]

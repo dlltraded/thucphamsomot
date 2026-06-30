@@ -292,28 +292,82 @@ export const ordersState = atomFamily((status: OrderStatus) =>
         console.error("Lỗi lấy đơn hàng Supabase:", error);
       }
 
+      const allProducts = await get(productsState);
+
       const supabaseOrders: Order[] = (quotes || []).map((q: any) => {
         let mappedStatus: OrderStatus = "pending"; // new, contacting, quoting, etc.
         const qStatus = String(q.status || "").toLowerCase();
         
-        // Admin system uses: new, contacting, quoting, quoted, won, lost, canceled
-        if (qStatus === "quoted" || qStatus === "shipping" || qStatus.includes("giao")) {
-          mappedStatus = "shipping"; // Đã báo giá -> Xem như đang xử lý/giao hàng
-        } else if (qStatus === "won" || qStatus === "completed" || qStatus.includes("hoàn thành") || qStatus.includes("chốt")) {
-          mappedStatus = "completed"; // Đã chốt đơn -> Hoàn thành
+        // Admin system uses: new, contacting, quoting, quoted, won, completed, lost, canceled
+        if (qStatus === "won" || qStatus === "shipping" || qStatus.includes("giao")) {
+          mappedStatus = "shipping"; // Đã chốt đơn -> Xem như đang xử lý/giao hàng
+        } else if (qStatus === "completed" || qStatus.includes("hoàn thành")) {
+          mappedStatus = "completed"; // Hoàn thành -> Lịch sử
+        }
+
+        let mappedPaymentStatus: any = "pending";
+        if (qStatus === "won" || qStatus === "shipping" || qStatus.includes("giao")) {
+          mappedPaymentStatus = "shipping";
+        } else if (qStatus === "quoted" || qStatus.includes("báo giá")) {
+          mappedPaymentStatus = "quoted";
         }
 
         return {
           id: q.quote_code || q.id,
           status: mappedStatus,
-          paymentStatus: "pending",
+          paymentStatus: mappedPaymentStatus,
           createdAt: new Date(q.created_at),
           receivedAt: new Date(q.created_at),
-          items: Array.isArray(q.items) ? q.items.map((i: any) => ({
-            product: { id: i.id || 0, name: i.name || "Sản phẩm", price: i.price || 0, image: i.image || "", category: {id: 0, name: "", image: ""} },
-            quantity: i.quantity || 1
-          })) : [],
-          delivery: { type: "shipping", address: "", name: user.name, phone: user.phone, alias: "" },
+          items: Array.isArray(q.items) ? q.items.map((i: any) => {
+            const matchedProduct = allProducts.find(p => p.id === i.productId || p.name.toLowerCase() === (i.name || "").toLowerCase());
+            return {
+              product: { 
+                id: i.id || matchedProduct?.id || 0, 
+                name: i.name || matchedProduct?.name || "Sản phẩm", 
+                price: i.price || matchedProduct?.price || 0, 
+                image: i.image || matchedProduct?.image || "", 
+                category: matchedProduct?.category || {id: 0, name: "", image: ""} 
+              },
+              quantity: i.quantity || i.qty || 1
+            };
+          }) : [],
+          delivery: (() => {
+            // Ưu tiên đọc từ cột structured trong Supabase (delivery_type/address/alias)
+            // Fallback: parse từ message nếu cột chưa có dữ liệu (đơn cũ trước khi migration)
+            if (q.delivery_address) {
+              return {
+                type: (q.delivery_type || 'shipping') as any,
+                address: q.delivery_address || '',
+                alias: q.delivery_alias || '',
+                name: user.name,
+                phone: user.phone
+              };
+            }
+
+            // --- Legacy fallback: parse from message ---
+            let parsedAddress = "";
+            let parsedAlias = "";
+            let parsedType: "shipping" | "pickup" = "shipping";
+            const msg = q.lead_snapshot?.message || q.note || "";
+            const addressMatch = msg.match(/Địa chỉ:\s*(.+)/);
+            if (addressMatch) {
+              const fullAddress = addressMatch[1].trim();
+              if (fullAddress.includes("Tự đến lấy")) {
+                parsedType = "pickup";
+                parsedAddress = fullAddress.replace("Tự đến lấy:", "").trim();
+              } else {
+                parsedType = "shipping";
+                const matchAlias = fullAddress.match(/(.*?)\((.*?)\)$/);
+                if (matchAlias) {
+                  parsedAddress = matchAlias[1].replace("Giao tận nơi:", "").trim();
+                  parsedAlias = matchAlias[2].trim();
+                } else {
+                  parsedAddress = fullAddress.replace("Giao tận nơi:", "").trim();
+                }
+              }
+            }
+            return { type: parsedType, address: parsedAddress, name: user.name, phone: user.phone, alias: parsedAlias };
+          })(),
           total: Number(q.grand_total || q.subtotal || 0),
           note: q.note || ""
         };
@@ -321,10 +375,20 @@ export const ordersState = atomFamily((status: OrderStatus) =>
 
       const localOrders = get(localOrdersState);
       const activeLocalOrders = localOrders.filter(lo => {
-        const hoursDiff = (new Date().getTime() - new Date(lo.createdAt).getTime()) / (1000 * 60 * 60);
-        if (hoursDiff > 24) return false;
+        const loTime = new Date(lo.createdAt).getTime();
+        const minutesDiff = (new Date().getTime() - loTime) / (1000 * 60);
+        // Đơn local chỉ hiển thị tối đa 15 phút (đủ để webhook xử lý xong)
+        // Sau 15 phút mà không thấy trong Supabase thì ẩn luôn
+        if (minutesDiff > 15) return false;
         
-        const isSynced = supabaseOrders.some(so => so.id === lo.id);
+        // Ẩn local order nếu đã có đơn Supabase tương ứng:
+        // 1. Khớp theo ID (quote_code) chính xác nhất
+        // 2. Fallback: khớp theo thời gian trong vòng 10 phút
+        const isSynced = supabaseOrders.some(so => {
+          if (lo.id && so.id && lo.id === so.id) return true;
+          const soTime = new Date(so.createdAt).getTime();
+          return Math.abs(soTime - loTime) < 10 * 60 * 1000; // trong 10 phút
+        });
         return !isSynced;
       });
 

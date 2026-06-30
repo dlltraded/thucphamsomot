@@ -33,7 +33,7 @@
     "react-hot-toast": "^2.4.1",
     "resize-observer-polyfill": "^1.5.1",
     "xlsx": "^0.18.5",
-    "zmp-sdk": "^2.41.0",
+    "zmp-sdk": "^2.51.6",
     "zmp-ui": "^1.11.6"
   },
   "devDependencies": {

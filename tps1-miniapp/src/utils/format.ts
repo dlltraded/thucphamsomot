@@ -3,7 +3,8 @@ export function formatPrice(price: number) {
     style: "currency",
     currency: "VND",
     currencyDisplay: "code",
-  }).format(price);
+    maximumFractionDigits: 0
+  }).format(Math.round(price));
 }
 
 export function formatDistant(value: number) {

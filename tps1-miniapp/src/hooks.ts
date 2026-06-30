@@ -139,12 +139,25 @@ export function useCheckout() {
         quantity: item.quantity,
       }));
 
-      let addressText = "Trống";
+      // Delivery info (structured)
+      let deliveryType    = deliveryMode || "shipping";
+      let deliveryAddress = "";
+      let deliveryAlias   = "";
+      let addressText     = "Trống";
+
       if (deliveryMode === "shipping" && shippingAddress) {
-        addressText = `Giao tận nơi: ${shippingAddress.address} (${shippingAddress.alias})`;
+        addressText     = `Giao tận nơi: ${shippingAddress.address} (${shippingAddress.alias})`;
+        deliveryType    = "shipping";
+        deliveryAddress = shippingAddress.address || "";
+        deliveryAlias   = shippingAddress.alias   || "";
       } else if (deliveryMode === "pickup" && selectedStation) {
-        addressText = `Tự đến lấy: ${selectedStation.name} - ${selectedStation.address}`;
+        addressText     = `Tự đến lấy: ${selectedStation.name} - ${selectedStation.address}`;
+        deliveryType    = "pickup";
+        deliveryAddress = `${selectedStation.name} - ${selectedStation.address}`;
+        deliveryAlias   = "Tự đến lấy";
       }
+
+      const orderCode = `DH${Date.now().toString().slice(-6)}`;
 
       const payload = {
         vaiTro: "Người mua", 
@@ -155,11 +168,16 @@ export function useCheckout() {
         email: "",
         company: "",
         source: "Zalo Mini App",
-        message: `Mã đơn: DH${Date.now().toString().slice(-6)}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${totalAmount}đ\nChi tiết:\n${orderItems.map(i => `${i.name} x${i.quantity} - ${i.price}đ`).join('\n')}`,
+        // Structured delivery fields (for Google Sheets columns + Admin mapping)
+        deliveryType,
+        deliveryAddress,
+        deliveryAlias,
+        // Message field giữ nguyên cho backward compat
+        message: `Mã đơn: ${orderCode}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${totalAmount}đ\nChi tiết:\n${orderItems.map(i => `${i.name} x${i.quantity} - ${i.price}đ`).join('\n')}`,
         selectedItems: orderItems.map(i => `${i.name} x${i.quantity}`).join(' | '),
         selectedCount: orderItems.length,
         miniAppSource: "quote_form",
-        gioHang: JSON.stringify(orderItems.map(i => ({ name: i.name, qty: i.quantity })))
+        gioHang: JSON.stringify(orderItems.map(i => ({ name: i.name, qty: i.quantity, price: i.price })))
       };
 
       const webhookUrl = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK || "";
@@ -190,11 +208,44 @@ export function useCheckout() {
 
       setLocalOrders((prev) => [...prev, newLocalOrder]);
 
-      setCart([]);
-      refreshNewOrders();
-      navigate("/checkout-success", {
-        viewTransition: true,
-        replace: true
+      const apiUrl = import.meta.env.DEV ? 'http://localhost:3000' : 'https://thucphamsomot.vn';
+      let mac = '';
+      try {
+        const response = await fetch(`${apiUrl}/api/payment/create-order-mac`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalAmount > 0 ? totalAmount : 10000,
+            desc: `Thanh toán đơn hàng ${orderCode}`,
+            method: JSON.stringify({ id: "COD", isCustom: false }),
+            item: JSON.stringify(orderItems.map(it => ({ id: String(it.id), amount: it.price || 10000 })))
+          })
+        });
+        const data = await response.json();
+        mac = data.mac;
+      } catch (err) {
+        console.error("Lỗi lấy MAC:", err);
+      }
+
+      await createOrder({
+        amount: totalAmount > 0 ? totalAmount : 10000,
+        desc: `Thanh toán đơn hàng ${orderCode}`,
+        item: orderItems.map(it => ({ id: String(it.id), amount: it.price || 10000 })),
+        method: { id: "COD", isCustom: false },
+        mac: mac,
+        success: (data) => {
+          console.log("Thanh toán thành công", data);
+          setCart([]);
+          refreshNewOrders();
+          navigate("/checkout-success", {
+            viewTransition: true,
+            replace: true
+          });
+        },
+        fail: (err) => {
+          console.error("Lỗi thanh toán Zalo:", err);
+          toast.error("Thanh toán bị hủy hoặc có lỗi xảy ra.");
+        }
       });
     } catch (error) {
       console.warn(error);

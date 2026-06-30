@@ -62,7 +62,7 @@ export type Delivery =
     };
 
 export type OrderStatus = "pending" | "shipping" | "completed";
-export type PaymentStatus = "pending" | "success" | "failed";
+export type PaymentStatus = "pending" | "quoted" | "shipping" | "success" | "failed";
 
 export interface Order {
   id: string | number;

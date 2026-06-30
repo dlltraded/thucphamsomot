@@ -162,20 +162,64 @@ export function CartDrawer({ open, onClose, locale = "vi" }: CartDrawerProps) {
           )}
         </div>
 
-        {/* Footer */}
+      {/* Footer */}
         {items.length > 0 && (
           <div className="cart-drawer__footer">
             <p className="cart-footer__note">
               {count} {text.items} · {text.note}
             </p>
-            <Link
-              href={text.quoteLink}
-              className="btn-primary cart-footer__cta"
-              onClick={onClose}
-            >
-              <ShoppingBag size={16} />
-              {text.submit}
-            </Link>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <Link
+                href={text.quoteLink}
+                className="btn-primary cart-footer__cta"
+                onClick={onClose}
+              >
+                <ShoppingBag size={16} />
+                {text.submit}
+              </Link>
+              <button
+                type="button"
+                className="btn-secondary cart-footer__cta"
+                onClick={async () => {
+                  try {
+                    const { Payment } = await import("zmp-sdk");
+                    const totalAmount = items.reduce((acc, item) => acc + 10000 * item.quantity, 0);
+                    // Generate MAC from backend
+                    const response = await fetch('/api/payment/create-order-mac', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        amount: totalAmount > 0 ? totalAmount : 10000, // Zalo requires amount > 0
+                        desc: "Thanh toán đơn hàng Thực Phẩm Số Một",
+                        method: JSON.stringify({ id: "COD", isCustom: false }), // Optional but good for strict matching
+                        item: JSON.stringify(items.map(it => ({ id: it.slug, amount: 10000 })))
+                      })
+                    });
+                    const { mac } = await response.json();
+                    
+                    Payment.createOrder({
+                      amount: totalAmount > 0 ? totalAmount : 10000,
+                      desc: "Thanh toán đơn hàng Thực Phẩm Số Một",
+                      item: items.map(it => ({ id: it.slug, amount: 10000 })),
+                      method: { id: "COD", isCustom: false },
+                      mac: mac,
+                      success: (data) => {
+                        console.log("Thanh toán thành công", data);
+                        clear();
+                        onClose();
+                      },
+                      fail: (err) => {
+                        console.log("Lỗi tạo order", err);
+                      }
+                    });
+                  } catch (error) {
+                    console.error("Lỗi khi gọi thanh toán:", error);
+                  }
+                }}
+              >
+                Thanh toán trực tiếp (COD)
+              </button>
+            </div>
           </div>
         )}
       </aside>
