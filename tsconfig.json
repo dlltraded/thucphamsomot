@@ -43,6 +43,7 @@
     "node_modules",
     "TPS1",
     "namecard-app",
-    "tps1-miniapp"
+    "tps1-miniapp",
+    "zaui-market-template"
   ]
 }
