@@ -522,7 +522,7 @@ export function QuotePortal({ initialNotice = null, locale = "vi" }: QuotePortal
               {locale === "en" ? "Back to Homepage" : "Về Trang Chủ"}
             </a>
             <a 
-              href={`https://zalo.me/${siteConfig.zalo}`} 
+              href={`https://zalo.me/${siteConfig.zaloOaId}`} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="btn-primary quote-thank-you__btn quote-thank-you__btn--zalo"

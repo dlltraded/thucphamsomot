@@ -16,6 +16,7 @@ export const siteConfig = {
   phone: primaryPhoneDisplay,
   email: "contact@thucphamsomot.vn",
   zalo: primaryPhoneDigits,
+  zaloOaId: "2465685762920854605",
   zaloDisplay: "+84.898902222",
   facebook: "https://www.facebook.com/thucphamsomot.vn",
   address: "Đồng Nai, Việt Nam",

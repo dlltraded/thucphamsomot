@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { siteConfig, type Locale } from "@/lib/site";
 
 const phoneHref = `tel:${siteConfig.phone.replace(/\s+/g, "")}`;
-const zaloHref = `https://zalo.me/${siteConfig.zalo}`;
+const zaloHref = `https://zalo.me/${siteConfig.zaloOaId}`;
 
 const socialText = {
   vi: {
