@@ -30,7 +30,7 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
   if (!item) return notFound();
   
   const description = item.description ?? item.title;
-  const heroImage = `/images/industries/${slug}.png`;
+  const heroImage = `/images/industries/${slug}-vn.png`;
   
   return (
     <main className="industry-detail-page bg-gray-50 pb-20">

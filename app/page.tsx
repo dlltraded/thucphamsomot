@@ -196,7 +196,7 @@ export default function HomePage() {
             {[1, 2, 3, 4].map((num) => (
               <StaggerItem key={num} className={`relative rounded-xl overflow-hidden shadow-lg ${num % 2 === 0 ? 'h-[300px] mt-8' : 'h-[300px]'}`}>
                 <Image 
-                  src={`/images/real-operations/op-${num}.jpg`} 
+                  src={`/images/real-operations/op-${num}-vn.jpg`} 
                   alt="Hoạt động TPS1" 
                   fill 
                   className="object-cover hover:scale-110 transition-transform duration-700" 
