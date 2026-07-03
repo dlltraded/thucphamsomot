@@ -1,9 +1,8 @@
 .next/
-.next/
 node_modules/
 TPS1/
 .env.local
 *.log
 dist/
 out/
-*.pdf  
+*.pdf

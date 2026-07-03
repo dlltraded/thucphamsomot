@@ -49,7 +49,7 @@ export const navItemsByLocale: Record<Locale, Array<{ label: string; href: strin
     { label: "BÁO GIÁ", href: "/bao-gia" },
     { label: "Giới Thiệu", href: "/gioi-thieu" },
     { label: "Sản Phẩm", href: "/san-pham" },
-    { label: "Nguyên Liệu", href: "/nganh-hang/bep-an-tap-the" },
+    { label: "Ngành Hàng", href: "/nganh-hang" },
     { label: "Công Thức", href: "/kien-thuc" },
     { label: "Tin Tức", href: "/tin-tuc" },
     { label: "Liên Hệ", href: "/lien-he" },

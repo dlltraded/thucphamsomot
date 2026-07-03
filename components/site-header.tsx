@@ -23,7 +23,7 @@ function swapLocalePath(pathname: string, nextLocale: Locale) {
     if (cleanPath === "/san-pham") return "/en/products";
     if (cleanPath === "/tin-tuc") return "/en/news";
     if (cleanPath === "/lien-he") return "/en/contact";
-    if (cleanPath.startsWith("/nganh-hang") || cleanPath.startsWith("/danh-muc")) return "/en/ingredients";
+    if (cleanPath === "/nganh-hang" || cleanPath.startsWith("/nganh-hang/") || cleanPath.startsWith("/danh-muc")) return "/en/ingredients";
     if (cleanPath.startsWith("/kien-thuc")) return "/en/recipes";
     return "/en";
   }
@@ -75,15 +75,21 @@ export function SiteHeader() {
           </button>
 
           <nav className="site-nav" aria-label={isEnglish ? "Main navigation" : "Điều hướng chính"}>
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={item.href.endsWith("/bao-gia") ? "site-nav__link site-nav__link--order" : "site-nav__link"}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isOrder = item.href.endsWith("/bao-gia");
+              const isActive =
+                item.href === "/" || item.href === "/en"
+                  ? pathname === item.href
+                  : pathname === item.href || pathname.startsWith(item.href + "/");
+              let cls = "site-nav__link";
+              if (isOrder) cls += " site-nav__link--order";
+              if (isActive && !isOrder) cls += " site-nav__link--active";
+              return (
+                <Link key={item.href} href={item.href} className={cls} aria-current={isActive ? "page" : undefined}>
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="site-header__actions">
@@ -119,19 +125,30 @@ export function SiteHeader() {
 
         <div id="site-mobile-nav" className={`site-mobile-nav${menuOpen ? " is-open" : ""}`}>
           <div className="container-shell site-mobile-nav__panel">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={item.href.endsWith("/bao-gia") ? "site-mobile-nav__link site-mobile-nav__link--order" : "site-mobile-nav__link"}
-                onClick={() => setMenuOpen(false)}
-              >
-                <span>{item.label}</span>
-                {item.href.endsWith("/bao-gia") ? (
-                  <span className="site-mobile-nav__hint">{isEnglish ? "Send request / quote" : "Gửi yêu cầu / báo giá"}</span>
-                ) : null}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isOrder = item.href.endsWith("/bao-gia");
+              const isActive =
+                item.href === "/" || item.href === "/en"
+                  ? pathname === item.href
+                  : pathname === item.href || pathname.startsWith(item.href + "/");
+              let cls = "site-mobile-nav__link";
+              if (isOrder) cls += " site-mobile-nav__link--order";
+              if (isActive && !isOrder) cls += " site-mobile-nav__link--active";
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cls}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span>{item.label}</span>
+                  {isOrder ? (
+                    <span className="site-mobile-nav__hint">{isEnglish ? "Send request / quote" : "Gửi yêu cầu / báo giá"}</span>
+                  ) : null}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </header>

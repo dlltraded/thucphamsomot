@@ -160,17 +160,76 @@ export const industries: ContentItem[] = [
   {
     slug: "bep-an-tap-the",
     title: "Bếp ăn tập thể",
-    description: "Cung ứng thực phẩm theo định mức, lịch giao và quy trình rõ ràng cho bếp vận hành hằng ngày.",
-    targets: ["Khu công nghiệp", "Trường học", "Bệnh viện", "Nhà máy"],
+    description:
+      "Cung ứng thực phẩm theo định mức, lịch giao và quy trình rõ ràng cho bếp vận hành hằng ngày — từ 100 đến 5.000 suất mỗi ngày.",
+    targets: ["Khu công nghiệp", "Trường học", "Bệnh viện", "Nhà máy", "Doanh nghiệp"],
     sections: [
       {
-        heading: "Nhu cầu chính",
+        heading: "Bếp ăn lớn cần nguồn hàng ổn định — không phải chỉ giá rẻ",
         body:
-          "Bếp ăn tập thể cần nguồn hàng đủ số lượng, lịch giao ổn định và danh mục dễ kiểm soát để phục vụ lặp lại theo tuần hoặc theo tháng.",
-        items: ["Lập danh mục hàng theo menu", "Giao theo khung giờ bếp nhận hàng", "Tư vấn thay thế khi giá hoặc mùa vụ biến động"],
+          "Vấn đề thường gặp nhất của bếp ăn tập thể không phải là giá — mà là giao trễ, hàng không đúng quy cách và không có người chịu trách nhiệm khi phát sinh. Khi bếp phục vụ 500–2.000 suất mỗi ngày, chỉ cần một ca giao thiếu hoặc chất lượng lệch là toàn bộ lịch nấu bị ảnh hưởng.",
+        items: [
+          "Giao trễ làm lỡ giờ bếp phục vụ",
+          "Hàng không đúng quy cách, phải xử lý thêm",
+          "Không có đầu mối rõ khi phát sinh thiếu hàng",
+          "Giá biến động không được báo trước",
+        ],
+      },
+      {
+        heading: "TPS1 vận hành theo lịch bếp — không phải lịch của kho",
+        body:
+          "Khác với đặt hàng lẻ theo ngày, TPS1 lập kế hoạch cung ứng theo lịch bếp của từng khách: khung giờ nhận hàng, danh mục theo menu tuần, định mức từng nhóm hàng và phương án thay thế khi mùa vụ hoặc giá biến động.",
+        items: [
+          "Lịch giao theo khung giờ bếp nhận hàng",
+          "Danh mục hàng theo menu tuần hoặc tháng",
+          "Thông báo trước khi giá hoặc mùa vụ thay đổi",
+          "Đầu mối kinh doanh cố định — phản hồi trong giờ làm việc",
+        ],
+      },
+      {
+        heading: "Quy trình làm việc đơn giản — 3 bước",
+        body:
+          "Chỉ cần gửi danh mục hàng cần mua, số lượng dự kiến và lịch giao — TPS1 sẽ ra phương án báo giá trong ngày làm việc và xác nhận lịch giao trước khi hàng vào bếp.",
+        items: [
+          "Bước 1: Gửi danh mục hàng, số lượng và lịch giao",
+          "Bước 2: Nhận báo giá và xác nhận trong ngày",
+          "Bước 3: Giao hàng đúng khung giờ — kiểm tra và ký nhận",
+        ],
+      },
+      {
+        heading: "Nhóm hàng phù hợp bếp ăn tập thể",
+        body:
+          "TPS1 cung cấp đầy đủ nhóm nguyên liệu mà bếp ăn tập thể cần: rau củ tươi theo mùa, thịt cá hải sản hằng ngày, hàng đông lạnh theo kế hoạch và gia vị chuẩn hóa hương vị.",
+        items: [
+          "Rau củ quả tươi — nguồn Đà Lạt, Miền Tây, VietGAP",
+          "Thịt heo, bò, gà, hải sản tươi và đông lạnh",
+          "Gia vị món Việt, Hoa, Hàn, Âu",
+          "Hàng đặc thù theo menu và yêu cầu riêng",
+        ],
       },
     ],
-    faqs: sharedFaqs,
+    faqs: [
+      {
+        question: "Bếp ăn cần cung cấp thông tin gì để nhận báo giá?",
+        answer:
+          "Gửi danh mục nhóm hàng cần mua, số lượng dự kiến mỗi ngày hoặc mỗi tuần, địa điểm giao và khung giờ nhận hàng. Càng rõ thì TPS1 ra báo giá càng nhanh.",
+      },
+      {
+        question: "TPS1 có giao theo ca không (sáng sớm, trưa, chiều)?",
+        answer:
+          "Có. Lịch giao được thỏa thuận theo khung giờ bếp nhận hàng. TPS1 ưu tiên giao đúng giờ để không ảnh hưởng lịch chế biến.",
+      },
+      {
+        question: "Nếu thiếu hàng hoặc chất lượng không đạt thì xử lý thế nào?",
+        answer:
+          "Khách kiểm tra khi nhận hàng. Trường hợp sai quy cách hoặc thiếu hàng, đầu mối kinh doanh sẽ xử lý và phản hồi trong ngày.",
+      },
+      {
+        question: "Khu vực giao chính là đâu?",
+        answer:
+          "Trọng tâm là Đồng Nai, Biên Hòa, Long Thành, Nhơn Trạch, Trảng Bom. Có thể mở rộng sang Dĩ An, Thủ Đức và TP.HCM nếu lịch giao phù hợp.",
+      },
+    ],
   },
   {
     slug: "suat-an-cong-nghiep",
