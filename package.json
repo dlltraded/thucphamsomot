@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource/be-vietnam-pro": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
+    "@next/third-parties": "^16.2.10",
     "@supabase/supabase-js": "^2.108.2",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.14.0",
