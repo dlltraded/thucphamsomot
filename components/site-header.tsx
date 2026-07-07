@@ -22,7 +22,7 @@ function swapLocalePath(pathname: string, nextLocale: Locale) {
     if (cleanPath === "/san-pham") return "/en/products";
     if (cleanPath === "/quy-trinh") return "/en/delivery";
     if (cleanPath === "/lien-he") return "/en/contact";
-    if (cleanPath.startsWith("/nganh-hang") || cleanPath.startsWith("/danh-muc")) return "/en/ingredients";
+    if (cleanPath === "/nganh-hang" || cleanPath.startsWith("/nganh-hang/") || cleanPath.startsWith("/danh-muc")) return "/en/ingredients";
     if (cleanPath.startsWith("/kien-thuc")) return "/en/recipes";
     return "/en";
   }

@@ -4228,6 +4228,32 @@ a {
   box-shadow: 0 16px 34px rgba(199, 55, 47, 0.18);
 }
 
+/* ── Active nav state ── */
+.site-nav__link--active {
+  color: #0f6f4b;
+  font-weight: 800;
+  position: relative;
+}
+
+.site-nav__link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0f6f4b, #34d399);
+}
+
+.site-mobile-nav__link--active {
+  border-color: rgba(15, 111, 75, 0.28);
+  background: rgba(15, 111, 75, 0.06);
+  color: #0a5c3c;
+  border-left: 3px solid #0f6f4b;
+}
+
 @keyframes nav-order-pulse {
   0%,
   100% {

@@ -160,75 +160,230 @@ export const industries: ContentItem[] = [
   {
     slug: "bep-an-tap-the",
     title: "Bếp ăn tập thể",
-    description: "Cung ứng thực phẩm theo định mức, lịch giao và quy trình rõ ràng cho bếp vận hành hằng ngày.",
-    targets: ["Khu công nghiệp", "Trường học", "Bệnh viện", "Nhà máy"],
+    description:
+      "Cung ứng thực phẩm theo định mức, lịch giao và quy trình rõ ràng cho bếp vận hành hằng ngày — từ 100 đến 5.000 suất mỗi ngày.",
+    targets: ["Khu công nghiệp", "Trường học", "Bệnh viện", "Nhà máy", "Doanh nghiệp"],
     sections: [
       {
-        heading: "Nhu cầu chính",
+        heading: "Bếp ăn lớn cần nguồn hàng ổn định — không phải chỉ giá rẻ",
         body:
-          "Bếp ăn tập thể cần nguồn hàng đủ số lượng, lịch giao ổn định và danh mục dễ kiểm soát để phục vụ lặp lại theo tuần hoặc theo tháng.",
-        items: ["Lập danh mục hàng theo menu", "Giao theo khung giờ bếp nhận hàng", "Tư vấn thay thế khi giá hoặc mùa vụ biến động"],
+          "Vấn đề thường gặp nhất của bếp ăn tập thể không phải là giá — mà là giao trễ, hàng không đúng quy cách và không có người chịu trách nhiệm khi phát sinh. Khi bếp phục vụ 500–2.000 suất mỗi ngày, chỉ cần một ca giao thiếu hoặc chất lượng lệch là toàn bộ lịch nấu bị ảnh hưởng.",
+        items: [
+          "Giao trễ làm lỡ giờ bếp phục vụ",
+          "Hàng không đúng quy cách, phải xử lý thêm",
+          "Không có đầu mối rõ khi phát sinh thiếu hàng",
+          "Giá biến động không được báo trước",
+        ],
+      },
+      {
+        heading: "TPS1 vận hành theo lịch bếp — không phải lịch của kho",
+        body:
+          "Khác với đặt hàng lẻ theo ngày, TPS1 lập kế hoạch cung ứng theo lịch bếp của từng khách: khung giờ nhận hàng, danh mục theo menu tuần, định mức từng nhóm hàng và phương án thay thế khi mùa vụ hoặc giá biến động.",
+        items: [
+          "Lịch giao theo khung giờ bếp nhận hàng",
+          "Danh mục hàng theo menu tuần hoặc tháng",
+          "Thông báo trước khi giá hoặc mùa vụ thay đổi",
+          "Đầu mối kinh doanh cố định — phản hồi trong giờ làm việc",
+        ],
+      },
+      {
+        heading: "Quy trình làm việc đơn giản — 3 bước",
+        body:
+          "Chỉ cần gửi danh mục hàng cần mua, số lượng dự kiến và lịch giao — TPS1 sẽ ra phương án báo giá trong ngày làm việc và xác nhận lịch giao trước khi hàng vào bếp.",
+        items: [
+          "Bước 1: Gửi danh mục hàng, số lượng và lịch giao",
+          "Bước 2: Nhận báo giá và xác nhận trong ngày",
+          "Bước 3: Giao hàng đúng khung giờ — kiểm tra và ký nhận",
+        ],
+      },
+      {
+        heading: "Nhóm hàng phù hợp bếp ăn tập thể",
+        body:
+          "TPS1 cung cấp đầy đủ nhóm nguyên liệu mà bếp ăn tập thể cần: rau củ tươi theo mùa, thịt cá hải sản hằng ngày, hàng đông lạnh theo kế hoạch và gia vị chuẩn hóa hương vị.",
+        items: [
+          "Rau củ quả tươi — nguồn Đà Lạt, Miền Tây, VietGAP",
+          "Thịt heo, bò, gà, hải sản tươi và đông lạnh",
+          "Gia vị món Việt, Hoa, Hàn, Âu",
+          "Hàng đặc thù theo menu và yêu cầu riêng",
+        ],
       },
     ],
-    faqs: sharedFaqs,
+    faqs: [
+      {
+        question: "Bếp ăn cần cung cấp thông tin gì để nhận báo giá?",
+        answer:
+          "Gửi danh mục nhóm hàng cần mua, số lượng dự kiến mỗi ngày hoặc mỗi tuần, địa điểm giao và khung giờ nhận hàng. Càng rõ thì TPS1 ra báo giá càng nhanh.",
+      },
+      {
+        question: "TPS1 có giao theo ca không (sáng sớm, trưa, chiều)?",
+        answer:
+          "Có. Lịch giao được thỏa thuận theo khung giờ bếp nhận hàng. TPS1 ưu tiên giao đúng giờ để không ảnh hưởng lịch chế biến.",
+      },
+      {
+        question: "Nếu thiếu hàng hoặc chất lượng không đạt thì xử lý thế nào?",
+        answer:
+          "Khách kiểm tra khi nhận hàng. Trường hợp sai quy cách hoặc thiếu hàng, đầu mối kinh doanh sẽ xử lý và phản hồi trong ngày.",
+      },
+      {
+        question: "Khu vực giao chính là đâu?",
+        answer:
+          "Trọng tâm là Đồng Nai, Biên Hòa, Long Thành, Nhơn Trạch, Trảng Bom. Có thể mở rộng sang Dĩ An, Thủ Đức và TP.HCM nếu lịch giao phù hợp.",
+      },
+    ],
   },
   {
     slug: "suat-an-cong-nghiep",
     title: "Suất ăn công nghiệp",
-    description: "Hỗ trợ nguyên liệu, menu và tối ưu chi phí cho đơn vị cung cấp suất ăn số lượng lớn.",
-    targets: ["Bữa ăn số lượng lớn", "Ca sáng trưa tối", "Menu chuẩn hóa"],
+    description: "Hỗ trợ nguyên liệu, menu và tối ưu chi phí cho đơn vị cung cấp suất ăn số lượng lớn phục vụ hàng ngàn công nhân mỗi ca.",
+    targets: ["Nhà máy quy mô lớn", "Suất ăn văn phòng", "Ca sáng trưa tối", "Canteen doanh nghiệp"],
     sections: [
       {
-        heading: "Tối ưu chi phí trên từng suất ăn",
+        heading: "Định lượng chính xác — Chìa khóa tối ưu chi phí",
         body:
-          "Đơn vị suất ăn công nghiệp cần phối hợp menu, định lượng nguyên liệu và cân đối chi phí cho từng suất ăn.",
-        items: ["Tư vấn định lượng nguyên liệu", "Gợi ý danh mục thay thế", "Giữ nguồn cung ổn định cho hợp đồng dài hạn"],
+          "Các đơn vị cung cấp suất ăn công nghiệp không chỉ cần mua sỉ, mà còn cần hàng hóa được chuẩn hóa quy cách (size đồng đều, tỷ lệ hao hụt thấp) để dễ dàng chia khẩu phần. Sự ổn định trong quy cách giúp duy trì chi phí trên mỗi suất ăn luôn đúng ngân sách.",
+        items: [
+          "Cung cấp hàng hóa có quy cách đồng nhất",
+          "Tư vấn định lượng nguyên liệu thô theo số lượng suất",
+          "Tỷ lệ hao hụt thấp, dễ dàng kiểm soát chi phí food cost"
+        ],
       },
+      {
+        heading: "Năng lực cung ứng quy mô lớn mỗi ngày",
+        body:
+          "Phục vụ hàng ngàn suất ăn yêu cầu nhà cung cấp phải có năng lực logistics mạnh mẽ. TPS1 sở hữu hệ thống kho bãi, xe lạnh và nhân sự vận hành đáp ứng khối lượng hàng tấn rau củ, thịt cá mỗi ngày, giao đúng khung giờ khắt khe của bếp.",
+        items: [
+          "Giao hàng tấn nguyên liệu mỗi ca",
+          "Đội xe chuyên dụng tải trọng lớn, bảo quản lạnh",
+          "Sẵn sàng phương án dự phòng khi có phát sinh"
+        ],
+      },
+      {
+        heading: "Đồng hành và tư vấn thực đơn",
+        body:
+          "Thực đơn suất ăn công nghiệp cần thay đổi thường xuyên nhưng vẫn phải nằm trong ngân sách cố định. TPS1 cung cấp thông tin thị trường, dự báo giá nguyên liệu và tư vấn các món thay thế khi giá có biến động lớn hoặc theo mùa vụ.",
+        items: [
+          "Dự báo biến động giá để bếp chủ động ngân sách",
+          "Đề xuất nguyên liệu thay thế hợp lý",
+          "Phối hợp lên menu đa dạng, chống ngán cho công nhân"
+        ],
+      }
     ],
     faqs: sharedFaqs,
   },
   {
     slug: "truong-hoc",
     title: "Trường học",
-    description: "Nguyên liệu an toàn, truy xuất dễ, phù hợp bữa ăn cho học sinh, mầm non và trường nội trú.",
-    targets: ["Mầm non", "Tiểu học", "Trung học", "Nội trú"],
+    description: "Cung cấp nguồn thực phẩm đạt chuẩn vệ sinh an toàn, tươi ngon, giàu dinh dưỡng cho bữa ăn học đường các cấp.",
+    targets: ["Trường mầm non", "Trường tiểu học", "Trường nội trú", "Canteen đại học"],
     sections: [
       {
-        heading: "Ưu tiên an toàn và dinh dưỡng",
+        heading: "An toàn thực phẩm là ưu tiên hàng đầu",
         body:
-          "Nhóm trường học cần an toàn thực phẩm, độ tươi, lịch giao đúng giờ và thực đơn phù hợp học sinh.",
-        items: ["Rau củ tươi", "Thịt cá theo định lượng", "Thực phẩm chay hoặc menu đặc biệt khi cần"],
+          "Bữa ăn của học sinh đòi hỏi sự kiểm soát khắt khe nhất về chất lượng và nguồn gốc. TPS1 cam kết 100% sản phẩm có đầy đủ giấy tờ chứng nhận (VietGAP, VSATTP), quy trình lưu mẫu minh bạch, đảm bảo an toàn tuyệt đối cho sức khỏe các em.",
+        items: [
+          "100% nguyên liệu có nguồn gốc xuất xứ rõ ràng",
+          "Hỗ trợ đầy đủ hồ sơ, chứng từ truy xuất nguồn gốc",
+          "Quy trình kiểm soát chất lượng đầu vào nghiêm ngặt"
+        ],
       },
+      {
+        heading: "Đa dạng nguyên liệu cho thực đơn dinh dưỡng",
+        body:
+          "Trẻ em ở mỗi độ tuổi cần một chế độ dinh dưỡng khác nhau. TPS1 cung cấp danh mục phong phú từ rau củ quả tươi sạch, các loại thịt nạc mềm, cá phi lê không xương, đến đa dạng các loại sữa và ngũ cốc, hỗ trợ phát triển toàn diện.",
+        items: [
+          "Danh mục rau củ quả đa dạng, tươi mới mỗi ngày",
+          "Thịt, cá được sơ chế sẵn theo yêu cầu (cắt thái, phi lê)",
+          "Thực phẩm hỗ trợ phát triển thể chất và trí tuệ"
+        ],
+      },
+      {
+        heading: "Giao hàng chuẩn xác — Phục vụ đúng giờ ăn",
+        body:
+          "Lịch trình học tập và sinh hoạt của học sinh được quy định rất chặt chẽ. Đội ngũ giao nhận của TPS1 luôn tuân thủ chính xác khung giờ giao hàng đã thỏa thuận, giúp nhà bếp có đủ thời gian chế biến bữa ăn nóng sốt.",
+        items: [
+          "Giao hàng đúng khung giờ sáng sớm theo yêu cầu",
+          "Đội ngũ nhân viên giao nhận lịch sự, tuân thủ nội quy trường học",
+          "Hỗ trợ giao phát sinh nhanh chóng"
+        ],
+      }
     ],
     faqs: sharedFaqs,
   },
   {
     slug: "benh-vien",
     title: "Bệnh viện",
-    description: "Danh mục thực phẩm cần kiểm soát chất lượng và nhịp giao ổn định cho bếp bệnh viện.",
-    targets: ["Suất ăn bệnh nhân", "Nhân viên y tế", "Menu dinh dưỡng"],
+    description: "Cung cấp thực phẩm đa dạng, tuân thủ tiêu chuẩn y tế nghiêm ngặt, hỗ trợ lên thực đơn dinh dưỡng đặc thù cho bệnh nhân và y bác sĩ.",
+    targets: ["Bếp ăn bệnh nhân", "Canteen bệnh viện", "Khu ăn uống nhân viên y tế", "Viện dưỡng lão"],
     sections: [
       {
-        heading: "Phục vụ nhóm nhu cầu đặc thù",
+        heading: "Phục vụ đa dạng chế độ dinh dưỡng bệnh lý",
         body:
-          "Bếp bệnh viện thường có nhiều nhóm khẩu phần khác nhau. Danh mục hàng cần hỗ trợ phối hợp menu theo từng đối tượng ăn.",
-        items: ["Người bệnh", "Nhân viên y tế", "Thực đơn mềm, thanh đạm hoặc đặc thù"],
+          "Bếp bệnh viện phải nấu nhiều loại khẩu phần phức tạp: ăn lỏng, ăn mềm, ăn kiêng đường, kiêng muối... TPS1 cung cấp danh mục nguyên liệu đa dạng, cho phép các chuyên gia dinh dưỡng và đầu bếp dễ dàng phối hợp thành nhiều thực đơn chuyên biệt.",
+        items: [
+          "Đầy đủ nguyên liệu cho các chế độ ăn bệnh lý",
+          "Cung cấp các sản phẩm chuyên biệt (không đường, ít béo)",
+          "Sẵn sàng cung cấp các nguyên liệu cao cấp bồi bổ sức khỏe"
+        ],
       },
+      {
+        heading: "Tiêu chuẩn vệ sinh và lưu trữ khắt khe",
+        body:
+          "Môi trường y tế không chấp nhận bất kỳ rủi ro nào về nhiễm khuẩn thực phẩm. Hàng hóa cung cấp cho bệnh viện từ TPS1 luôn trải qua quy trình khử trùng bao bì, giao nhận bằng khay/thùng riêng biệt, và đảm bảo nhiệt độ chuẩn trong suốt quá trình.",
+        items: [
+          "Vận chuyển bằng xe chuyên dụng, đảm bảo nhiệt độ bảo quản",
+          "Khay và thùng chứa được vệ sinh, sát khuẩn định kỳ",
+          "Kiểm dịch thú y và chứng nhận an toàn đầy đủ mỗi ngày"
+        ],
+      },
+      {
+        heading: "Cung ứng ổn định 365 ngày",
+        body:
+          "Bệnh viện hoạt động liên tục không ngừng nghỉ. TPS1 duy trì dịch vụ giao hàng xuyên suốt các ngày lễ, Tết, đảm bảo nguồn lương thực cho bệnh nhân và đội ngũ y bác sĩ luôn đầy đủ và chất lượng nhất.",
+        items: [
+          "Phục vụ xuyên lễ, Tết, không gián đoạn",
+          "Cung ứng đủ nhóm thực phẩm thiết yếu liên tục",
+          "Lên kế hoạch dự trữ thực phẩm dài hạn cùng bệnh viện"
+        ],
+      }
     ],
     faqs: sharedFaqs,
   },
   {
     slug: "nha-hang-khach-san",
     title: "Nhà hàng, khách sạn",
-    description: "Nguồn hàng chuyên nghiệp cho bếp vận hành liên tục, menu thay đổi và yêu cầu chất lượng ổn định.",
-    targets: ["Bếp khách sạn", "Nhà hàng", "Ẩm thực đa phong cách"],
+    description: "Nguồn hàng cao cấp, đặc sản, gia vị chuyên dụng và thực phẩm tươi sống đáp ứng yêu cầu khắt khe của các đầu bếp chuyên nghiệp.",
+    targets: ["Khách sạn 3-5 sao", "Chuỗi nhà hàng cao cấp", "Nhà hàng tiệc cưới", "Resort & Khu nghỉ dưỡng"],
     sections: [
       {
-        heading: "Danh mục rộng cho bếp chuyên nghiệp",
+        heading: "Nguồn hàng phong phú, nguyên liệu đặc thù",
         body:
-          "Nhà hàng và khách sạn cần danh mục đa dạng, có cả hàng tươi, hàng đông lạnh, gia vị Âu - Á và khả năng xử lý phát sinh nhanh.",
-        items: ["Rau củ quả", "Thịt cá hải sản", "Gia vị món Hoa, Hàn, Âu", "Hàng đặc thù theo menu"],
+          "Để chế biến các món ăn đa phong cách (Á, Âu, Fusion), nhà hàng cần nguồn nguyên liệu đặc thù mà thị trường chung khó cung cấp. TPS1 có mạng lưới đối tác rộng, cung cấp từ hải sản nhập khẩu, thịt bò Úc/Mỹ, đến các loại lá thơm, gia vị ngoại nhập.",
+        items: [
+          "Cung cấp nguyên liệu ngoại nhập, đặc sản vùng miền",
+          "Đầy đủ các loại gia vị Âu, Á chuyên dụng",
+          "Rau củ quả độc lạ theo yêu cầu thực đơn riêng"
+        ],
       },
+      {
+        heading: "Chất lượng hảo hạng, tuyển chọn kỹ lưỡng",
+        body:
+          "Mỗi món ăn là một tác phẩm nghệ thuật, và nguyên liệu là linh hồn. Chúng tôi hiểu sự khắt khe của các Bếp trưởng, nên mỗi lô hàng rau củ quả, thịt cá đều được phân loại, tuyển chọn gắt gao nhất trước khi giao đến kho khách sạn.",
+        items: [
+          "Phân loại size đồng đều, hình thức đẹp (rau củ, hải sản)",
+          "Thịt cá tươi sống, giữ nguyên độ ngọt và cấu trúc",
+          "Cam kết chất lượng chuẩn nhà hàng cao cấp"
+        ],
+      },
+      {
+        heading: "Linh hoạt đáp ứng các sự kiện đột xuất",
+        body:
+          "Các nhà hàng tiệc cưới, khách sạn thường xuyên có những buổi tiệc lớn hoặc phát sinh lượng khách ngoài dự kiến. Đội ngũ TPS1 với quy trình linh hoạt sẵn sàng hỗ trợ những đơn hàng khẩn cấp để đảm bảo sự kiện diễn ra thành công.",
+        items: [
+          "Hỗ trợ giao hàng gấp, bổ sung nguyên liệu thiếu hụt nhanh chóng",
+          "Đáp ứng số lượng lớn đột biến cho mùa cưới, mùa lễ hội",
+          "Đội ngũ chăm sóc khách hàng 24/7 cho khối hospitality"
+        ],
+      }
     ],
     faqs: sharedFaqs,
   },
