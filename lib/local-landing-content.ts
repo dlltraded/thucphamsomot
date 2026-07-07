@@ -251,11 +251,10 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     chips: ["Giao định kỳ", "Bà Rịa - Vũng Tàu", "Danh mục + báo giá"],
     sections: [
       {
-        title: "Dịch vụ cung cấp thực phẩm tại Bà Rịa - Vũng Tàu",
-        content:
+        heading: "Dịch vụ cung cấp thực phẩm tại Bà Rịa - Vũng Tàu",
+        body:
           "TPS1 cung cấp thực phẩm giá sỉ cho các bếp ăn tập thể, nhà máy, bệnh viện tại khu vực Bà Rịa - Vũng Tàu. Chúng tôi cam kết nguồn hàng ổn định, đầy đủ hóa đơn VAT và chứng nhận vệ sinh an toàn thực phẩm.",
-        image: "/images/hero-warehouse.jpg",
-        imageAlt: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu",
+        items: ["Cung ứng số lượng lớn", "Hóa đơn VAT minh bạch", "Đạt chuẩn an toàn"],
       },
     ],
   },
@@ -269,11 +268,10 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     chips: ["Giao định kỳ", "TP. Hồ Chí Minh", "Danh mục + báo giá"],
     sections: [
       {
-        title: "Dịch vụ cung cấp thực phẩm tại TP. Hồ Chí Minh",
-        content:
+        heading: "Dịch vụ cung cấp thực phẩm tại TP. Hồ Chí Minh",
+        body:
           "TPS1 cung cấp thực phẩm giá sỉ cho các bếp ăn tập thể, nhà máy, bệnh viện tại khu vực TP. Hồ Chí Minh. Chúng tôi cam kết nguồn hàng ổn định, đầy đủ hóa đơn VAT và chứng nhận vệ sinh an toàn thực phẩm.",
-        image: "/images/hero-warehouse.jpg",
-        imageAlt: "Cung cấp thực phẩm TP. Hồ Chí Minh",
+        items: ["Giao hàng linh hoạt 24/7", "Đa dạng danh mục hàng hóa", "Kiểm định định kỳ"],
       },
     ],
   },
