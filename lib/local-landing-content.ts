@@ -257,6 +257,24 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
         items: ["Cung ứng số lượng lớn", "Hóa đơn VAT minh bạch", "Đạt chuẩn an toàn"],
       },
     ],
+    faqs: [
+      {
+        question: "TPS1 có giao hàng tận nơi tại Bà Rịa - Vũng Tàu không?",
+        answer: "Có, chúng tôi có đội xe tải chuyên dụng và giao hàng tận nơi cho các doanh nghiệp, nhà máy, bếp ăn tập thể tại Bà Rịa - Vũng Tàu mỗi ngày.",
+      },
+      {
+        question: "Cần lấy hóa đơn VAT không?",
+        answer: "TPS1 cung cấp hóa đơn VAT 100% hợp lệ cho mọi giao dịch, hỗ trợ khách hàng doanh nghiệp kê khai đầy đủ.",
+      }
+    ],
+    ctaLabel: "NHẬN BÁO GIÁ",
+    quoteSlug: "thuc-pham-vung-tau",
+    quoteTitle: "Báo Giá Thực Phẩm Bà Rịa - Vũng Tàu",
+    quoteSummary: "Báo giá nhanh cho khách hàng tại Bà Rịa - Vũng Tàu",
+    relatedLinks: [
+      { href: "/san-pham", label: "Danh mục sản phẩm" },
+      { href: "/bao-gia", label: "Mở form báo giá" },
+    ],
   },
   tpHcm: {
     eyebrow: "TP. Hồ Chí Minh",
@@ -273,6 +291,24 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
           "TPS1 cung cấp thực phẩm giá sỉ cho các bếp ăn tập thể, nhà máy, bệnh viện tại khu vực TP. Hồ Chí Minh. Chúng tôi cam kết nguồn hàng ổn định, đầy đủ hóa đơn VAT và chứng nhận vệ sinh an toàn thực phẩm.",
         items: ["Giao hàng linh hoạt 24/7", "Đa dạng danh mục hàng hóa", "Kiểm định định kỳ"],
       },
+    ],
+    faqs: [
+      {
+        question: "Có giao hàng cho bếp ăn tại TP. Hồ Chí Minh không?",
+        answer: "TPS1 hỗ trợ giao hàng tận nơi cho các bếp ăn, suất ăn công nghiệp tại TP. Hồ Chí Minh với tần suất đều đặn.",
+      },
+      {
+        question: "Thanh toán công nợ như thế nào?",
+        answer: "Chúng tôi hỗ trợ linh hoạt các hình thức thanh toán công nợ theo thỏa thuận dành riêng cho khách hàng doanh nghiệp B2B.",
+      }
+    ],
+    ctaLabel: "NHẬN BÁO GIÁ",
+    quoteSlug: "thuc-pham-tp-hcm",
+    quoteTitle: "Báo Giá Thực Phẩm TP. Hồ Chí Minh",
+    quoteSummary: "Báo giá nhanh cho khách hàng tại TP. Hồ Chí Minh",
+    relatedLinks: [
+      { href: "/san-pham", label: "Danh mục sản phẩm" },
+      { href: "/bao-gia", label: "Mở form báo giá" },
     ],
   },
   phuMy: {
