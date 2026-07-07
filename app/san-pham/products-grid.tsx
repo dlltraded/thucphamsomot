@@ -19,6 +19,7 @@ const CATEGORIES: Record<Locale, { slug: string; label: string }[]> = {
     { slug: "dong-lanh", label: "❄️ Đông lạnh" },
     { slug: "gia-vi", label: "🫙 Gia vị" },
     { slug: "gao-mi", label: "🌾 Gạo, mì, khô" },
+    { slug: "thiet-bi-bep", label: "🍳 Thiết bị bếp" },
   ],
   en: [
     { slug: "", label: "All" },
@@ -30,6 +31,7 @@ const CATEGORIES: Record<Locale, { slug: string; label: string }[]> = {
     { slug: "dong-lanh", label: "❄️ Frozen" },
     { slug: "gia-vi", label: "🫙 Seasonings" },
     { slug: "gao-mi", label: "🌾 Dry Goods" },
+    { slug: "thiet-bi-bep", label: "🍳 Kitchen equipment" },
   ]
 };
 
@@ -39,7 +41,7 @@ const UI = {
     unit: "Đơn vị: ",
     reference: "/tham khảo",
     added: "Đã thêm",
-    addToCart: "Thêm vào giỏ",
+    addToCart: "Đưa vào DS báo giá",
     searchPlaceholder: "Tìm tên sản phẩm... (vd: cá basa, thịt vai, cải thảo)",
     loadingProducts: "Đang tải sản phẩm...",
     empty: "Không tìm thấy sản phẩm phù hợp.",
@@ -128,8 +130,8 @@ function SkuRow({ product, locale = "vi" }: { product: SkuProduct, locale?: Loca
           type="button"
           className={`sku-row__add${added ? " is-added" : ""}`}
           onClick={handleAdd}
-          aria-label={`Thêm ${product.name} vào giỏ`}
-        >
+        aria-label={`Đưa ${product.name} vào danh sách báo giá`}
+      >
           {added ? <CheckCircle2 size={16} /> : <ShoppingCart size={16} />}
           <span className="sku-row__add-text">{added ? text.added : text.addToCart}</span>
         </button>
@@ -199,7 +201,11 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
 
   // Reload when category/query/page changes
   useEffect(() => {
-    fetchProducts(category, query, page);
+    const timer = window.setTimeout(() => {
+      void fetchProducts(category, query, page);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [category, query, page, fetchProducts]);
 
   // Pagination Generator
@@ -321,3 +327,6 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
     </section>
   );
 }
+
+
+

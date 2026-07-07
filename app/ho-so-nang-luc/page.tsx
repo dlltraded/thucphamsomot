@@ -25,9 +25,9 @@ export default function CompanyProfilePage() {
             <MoveLeft size={16} />
             Về trang chủ
           </Link>
-          <a href={siteConfig.profilePdfUrl} target="_blank" rel="noreferrer" className="btn-primary">
+          <a href={siteConfig.profileDownloadUrl} target="_blank" rel="noreferrer" className="btn-primary">
             <ExternalLink size={16} />
-            Mở file PDF
+            Tải file PDF
           </a>
         </div>
 

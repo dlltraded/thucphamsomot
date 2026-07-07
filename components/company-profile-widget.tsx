@@ -33,11 +33,16 @@ export function CompanyProfileWidget() {
   return (
     <>
       <aside className="company-profile-widget" aria-label={text.aria}>
-        <Link href={siteConfig.profilePagePath} className="company-profile-widget__button company-profile-widget__button--compact">
+        <a
+          href={siteConfig.profilePdfUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="company-profile-widget__button company-profile-widget__button--compact"
+        >
           <FileText size={16} />
           <span>{locale === "en" ? "Profile" : "HSNL"}</span>
           <MoveUpRight size={15} />
-        </Link>
+        </a>
       </aside>
 
       <div className={`company-profile-fab${mobileOpen ? " is-open" : ""}`} aria-label={text.aria}>
@@ -63,12 +68,13 @@ export function CompanyProfileWidget() {
           <p>{text.copy}</p>
           <div className="company-profile-fab__actions">
             <a
-              href="/documents/PROFILE_TPS1_SONGNGU_lite.pdf"
-              download="PROFILE_TPS1_SONGNGU_lite.pdf"
+              href={siteConfig.profilePdfUrl}
+              target="_blank"
+              rel="noreferrer"
               className="company-profile-fab__button"
               onClick={() => setMobileOpen(false)}
             >
-              {locale === "en" ? "Download company profile" : "Tải company profile"} <MoveUpRight size={16} />
+              {locale === "en" ? "Download company profile" : "Tải HSNL"} <MoveUpRight size={16} />
             </a>
           </div>
         </div>
@@ -76,3 +82,4 @@ export function CompanyProfileWidget() {
     </>
   );
 }
+

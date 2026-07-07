@@ -114,7 +114,7 @@ const UI = {
       deliveryFrequency: "Tần suất giao",
       deliveryArea: "Khu vực giao",
       needBy: "Cần phản hồi trước",
-      messageLabel: "Mô tả nhu cầu",
+      messageLabel: "Mô tả nhu cầu *",
     },
     supplier: {
       supplierType: "Loại nhà cung cấp",
@@ -126,7 +126,7 @@ const UI = {
       supplyCapacity: "Năng lực cung ứng / MOQ",
       supplyArea: "Khu vực cung ứng",
       certifications: "Chứng nhận / điểm mạnh",
-      messageLabel: "Ghi chú thêm",
+      messageLabel: "Ghi chú thêm *",
     },
   },
   en: {
@@ -183,7 +183,7 @@ const UI = {
       deliveryFrequency: "Delivery frequency",
       deliveryArea: "Delivery area",
       needBy: "Need response by",
-      messageLabel: "Buying needs",
+      messageLabel: "Buying needs *",
     },
     supplier: {
       supplierType: "Supplier type",
@@ -195,7 +195,7 @@ const UI = {
       supplyCapacity: "Supply capacity / MOQ",
       supplyArea: "Supply area",
       certifications: "Certifications / strengths",
-      messageLabel: "Additional notes",
+      messageLabel: "Additional notes *",
     },
   },
 } as const;

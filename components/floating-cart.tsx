@@ -15,7 +15,7 @@ export function FloatingCart() {
   }
 
   return (
-    <Link href="/bao-gia" className="floating-cart" aria-label="Xem giỏ hàng">
+    <Link href="/bao-gia" className="floating-cart" aria-label="Xem giỏ báo giá">
       <div className="floating-cart__icon">
         <ShoppingCart size={24} />
         <span className="floating-cart__badge">{count}</span>

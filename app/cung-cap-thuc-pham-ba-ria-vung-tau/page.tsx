@@ -6,10 +6,12 @@ import { localLandingPages } from "@/lib/local-landing-content";
 import { LocalLandingPage } from "@/components/local-landing-page";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho doanh nghiệp, bếp ăn và đơn vị suất ăn",
+  title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho bếp ăn tập thể và doanh nghiệp",
   description:
-    "TPS1 nhận cung cấp thực phẩm tại Bà Rịa - Vũng Tàu cho doanh nghiệp, bếp ăn tập thể, trường học, bệnh viện và đơn vị cần giao hàng theo lịch.",
+    "TPS1 phục vụ khách tại Bà Rịa - Vũng Tàu cần nguồn hàng thực phẩm định kỳ, báo giá rõ ràng cho doanh nghiệp, xí nghiệp, bếp ăn tập thể.",
   path: "/cung-cap-thuc-pham-ba-ria-vung-tau",
+  ogTitle: "Cung Cấp Thực Phẩm",
+  ogSubtitle: "Tại Bà Rịa - Vũng Tàu",
 });
 
 export default function BaRiaVungTauLandingPage() {

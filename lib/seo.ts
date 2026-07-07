@@ -32,11 +32,24 @@ export function makeMetadata(params: {
   description?: string;
   path?: string;
   robots?: Metadata["robots"];
+  ogTitle?: string;
+  ogSubtitle?: string;
 }): Metadata {
   const title = params.title;
   const description = params.description ?? siteConfig.description;
   const url = new URL(params.path ?? "/", siteConfig.url).toString();
-  const image = new URL(siteConfig.shareImage, siteConfig.url).toString();
+  
+  // Use dynamic OG image if ogTitle is provided
+  let image = new URL(siteConfig.shareImage, siteConfig.url).toString();
+  if (params.ogTitle) {
+    const ogUrl = new URL("/api/og", siteConfig.url);
+    ogUrl.searchParams.set("title", params.ogTitle);
+    if (params.ogSubtitle) {
+      ogUrl.searchParams.set("subtitle", params.ogSubtitle);
+    }
+    image = ogUrl.toString();
+  }
+
   const alternateLanguages = buildAlternateLanguages(params.path);
   const locale = params.path?.startsWith("/en") ? "en_US" : "vi_VN";
   const alternateLocale = locale === "en_US" ? ["vi_VN"] : ["en_US"];
@@ -58,7 +71,7 @@ export function makeMetadata(params: {
           url: image,
           width: 1200,
           height: 630,
-          alt: siteConfig.name,
+          alt: title,
         },
       ],
     },

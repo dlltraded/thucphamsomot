@@ -16,10 +16,57 @@ async function readLeadPayload(req: Request) {
     const formData = await req.formData().catch(() => null);
     if (!formData) return null;
 
-    const entries = Object.fromEntries(formData.entries());
-    return Object.fromEntries(
-      Object.entries(entries).map(([key, value]) => [key, typeof value === "string" ? value : ""]),
-    );
+    const payloadRaw = formData.get("payload");
+    let payload: Record<string, unknown> | null = null;
+
+    if (typeof payloadRaw === "string" && payloadRaw.trim()) {
+      try {
+        payload = JSON.parse(payloadRaw) as Record<string, unknown>;
+      } catch {
+        payload = null;
+      }
+    }
+
+    if (!payload) {
+      const entries = Object.fromEntries(formData.entries());
+      payload = Object.fromEntries(
+        Object.entries(entries).map(([key, value]) => [key, typeof value === "string" ? value : ""]),
+      );
+    }
+
+    const attachment = formData.get("attachment");
+    if (attachment instanceof File && attachment.size > 0) {
+      const allowedTypes = [
+        "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+        "application/pdf", 
+        "application/msword", 
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain",
+        "text/csv"
+      ];
+      const isSafeExt = attachment.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|svg|pdf|doc|docx|xls|xlsx|csv|txt)$/);
+      const isSafeType = attachment.type === "" ? isSafeExt : (allowedTypes.includes(attachment.type) || attachment.type.startsWith("image/"));
+
+      if (!isSafeType && !isSafeExt) {
+        payload.attachmentValidationFailed = true;
+      } else {
+        payload.attachmentName = attachment.name;
+        payload.attachmentType = attachment.type || "application/octet-stream";
+        payload.attachmentSize = String(attachment.size);
+
+        const maxInlineBytes = 4 * 1024 * 1024;
+        if (attachment.size <= maxInlineBytes) {
+          const bytes = Buffer.from(await attachment.arrayBuffer());
+          payload.attachmentDataUrl = `data:${payload.attachmentType};base64,${bytes.toString("base64")}`;
+        } else {
+          payload.attachmentTooLarge = "true";
+        }
+      }
+    }
+
+    return payload;
   }
 
   return req.json().catch(() => null);
@@ -47,6 +94,13 @@ function errorNotice(message: string) {
 
 export async function POST(req: Request) {
   const body = await readLeadPayload(req);
+
+  if (body?.attachmentValidationFailed) {
+    const notice = errorNotice("Loại file đính kèm không hợp lệ. Chỉ cho phép định dạng Hình ảnh, Word, Excel, PDF hoặc Text để đảm bảo an toàn.");
+    if (!wantsJsonResponse(req)) return quoteRedirectResponse(req, notice);
+    return NextResponse.json({ ok: false, error: notice.message }, { status: 400 });
+  }
+
   const normalizedBody =
     body && typeof body === "object" && !Array.isArray(body)
       ? { inquiryType: "buyer", ...body }
@@ -92,7 +146,7 @@ export async function POST(req: Request) {
     inquiryType,
     ...leadData,
     site: siteConfig.domain,
-    source: `${siteConfig.domain}${pagePath.startsWith("/") ? pagePath : `/${pagePath}`}`,
+    source: `${siteConfig.domain}${pagePath.startsWith("/") ? pagePath : "/" + pagePath}`,
     submittedAt: new Date().toISOString(),
     selectedCount: leadData.selectedItems?.length ?? 0,
     selectedProducts: leadData.selectedItems

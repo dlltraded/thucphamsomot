@@ -50,15 +50,15 @@ export default async function SanPhamPage() {
       <div className="sp-page__head container-shell">
         <div className="sp-page__head-left">
           <div className="eyebrow">Danh mục sản phẩm</div>
-          <h1 className="sp-page__title">Chọn sản phẩm &amp; gửi báo giá</h1>
+          <h1 className="sp-page__title">Chọn hàng cho giỏ báo giá</h1>
           <p className="sp-page__desc">
-            Thêm mặt hàng vào giỏ, sau đó gửi yêu cầu — đội ngũ phản hồi trong 30 phút.
+            Chọn mặt hàng, đưa vào giỏ báo giá hoặc tải danh sách cần mua để gửi RFQ nhanh hơn.
           </p>
         </div>
         <div className="sp-page__badges">
-          <span><ClipboardList size={14} /> Báo giá riêng theo nhóm hàng</span>
+          <span><ClipboardList size={14} /> Báo giá theo danh mục thực tế</span>
           <span><Truck size={14} /> Giao định kỳ toàn vùng Đông Nam Bộ</span>
-          <span><BadgeCheck size={14} /> Hàng đúng nhóm, giao đúng nhịp</span>
+          <span><BadgeCheck size={14} /> Đưa vào DS báo giá, không mua lẻ</span>
         </div>
       </div>
 
@@ -70,10 +70,10 @@ export default async function SanPhamPage() {
           <div>
             <Boxes size={26} />
             <h2>Cần báo giá theo danh mục riêng của bếp?</h2>
-            <p>Gửi nhóm hàng, số lượng dự kiến, khu vực giao và tần suất nhận hàng để đội ngũ chuẩn bị phương án phù hợp.</p>
+            <p>Gửi nhóm hàng, số lượng dự kiến, khu vực giao và tần suất nhận hàng để đội ngũ chuẩn bị RFQ phù hợp. Anh/chị cũng có thể tải file Excel/PDF ngay ở form báo giá.</p>
           </div>
           <Link href="/bao-gia" className="btn-primary btn-on-dark">
-            Mở form báo giá <ArrowRight size={18} />
+            Mở giỏ báo giá <ArrowRight size={18} />
           </Link>
         </section>
       </div>

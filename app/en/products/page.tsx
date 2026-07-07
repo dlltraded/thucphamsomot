@@ -67,7 +67,7 @@ export default async function EnglishProductsPage() {
           <div className="eyebrow">Product Categories</div>
           <h2>From broad groups to specific kitchen needs.</h2>
           <p>
-            If you don't have a fixed SKU list yet, you can start from these categories and add quantities, delivery schedule, and packaging requirements later.
+            If you don&apos;t have a fixed SKU list yet, you can start from these categories and add quantities, delivery schedule, and packaging requirements later.
           </p>
         </div>
         <div className="product-category-list">
@@ -131,3 +131,4 @@ export default async function EnglishProductsPage() {
     </main>
   );
 }
+

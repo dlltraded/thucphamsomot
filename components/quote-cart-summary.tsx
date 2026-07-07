@@ -151,31 +151,31 @@ const S = {
 
 const UI = {
   vi: {
-    emptyTitle: "Chưa chọn sản phẩm nào",
-    emptySub1: "Bạn có thể điền form bên dưới, hoặc ",
-    emptySubLink: "chọn sản phẩm cụ thể",
-    emptySub2: " trước để gửi báo giá chính xác hơn.",
-    selectedProducts: "Sản phẩm đã chọn",
-    addProducts: "Thêm sản phẩm",
+    emptyTitle: "Giỏ báo giá đang trống",
+    emptySub1: "Anh/chị có thể điền form bên dưới, hoặc ",
+    emptySubLink: "chọn hàng từ danh mục",
+    emptySub2: " trước để gửi RFQ chính xác hơn.",
+    selectedProducts: "Giỏ báo giá",
+    addProducts: "Đưa thêm hàng",
     unit: "ĐV: ",
     decrease: "Giảm",
     increase: "Tăng",
     remove: "Xóa",
-    note: "Giá sẽ được tư vấn cụ thể sau khi gửi yêu cầu. Thông tin sản phẩm ở trên sẽ được đính kèm vào form báo giá tự động.",
+    note: "Các mặt hàng đã chọn sẽ được gắn tự động vào yêu cầu báo giá. Giá sẽ được báo riêng theo khối lượng thực tế.",
     productsLink: "/san-pham"
   },
   en: {
-    emptyTitle: "No products selected",
+    emptyTitle: "RFQ basket is empty",
     emptySub1: "You can fill the form below, or ",
-    emptySubLink: "select specific products",
-    emptySub2: " first for a more accurate quote.",
-    selectedProducts: "Selected products",
-    addProducts: "Add products",
+    emptySubLink: "pick items from the catalog",
+    emptySub2: " first for a more accurate RFQ.",
+    selectedProducts: "RFQ basket",
+    addProducts: "Add more items",
     unit: "Unit: ",
     decrease: "Decrease",
     increase: "Increase",
     remove: "Remove",
-    note: "Prices will be provided after submission. Your selected products will be automatically attached to this request.",
+    note: "Selected items are automatically attached to this request. Pricing is provided after submission.",
     productsLink: "/en/products"
   }
 };

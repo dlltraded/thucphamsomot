@@ -26,6 +26,7 @@ export const siteConfig = {
   profilePagePath: "/ho-so-nang-luc",
   profilePdfUrl: "https://drive.google.com/file/d/1uJ7gCVsCRsXMAZAZLKMcFbgv5um6--8L/view?usp=sharing",
   profilePreviewUrl: "https://drive.google.com/file/d/1uJ7gCVsCRsXMAZAZLKMcFbgv5um6--8L/preview",
+  profileDownloadUrl: "https://drive.google.com/uc?export=download&id=1uJ7gCVsCRsXMAZAZLKMcFbgv5um6--8L",
   mapEmbedUrl:
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3917.0578086349!2d106.87441187476843!3d10.959005955799993!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3174dff7e03cba73%3A0x6c4cc550089d1307!2zQ8O0bmcgdHkgVE5ISCBUaOG7sWMgUGjhuqltIFPhu5EgTeG7mXQ!5e0!3m2!1svi!2s!4v1779156720834!5m2!1svi!2s",
   mapPlaceUrl:
@@ -46,23 +47,20 @@ export const siteConfig = {
 
 export const navItemsByLocale: Record<Locale, Array<{ label: string; href: string }>> = {
   vi: [
-    { label: "BÁO GIÁ", href: "/bao-gia" },
-    { label: "Giới Thiệu", href: "/gioi-thieu" },
-    { label: "Sản Phẩm", href: "/san-pham" },
-    { label: "Nguyên Liệu", href: "/nganh-hang/bep-an-tap-the" },
-    { label: "Công Thức", href: "/kien-thuc" },
-    { label: "Tin Tức", href: "/tin-tuc" },
+    { label: "Hồ Sơ Năng Lực", href: "/gioi-thieu" },
+    { label: "Danh Mục Hàng Hóa", href: "/san-pham" },
+    { label: "Quy Trình Giao Nhận", href: "/quy-trinh" },
     { label: "Liên Hệ", href: "/lien-he" },
   ],
   en: [
-    { label: "QUOTE", href: "/en/bao-gia" },
-    { label: "About", href: "/en/about" },
-    { label: "Products", href: "/en/products" },
-    { label: "Ingredients", href: "/en/ingredients" },
-    { label: "Recipes", href: "/en/recipes" },
-    { label: "News", href: "/en/news" },
+    { label: "Company Profile", href: "/en/about" },
+    { label: "B2B Catalog", href: "/en/products" },
+    { label: "Delivery Process", href: "/en/delivery" },
     { label: "Contact", href: "/en/contact" },
   ],
 };
 
 export const navItems = navItemsByLocale.vi;
+
+
+

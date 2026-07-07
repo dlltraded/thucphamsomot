@@ -8,6 +8,8 @@ export const metadata: Metadata = makeMetadata({
   description:
     "TPS1 nhận cung cấp thực phẩm tại Biên Hòa cho bếp ăn tập thể, nhà máy, trường học và đơn vị cần báo giá rõ ràng, giao đúng lịch.",
   path: "/cung-cap-thuc-pham-bien-hoa",
+  ogTitle: "Cung Cấp Thực Phẩm",
+  ogSubtitle: "Tại Biên Hòa",
 });
 
 export default function BienHoaLandingPage() {

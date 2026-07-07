@@ -312,8 +312,15 @@ export const ordersState = atomFamily((status: OrderStatus) =>
           mappedPaymentStatus = "quoted";
         }
 
+        const msg = q.lead_snapshot?.message || q.note || "";
+        let originalOrderId = q.quote_code || q.id;
+        const orderCodeMatch = msg.match(/Mã đơn:\s*(DH\d+)/);
+        if (orderCodeMatch) {
+          originalOrderId = orderCodeMatch[1];
+        }
+
         return {
-          id: q.quote_code || q.id,
+          id: originalOrderId,
           status: mappedStatus,
           paymentStatus: mappedPaymentStatus,
           createdAt: new Date(q.created_at),

@@ -120,10 +120,6 @@ export function SiteFooter() {
 
       <div className="container-shell site-footer__bottom">
         <span>thucphamsomot.vn</span>
-        <div className="site-footer__bottom-links">
-          <Link href={text.quoteHref}>{text.quoteLabel}</Link>
-          <Link href="/quan-tri">{text.adminLabel}</Link>
-        </div>
       </div>
     </footer>
   );

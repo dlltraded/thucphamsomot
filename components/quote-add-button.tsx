@@ -14,7 +14,7 @@ type QuoteAddButtonProps = {
   label?: string;
 };
 
-export function QuoteAddButton({ product, className = "btn-secondary", label = "Thêm vào báo giá" }: QuoteAddButtonProps) {
+export function QuoteAddButton({ product, className = "btn-secondary", label = "Đưa vào DS báo giá" }: QuoteAddButtonProps) {
   const router = useRouter();
 
   return (

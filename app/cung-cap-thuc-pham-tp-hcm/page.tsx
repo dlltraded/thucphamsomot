@@ -7,10 +7,12 @@ import { SeoJsonLd } from "@/components/seo-json-ld";
 import { makeMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Cung cấp thực phẩm TP.HCM cho bếp ăn, nhà máy và đơn vị suất ăn",
+  title: "Cung cấp thực phẩm TP.HCM cho bếp ăn công nghiệp và doanh nghiệp",
   description:
-    "TPS1 nhận cung cấp thực phẩm tại TP.HCM cho bếp ăn tập thể, nhà máy, trường học, bệnh viện và đơn vị cần giao hàng theo tuyến phù hợp.",
+    "TPS1 phục vụ khách tại TP.HCM cần nguồn cung thực phẩm ổn định, báo giá nhanh, chuyên cho bếp ăn công nghiệp, nhà máy, xí nghiệp.",
   path: "/cung-cap-thuc-pham-tp-hcm",
+  ogTitle: "Cung Cấp Thực Phẩm",
+  ogSubtitle: "Tại TP.HCM",
 });
 
 const sections = [

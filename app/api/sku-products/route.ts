@@ -13,7 +13,7 @@ const CAT_REVERSE: Record<string, string> = {
   'dong-lanh': 'ĐÔNG LẠNH',
   'gia-vi': 'GIA VỊ',
   'gao-mi': 'ĐỒ KHÔ',
-  'cong-cu': 'CÔNG CỤ',
+  'thiet-bi-bep': 'CÔNG CỤ',
 };
 
 const CAT_IMAGE: Record<string, string> = {
@@ -89,10 +89,7 @@ export async function GET(req: NextRequest) {
       const txt = await res.text();
       console.error('[sku-products] Supabase error:', res.status, txt.slice(0, 200));
       return NextResponse.json({ error: 'Fetch failed', details: txt }, { status: 503 });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw: any[] = await res.json();
+    }    const raw: any[] = await res.json();
     
     // Parse content-range for total count
     const contentRange = res.headers.get('content-range');
@@ -139,3 +136,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
+
+
+

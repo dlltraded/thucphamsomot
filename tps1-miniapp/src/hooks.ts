@@ -135,7 +135,7 @@ export function useCheckout() {
       const orderItems = cart.map((item) => ({
         id: item.product.id,
         name: item.product.name,
-        price: item.product.price,
+        price: Math.round(item.product.price),
         quantity: item.quantity,
       }));
 
@@ -173,7 +173,7 @@ export function useCheckout() {
         deliveryAddress,
         deliveryAlias,
         // Message field giữ nguyên cho backward compat
-        message: `Mã đơn: ${orderCode}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${totalAmount}đ\nChi tiết:\n${orderItems.map(i => `${i.name} x${i.quantity} - ${i.price}đ`).join('\n')}`,
+        message: `Mã đơn: ${orderCode}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${Math.round(totalAmount)}đ\nChi tiết:\n${orderItems.map(i => `${i.name} x${i.quantity} - ${i.price}đ`).join('\n')}`,
         selectedItems: orderItems.map(i => `${i.name} x${i.quantity}`).join(' | '),
         selectedCount: orderItems.length,
         miniAppSource: "quote_form",
@@ -208,18 +208,36 @@ export function useCheckout() {
 
       setLocalOrders((prev) => [...prev, newLocalOrder]);
 
-      const apiUrl = import.meta.env.DEV ? 'http://localhost:3000' : 'https://thucphamsomot.vn';
+      const apiUrl = 'https://thucphamsomot.vn';
       let mac = '';
+      
+      const paymentDesc = `Thanh toan don hang ${orderCode}`; // Bỏ dấu tiếng Việt để tránh lỗi encoding khi tạo MAC qua SDK
+      const paymentExtradata = "{}"; // QUAN TRỌNG: Phải là chuỗi khác rỗng (VD: "{}") để ZMP SDK chịu gửi lên server Zalo, nếu rỗng ("") SDK sẽ bỏ qua dẫn đến sai MAC.
+      const paymentMethodStr = JSON.stringify({ id: "COD", isCustom: false });
+      
+      // Quan trọng: item.amount phải là TỔNG tiền của món đó (đơn giá * số lượng) VÀ LÀ SỐ NGUYÊN (tránh lỗi decimal)
+      // Cắt id còn 32 ký tự vì Zalo Pay giới hạn độ dài mã item
+      const paymentItemObj = orderItems.map(it => ({ 
+        id: String(it.id).substring(0, 32), 
+        amount: Math.round((it.price || 10000) * it.quantity)
+      }));
+      
+      // BẮT BUỘC: paymentAmount phải BẰNG CHÍNH XÁC tổng các item.amount đã được làm tròn. 
+      // Nếu tổng item.amount khác paymentAmount, Zalo sẽ báo lỗi MAC hoặc lỗi logic thanh toán.
+      const paymentAmount = paymentItemObj.reduce((sum, item) => sum + item.amount, 0) || 10000;
+      
+      const paymentItemStr = JSON.stringify(paymentItemObj);
+
       try {
         const response = await fetch(`${apiUrl}/api/payment/create-order-mac`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: totalAmount > 0 ? totalAmount : 10000,
-            desc: `Thanh toán đơn hàng ${orderCode}`,
-            extradata: "",
-            method: JSON.stringify({ id: "COD", isCustom: false }),
-            item: JSON.stringify(orderItems.map(it => ({ id: String(it.id), amount: it.price || 10000 })))
+            amount: paymentAmount,
+            desc: paymentDesc,
+            extradata: paymentExtradata,
+            method: paymentMethodStr,
+            item: paymentItemStr
           })
         });
         const data = await response.json();
@@ -229,11 +247,11 @@ export function useCheckout() {
       }
 
       await createOrder({
-        amount: totalAmount > 0 ? totalAmount : 10000,
-        desc: `Thanh toán đơn hàng ${orderCode}`,
-        extradata: "",
-        item: orderItems.map(it => ({ id: String(it.id), amount: it.price || 10000 })),
-        method: { id: "COD", isCustom: false },
+        amount: paymentAmount,
+        desc: paymentDesc,
+        extradata: paymentExtradata,
+        item: paymentItemObj,
+        method: paymentMethodStr, // BẮT BUỘC TRUYỀN CHUỖI JSON ĐỂ KHÔNG SAI LỆCH MAC ("Nếu truyền object trực tiếp, chuỗi băm sẽ không khớp")
         mac: mac,
         success: (data) => {
           console.log("Thanh toán thành công", data);
@@ -246,7 +264,7 @@ export function useCheckout() {
         },
         fail: (err) => {
           console.error("Lỗi thanh toán Zalo:", err);
-          toast.error("Thanh toán bị hủy hoặc có lỗi xảy ra.");
+          toast.error("Lỗi thanh toán: " + JSON.stringify(err));
         }
       });
     } catch (error) {

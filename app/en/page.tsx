@@ -1,173 +1,159 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Building2, ClipboardList, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { makeMetadata } from "@/lib/seo";
-import { brandAssets } from "@/lib/brand";
-import { siteConfig } from "@/lib/site";
+import { B2BHeroSection } from "@/components/b2b/hero-section";
+import { PartnerRibbon } from "@/components/b2b/partner-ribbon";
+import { TrustPillars } from "@/components/b2b/trust-pillars";
+import { B2BCatalog } from "@/components/b2b/catalog-section";
+import { LeadCaptureSection } from "@/components/b2b/lead-capture";
 
 export const metadata = makeMetadata({
-  title: "Thuc Pham So Mot | B2B food supplier in Dong Nai",
+  title: "Thuc Pham So Mot | B2B Food Supplier in Dong Nai",
   description:
-    "TPS1 supplies food ingredients for canteens, factories, schools, hospitals, restaurants, and industrial catering operators in Dong Nai.",
+    "B2B food supplier for canteens, factories, schools, and hospitals in Dong Nai. ISO 22000 & HACCP certified. Quotes within 24h. Scheduled delivery. Full VAT invoices.",
   path: "/en",
 });
 
-const servicePillars = [
+const processSteps = [
   {
-    icon: ShieldCheck,
-    title: "Clear supply sources",
-    text: "Product groups are organized for recurring B2B buying, making it easier to compare and plan.",
+    num: "01",
+    title: "Send product list",
+    desc: "Upload an Excel, PDF, or photo of your required ingredients.",
   },
   {
-    icon: Truck,
-    title: "Scheduled delivery",
-    text: "Delivery can be coordinated by shift, day, or week to match canteen and kitchen operations.",
+    num: "02",
+    title: "Receive quote in 24h",
+    desc: "Our sales team analyzes and sends a detailed pricing plan matching your volume.",
   },
   {
-    icon: ClipboardList,
-    title: "Quotes by real demand",
-    text: "Each customer has a different volume, location, and specification, so TPS1 responds with a tailored plan.",
-  },
-  {
-    icon: Building2,
-    title: "B2B operating focus",
-    text: "Serving factories, canteens, hospitals, schools, restaurants, and hospitality buyers in Dong Nai.",
+    num: "03",
+    title: "Confirm & Deliver",
+    desc: "Confirm via phone or email. We deliver on schedule with agreed specifications.",
   },
 ];
-
-const categories = ["Fresh vegetables", "Meat and seafood", "Frozen food", "Kitchen seasonings", "Vegan products"];
-const heroStats = [
-  { value: "109+", label: "B2B customers served" },
-  { value: "24h", label: "Quote response target" },
-  { value: "5", label: "Core product groups" },
-];
-
-const partnerLogoPanels = [{ src: "/images/partners/tps1-partner-logos-all.png", alt: "TPS1 representative partner and client logos" }];
 
 export default function EnglishHomePage() {
   return (
-    <main className="home-page">
-      <section className="home-hero">
-        <div className="container-shell home-hero__grid">
-          <div className="home-hero__copy">
-            <div className="home-hero__brand">
-              <Image src={brandAssets.logoTransparent} alt={siteConfig.englishName} width={190} height={64} priority />
-              <span className="home-hero__brand-tag">B2B food supply in Dong Nai and nearby areas</span>
-            </div>
-            <div className="eyebrow eyebrow-on-dark">Thuc Pham So Mot</div>
-            <h1 className="home-hero__title">
-              A food supply partner for
-              <span>canteens, factories, and industrial catering operators</span>
-            </h1>
-            <p className="home-hero__lead">
-              Clear catalog, simple request flow, and fast quote follow-up based on the real operating needs of each organization.
+    <main>
+      {/* 1. HERO */}
+      <B2BHeroSection locale="en" />
+
+      {/* 2. SOCIAL PROOF – Partner ribbon */}
+      <PartnerRibbon locale="en" />
+
+      {/* 3. TRUST PILLARS */}
+      <TrustPillars locale="en" />
+
+      {/* 4. B2B CATALOG */}
+      <B2BCatalog locale="en" />
+
+      {/* 5. PROCESS – How it works */}
+      <section className="b2b-process" aria-labelledby="process-heading">
+        <div className="container-shell">
+          <div style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto 56px" }}>
+            <div className="section-label">Workflow</div>
+            <h2 id="process-heading" className="section-title">
+              3 steps — Simple &amp; Transparent
+            </h2>
+            <p className="section-desc" style={{ margin: "0 auto" }}>
+              No complexity, no wasted time. TPS1 optimizes the process so you get the fastest quote.
             </p>
-
-            <div className="home-hero__actions">
-              <Link href="/en/bao-gia" className="btn-primary btn-on-dark">
-                Send request <ArrowRight size={18} />
-              </Link>
-              <Link href="/en/products" className="btn-secondary btn-on-dark-secondary">
-                View products <ArrowRight size={18} />
-              </Link>
-            </div>
-
-            <div className="home-hero__stats">
-              {heroStats.map((item) => (
-                <div key={item.label} className="home-stat">
-                  <strong>{item.value}</strong>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <div className="home-hero__visual">
-            <div className="home-mosaic">
-              <div className="home-mosaic__tile home-mosaic__tile--large">
-                <Image src={brandAssets.warehouseWide} alt="TPS1 warehouse" fill className="home-mosaic__image" />
-              </div>
-              <div className="home-mosaic__tile">
-                <Image src={brandAssets.coverFood} alt="TPS1 food ingredients" fill className="home-mosaic__image" />
-              </div>
-              <div className="home-mosaic__tile home-mosaic__tile--wide">
-                <Image src={brandAssets.deliveryTruckReal} alt="TPS1 delivery truck" fill className="home-mosaic__image home-mosaic__image--truck" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="home-trust">
-        <div className="container-shell home-trust__grid">
-          {servicePillars.map((item) => {
-            const Icon = item.icon;
-            return (
-              <article key={item.title} className="home-trust__card">
-                <Icon size={22} />
-                <h2>{item.title}</h2>
-                <p>{item.text}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="home-catalog">
-        <div className="container-shell">
-          <div className="section-split">
-            <div className="section-heading">
-              <div className="eyebrow">Product groups</div>
-              <h2 className="section-heading__title">Categories arranged the way B2B kitchens usually buy.</h2>
-              <p className="section-heading__description">
-                Start from a product group, then send quantity, delivery area, frequency, and required specifications.
-              </p>
-            </div>
-            <Link href="/en/products" className="text-link">
-              View all products <ArrowRight size={16} />
-            </Link>
-          </div>
-
-          <div className="home-catalog__grid">
-            {categories.map((item, index) => (
-              <Link key={item} href="/en/products" className="category-card category-card--premium">
-                <span className="category-card__index">0{index + 1}</span>
-                <h3>{item}</h3>
-                <p>Suitable for recurring orders, kitchen planning, and B2B quote requests.</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="home-partners">
-        <div className="container-shell">
-          <div className="section-split">
-            <div className="section-heading">
-              <div className="eyebrow">Partners & clients</div>
-            </div>
-          </div>
-
-          <div className="home-partners__grid">
-            {partnerLogoPanels.map((item) => (
-              <div key={item.src} className="home-partners__panel">
-                <Image src={item.src} alt={item.alt} fill className="home-partners__image" sizes="(max-width: 960px) 100vw, 1180px" />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "24px",
+              position: "relative",
+            }}
+          >
+            {/* Connector line */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: "32px",
+                left: "16.5%",
+                right: "16.5%",
+                height: "2px",
+                background: "transparent",
+                borderTop: "2px dashed rgba(15,111,75,0.3)",
+                zIndex: 0,
+              }}
+            />
+            {/* Animated glowing dot */}
+            <div
+              aria-hidden="true"
+              className="process-dot-anim"
+              style={{
+                position: "absolute",
+                top: "30px",
+                left: "16.5%",
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: "#14b87a",
+                boxShadow: "0 0 10px #14b87a, 0 0 20px #14b87a",
+                zIndex: 1,
+              }}
+            />
+            {processSteps.map((step) => (
+              <div key={step.num} className="b2b-process-step" style={{ position: "relative" }}>
+                <div className="b2b-process-step__num">{step.num}</div>
+                <h3 style={{ fontSize: "1.05rem", fontWeight: 800, marginBottom: "10px", color: "#133127" }}>
+                  {step.title}
+                </h3>
+                <p style={{ fontSize: "0.9rem", color: "#59665f", lineHeight: 1.7, margin: 0 }}>
+                  {step.desc}
+                </p>
               </div>
             ))}
           </div>
+
+          {/* Mobile: 1-col */}
+          <style>{`
+            @media (max-width: 640px) {
+              #process-heading ~ div { grid-template-columns: 1fr !important; }
+            }
+          `}</style>
         </div>
       </section>
 
-      <section className="home-cta">
-        <div className="container-shell home-cta__card">
-          <div>
-            <div className="eyebrow eyebrow-on-dark">Ready to receive your request</div>
-            <h2>Send your buying list and TPS1 will respond with a suitable quote plan.</h2>
-            <p>Share your product group, expected quantity, delivery area, and timing. Our team will follow up to confirm details.</p>
+      {/* 6. LEAD CAPTURE (Dropzone + Form) */}
+      <LeadCaptureSection locale="en" />
+
+      {/* 8. FINAL CTA BAND */}
+      <section className="b2b-cta-band" aria-label="Bottom call to action">
+        <div className="container-shell" style={{ position: "relative", zIndex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              gap: "24px",
+            }}
+          >
+            <div className="section-label" style={{ color: "#4ade80" }}>
+              Ready to partner
+            </div>
+            <h2 className="section-title-light" style={{ maxWidth: "640px", margin: 0 }}>
+              Get a food supply quote<br />for your kitchen today.
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.62)", fontSize: "1rem", lineHeight: 1.7, maxWidth: "480px", margin: 0 }}>
+              Response within 24 hours. No commitment required.
+              Just send your list — TPS1 handles the rest.
+            </p>
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center" }}>
+              <Link href="#rfq-form" className="btn-hero-primary" style={{ fontSize: "1rem" }}>
+                Send quote request <ArrowRight size={18} />
+              </Link>
+              <Link href="/gioi-thieu" className="btn-hero-secondary">
+                Download company profile
+              </Link>
+            </div>
           </div>
-          <Link href="/en/bao-gia" className="btn-primary btn-on-dark">
-            Open quote form <ArrowRight size={18} />
-          </Link>
         </div>
       </section>
     </main>

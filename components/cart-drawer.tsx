@@ -13,36 +13,36 @@ type CartDrawerProps = {
 
 const UI = {
   vi: {
-    contact: "Liên hệ báo giá",
-    title: "Giỏ hàng",
+    contact: "Nhận báo giá",
+    title: "Giỏ báo giá",
     clearAll: "Xóa tất cả",
-    close: "Đóng giỏ hàng",
-    empty: "Giỏ hàng trống",
-    emptySub: "Thêm sản phẩm từ trang Sản Phẩm",
-    viewProducts: "Xem sản phẩm",
+    close: "Đóng giỏ báo giá",
+    empty: "Giỏ báo giá đang trống",
+    emptySub: "Chọn mặt hàng từ danh mục để tạo RFQ nhanh hơn",
+    viewProducts: "Chọn hàng",
     decrease: "Giảm",
     increase: "Tăng",
     remove: "Xóa",
-    items: "sản phẩm",
-    note: "Giá sẽ được tư vấn cụ thể",
-    submit: "Gửi yêu cầu báo giá",
+    items: "mặt hàng",
+    note: "Mặt hàng đã chọn sẽ đi kèm trong yêu cầu báo giá.",
+    submit: "Mở form báo giá",
     productsLink: "/san-pham",
     quoteLink: "/bao-gia"
   },
   en: {
-    contact: "Contact for quote",
-    title: "Quote Cart",
+    contact: "Request quote",
+    title: "RFQ Basket",
     clearAll: "Clear all",
-    close: "Close cart",
-    empty: "Cart is empty",
-    emptySub: "Add products from the Products page",
-    viewProducts: "View products",
+    close: "Close RFQ basket",
+    empty: "RFQ basket is empty",
+    emptySub: "Pick items from the catalog to build a faster RFQ",
+    viewProducts: "Pick items",
     decrease: "Decrease",
     increase: "Increase",
     remove: "Remove",
     items: "items",
-    note: "Prices will be quoted directly",
-    submit: "Request quote",
+    note: "Selected items will be included in the quote request.",
+    submit: "Open quote form",
     productsLink: "/en/products",
     quoteLink: "/en/bao-gia"
   }
@@ -176,49 +176,7 @@ export function CartDrawer({ open, onClose, locale = "vi" }: CartDrawerProps) {
               >
                 <ShoppingBag size={16} />
                 {text.submit}
-              </Link>
-              <button
-                type="button"
-                className="btn-secondary cart-footer__cta"
-                onClick={async () => {
-                  try {
-                    const { Payment } = await import("zmp-sdk");
-                    const totalAmount = items.reduce((acc, item) => acc + 10000 * item.quantity, 0);
-                    // Generate MAC from backend
-                    const response = await fetch('/api/payment/create-order-mac', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        amount: totalAmount > 0 ? totalAmount : 10000, // Zalo requires amount > 0
-                        desc: "Thanh toán đơn hàng Thực Phẩm Số Một",
-                        method: JSON.stringify({ id: "COD", isCustom: false }), // Optional but good for strict matching
-                        item: JSON.stringify(items.map(it => ({ id: it.slug, amount: 10000 })))
-                      })
-                    });
-                    const { mac } = await response.json();
-                    
-                    Payment.createOrder({
-                      amount: totalAmount > 0 ? totalAmount : 10000,
-                      desc: "Thanh toán đơn hàng Thực Phẩm Số Một",
-                      item: items.map(it => ({ id: it.slug, amount: 10000 })),
-                      method: { id: "COD", isCustom: false },
-                      mac: mac,
-                      success: (data) => {
-                        console.log("Thanh toán thành công", data);
-                        clear();
-                        onClose();
-                      },
-                      fail: (err) => {
-                        console.log("Lỗi tạo order", err);
-                      }
-                    });
-                  } catch (error) {
-                    console.error("Lỗi khi gọi thanh toán:", error);
-                  }
-                }}
-              >
-                Thanh toán trực tiếp (COD)
-              </button>
+                </Link>
             </div>
           </div>
         )}

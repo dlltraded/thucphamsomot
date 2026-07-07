@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    workerThreads: true,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
@@ -24,7 +27,9 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
+    qualities: [75, 80, 85, 88, 90],
   },
 };
 
 export default nextConfig;
+

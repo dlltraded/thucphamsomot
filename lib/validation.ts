@@ -69,41 +69,18 @@ export const quoteSchema = leadCoreSchema.extend({
   supplyCapacity: z.string().optional().or(z.literal("")),
   supplyArea: z.string().optional().or(z.literal("")),
   certifications: z.string().optional().or(z.literal("")),
+  attachmentName: z.string().optional().or(z.literal("")),
+  attachmentType: z.string().optional().or(z.literal("")),
+  attachmentSize: z.string().optional().or(z.literal("")),
+  attachmentDataUrl: z.string().optional().or(z.literal("")),
+  attachmentTooLarge: z.string().optional().or(z.literal("")),
 }).superRefine((data, ctx) => {
   if (data.inquiryType === "buyer") {
-    if (!data.facilityType) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["facilityType"],
-        message: "Vui lòng chọn loại hình đơn vị",
-      });
-    }
     if (!data.interestedIn) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["interestedIn"],
         message: "Vui lòng chọn nhóm hàng quan tâm",
-      });
-    }
-    if (!data.purchaseScale) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["purchaseScale"],
-        message: "Vui lòng chọn quy mô nhu cầu",
-      });
-    }
-    if (!data.deliveryFrequency) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["deliveryFrequency"],
-        message: "Vui lòng chọn tần suất giao",
-      });
-    }
-    if (!data.deliveryArea) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["deliveryArea"],
-        message: "Vui lòng nhập khu vực giao",
       });
     }
   }
