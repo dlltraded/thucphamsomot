@@ -44,9 +44,9 @@ const texts = {
     sub: "Phục vụ bếp ăn tập thể, nhà máy, trường học và bệnh viện. Báo giá trong 24h · Giao định kỳ · Hóa đơn VAT đầy đủ.",
     formRibbon: "PHẢN HỒI TRONG 30 PHÚT",
     formSuccessTitle: "Đã nhận yêu cầu!",
-    formSuccessDesc: (
+    formSuccessDesc: (name: string) => (
       <>
-        Hệ thống đã ghi nhận yêu cầu của <strong>{'{lastSubmitName || "anh/chị"}'}</strong>.<br/>
+        Hệ thống đã ghi nhận yêu cầu của <strong>{name || "anh/chị"}</strong>.<br/>
         Đội kinh doanh TPS1 sẽ phản hồi báo giá chi tiết <strong>trong vòng 15-30 phút</strong>.
       </>
     ),
@@ -93,9 +93,9 @@ const texts = {
     sub: "Serving canteens, factories, schools, and hospitals. 24h quote · Scheduled delivery · VAT invoices included.",
     formRibbon: "30-MINUTE RESPONSE",
     formSuccessTitle: "Request Received!",
-    formSuccessDesc: (
+    formSuccessDesc: (name: string) => (
       <>
-        We have received the request from <strong>{'{lastSubmitName || "you"}'}</strong>.<br/>
+        We have received the request from <strong>{name || "you"}</strong>.<br/>
         TPS1 sales team will send a detailed quote <strong>within 15-30 minutes</strong>.
       </>
     ),
@@ -260,12 +260,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
                       {t.formSuccessTitle}
                     </h3>
                     <p className="text-white/80 text-base leading-relaxed mb-6">
-                      {typeof t.formSuccessDesc === 'function' ? t.formSuccessDesc(lastSubmitName) : (
-                        <>
-                          Hệ thống đã ghi nhận yêu cầu của <strong>{lastSubmitName || "anh/chị"}</strong>.<br/>
-                          Đội kinh doanh TPS1 sẽ phản hồi báo giá chi tiết <strong>trong vòng 15-30 phút</strong>.
-                        </>
-                      )}
+                      {t.formSuccessDesc(lastSubmitName)}
                     </p>
                     <div className="bg-white/5 border border-[#14b87a]/30 rounded-xl p-5 text-left">
                       <h4 className="text-sm font-bold text-white uppercase mb-3 flex items-center gap-2">
