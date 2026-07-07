@@ -241,6 +241,42 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
   },
+  baRiaVungTau: {
+    eyebrow: "Bà Rịa - Vũng Tàu",
+    title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho bếp ăn và nhà máy",
+    description:
+      "Phù hợp với khách cần nguồn hàng định kỳ tại Bà Rịa - Vũng Tàu, ưu tiên giao đều và phản hồi báo giá nhanh cho bếp ăn, nhà máy và đơn vị suất ăn.",
+    intro:
+      "Phục vụ đơn vị ở Bà Rịa - Vũng Tàu cần giao định kỳ, danh mục rõ và lịch nhận hàng ổn định.",
+    chips: ["Giao định kỳ", "Bà Rịa - Vũng Tàu", "Danh mục + báo giá"],
+    sections: [
+      {
+        title: "Dịch vụ cung cấp thực phẩm tại Bà Rịa - Vũng Tàu",
+        content:
+          "TPS1 cung cấp thực phẩm giá sỉ cho các bếp ăn tập thể, nhà máy, bệnh viện tại khu vực Bà Rịa - Vũng Tàu. Chúng tôi cam kết nguồn hàng ổn định, đầy đủ hóa đơn VAT và chứng nhận vệ sinh an toàn thực phẩm.",
+        image: "/images/hero-warehouse.jpg",
+        imageAlt: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu",
+      },
+    ],
+  },
+  tpHcm: {
+    eyebrow: "TP. Hồ Chí Minh",
+    title: "Cung cấp thực phẩm TP. Hồ Chí Minh cho bếp ăn công nghiệp",
+    description:
+      "Giải pháp cung ứng thực phẩm toàn diện cho các bếp ăn công nghiệp, suất ăn nhà máy, trường học, bệnh viện tại TP. Hồ Chí Minh.",
+    intro:
+      "Phục vụ đơn vị ở TP. Hồ Chí Minh cần giao định kỳ, danh mục rõ và lịch nhận hàng ổn định.",
+    chips: ["Giao định kỳ", "TP. Hồ Chí Minh", "Danh mục + báo giá"],
+    sections: [
+      {
+        title: "Dịch vụ cung cấp thực phẩm tại TP. Hồ Chí Minh",
+        content:
+          "TPS1 cung cấp thực phẩm giá sỉ cho các bếp ăn tập thể, nhà máy, bệnh viện tại khu vực TP. Hồ Chí Minh. Chúng tôi cam kết nguồn hàng ổn định, đầy đủ hóa đơn VAT và chứng nhận vệ sinh an toàn thực phẩm.",
+        image: "/images/hero-warehouse.jpg",
+        imageAlt: "Cung cấp thực phẩm TP. Hồ Chí Minh",
+      },
+    ],
+  },
   phuMy: {
     eyebrow: "Phú Mỹ",
     title: "Cung cấp thực phẩm KCN Phú Mỹ cho bếp ăn nhà máy",
