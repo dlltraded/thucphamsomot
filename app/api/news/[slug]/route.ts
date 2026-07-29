@@ -30,8 +30,8 @@ export async function PUT(req: Request, context: { params: { slug: string } | Pr
   }
 
   const article = await upsertNewsArticle(parsed.data);
-  revalidatePath("/tin-tuc");
-  revalidatePath(`/tin-tuc/${article.slug}`);
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${article.slug}`);
 
   return NextResponse.json({ ok: true, article });
 }
@@ -43,8 +43,8 @@ export async function DELETE(req: Request, context: { params: { slug: string } |
 
   const { slug } = await context.params;
   const deleted = await deleteNewsArticle(slug);
-  revalidatePath("/tin-tuc");
-  revalidatePath(`/tin-tuc/${slug}`);
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${slug}`);
 
   return NextResponse.json({ ok: deleted });
 }

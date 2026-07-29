@@ -25,8 +25,8 @@ export async function POST(req: Request) {
   }
 
   const article = await upsertNewsArticle(parsed.data);
-  revalidatePath("/tin-tuc");
-  revalidatePath(`/tin-tuc/${article.slug}`);
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${article.slug}`);
 
   return NextResponse.json({ ok: true, article });
 }

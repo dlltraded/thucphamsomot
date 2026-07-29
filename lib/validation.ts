@@ -13,6 +13,15 @@ const leadCoreSchema = z.object({
   email: z.string().email("Vui lòng nhập email hợp lệ").optional().or(z.literal("")),
   message: z.string().min(10, "Vui lòng mô tả nhu cầu"),
   selectedItems: z.array(quoteItemSchema).optional(),
+  hasBuyingList: z.string().optional().or(z.literal("")),
+  contactRole: z.string().optional().or(z.literal("")),
+  consent: z.boolean().optional(),
+  utmSource: z.string().optional().or(z.literal("")),
+  utmMedium: z.string().optional().or(z.literal("")),
+  utmCampaign: z.string().optional().or(z.literal("")),
+  utmContent: z.string().optional().or(z.literal("")),
+  utmTerm: z.string().optional().or(z.literal("")),
+  fbclid: z.string().optional().or(z.literal("")),
 });
 
 export const leadSchema = leadCoreSchema.extend({

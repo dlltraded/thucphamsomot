@@ -154,6 +154,35 @@ function isZaloMiniAppLead(payload) {
   );
 }
 
+
+function scoreLead(payload) {
+  const area = String(payload.deliveryArea || payload.delivery_area || "").toLowerCase();
+  const frequency = String(payload.deliveryFrequency || payload.delivery_frequency || "").toLowerCase();
+  const role = String(payload.contactRole || "").toLowerCase();
+  const scale = String(payload.purchaseScale || payload.purchase_scale || "").toLowerCase();
+  const hasList = String(payload.hasBuyingList || "").toLowerCase();
+  const message = String(payload.message || "").toLowerCase();
+  const company = String(payload.company || "").trim();
+  const needBy = String(payload.needBy || payload.need_by || "").trim();
+  let score = 0;
+  const servedArea = /(biên hòa|bien hoa|tam hiệp|tam hiep|long bình|long binh|amata|tam phước|tam phuoc|giang điền|giang dien|long thành|long thanh|nhơn trạch|nhon trach|an phước|an phuoc)/.test(area);
+  if (servedArea) score += 3;
+  if (/(hằng ngày|hang ngay|2–3|2-3|nhiều lần|nhieu lan)/.test(frequency)) score += 3;
+  if (hasList === "có" || hasList === "co" || payload.attachmentName) score += 2;
+  if (needBy) score += 2;
+  if (/(chủ|giám đốc|thu mua|cung ứng|quản lý bếp|canteen|owner|director|procurement|manager)/.test(role)) score += 2;
+  if (/(200–499|500–999|1.000\+|200-499|500-999|1000\+)/.test(scale)) score += 1;
+  const retail = /(mua lẻ|mua le|hộ gia đình|ho gia dinh|1kg|2kg)/.test(message) || !company;
+  if (retail) score -= 3;
+  if (area && !servedArea) score -= 2;
+  const priceOnly = /(chỉ hỏi giá|chi hoi gia|xin giá|xin gia)$/.test(message.trim());
+  if (priceOnly) score -= 2;
+  const reasons = [];
+  if (retail) reasons.push("Bán lẻ/không xác định tổ chức");
+  if (area && !servedArea) reasons.push("Ngoài 2 cụm chạy tháng 1");
+  if (priceOnly) reasons.push("Chỉ hỏi giá, chưa có nhu cầu rõ");
+  return { score: score, quality: score >= 7 && !retail ? "Qualified" : "Needs review", reason: reasons.join("; ") };
+}
 // ─── SHEET MANAGEMENT ─────────────────────────────────────────────
 
 function getOrCreateLeadsSheet() {
@@ -312,6 +341,8 @@ function doPost(e) {
     const isZalo        = isZaloMiniAppLead(payload);
     const selectedItems = buildSelectedItemsText(payload);
 
+    const scoring = scoreLead(payload);
+
     const leadObject = {
       "Submitted At":       payload.submittedAt || new Date().toISOString(),
       "Vai trò":            payload.vaiTro || payload.role || (isZalo ? "Người mua" : ""),
@@ -339,7 +370,19 @@ function doPost(e) {
       "Zalo Avatar":        isZalo ? (payload.zaloAvatar        || "") : "",
       "Zalo Phone Token":   isZalo ? (payload.zaloPhoneToken    || "") : "",
       "Zalo Follow OA":     isZalo ? normalizeBoolean(payload.zaloFollowOA) : "",
-      "Mini App Source":    isZalo ? (payload.miniAppSource     || "quote_form") : ""
+      "Mini App Source":    isZalo ? (payload.miniAppSource     || "quote_form") : "",
+      "Contact Role":       payload.contactRole || "",
+      "Has Buying List":    payload.hasBuyingList || (payload.attachmentName ? "Có" : ""),
+      "Consent":            normalizeBoolean(payload.consent),
+      "UTM Source":         payload.utmSource || "",
+      "UTM Medium":         payload.utmMedium || "",
+      "UTM Campaign":       payload.utmCampaign || "",
+      "UTM Content":        payload.utmContent || "",
+      "UTM Term":           payload.utmTerm || "",
+      "FBCLID":             payload.fbclid || "",
+      "Lead Score":         scoring.score,
+      "Lead Quality":       scoring.quality,
+      "Disqualification Reason": scoring.reason
     };
 
     const sheet = getOrCreateLeadsSheet();

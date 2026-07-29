@@ -1,0 +1,4 @@
+interface:
+  display_name: "TPS1 Messenger Content"
+  short_description: "Viet content Facebook Ads keo hoi thoai Messenger cho TPS1"
+  default_prompt: "Phan tich brief va tao bo quang cao Facebook dan vao Messenger cho TPS1 theo dung quy trinh, claim va dinh dang cua skill."

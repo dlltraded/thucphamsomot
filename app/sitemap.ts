@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { categories, industries, policies, products, services } from "@/lib/content";
-import { readKnowledgeArticles } from "@/lib/knowledge";
+import { getAllBlogPosts } from "@/lib/blog";
 import { siteConfig } from "@/lib/site";
 
 const staticPaths = [
@@ -9,12 +9,11 @@ const staticPaths = [
   "/en/about",
   "/en/products",
   "/en/ingredients",
-  "/en/recipes",
-  "/en/news",
+  "/en/blog",
   "/en/contact",
   "/gioi-thieu",
   "/san-pham",
-  "/kien-thuc",
+  "/blog",
   "/lien-he",
   "/bao-gia",
   "/en/bao-gia",
@@ -37,13 +36,13 @@ const staticPaths = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const pages = staticPaths.map((path) => ({ url: `${siteConfig.url}${path}`, lastModified: now }));
-  const knowledgePosts = await readKnowledgeArticles();
+  const blogPosts = await getAllBlogPosts();
   const dynamic = [
     ...categories.map((item) => `${siteConfig.url}/danh-muc/${item.slug}`),
     ...industries.map((item) => `${siteConfig.url}/nganh-hang/${item.slug}`),
     ...services.map((item) => `${siteConfig.url}/dich-vu/${item.slug}`),
     ...products.map((item) => `${siteConfig.url}/san-pham/${item.slug}`),
-    ...knowledgePosts.map((item) => `${siteConfig.url}/kien-thuc/${item.slug}`),
+    ...blogPosts.map((item) => `${siteConfig.url}/blog/${item.slug}`),
     ...policies.map((item) => `${siteConfig.url}/chinh-sach/${item.slug}`),
   ].map((url) => ({ url, lastModified: now }));
 

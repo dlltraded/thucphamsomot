@@ -11,7 +11,7 @@ const texts = {
         color: "#0f6f4b",
         bg: "rgba(15,111,75,0.10)",
         title: "Nguồn hàng kiểm định",
-        desc: "Đạt chuẩn ISO 22000 & HACCP. Bảo hiểm trách nhiệm sản phẩm 5 tỷ VNĐ. Đầy đủ hồ sơ pháp lý.",
+        desc: "Cung cấp hồ sơ an toàn thực phẩm và chứng từ pháp lý theo yêu cầu của khách hàng B2B.",
       },
       {
         icon: Truck,
@@ -32,7 +32,7 @@ const texts = {
         color: "#7c3aed",
         bg: "rgba(124,58,237,0.10)",
         title: "Kinh nghiệm B2B",
-        desc: "Phục vụ nhà máy, trường học, bệnh viện và suất ăn công nghiệp tại Đồng Nai 10+ năm.",
+        desc: "Phục vụ nhà máy, trường học, bệnh viện và đơn vị suất ăn công nghiệp tại Đồng Nai.",
       },
       {
         icon: Award,
@@ -60,7 +60,7 @@ const texts = {
         color: "#0f6f4b",
         bg: "rgba(15,111,75,0.10)",
         title: "Verified Source",
-        desc: "ISO 22000 & HACCP standards. 5B VND product liability insurance. Full legal documentation.",
+        desc: "Food-safety and legal documents are available for B2B review on request.",
       },
       {
         icon: Truck,
@@ -81,7 +81,7 @@ const texts = {
         color: "#7c3aed",
         bg: "rgba(124,58,237,0.10)",
         title: "B2B Experience",
-        desc: "Serving factories, schools, hospitals, and industrial catering in Dong Nai for 10+ years.",
+        desc: "Serving factories, schools, hospitals, and industrial catering operators in Dong Nai.",
       },
       {
         icon: Award,

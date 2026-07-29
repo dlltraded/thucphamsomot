@@ -22,13 +22,17 @@
     "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.108.2",
     "@types/three": "^0.185.0",
+    "date-fns": "^4.4.0",
     "framer-motion": "^12.40.0",
+    "gray-matter": "^4.0.3",
     "lucide-react": "^1.14.0",
     "next": "^16.2.6",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.75.0",
+    "remark": "^15.0.1",
+    "remark-html": "^16.0.1",
     "sharp": "^0.34.5",
     "three": "^0.185.1",
     "zmp-sdk": "^2.51.6",
@@ -50,4 +54,3 @@
     "typescript": "^6.0.3"
   }
 }
-

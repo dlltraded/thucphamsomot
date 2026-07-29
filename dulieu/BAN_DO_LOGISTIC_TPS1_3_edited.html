@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Bản đồ Logistics – TPS1</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root{
+    --navy:#0e2439; --navy2:#16324f; --ink:#12202e; --line:#0b3d91;
+    --accent:#17a2b8; --red:#e11d2a; --green:#1a9850; --paper:#f7f9fb;
+    --muted:#7c8b99; --panel:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif;color:var(--ink);background:var(--navy)}
+  #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  header{display:flex;align-items:center;gap:16px;padding:12px 20px;background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:1200}
+  header .logo{width:40px;height:40px;border-radius:9px;background:var(--accent);display:grid;place-items:center;font-weight:800;font-size:19px;color:#04222a;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
+  header h1{font-size:19px;margin:0;letter-spacing:.3px;font-weight:700}
+  header .sub{font-size:12px;opacity:.8;margin-top:1px}
+  header .stats{margin-left:auto;display:flex;gap:22px}
+  header .stat{text-align:right}
+  header .stat b{font-size:20px;display:block;line-height:1}
+  header .stat span{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.5px}
+  #main{flex:1;display:flex;min-height:0}
+  #panel{width:310px;background:var(--panel);border-right:1px solid #dfe6ec;display:flex;flex-direction:column;z-index:1100;box-shadow:2px 0 12px rgba(0,0,0,.06)}
+  #panel .phead{padding:12px 14px;border-bottom:1px solid #eef2f5;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  #routelist{overflow:auto;flex:1;padding:6px}
+  .ritem{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:background .15s}
+  .ritem:hover{background:#eef4f8}
+  .ritem.active{background:#e3f0f6;outline:1px solid #bfe0ec}
+  .ritem .dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,.08)}
+  .ritem .meta{flex:1;min-width:0}
+  .ritem .t{font-weight:700;font-size:13.5px}
+  .ritem .d{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ritem .cnt{font-size:11px;color:#fff;background:var(--navy2);border-radius:20px;padding:2px 8px;font-weight:700}
+  #panel .legend{border-top:1px solid #eef2f5;padding:12px 14px;font-size:12px;color:#33475b}
+  #panel .legend .row{display:flex;align-items:center;gap:9px;margin:6px 0}
+  .swatch{width:26px;height:0;flex:0 0 auto}
+  .sw-line{border-top:4px solid var(--line);border-radius:2px}
+  .sw-dot{width:15px;height:15px;border-radius:50%}
+  .allbtn{margin:6px;padding:9px;border:1px dashed #bcd;border-radius:9px;text-align:center;font-weight:700;color:var(--navy2);cursor:pointer;font-size:13px}
+  .allbtn:hover{background:#eef4f8}
+  #mapwrap{flex:1;position:relative;min-width:0;background:#e9eef2}
+  #map{position:absolute;inset:0}
+  .num-ic{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;color:#fff;font-weight:800;font-size:13px;border:2.5px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.35)}
+  .dot-ic{width:10px;height:10px;border-radius:50%;background:#1a9850;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+  .dot-ic.end{background:var(--red)}
+  .lbl-tip{background:rgba(255,255,255,.95);border:1px solid #cfd7de;color:#0e2439;font-weight:700;font-size:11px;padding:1px 6px;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);white-space:nowrap}
+  .lbl-tip::before{display:none !important}
+  .leaflet-tooltip.lbl-tip{margin-left:0;margin-top:0}
+  .depot-ic{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--green);color:#fff;font-weight:800;font-size:15px;border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+  .leaflet-popup-content{font-family:inherit;font-size:13px;margin:10px 12px;line-height:1.4}
+  .pop-t{font-weight:800;color:var(--navy);font-size:13.5px;margin-bottom:3px}
+  .pop-a{color:#55636e;font-size:12px}
+  .pop-r{margin-top:5px;font-size:11px;color:#fff;background:var(--line);display:inline-block;padding:2px 8px;border-radius:20px}
+  .tip{font-weight:700;font-size:12px}
+  #loading{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#fff;padding:8px 16px;border-radius:30px;box-shadow:0 3px 12px rgba(0,0,0,.2);font-size:12.5px;font-weight:600;color:var(--navy2);z-index:1000;display:flex;align-items:center;gap:9px}
+  .spin{width:14px;height:14px;border:2.5px solid #cfe0ea;border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #present{position:absolute;top:12px;right:12px;z-index:1000;background:var(--navy2);color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  #present:hover{background:var(--navy)}
+  body.present #panel{display:none}
+  body.present header{display:none}
+  body.present #mapwrap{background:#0e2439}
+  body.present #map{max-width:calc(100vh * 16 / 9);max-height:calc(100vw * 9 / 16);margin:auto;position:absolute;inset:0}
+  .exit-present{display:none}
+  body.present .exit-present{display:block;position:absolute;top:12px;left:12px;z-index:2000}
+  .maptitle{position:absolute;left:16px;bottom:16px;z-index:900;background:rgba(14,36,57,.9);color:#fff;padding:10px 16px;border-radius:10px;box-shadow:0 3px 12px rgba(0,0,0,.3);max-width:60%}
+  .maptitle b{font-size:15px;letter-spacing:.3px}
+  .maptitle span{display:block;font-size:11.5px;opacity:.8;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">HP</div>
+    <div>
+      <h1>BẢN ĐỒ LOGISTIC TPS1</h1>
+      <div class="sub">Lộ trình giao hàng theo đường thực tế · nền bản đồ đường phố · xuất phát từ kho TPS1</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="s-routes">0</b><span>Tuyến</span></div>
+      <div class="stat"><b id="s-stops">0</b><span>Điểm giao</span></div>
+    </div>
+  </header>
+  <div id="main">
+    <aside id="panel">
+      <div class="phead">Danh sách tuyến</div>
+      <div class="allbtn" id="allbtn">▣ Hiện tất cả tuyến</div>
+      <div class="allbtn" id="togroutes" style="border-color:#8fbc8f;color:#2f6f2f">🛣 Ẩn tuyến đường (chỉ hiện điểm)</div>
+      <div class="allbtn" id="togglelabels" style="border-color:#7aa7d9;color:#1f4f8a">🏷️ Tắt label</div>
+      <div id="routelist"></div>
+      <div class="legend">
+        <div class="phead" style="padding:0 0 6px 0;border:none">Chú giải</div>
+        <div class="row"><span class="swatch sw-line"></span> Lộ trình (bám đường thực tế)</div>
+        <div class="row"><span class="sw-dot" style="background:#1a9850;width:11px;height:11px"></span> Điểm khách hàng (chế độ toàn cảnh)</div>
+        <div class="row"><span class="sw-dot" style="background:var(--line)"></span> Điểm giao có số thứ tự (khi xem 1 tuyến)</div>
+        <div class="row"><span class="sw-dot" style="background:var(--red)"></span> Điểm kết thúc tuyến</div>
+        <div class="row"><span class="sw-dot" style="background:var(--green);border-radius:5px"></span> Kho xuất phát</div>
+      </div>
+    </aside>
+    <div id="mapwrap">
+      <div id="map"></div>
+      <div id="loading"><span class="spin"></span><span id="loadtxt">Đang tính lộ trình theo đường thực tế…</span></div>
+      <button id="present">⛶ Chế độ trình chiếu 16:9</button>
+      <button id="exitpresent" class="exit-present" onclick="togglePresent()" style="background:#fff;color:#0e2439;border:none;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)">✕ Thoát</button>
+      <div class="maptitle" id="maptitle"><b>Toàn bộ mạng lưới giao hàng</b><span>Di chuột hoặc click vào chấm để xem tên đầy đủ · chọn tuyến ở panel để xem chi tiết</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const DATA = {"depot": {"name": "Công ty TNHH Thực Phẩm Số Một", "addr": "B19 Khu phố 15, Tam Hiệp, Đồng Nai", "lat": 10.959063, "lng": 106.876937}, "routes": [{"tuyen": "Tuyến 1", "tx": "Hứa Hải Sơn", "stops": [{"n": 1, "ma": "TL", "name": "CÔNG TY TNHH THIÊN LONG", "addr": "Đường số 7, KCN Long Thành, Đồng Nai", "lat": 10.815313, "lng": 106.921937, "src": "pluscode"}, {"n": 2, "ma": "INK", "name": "CÔNG TY CỔ PHẦN LIÊN KẾT QUỐC TẾ INKINDY", "addr": "6A Chợ Mới, tổ 34, khu Cầu Xéo, Long Thành, Đồng Nai 76206, Vietnam", "lat": 10.779187, "lng": 106.957062, "src": "pluscode"}, {"n": 3, "ma": "TYT", "name": "CÔNG TY CỔ PHẦN TOYOTA LONG THÀNH", "addr": "Long Thành / An Phước (KCN Long Thành)", "lat": 10.751063, "lng": 106.968938, "src": "pluscode"}, {"n": 4, "ma": "NANKAI", "name": "NANKAI", "addr": "3 Đường Số 2, Khu công nghiệp Nhơn Trạch 1, Nhơn Trạch, Đồng Nai, Vietnam", "lat": 10.741187, "lng": 106.918312, "src": "pluscode"}, {"n": 5, "ma": "SOLTEC", "name": "SOLTEC", "addr": "Nhon Trạch, Phuoc An, Dong Nai City, Vietnam", "lat": 10.707562, "lng": 106.953813, "src": "pluscode"}], "color": "#e6194B"}, {"tuyen": "Tuyến 2", "tx": "Nguyễn Trương Đạt", "stops": [{"n": 1, "ma": "LEA", "name": "LEADER", "addr": "An Phuoc, Dong Nai City, Vietnam", "lat": 10.812187, "lng": 106.913187, "src": "pluscode"}, {"n": 2, "ma": "SAITE", "name": "SAITE", "addr": "Đường số 6, KCN An Phước, xã An phước, huyện Long Thành, tỉnh Đồng Nai", "lat": 10.845938, "lng": 106.955813, "src": "pluscode"}, {"n": 3, "ma": "NGV", "name": "NGV", "addr": "", "lat": 10.867312, "lng": 106.946937, "src": "pluscode"}, {"n": 4, "ma": "ITF", "name": "INTERFOOD", "addr": "VW7P+V64, Đường số 3, Tam Phước, Đồng Nai, Vietnam", "lat": 10.864688, "lng": 106.935562, "src": "pluscode"}, {"n": 5, "ma": "TRIPOD", "name": "CÔNG TY TNHH ELECTRONIC TRIPOD VIỆT NAM ( Bien Hoa)", "addr": "No. 31, 3A street, Bien Hoa, Industrial Zone 2, Trấn Biên, Đồng Nai, Vietnam", "lat": 10.924313, "lng": 106.875062, "src": "pluscode"}], "color": "#3cb44b"}, {"tuyen": "Tuyến 3", "tx": "Nguyễn Long Phi Bảo", "stops": [{"n": 1, "ma": "MHT", "name": "CÔNG TY TNHH MINH HƯNG TIẾN", "addr": "Công ty TNHH Minh Hưng Tiến - Số 72/2 Tổ 4, KP Tân Lập, Kp Long Điềm, Phường, Phước Tân, Đồng Nai, Vietnam", "lat": 10.924437, "lng": 106.950062, "src": "pluscode"}, {"n": 2, "ma": "DECHANG", "name": "DECHANG", "addr": "C3 Đường 1 Khu Công Nghiệp Giang Điền, Trảng Bom, Đồng Nai, Vietnam", "lat": 10.906188, "lng": 106.987313, "src": "pluscode"}, {"n": 3, "ma": "PROVIMI", "name": "PROVIMI", "addr": "KCN Giang Điền", "lat": 10.894437, "lng": 106.975187, "src": "pluscode"}, {"n": 4, "ma": "N.GỖ", "name": "Nhất Gỗ C4", "addr": "Lô 18, đường, số 5 Khu Công Nghiệp Giang Điền, Tam Phước, Đồng Nai, Vietnam", "lat": 10.895813, "lng": 106.975187, "src": "pluscode"}, {"n": 5, "ma": "NG3", "name": "NHẤT GỖ C3", "addr": "Lô 18, đường, số 5 Khu Công Nghiệp Giang Điền, Tam Phước, Đồng Nai, Vietnam", "lat": 10.895813, "lng": 106.975187, "src": "pluscode"}], "color": "#4363d8"}, {"tuyen": "Tuyến 4", "tx": "Vũ Hoàng Triều", "stops": [{"n": 1, "ma": "REGZA", "name": "REGZA.", "addr": "Đường số 1, KCN Long Thành, Xã Tam An, Huyện Long Thành, Đồng Nai", "lat": 10.820313, "lng": 106.921188, "src": "pluscode"}, {"n": 2, "ma": "VANSAN-HP", "name": "CT CP VÁN SÀN HÒA PHÁT", "addr": "Lô số 35, Đường D12 KCN Châu Đức, Nghĩa Thành, Hồ Chí Minh, Vietnam", "lat": 10.569563, "lng": 107.191062, "src": "pluscode"}, {"n": 3, "ma": "KINGSTYLE", "name": "CTY MAY MẶC KINGSTYLE", "addr": "268 QL55, Xuyên Mộc, Hồ Chí Minh", "lat": 10.544313, "lng": 107.425562, "src": "pluscode"}, {"n": 4, "ma": "IDC", "name": "CỒNG TY CƯỜNG THUẬN IDICO", "addr": "Lô 8, Đường N7, Khu công nghiệp Đất Đỏ I, Xã Đất Đỏ, Thành phố Hồ Chí Minh, Việt Nam", "lat": 10.518333, "lng": 107.311006, "src": "latlng"}, {"n": 5, "ma": "SSG", "name": "BẾP S&S GLOVE", "addr": "Lô 4 D6 Khu Công Nghiệp Đất Đỏ I, Đất Đỏ, Hồ Chí Minh 78000, Vietnam", "lat": 10.526187, "lng": 107.302437, "src": "pluscode"}], "color": "#f58231"}, {"tuyen": "Tuyến 5", "tx": "Nguyễn Văn Chiến", "stops": [{"n": 1, "ma": "GIAYSG", "name": "SGP.", "addr": "KCN Mỹ Xuân A, Phường Mỹ Xuân, Tỉnh Bà Rịa-Vũng Tàu", "lat": 10.648562, "lng": 107.040938, "src": "pluscode"}, {"n": 2, "ma": "NIP", "name": "NIPPON STEEL PIPE VN.", "addr": "Đường D3, KCN Phú Mỹ II, Phường Phú Mỹ, Tỉnh Bà Rịa-Vũng Tàu.", "lat": 10.563278, "lng": 107.074237, "src": "latlng"}, {"n": 3, "ma": "HOAPHAT", "name": "CÔNG TY CỔ PHẦN SẢN XUẤT CONTAINER HÒA PHÁT", "addr": "", "lat": 10.539312, "lng": 107.046062, "src": "pluscode"}, {"n": 4, "ma": "BSV", "name": "NS BLUESCOPE VIỆT NAM.", "addr": "KCN Phú Mỹ 1, Phường Phú Mỹ, Thị Xã Phú Mỹ, Tỉnh Bà Rịa-Vũng Tàu.", "lat": 10.584268, "lng": 107.047287, "src": "latlng"}], "color": "#911eb4"}, {"tuyen": "Tuyến 6", "tx": "Vũ Xuân Tú", "stops": [{"n": 1, "ma": "JCT", "name": "CÔNG TY CỔ PHẦN CUNG ỨNG THỰC PHẨM JETCATERING", "addr": "94 Cao Thắng, Bàn Cờ, Hồ Chí Minh, Vietnam", "lat": 10.777415, "lng": 106.706892, "src": "latlng"}, {"n": 2, "ma": "X51", "name": "CÔNG TY TNHH MTV ĐÓNG VÀ SỬA TÀU HẢI MINH", "addr": "1042 Huỳnh Tấn Phát, Nhà Bè, Hồ Chí Minh, Vietnam", "lat": 10.673901, "lng": 106.766386, "src": "latlng"}], "color": "#42d4f4"}, {"tuyen": "Tuyến 7", "tx": "Thiên Hoàng", "stops": [{"n": 1, "ma": "VIG", "name": "CVIGLACERA MỸ ĐỨC.", "addr": "Đường số 1A, KCN Mỹ Xuân A, Phường Mỹ Xuân, Tỉnh Bà Rịa-Vũng Tàu.", "lat": 10.648062, "lng": 107.038313, "src": "pluscode"}, {"n": 2, "ma": "DEVI", "name": "CÔNG TY DAEYOUNG EP VINA - HÀN- VIỆT", "addr": "KCN Mỹ Xuân, B1, Phú Mỹ, Thành phố Hồ Chí Minh", "lat": 10.639524, "lng": 107.057738, "src": "latlng"}, {"n": 3, "ma": "XCP", "name": "CÔNG TY TNHH HP PHÚ MỸ - XƯỞNG CHÂU PHA", "addr": "", "lat": 10.607065, "lng": 107.095117, "src": "latlng"}, {"n": 4, "ma": "DOF", "name": "CÔNG TY TNHH DOORE FOODS", "addr": "", "lat": 10.597935, "lng": 107.153537, "src": "latlng"}, {"n": 5, "ma": "FULL", "name": "CÔNG TY TNHH FULLXIN VIỆT NAM.", "addr": "Lô 12A-12B KCN Châu Đức, Xã Nghĩa Thành, Tỉnh Bà Rịa-Vũng Tàu.", "lat": 10.593185, "lng": 107.173234, "src": "latlng"}, {"n": 6, "ma": "CG1", "name": "CÔNG TY TNHH FULLXIN (VIỆT NAM) - CG1", "addr": "", "lat": 10.583271, "lng": 107.172133, "src": "latlng"}, {"n": 7, "ma": "CG2", "name": "CÔNG TY TNHH FULLXIN (VIỆT NAM) -CG2", "addr": "H5RC+X7Q, Ngãi Giao, Hồ Chí Minh, Vietnam", "lat": 10.578324, "lng": 107.176125, "src": "latlng"}, {"n": 8, "ma": "UYVIET", "name": "CÔNG TY TNHH SẢN XUẤT GIÀY UY VIỆT", "addr": "H5RC+43V, KCN, Ngãi Giao, Hồ Chí Minh, Vietnam", "lat": 10.588452, "lng": 107.169342, "src": "latlng"}, {"n": 9, "ma": "SND", "name": "CÔNG TY TNHH MTV DỊCH VỤ GOLF CHÂU ĐỨC", "addr": "J56M+GGW, Ngãi Giao, Hồ Chí Minh, Vietnam", "lat": 10.611538, "lng": 107.184764, "src": "latlng"}], "color": "#f032e6"}, {"tuyen": "Tuyến 8", "tx": "hà mạnh cường", "stops": [{"n": 1, "ma": "LSP", "name": "LSP CỔNG ADMIN", "addr": "F397+RG6, Đảo, Long Sơn, Hồ Chí Minh, Vietnam", "lat": 10.464815, "lng": 107.065456, "src": "latlng"}], "color": "#bfef45"}, {"tuyen": "Tuyến 9", "tx": "Bình", "stops": [{"n": 1, "ma": "G8", "name": "XƯỞNG G8", "addr": "XV8G+WH6, Hẻm 521 Nguyễn Ái Quốc, Long Bình, Đồng Nai, Vietnam", "lat": 10.967466, "lng": 106.876577, "src": "latlng"}, {"n": 2, "ma": "ZUI", "name": "HỘ KINH DOANH ĐÀO KIM HOÀNG", "addr": "XV7H+9M3, Khu Phố 13, Long Bình, Đồng Nai, Vietnam", "lat": 10.967732, "lng": 106.878439, "src": "latlng"}], "color": "#469990"}, {"tuyen": "Tuyến 10", "tx": "Dũng", "stops": [{"n": 1, "ma": "NTN", "name": "NHÀ THIẾU NHI THÀNH PHỐ", "addr": "03 Cách Mạng Tháng 8, Trấn Biên, Đồng Nai, Vietnam", "lat": 10.948769, "lng": 106.832794, "src": "latlng"}, {"n": 2, "ma": "GMA", "name": "CÔNG TY TNHH GM APPAREL & ACCESSORIES", "addr": "Số 90, Lô CN7, Bình Hòa 19 Đồng An, Khu Công Nghiệp, Bình Hòa, Hồ Chí Minh, Vietnam", "lat": 10.914426, "lng": 106.752132, "src": "latlng"}, {"n": 3, "ma": "ASIA", "name": "ASIA 1", "addr": "Lô E12, NA3, KCN Mỹ Phước II, Bến Cát, Hồ Chí Minh, Vietnam", "lat": 11.139647, "lng": 106.627455, "src": "latlng"}, {"n": 4, "ma": "ASIA2", "name": "ASIA 2", "addr": "LÔ E-6-CN; E-12-CN KCN MỸ PHƯỚC 2, PHƯỜNG BẾN CÁT, TP HỒ CHÍ MINH, VIỆT NAM", "lat": 11.127058, "lng": 106.620505, "src": "latlng"}, {"n": 5, "ma": "KIRIN", "name": "KIRIN", "addr": "4JQ9+CJ3, Bến Cát, Hồ Chí Minh, Vietnam", "lat": 11.140633, "lng": 106.623092, "src": "latlng"}], "color": "#9A6324"}, {"tuyen": "Tuyến 11", "tx": "Đoan", "stops": [{"n": 1, "ma": "BAT", "name": "HIEPPHATFOOD - BAT", "addr": "", "lat": 10.958661, "lng": 106.896281, "src": "latlng"}, {"n": 2, "ma": "VT", "name": "Mầm non Vĩnh Tân", "addr": "", "lat": 11.049035, "lng": 107.025845, "src": "latlng"}, {"n": 3, "ma": "HHT", "name": "HƯNG HẢI THỊNH", "addr": "Phú Giáo", "lat": 11.280033, "lng": 106.841683, "src": "latlng"}], "color": "#800000"}, {"tuyen": "Tuyến 12", "tx": "KHOA", "stops": [{"n": 1, "ma": "DECHANG1", "name": "DECHANG - GIAO G8", "addr": "XV8G+WH6, Hẻm 521 Nguyễn Ái Quốc, Long Bình, Đồng Nai, Vietnam", "lat": 10.967466, "lng": 106.876577, "src": "latlng"}, {"n": 2, "ma": "CAR", "name": "CÔNG TY TNHH CARGILL VIỆT NAM.", "addr": "", "lat": 10.923518, "lng": 106.896044, "src": "latlng"}, {"n": 3, "ma": "KOBELCO", "name": "KOBELCO E&M VIỆT NAM", "addr": "", "lat": 10.914318, "lng": 106.858761, "src": "latlng"}, {"n": 4, "ma": "FGL-AB", "name": "FASHION GARMENTS 2.", "addr": "", "lat": 10.93008, "lng": 106.871767, "src": "latlng"}], "color": "#000075"}, {"tuyen": "Tuyến 13", "tx": "Thiện", "stops": [{"n": 1, "ma": "BAY", "name": "BAYER", "addr": "AMATA", "lat": 10.939732, "lng": 106.893533, "src": "latlng"}, {"n": 2, "ma": "VINA-V", "name": "CÔNG TY TNHH E VIET FOOD_INZI VINA - BẾP VIỆT", "addr": "", "lat": 10.950601, "lng": 106.901532, "src": "latlng"}, {"n": 3, "ma": "STARPRINT", "name": "STARPRINT", "addr": "AMATA", "lat": 10.942411, "lng": 106.903868, "src": "latlng"}, {"n": 4, "ma": "NOBEL", "name": "NOBEL", "addr": "AMATA", "lat": 10.937768, "lng": 106.90068, "src": "latlng"}, {"n": 5, "ma": "HANGCHA", "name": "CÔNG TY TNHH XE NÂNG HANGCHA VIỆT NAM", "addr": "AMATA", "lat": 10.939216, "lng": 106.898186, "src": "latlng"}, {"n": 6, "ma": "SONHA", "name": "CÔNG TY TNHH SƠN HÀ", "addr": "Số 79, Nguyễn Văn A, KP 2, Phường Tân Hiệp, Thành phố Biên Hoà, Tỉnh Đồng Nai, Việt Nam", "lat": 10.965113, "lng": 106.857712, "src": "latlng"}, {"n": 7, "ma": "AGIS", "name": "CÔNG TY TNHH AGIS", "addr": "", "lat": 10.979631, "lng": 106.847399, "src": "latlng"}, {"n": 8, "ma": "NDC", "name": "HKD PHẠM THỊ ĐAN ANH - TRƯỜNG NGUYỄN ĐÌNH CHIỂU", "addr": "", "lat": 10.965175, "lng": 106.884056, "src": "latlng"}], "color": "#808000"}, {"tuyen": "Tuyến 14", "tx": "Khoa", "stops": [{"n": 1, "ma": "AQUA", "name": "AQUA", "addr": "", "lat": 10.920344, "lng": 106.879525, "src": "latlng"}, {"n": 2, "ma": "NOVA", "name": "CÔNG TY TNHH NOVA BUILDINGS VIỆT NAM", "addr": "KCN Biên Hoà 2", "lat": 10.921718, "lng": 106.885735, "src": "latlng"}, {"n": 3, "ma": "LYS-HP", "name": "LYSAGHT", "addr": "Số 03, đường 09A, KCN Biên Hoà 2, Đường 9A, Trấn Biên, Đồng Nai, Vietnam", "lat": 10.918998, "lng": 106.871487, "src": "latlng"}, {"n": 4, "ma": "THIENTAM", "name": "CÔNG TY TNHH MỘT THÀNH VIÊN THIỀN TÂM", "addr": "80 Võ Nguyên Giáp, Phước Tân, Đồng Nai, Vietnam", "lat": 10.913847, "lng": 106.938198, "src": "latlng"}, {"n": 5, "ma": "VIETUC", "name": "CÔNG TY TNHH CƠ KHÍ NHỰA VIỆT ÚC", "addr": "", "lat": 10.900643, "lng": 106.818441, "src": "latlng"}], "color": "#000000"}, {"tuyen": "Tuyến 15", "tx": "Vũ Thiện Hoàng", "stops": [{"n": 1, "ma": "ST", "name": "Sơn tiên", "addr": "QL51, Khu phố 4, Long Hưng, Đồng Nai 81000, Vietnam", "lat": 10.889568, "lng": 106.880661, "src": "latlng"}, {"n": 2, "ma": "FMS", "name": "FORMOSA", "addr": "Nhơn trạch", "lat": 10.717101, "lng": 106.957695, "src": "latlng"}], "color": "#a9a9a9"}, {"tuyen": "Tuyến 16", "tx": "HÀ MẠNH TUYẾN", "stops": [{"n": 1, "ma": "Caesar", "name": "Caesar", "addr": "Nhơn trạch", "lat": 10.718862, "lng": 106.911293, "src": "latlng"}], "color": "#e6beff"}, {"tuyen": "Tuyến 17", "tx": "nguyễn phúc kha", "stops": [{"n": 1, "ma": "MNHY", "name": "mần non hoàng yến", "addr": "Trảng dài", "lat": 10.99809, "lng": 106.8819, "src": "latlng"}], "color": "#aaffc3"}], "skipped": [{"tuyen": "Tuyến 7", "ma": "XPM", "ten": "XPM", "lydo": "thiếu Plus Code/toạ độ hợp lệ"}, {"tuyen": "Tuyến 9", "ma": "ROCO", "ten": "ROCO", "lydo": "thiếu Plus Code/toạ độ hợp lệ"}, {"tuyen": "Tuyến 11", "ma": "SAOMAI", "ten": "Mầm Non Sao Mai", "lydo": "thiếu Plus Code/toạ độ hợp lệ"}, {"tuyen": "Tuyến 14", "ma": "ALN", "ten": "ALLNEX", "lydo": "thiếu Plus Code/toạ độ hợp lệ"}, {"tuyen": "Tuyến 15", "ma": "DPHAT", "ten": "Hộ kinh doanh Dương Phát", "lydo": "thiếu Plus Code/toạ độ hợp lệ"}], "total_stops": 67};
+const LINE_BLUE = "#0b3d91", DIM = "#b9c6d1", RED = "#e11d2a", GREEN = "#1a9850";
+const map = L.map('map',{zoomControl:true, preferCanvas:false}).setView([DATA.depot.lat, DATA.depot.lng], 10);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; OpenStreetMap, &copy; CARTO', subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+document.getElementById('s-routes').textContent = DATA.routes.length;
+document.getElementById('s-stops').textContent = DATA.routes.reduce((a,r)=>a+r.stops.length,0);
+
+// depot marker
+const depotIcon = L.divIcon({className:'', html:'<div class="depot-ic">KHO</div>', iconSize:[34,34], iconAnchor:[17,17]});
+const depotM = L.marker([DATA.depot.lat, DATA.depot.lng], {icon:depotIcon, zIndexOffset:1000}).addTo(map);
+depotM.bindPopup('<div class="pop-t">'+esc(DATA.depot.name)+'</div><div class="pop-a">'+esc(DATA.depot.addr)+'</div><div class="pop-r">KHO XUẤT PHÁT</div>');
+depotM.bindTooltip('KHO', {direction:'right', className:'tip', offset:[14,0]});
+
+function numIcon(n, color){
+  return L.divIcon({className:'', html:'<div class="num-ic" style="background:'+color+'">'+n+'</div>', iconSize:[26,26], iconAnchor:[13,13]});
+}
+function dotIcon(isEnd){
+  const sz = labelsVisible ? 10 : 18;
+  const border = labelsVisible ? 2 : 3;
+  return L.divIcon({className:'', html:'<div class="dot-ic'+(isEnd?' end':'')+'" style="width:'+sz+'px;height:'+sz+'px;border-width:'+border+'px"></div>', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2]});
+}
+
+// build layers per route
+const layers = [];
+DATA.routes.forEach((rt,idx)=>{
+  const grp = L.layerGroup().addTo(map);
+  const markers = [];
+  const latlngs = [[DATA.depot.lat, DATA.depot.lng]];
+  rt.stops.forEach((s,i)=>{
+    const last = (i===rt.stops.length-1);
+    const col = last ? RED : LINE_BLUE;
+    const m = L.marker([s.lat,s.lng],{icon:numIcon(s.n,col)}).addTo(grp);
+    m.bindPopup('<div class="pop-t">'+esc(s.name||s.ma)+'</div><div class="pop-a">'+esc(s.addr||'—')+'</div><div class="pop-r">'+esc(rt.tuyen)+' · Điểm '+s.n+(last?' (kết thúc)':'')+'</div>');
+    m.bindTooltip((last?'🔴 ':'')+'#'+s.n+' '+shortName(s.name||s.ma), {direction:'top', offset:[0,-12], className:'tip'});
+    markers.push(m);
+    latlngs.push([s.lat,s.lng]);
+  });
+  // placeholder polyline (empty) until OSRM fills it
+  const line = L.polyline([], {color:LINE_BLUE, weight:5, opacity:.9, lineJoin:'round', lineCap:'round'}).addTo(grp);
+  const bounds = L.latLngBounds(latlngs);
+  layers.push({grp, line, markers, bounds, data:rt, latlngs, routed:false});
+});
+
+// fit to everything
+const allBounds = L.latLngBounds([[DATA.depot.lat,DATA.depot.lng]]);
+layers.forEach(l=>allBounds.extend(l.bounds));
+map.fitBounds(allBounds.pad(0.08));
+
+// ---- Hover → hiện popup tên đầy đủ + địa chỉ (click cũng mở popup như mặc định) ----
+// Popup mới mở sẽ tự đóng popup cũ (autoClose mặc định), rất phù hợp với chuyển hover giữa các chấm.
+layers.forEach(l=>{
+  l.markers.forEach(m=>{
+    m.on('mouseover', function(){ this.openPopup(); });
+  });
+});
+depotM.on('mouseover', function(){ this.openPopup(); });
+
+// ---- OSRM routing (real roads, no return-to-depot) ----
+let pending = layers.length;
+function updateLoad(){
+  document.getElementById('loadtxt').textContent = 'Đang tính lộ trình theo đường thực tế… ('+(layers.length-pending)+'/'+layers.length+')';
+  if(pending<=0){ document.getElementById('loading').style.display='none'; }
+}
+function routeOne(l){
+  // no return-to-depot: use only depot + stops (không nối về kho)
+  const coords = l.latlngs.map(p=>p[1]+','+p[0]).join(';');
+  const url = 'https://router.project-osrm.org/route/v1/driving/'+coords+'?overview=full&geometries=geojson';
+  fetch(url).then(r=>r.json()).then(j=>{
+    if(j && j.routes && j.routes[0]){
+      const gj = j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+      l.line.setLatLngs(gj);
+      l.routed=true;
+    } else {
+      l.line.setLatLngs(l.latlngs);
+      l.line.setStyle({dashArray:'6,8'});
+    }
+  }).catch(_=>{
+    l.line.setLatLngs(l.latlngs);
+    l.line.setStyle({dashArray:'6,8'});
+  }).finally(()=>{ pending--; updateLoad(); });
+}
+layers.forEach((l,i)=> setTimeout(()=>routeOne(l), i*350));
+updateLoad();
+
+// ---- panel list ----
+const list = document.getElementById('routelist');
+layers.forEach((l,idx)=>{
+  const rt=l.data;
+  const el=document.createElement('div'); el.className='ritem'; el.dataset.idx=idx;
+  el.innerHTML='<span class="dot" style="background:'+LINE_BLUE+'"></span>'+
+    '<div class="meta"><div class="t">'+esc(rt.tuyen)+'</div><div class="d">'+esc(rt.tx||'—')+'</div></div>'+
+    '<span class="cnt">'+rt.stops.length+'</span>';
+  el.onclick=()=>focusRoute(idx);
+  list.appendChild(el);
+});
+
+// mode: 'all' (chấm xanh + label) or 'focus' (icon số)
+let currentMode='all';
+let routesVisible=true;
+let labelsVisible=true;
+
+function setActive(idx){
+  document.querySelectorAll('.ritem').forEach(e=>e.classList.toggle('active', e.dataset.idx==idx));
+}
+
+function applyNumberedIcons(l, isDim){
+  l.markers.forEach((m,k)=>{
+    const s=l.data.stops[k]; const last=(k===l.data.stops.length-1);
+    const col = last ? RED : LINE_BLUE;
+    m.setIcon(numIcon(s.n,col));
+    m.unbindTooltip();
+    const el=m.getElement(); if(el){ el.style.opacity=isDim?0.28:1; }
+  });
+}
+
+function applyDotIcons(l){
+  l.markers.forEach((m,k)=>{
+    const s=l.data.stops[k]; const last=(k===l.data.stops.length-1);
+    m.setIcon(dotIcon(last));
+    m.unbindTooltip();
+    // label mã KH sẽ do refreshLabels() gắn với hướng chống chồng
+    const el=m.getElement(); if(el) el.style.opacity=1;
+  });
+}
+
+function focusRoute(idx){
+  currentMode='focus';
+  setActive(idx);
+  layers.forEach((l,i)=>{
+    const on = (i===idx);
+    l.line.setStyle({color: on?LINE_BLUE:DIM, opacity: on?0.95:0.35, weight: on?6:3});
+    // in focus mode: numbered icons on the focused route, dimmed on others
+    applyNumberedIcons(l, !on);
+    if(on){
+      // permanent tooltip on focused route
+      l.markers.forEach((m,k)=>{
+        const s=l.data.stops[k];
+        m.bindTooltip('#'+s.n+' '+shortName(s.name||s.ma),
+          {permanent:true, direction:'top', offset:[0,-14], className:'tip'});
+      });
+    }
+  });
+  map.fitBounds(layers[idx].bounds.pad(0.18));
+  const rt=layers[idx].data;
+  document.getElementById('maptitle').innerHTML='<b>'+esc(rt.tuyen)+' — '+esc(rt.tx||'')+'</b><span>'+rt.stops.length+' điểm giao · điểm số '+rt.stops.length+' là điểm kết thúc (đỏ)</span>';
+}
+
+function showAll(){
+  currentMode='all';
+  setActive(-1);
+  layers.forEach(l=>{
+    l.line.setStyle({color:LINE_BLUE, opacity:0.9, weight:5});
+    applyDotIcons(l);
+  });
+  map.fitBounds(allBounds.pad(0.08));
+  document.getElementById('maptitle').innerHTML='<b>Toàn bộ mạng lưới giao hàng</b><span>Di chuột hoặc click vào chấm để xem tên đầy đủ · chọn tuyến ở panel để xem chi tiết</span>';
+  refreshLabels();
+}
+
+// ---- Smart label placement: 4-direction collision detection, always on ----
+// Label mã KH luôn hiện ở mọi mức zoom. Với mỗi chấm thử 4 hướng đặt label
+// (top → right → left → bottom); chọn hướng đầu tiên không đè label khác.
+// Nếu cả 4 đều đè → ẩn label đó (chấm vẫn hiện).
+function refreshLabels(){
+  if(currentMode!=='all') return;
+  if(!labelsVisible){ layers.forEach(l=>l.markers.forEach(m=>m.unbindTooltip())); return; }
+  const OFFSET = 12; // khoảng đẩy label khỏi chấm (px)
+  const CHAR_W = 6.6, PAD = 14, H = 16;
+
+  // gom mọi marker + vị trí pixel
+  const items = [];
+  layers.forEach(l=>{
+    l.markers.forEach((m,k)=>{
+      const s=l.data.stops[k];
+      const last=(k===l.data.stops.length-1);
+      const pt = map.latLngToContainerPoint(m.getLatLng());
+      items.push({m, pt, last, ma:s.ma||'?'});
+    });
+  });
+  // ưu tiên đặt label cho điểm cuối tuyến (chấm đỏ) trước
+  items.sort((a,b)=> (b.last?1:0) - (a.last?1:0));
+
+  const placed = []; // các bounding box đã đặt
+  const overlap = (r,s)=> !(r.x2 <= s.x1 || r.x1 >= s.x2 || r.y2 <= s.y1 || r.y1 >= s.y2);
+
+  items.forEach(it=>{
+    const w = it.ma.length * CHAR_W + PAD;
+    const cx = it.pt.x, cy = it.pt.y;
+    // 4 hướng thử theo thứ tự ưu tiên
+    const cands = [
+      {dir:'top',    off:[0,-OFFSET+4], box:{x1:cx-w/2, y1:cy-OFFSET-H, x2:cx+w/2, y2:cy-OFFSET}},
+      {dir:'right',  off:[OFFSET-4,0], box:{x1:cx+OFFSET, y1:cy-H/2,   x2:cx+OFFSET+w, y2:cy+H/2}},
+      {dir:'left',   off:[-OFFSET+4,0],box:{x1:cx-OFFSET-w, y1:cy-H/2, x2:cx-OFFSET,   y2:cy+H/2}},
+      {dir:'bottom', off:[0,OFFSET-4], box:{x1:cx-w/2, y1:cy+OFFSET,   x2:cx+w/2, y2:cy+OFFSET+H}},
+    ];
+    let chosen = null;
+    for(const c of cands){
+      if(!placed.some(r=>overlap(r,c.box))){ chosen=c; placed.push(c.box); break; }
+    }
+    // gỡ tooltip cũ, gắn tooltip mới đúng hướng đã chọn
+    it.m.unbindTooltip();
+    if(chosen){
+      it.m.bindTooltip(esc(it.ma), {
+        permanent:true, direction:chosen.dir, offset:chosen.off,
+        className:'lbl-tip', opacity:1
+      });
+    }
+    // nếu không có hướng nào hợp lệ → không bind (label ẩn, chấm vẫn hiện)
+  });
+}
+map.on('zoomend moveend', refreshLabels);
+
+document.getElementById('allbtn').onclick=showAll;
+
+// ---- Toggle route lines (chỉ trong chế độ all) ----
+document.getElementById('togroutes').onclick=function(){
+  routesVisible = !routesVisible;
+  layers.forEach(l=>{
+    if(routesVisible){ l.grp.addLayer(l.line); }
+    else { l.grp.removeLayer(l.line); }
+  });
+  this.innerHTML = routesVisible ? '🛣 Ẩn tuyến đường (chỉ hiện điểm)' : '🛣 Hiện tuyến đường';
+  this.style.borderColor = routesVisible ? '#8fbc8f' : '#d38080';
+  this.style.color = routesVisible ? '#2f6f2f' : '#a03030';
+};
+
+document.getElementById('togglelabels').onclick=function(){
+  labelsVisible=!labelsVisible;
+  layers.forEach(l=>applyDotIcons(l));
+  refreshLabels();
+  this.innerHTML = labelsVisible ? '🏷️ Tắt label' : '🏷️ Hiện label';
+  this.style.borderColor = labelsVisible ? '#7aa7d9' : '#d39b6a';
+  this.style.color = labelsVisible ? '#1f4f8a' : '#8a4f1f';
+};
+
+// initial: show all with dots
+setTimeout(showAll, 100);
+
+// present mode
+function togglePresent(){ document.body.classList.toggle('present'); setTimeout(()=>map.invalidateSize(),250); }
+document.getElementById('present').onclick=togglePresent;
+
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function shortName(s){ s=s||''; s=s.replace(/^(CÔNG TY|CÔNG TY TNHH|CÔNG TY CỔ PHẦN|HKD|HỘ KINH DOANH|HIEPPHATFOOD -?)\s*/i,''); return s.length>26? s.slice(0,25)+'…': s; }
+</script>
+</body>
+</html>

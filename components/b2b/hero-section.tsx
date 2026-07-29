@@ -19,21 +19,22 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/lib/site";
 import { ThreeBackground } from "@/components/b2b/three-background";
+import { trackMetaLead } from "@/components/meta-pixel";
 
 const texts = {
   vi: {
     heroStats: [
-      { value: "109+", label: "Khách hàng B2B" },
-      { value: "24h", label: "Phản hồi báo giá" },
-      { value: "100%", label: "Giao đúng hẹn" },
-      { value: "10+", label: "Năm kinh nghiệm" },
+      { value: "24h", label: "Hoàn thành báo giá" },
+      { value: "30'", label: "Xác nhận yêu cầu" },
+      { value: "B2B", label: "Báo giá theo sản lượng" },
+      { value: "VAT", label: "Chứng từ đầy đủ" },
     ],
     trustBadges: [
-      { icon: ShieldCheck, label: "Chuẩn ISO 22000" },
-      { icon: ShieldCheck, label: "Chuẩn HACCP" },
-      { icon: Award, label: "Bảo hiểm SP 5 Tỷ" },
+      { icon: ShieldCheck, label: "Hồ sơ ATTP theo yêu cầu" },
+      { icon: FileText, label: "Báo giá theo sản lượng" },
+      { icon: Award, label: "Giao định kỳ theo thỏa thuận" },
     ],
-    certText: "Uy tín · ISO 22000 · HACCP · Bảo hiểm SP 5 tỷ VNĐ",
+    certText: "Nguồn nguyên liệu B2B · Hồ sơ rõ ràng · Giao định kỳ",
     title: (
       <>
         Đối tác cung ứng<br />
@@ -47,17 +48,17 @@ const texts = {
     formSuccessDesc: (name: string) => (
       <>
         Hệ thống đã ghi nhận yêu cầu của <strong>{name || "anh/chị"}</strong>.<br/>
-        Đội kinh doanh TPS1 sẽ phản hồi báo giá chi tiết <strong>trong vòng 15-30 phút</strong>.
+        TPS1 sẽ xác nhận yêu cầu trong <strong>30 phút</strong> và hoàn thành báo giá trong <strong>24 giờ</strong>.
       </>
     ),
     formCommitmentTitle: "Cam kết dịch vụ TPS1",
     formCommitment1: "Báo giá minh bạch: Cạnh tranh theo số lượng, không phí ẩn.",
-    formCommitment2: "Kiểm định khắt khe: 100% đạt chuẩn ISO 22000 & HACCP.",
+    formCommitment2: "Hồ sơ rõ ràng: Cung cấp chứng từ và hồ sơ ATTP theo yêu cầu.",
     formNewRequest: "← Gửi yêu cầu khác",
     formTitle: "Gửi nhu cầu nhận báo giá ngay",
     formDesc: "Tải lên danh sách cần mua hoặc điền nhanh thông tin bên dưới.",
     uploadPlaceholder: "Kéo thả hoặc Tải lên File danh mục (Excel/PDF)",
-    uploadSub: "Chúng tôi tính toán chiết khấu và gửi lại báo giá trong 2 giờ",
+    uploadSub: "Xác nhận trong 30 phút · Hoàn thành báo giá trong 24 giờ",
     companyLabel: "Tên công ty hoặc cơ sở bếp *",
     companyPlaceholder: "Ví dụ: Công ty TNHH ABC",
     phoneLabel: "SĐT hoặc Zalo liên hệ *",
@@ -72,17 +73,17 @@ const texts = {
   },
   en: {
     heroStats: [
-      { value: "109+", label: "B2B Customers" },
-      { value: "24h", label: "Quote Response" },
-      { value: "100%", label: "On-time Delivery" },
-      { value: "10+", label: "Years Experience" },
+      { value: "24h", label: "Complete quote" },
+      { value: "30 min", label: "Request confirmation" },
+      { value: "B2B", label: "Volume-based pricing" },
+      { value: "VAT", label: "Business documents" },
     ],
     trustBadges: [
-      { icon: ShieldCheck, label: "ISO 22000 Standard" },
-      { icon: ShieldCheck, label: "HACCP Certified" },
-      { icon: Award, label: "Product Liability" },
+      { icon: ShieldCheck, label: "Food-safety documents" },
+      { icon: FileText, label: "Volume-based quotes" },
+      { icon: Award, label: "Scheduled delivery" },
     ],
-    certText: "Trusted · ISO 22000 · HACCP · 5B VND Liability Ins.",
+    certText: "B2B ingredients · Clear documentation · Scheduled delivery",
     title: (
       <>
         Your professional<br />
@@ -96,17 +97,17 @@ const texts = {
     formSuccessDesc: (name: string) => (
       <>
         We have received the request from <strong>{name || "you"}</strong>.<br/>
-        TPS1 sales team will send a detailed quote <strong>within 15-30 minutes</strong>.
+        TPS1 will confirm the request within <strong>30 minutes</strong> and complete the quote within <strong>24 hours</strong>.
       </>
     ),
     formCommitmentTitle: "TPS1 Service Commitment",
     formCommitment1: "Transparent quotes: Competitive volume pricing, no hidden fees.",
-    formCommitment2: "Strict quality control: 100% ISO 22000 & HACCP certified.",
+    formCommitment2: "Clear documentation: Food-safety documents are provided on request.",
     formNewRequest: "← Send another request",
     formTitle: "Get your quote today",
     formDesc: "Upload your buying list or quickly fill out the info below.",
     uploadPlaceholder: "Drag & drop or Upload your list (Excel/PDF)",
-    uploadSub: "We calculate the discounts and send the quote in 2 hours",
+    uploadSub: "Confirmation in 30 minutes · Complete quote in 24 hours",
     companyLabel: "Company or Facility Name *",
     companyPlaceholder: "Ex: ABC Company",
     phoneLabel: "Phone or Zalo *",
@@ -139,6 +140,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
     setFormState("submitting");
     const formData = new FormData(e.currentTarget);
     const company = formData.get("company")?.toString() || "";
+    const params = new URLSearchParams(window.location.search);
     setLastSubmitName(company);
 
     const payload = {
@@ -148,7 +150,14 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
       phone: formData.get("phone")?.toString() || "",
       interestedIn: formData.get("category")?.toString() || "",
       message: formData.get("notes")?.toString().trim() || "",
-      pagePath: "/",
+      consent: formData.get("consent") === "yes",
+      utmSource: params.get("utm_source") || "",
+      utmMedium: params.get("utm_medium") || "",
+      utmCampaign: params.get("utm_campaign") || "",
+      utmContent: params.get("utm_content") || "",
+      utmTerm: params.get("utm_term") || "",
+      fbclid: params.get("fbclid") || "",
+      pagePath: `${window.location.pathname}${window.location.search}`,
     };
 
     const apiFormData = new FormData();
@@ -164,6 +173,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
         setFormState("success");
+        trackMetaLead({ form_name: "hero_quick_rfq", facility_type: "unknown" });
       } else {
         setFormState("error");
       }
@@ -392,6 +402,10 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
                         )}
                       </button>
 
+                      <label className="flex items-start gap-2 text-[11px] text-white/60 leading-relaxed mt-3">
+                        <input type="checkbox" name="consent" value="yes" required className="mt-0.5 h-4 w-4" />
+                        <span>{locale === "en" ? "I agree that TPS1 may contact me about this quote request." : "Tôi đồng ý để TPS1 liên hệ tư vấn và báo giá theo yêu cầu."} <Link href="/chinh-sach/bao-mat" className="text-[#4ade80]">{locale === "en" ? "Privacy policy" : "Chính sách bảo mật"}</Link>.</span>
+                      </label>
                       <p className="text-[10px] text-white/50 text-center mt-4 px-2">
                         {t.disclaimer}
                       </p>

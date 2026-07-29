@@ -47,15 +47,17 @@ export const siteConfig = {
 
 export const navItemsByLocale: Record<Locale, Array<{ label: string; href: string }>> = {
   vi: [
-    { label: "Hồ Sơ Năng Lực", href: "/gioi-thieu" },
-    { label: "Danh Mục Hàng Hóa", href: "/san-pham" },
-    { label: "Quy Trình Giao Nhận", href: "/quy-trinh" },
+    { label: "Giới Thiệu", href: "/gioi-thieu" },
+    { label: "Sản Phẩm", href: "/san-pham" },
+    { label: "Quy Trình", href: "/quy-trinh" },
+    { label: "Blog", href: "/blog" },
     { label: "Liên Hệ", href: "/lien-he" },
   ],
   en: [
-    { label: "Company Profile", href: "/en/about" },
-    { label: "B2B Catalog", href: "/en/products" },
-    { label: "Delivery Process", href: "/en/delivery" },
+    { label: "About", href: "/en/about" },
+    { label: "Products", href: "/en/products" },
+    { label: "Delivery", href: "/en/delivery" },
+    { label: "Blog", href: "/en/blog" },
     { label: "Contact", href: "/en/contact" },
   ],
 };

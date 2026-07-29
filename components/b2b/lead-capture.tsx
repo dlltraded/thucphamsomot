@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { Upload, FileText, Send, Lock, CheckCircle, Sparkles } from "lucide-react";
 import { siteConfig } from "@/lib/site";
+import { trackMetaLead } from "@/components/meta-pixel";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
@@ -138,6 +140,7 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [formState, setFormState] = useState<FormState>("idle");
+  const [lastSummary, setLastSummary] = useState({ name: "Khách hàng B2B", company: "", phone: "", primaryNeed: "Yêu cầu báo giá B2B", secondaryNeed: "Yêu cầu từ trang chủ" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const t = texts[locale];
@@ -183,6 +186,9 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
     const email = formData.get("email")?.toString() || "";
     const sector = formData.get("sector")?.toString() || "";
     const note = formData.get("note")?.toString() || "Yêu cầu báo giá từ trang chủ B2B";
+    const params = new URLSearchParams(window.location.search);
+    const hasBuyingList = formData.get("hasBuyingList")?.toString() || (file ? "Có" : "Chưa");
+    setLastSummary({ name: contact, company, phone, primaryNeed: "Yêu cầu báo giá B2B", secondaryNeed: note });
 
     const payload = {
       inquiryType: "buyer",
@@ -193,10 +199,19 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
       message: note,
       facilityType: sector,
       interestedIn: "Nhiều nhóm hàng", // Default or you can add a field
-      purchaseScale: "Chưa xác định",
-      deliveryFrequency: "Chưa xác định",
-      deliveryArea: "Chưa xác định",
-      pagePath: window.location.pathname,
+      deliveryArea: formData.get("deliveryArea")?.toString() || "",
+      purchaseScale: formData.get("purchaseScale")?.toString() || "",
+      deliveryFrequency: formData.get("deliveryFrequency")?.toString() || "",
+      contactRole: formData.get("contactRole")?.toString() || "",
+      hasBuyingList,
+      consent: formData.get("consent") === "yes",
+      utmSource: params.get("utm_source") || "",
+      utmMedium: params.get("utm_medium") || "",
+      utmCampaign: params.get("utm_campaign") || "",
+      utmContent: params.get("utm_content") || "",
+      utmTerm: params.get("utm_term") || "",
+      fbclid: params.get("fbclid") || "",
+      pagePath: `${window.location.pathname}${window.location.search}`,
     };
 
     const submitData = new FormData();
@@ -216,6 +231,7 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
 
       if (res.ok) {
         setFormState("success");
+        trackMetaLead({ form_name: "homepage_rfq", facility_type: sector || "unknown", has_buying_list: hasBuyingList });
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         setFormState("error");
@@ -226,13 +242,7 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
   };
 
   if (formState === "success") {
-    const summary = {
-      name: fileInputRef.current?.form?.contact?.value || "Khách hàng B2B",
-      company: fileInputRef.current?.form?.company?.value || "",
-      phone: fileInputRef.current?.form?.phone?.value || "",
-      primaryNeed: "Yêu cầu báo giá B2B",
-      secondaryNeed: fileInputRef.current?.form?.note?.value || "Yêu cầu từ trang chủ",
-    };
+    const summary = lastSummary;
 
     return (
       <section className="b2b-lead-section" aria-label={t.successAria}>
@@ -277,11 +287,11 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
                 <div className="quote-thank-you__promise-text">
                   {locale === "en" ? (
                     <>
-                      <strong>B2B Service Promise:</strong> Our dedicated consultant will contact you at <strong>{summary.phone || siteConfig.phone}</strong> within <strong>15 minutes</strong> (during business hours) to provide a detailed quote and onboarding support.
+                      <strong>B2B Service Promise:</strong> Our dedicated consultant will contact you at <strong>{summary.phone || siteConfig.phone}</strong> within <strong>30 minutes</strong> (during business hours) to confirm the request; the complete quote will be provided within <strong>24 hours</strong> and onboarding support.
                     </>
                   ) : (
                     <>
-                      <strong>Cam kết dịch vụ B2B:</strong> Chuyên viên tư vấn của Thực Phẩm Số Một sẽ chủ động liên hệ trực tiếp với anh/chị qua số điện thoại <strong>{summary.phone || siteConfig.phone}</strong> trong vòng <strong>15 phút</strong> (giờ hành chính) để báo giá chi tiết và hỗ trợ quy trình lên đơn hàng.
+                      <strong>Cam kết dịch vụ B2B:</strong> Chuyên viên tư vấn của Thực Phẩm Số Một sẽ chủ động liên hệ trực tiếp với anh/chị qua số điện thoại <strong>{summary.phone || siteConfig.phone}</strong> trong vòng <strong>30 phút</strong> (giờ hành chính) để xác nhận yêu cầu; báo giá hoàn chỉnh trong <strong>24 giờ</strong> và hỗ trợ quy trình lên đơn hàng.
                     </>
                   )}
                 </div>
@@ -444,6 +454,45 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
                 </select>
               </div>
 
+
+              <div className="b2b-lead-form__field">
+                <label htmlFor="lead-role">{locale === "en" ? "Your role *" : "Vai trò người liên hệ *"}</label>
+                <select id="lead-role" name="contactRole" required defaultValue="">
+                  <option value="" disabled>{locale === "en" ? "— Select role —" : "— Chọn vai trò —"}</option>
+                  <option>{locale === "en" ? "Owner / Director" : "Chủ doanh nghiệp / Ban giám đốc"}</option>
+                  <option>{locale === "en" ? "Purchasing / Procurement" : "Thu mua / Cung ứng"}</option>
+                  <option>{locale === "en" ? "Kitchen / Canteen manager" : "Quản lý bếp / Canteen"}</option>
+                  <option>{locale === "en" ? "HR / Administration" : "Hành chính / Nhân sự"}</option>
+                  <option>{locale === "en" ? "Other" : "Khác"}</option>
+                </select>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div className="b2b-lead-form__field">
+                  <label htmlFor="lead-scale">{locale === "en" ? "Daily scale *" : "Quy mô suất/ngày *"}</label>
+                  <select id="lead-scale" name="purchaseScale" required defaultValue="">
+                    <option value="" disabled>—</option><option>Dưới 200</option><option>200–499</option><option>500–999</option><option>1.000+</option>
+                  </select>
+                </div>
+                <div className="b2b-lead-form__field">
+                  <label htmlFor="lead-frequency">{locale === "en" ? "Purchase frequency *" : "Tần suất mua *"}</label>
+                  <select id="lead-frequency" name="deliveryFrequency" required defaultValue="">
+                    <option value="" disabled>—</option><option>Hằng ngày</option><option>2–3 lần/tuần</option><option>Hằng tuần</option><option>Chưa xác định</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="b2b-lead-form__field">
+                <label htmlFor="lead-area">{locale === "en" ? "Delivery area *" : "Khu vực giao hàng *"}</label>
+                <input id="lead-area" name="deliveryArea" required placeholder={locale === "en" ? "Industrial park / ward / city" : "KCN / phường / thành phố"} />
+              </div>
+
+              <div className="b2b-lead-form__field">
+                <label htmlFor="lead-list">{locale === "en" ? "Buying list available? *" : "Đã có danh sách hàng cần báo giá? *"}</label>
+                <select id="lead-list" name="hasBuyingList" required defaultValue={file ? "Có" : ""}>
+                  <option value="" disabled>—</option><option value="Có">Có, sẽ gửi ngay</option><option value="Chưa">Chưa, cần TPS1 tư vấn</option>
+                </select>
+              </div>
               <div className="b2b-lead-form__field">
                 <label htmlFor="lead-note">{t.noteLabel}</label>
                 <textarea
@@ -455,6 +504,11 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
                 />
               </div>
 
+
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "rgba(255,255,255,.72)", fontSize: ".78rem", lineHeight: 1.5 }}>
+                <input type="checkbox" name="consent" value="yes" required style={{ width: 16, marginTop: 3 }} />
+                <span>{locale === "en" ? "I agree that TPS1 may use this information to contact me about this quote request." : "Tôi đồng ý để TPS1 sử dụng thông tin này nhằm liên hệ tư vấn và báo giá theo yêu cầu; tôi có thể yêu cầu ngừng liên hệ hoặc xóa dữ liệu."} <Link href="/chinh-sach/bao-mat" style={{ color: "#4ade80" }}>{locale === "en" ? "Privacy policy" : "Chính sách bảo mật"}</Link>.</span>
+              </label>
               <button
                 type="submit"
                 className="btn-lead-submit"

@@ -6835,7 +6835,7 @@ a {
 /* Minimal Nav Links */
 .site-nav--minimal {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   margin: 0 auto;
 }
 @media (max-width: 1200px) {
@@ -6844,7 +6844,7 @@ a {
   }
 }
 .site-nav--minimal .site-nav__link {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #333;
   text-decoration: none;
