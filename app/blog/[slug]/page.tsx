@@ -130,14 +130,71 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   );
 }
 
+const categoryLinkBySlug: Record<string, { href: string; label: string; description: string }> = {
+  "bi-quyet-bao-quan-rau-cu-trong-kho-lanh": {
+    href: "/danh-muc/rau-cu-qua",
+    label: "Danh mục Rau củ quả",
+    description: "Nguồn rau củ tươi theo mùa, phù hợp bếp ăn cần giao định kỳ.",
+  },
+  "so-sanh-thuc-pham-tuoi-song-va-dong-lanh": {
+    href: "/danh-muc/hang-dong-lanh",
+    label: "Danh mục Hàng đông lạnh",
+    description: "Giải pháp dự phòng nguồn hàng khi cần chủ động tồn kho.",
+  },
+  "quy-trinh-chuan-kiem-tra-thit": {
+    href: "/danh-muc/thit-ca-hai-san",
+    label: "Danh mục Thịt cá hải sản",
+    description: "Nguồn thịt cá kiểm dịch mỗi ngày, đúng quy cách bếp cần.",
+  },
+  "du-bao-gia-thit-heo-cuoi-nam-2026": {
+    href: "/danh-muc/thit-ca-hai-san",
+    label: "Danh mục Thịt cá hải sản",
+    description: "Xem quy cách và cách nhận báo giá thịt heo, thịt bò, hải sản.",
+  },
+  "cach-xay-dung-thuc-don-suat-an-25k": {
+    href: "/danh-muc/gia-vi",
+    label: "Danh mục Gia vị",
+    description: "Gia vị chuẩn hóa hương vị, hỗ trợ giữ định mức chi phí suất ăn.",
+  },
+  "7-sai-lam-lang-phi-ngan-sach-suat-an": {
+    href: "/danh-muc/gia-vi",
+    label: "Danh mục Gia vị",
+    description: "Tối ưu chi phí gia vị và nguyên liệu để tránh lãng phí ngân sách.",
+  },
+  "tieu-chuan-vsattp-suat-an-cong-nghiep": {
+    href: "/danh-muc/thit-ca-hai-san",
+    label: "Danh mục Thịt cá hải sản",
+    description: "Nhóm hàng nhạy về an toàn thực phẩm, kiểm soát chặt từ đầu vào.",
+  },
+  "tai-sao-chon-nha-cung-cap-thuc-pham-dia-phuong": {
+    href: "/danh-muc/thuc-pham-chay",
+    label: "Danh mục Thực phẩm chay",
+    description: "Nguồn hàng chay từ nhà phân phối chuyên biệt tại địa phương.",
+  },
+  "case-study-giam-15-phan-tram-chi-phi-thuc-pham": {
+    href: "/san-pham",
+    label: "Xem toàn bộ sản phẩm",
+    description: "Danh mục 2.000+ SKU giúp tái cấu trúc chi phí nguyên liệu.",
+  },
+  "giai-phap-cung-ung-thuc-pham-nha-may-3-ca": {
+    href: "/danh-muc/hang-dong-lanh",
+    label: "Danh mục Hàng đông lạnh",
+    description: "Chủ động tồn kho cho nhà máy vận hành liên tục nhiều ca.",
+  },
+};
+
 function getRelatedNewsLinks(slug: string) {
   const common = [
     { href: "/san-pham", label: "Xem sản phẩm", description: "Danh mục nhóm hàng và quy cách cụ thể." },
     { href: "/bao-gia", label: "Nhận Báo Giá", description: "Gửi nhu cầu để nhận phản hồi nhanh chóng." },
   ];
 
+  const categoryLink = categoryLinkBySlug[slug];
+  const categoryLinks = categoryLink ? [categoryLink] : [];
+
   if (slug.includes("nha-may") || slug.includes("cong-nghiep")) {
     return [
+      ...categoryLinks,
       { href: "/cung-cap-thuc-pham-dong-nai", label: "Khu vực Đồng Nai", description: "Dịch vụ giao hàng tận nơi cho nhà máy Đồng Nai." },
       { href: "/cung-cap-thuc-pham-binh-duong", label: "Khu vực Bình Dương", description: "Tuyến giao hàng cho nhà máy, KCN Bình Dương." },
       ...common,
@@ -145,6 +202,7 @@ function getRelatedNewsLinks(slug: string) {
   }
 
   return [
+    ...categoryLinks,
     { href: "/cung-cap-thuc-pham-bien-hoa", label: "Khu vực Biên Hòa", description: "Trang địa phương cho nhu cầu mua định kỳ." },
     { href: "/cung-cap-thuc-pham-tp-hcm", label: "Khu vực TP.HCM", description: "Trang địa phương cho nhu cầu giao theo tuyến." },
     ...common,

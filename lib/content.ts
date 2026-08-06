@@ -19,6 +19,11 @@ export type ContentItem = {
   highlights?: string[];
   sections?: ContentSection[];
   faqs?: FaqItem[];
+  relatedLinks?: {
+    href: string;
+    label: string;
+    description: string;
+  }[];
 };
 
 const sharedFaqs: FaqItem[] = [
@@ -65,6 +70,11 @@ export const categories: ContentItem[] = [
       },
     ],
     faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/bi-quyet-bao-quan-rau-cu-trong-kho-lanh", label: "Bảo quản rau củ trong kho lạnh", description: "Cách setup và vận hành kho lạnh để rau củ tươi lâu, giảm hao hụt." },
+      { href: "/blog/so-sanh-thuc-pham-tuoi-song-va-dong-lanh", label: "Tươi sống hay đông lạnh?", description: "So sánh chi phí và chất lượng để chọn phương án phù hợp cho bếp." },
+      { href: "/danh-muc/hang-dong-lanh", label: "Xem thêm: Hàng đông lạnh", description: "Nhóm hàng đông lạnh bổ sung khi rau củ tươi trái mùa hoặc khan hàng." },
+    ],
   },
   {
     slug: "thit-ca-hai-san",
@@ -87,6 +97,11 @@ export const categories: ContentItem[] = [
       },
     ],
     faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/quy-trinh-chuan-kiem-tra-thit", label: "Quy trình kiểm tra thịt khi nhận hàng", description: "Các bước kiểm soát chất lượng thịt cá ngay tại khâu nhận hàng." },
+      { href: "/blog/du-bao-gia-thit-heo-cuoi-nam-2026", label: "Dự báo giá thịt heo cuối năm", description: "Cách ứng phó biến động giá thịt heo cho bếp ăn công nghiệp." },
+      { href: "/danh-muc/hang-dong-lanh", label: "Xem thêm: Hàng đông lạnh", description: "Phương án dự phòng khi cần chủ động nguồn thịt cá cho bếp." },
+    ],
   },
   {
     slug: "hang-dong-lanh",
@@ -109,6 +124,11 @@ export const categories: ContentItem[] = [
       },
     ],
     faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/so-sanh-thuc-pham-tuoi-song-va-dong-lanh", label: "Tươi sống hay đông lạnh?", description: "Bài toán tối ưu chi phí giữa thực phẩm tươi sống và đông lạnh." },
+      { href: "/blog/giai-phap-cung-ung-thuc-pham-nha-may-3-ca", label: "Cung ứng cho nhà máy 3 ca", description: "Giải pháp logistics thực phẩm cho nhà máy hoạt động liên tục." },
+      { href: "/danh-muc/thit-ca-hai-san", label: "Xem thêm: Thịt cá hải sản", description: "Nguồn thịt cá tươi hằng ngày kết hợp cùng hàng đông lạnh." },
+    ],
   },
   {
     slug: "gia-vi",
@@ -131,6 +151,11 @@ export const categories: ContentItem[] = [
       },
     ],
     faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/7-sai-lam-lang-phi-ngan-sach-suat-an", label: "7 sai lầm lãng phí ngân sách suất ăn", description: "Nhận diện sai lầm phổ biến khiến nhà máy tốn thêm chi phí." },
+      { href: "/blog/cach-xay-dung-thuc-don-suat-an-25k", label: "Xây dựng thực đơn suất ăn 25k", description: "Cân đối gia vị và nguyên liệu để giữ định mức chi phí suất ăn." },
+      { href: "/danh-muc/thuc-pham-chay", label: "Xem thêm: Thực phẩm chay", description: "Gia vị chay đi kèm khi bếp cần menu linh hoạt." },
+    ],
   },
   {
     slug: "thuc-pham-chay",
@@ -153,6 +178,11 @@ export const categories: ContentItem[] = [
       },
     ],
     faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/cach-xay-dung-thuc-don-suat-an-25k", label: "Xây dựng thực đơn suất ăn 25k", description: "Gợi ý xây thực đơn chay xen kẽ vẫn đảm bảo định lượng và chi phí." },
+      { href: "/blog/tai-sao-chon-nha-cung-cap-thuc-pham-dia-phuong", label: "Vì sao nên chọn nhà cung cấp địa phương", description: "Lợi thế logistics khi hợp tác với nhà cung cấp tại Đồng Nai." },
+      { href: "/danh-muc/gia-vi", label: "Xem thêm: Gia vị", description: "Gia vị chay đi kèm để hoàn thiện thực đơn." },
+    ],
   },
 ];
 

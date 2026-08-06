@@ -34,6 +34,7 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
         bullets={item.highlights}
         sections={item.sections}
         faqs={item.faqs}
+        relatedLinks={item.relatedLinks}
       />
     </PageShell>
   );

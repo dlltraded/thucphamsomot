@@ -5,6 +5,7 @@ import type { ContentSection, FaqItem } from "@/lib/content";
 import { siteConfig } from "@/lib/site";
 import { QuoteAddButton } from "@/components/quote-add-button";
 import { brandAssets } from "@/lib/brand";
+import { FaqJsonLd } from "@/components/faq-json-ld";
 
 type ContentPageProps = {
   title: string;
@@ -58,6 +59,7 @@ export function ContentPage({
 }: ContentPageProps) {
   return (
     <article className="content-detail">
+      <FaqJsonLd faqs={faqs} />
       <div className="content-detail__hero">
         <div className="content-detail__copy">
           <div className="pill">thucphamsomot.vn</div>

@@ -7,6 +7,7 @@ import type { LocalLandingPageConfig } from "@/lib/local-landing-content";
 import { brandAssets } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 import { QuoteAddButton } from "@/components/quote-add-button";
+import { FaqJsonLd } from "@/components/faq-json-ld";
 
 type LocalLandingPageProps = {
   config: LocalLandingPageConfig;
@@ -33,7 +34,8 @@ export function LocalLandingPage({ config }: LocalLandingPageProps) {
 
   return (
     <PageShell eyebrow={config.eyebrow} title={config.title} description={config.description} compact>
-      <SeoJsonLd />
+      <SeoJsonLd includeWebsite={false} />
+      <FaqJsonLd faqs={config.faqs} />
 
       {/* Hero Section */}
       <section className="local-hero">
