@@ -18,7 +18,7 @@ const pageVisuals: Record<string, string> = {
   "Giới thiệu": brandAssets.team,
   "Sản phẩm": brandAssets.coverFood,
   "Danh mục": brandAssets.warehouseWide,
-  "Ngành hàng": brandAssets.warehouseWide,
+  "Ngành hàng": brandAssets.deliveryTruckReal,
   "Dịch vụ": brandAssets.quality,
   "Kiến thức": brandAssets.coverFood,
   "Chính sách": brandAssets.quality,
