@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const https = require('https');
 
-const secretKey = 'f41214d4237be21bf7d6c7c88f4a546d';
+const secretKey = process.env.ZALO_MINI_APP_PRIVATE_KEY;
 
 const dataObj = {
   amount: 10000,

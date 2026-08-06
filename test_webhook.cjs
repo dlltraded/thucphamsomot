@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const http = require('http');
 
-const secretKey = process.env.ZALO_MINI_APP_PRIVATE_KEY || 'f41214d4237be21bf7d6c7c88f4a546d';
+const secretKey = process.env.ZALO_MINI_APP_PRIVATE_KEY;
 
 const data = `appId=3506828551978252271&orderId=123456789&method=COD`;
 const mac = crypto.createHmac('sha256', secretKey).update(data).digest('hex');
