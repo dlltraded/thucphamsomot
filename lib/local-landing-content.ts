@@ -288,25 +288,46 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       {
         heading: "Dịch vụ cung cấp thực phẩm tại TP. Hồ Chí Minh",
         body:
-          "TPS1 cung cấp thực phẩm giá sỉ cho các bếp ăn tập thể, nhà máy, bệnh viện tại khu vực TP. Hồ Chí Minh. Chúng tôi cam kết nguồn hàng ổn định, đầy đủ hóa đơn VAT và chứng nhận vệ sinh an toàn thực phẩm.",
-        items: ["Giao hàng linh hoạt 24/7", "Đa dạng danh mục hàng hóa", "Kiểm định định kỳ"],
+          "TPS1 cung cấp thực phẩm giá sỉ cho các bếp ăn tập thể, nhà máy, bệnh viện tại khu vực TP. Hồ Chí Minh. Tuyến giao xuất phát từ kho Đồng Nai, đi qua Nhơn Trạch/Long Thành nên chủ động được khung giờ giao cho khu Đông và trung tâm TP.HCM. Cam kết nguồn hàng ổn định, đầy đủ hóa đơn VAT và chứng nhận vệ sinh an toàn thực phẩm.",
+        items: ["Giao hàng linh hoạt theo khung giờ bếp", "Đa dạng danh mục hàng hóa", "Kiểm định định kỳ, có hồ sơ truy xuất"],
+      },
+      {
+        heading: "Nhóm hàng khách TP.HCM hỏi nhiều nhất",
+        body:
+          "Với các bếp ăn quy mô lớn và bếp ăn công nghiệp tại TP.HCM, nhóm hàng được đặt mua thường xuyên nhất là rau củ quả, thịt cá hải sản, hàng đông lạnh, gia vị nhà bếp và thực phẩm chay cho menu đa dạng.",
+        items: ["Rau củ quả tươi theo mùa", "Thịt cá hải sản tươi sống", "Hàng đông lạnh dự trữ", "Gia vị và thực phẩm chay"],
+      },
+      {
+        heading: "Quy trình nhận báo giá nhanh",
+        body:
+          "Khách chỉ cần gửi nhóm hàng cần mua, số lượng dự kiến và địa điểm giao tại TP.HCM — đội kinh doanh phản hồi báo giá trong ngày làm việc và xác nhận lịch giao trước khi nhận đơn đầu tiên.",
+        items: ["Gửi yêu cầu qua form hoặc Zalo", "Nhận báo giá trong 24h", "Thống nhất lịch giao trước khi chốt đơn"],
       },
     ],
     faqs: [
       {
-        question: "Có giao hàng cho bếp ăn tại TP. Hồ Chí Minh không?",
-        answer: "TPS1 hỗ trợ giao hàng tận nơi cho các bếp ăn, suất ăn công nghiệp tại TP. Hồ Chí Minh với tần suất đều đặn.",
+        question: "TPS1 giao hàng tới những khu vực nào ở TP.HCM?",
+        answer:
+          "Tập trung ở TP. Thủ Đức và các khu vực giáp Đồng Nai (do tuyến giao xuất phát từ kho Biên Hòa). Các quận huyện xa hơn vẫn nhận đơn nếu số lượng và lịch giao phù hợp với tuyến vận chuyển hiện có.",
+      },
+      {
+        question: "Đặt hàng lần đầu cần chuẩn bị gì?",
+        answer:
+          "Gửi danh mục hàng cần mua, số lượng dự kiến mỗi lần giao, tần suất giao (ngày/tuần) và địa chỉ nhận hàng. TPS1 sẽ tư vấn quy cách và gửi báo giá phù hợp trong ngày.",
       },
       {
         question: "Thanh toán công nợ như thế nào?",
-        answer: "Chúng tôi hỗ trợ linh hoạt các hình thức thanh toán công nợ theo thỏa thuận dành riêng cho khách hàng doanh nghiệp B2B.",
-      }
+        answer: "Hỗ trợ linh hoạt các hình thức thanh toán công nợ theo thỏa thuận riêng cho khách hàng doanh nghiệp mua định kỳ.",
+      },
     ],
     ctaLabel: "NHẬN BÁO GIÁ",
     quoteSlug: "thuc-pham-tp-hcm",
     quoteTitle: "Báo Giá Thực Phẩm TP. Hồ Chí Minh",
     quoteSummary: "Báo giá nhanh cho khách hàng tại TP. Hồ Chí Minh",
     relatedLinks: [
+      { href: "/kien-thuc/cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-tp-hcm", label: "Cách chọn nhà cung cấp thực phẩm cho nhà máy ở TP.HCM" },
+      { href: "/cung-cap-thuc-pham-dong-nai", label: "Cung cấp thực phẩm Đồng Nai" },
+      { href: "/cung-cap-thuc-pham-nhon-trach", label: "Cung cấp thực phẩm Nhơn Trạch" },
       { href: "/san-pham", label: "Danh mục sản phẩm" },
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
