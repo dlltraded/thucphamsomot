@@ -3,6 +3,8 @@ export type QuoteBasketItem = {
   title: string;
   summary?: string;
   quantity: number;
+  /** Đơn giá (đã áp chiết khấu nếu khách đã đăng nhập) — chỉ dùng cho luồng đặt hàng có tài khoản ở /portal. */
+  price?: number;
 };
 
 const STORAGE_KEY = "tps1-quote-basket-v1";

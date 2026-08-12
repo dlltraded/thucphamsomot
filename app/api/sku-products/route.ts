@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
   // Build query string for Supabase REST API
   const qs = new URLSearchParams({
-    select: 'id,local_product_id,name,category,unit,price_wholesale,image_url',
+    select: 'id,local_product_id,name,category,unit,price_retail,price_wholesale,image_url',
     active: 'eq.true',
     order: 'category.desc,name.asc',
     limit: String(PAGE_SIZE),
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
         category: catSlug,
         categoryLabel: p.category || '',
         unit: (p.unit || 'kg').toLowerCase(),
-        price: Number(p.price_wholesale) || 0,
+        price: Number(p.price_retail) || Number(p.price_wholesale) || 0,
         image: p.image_url || CAT_IMAGE[catSlug] || '/images/tps1-cover-food.jpg',
       };
     });

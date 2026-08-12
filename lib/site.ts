@@ -48,9 +48,9 @@ export const siteConfig = {
 export const navItemsByLocale: Record<Locale, Array<{ label: string; href: string }>> = {
   vi: [
     { label: "Giới Thiệu", href: "/gioi-thieu" },
-    { label: "Sản Phẩm", href: "/san-pham" },
+    { label: "Danh Mục Hàng Hóa", href: "/san-pham" },
     { label: "Ngành Hàng", href: "/nganh-hang" },
-    { label: "Quy Trình", href: "/quy-trinh" },
+    { label: "Quy Trình Giao Nhận", href: "/quy-trinh" },
     { label: "Blog", href: "/blog" },
     { label: "Liên Hệ", href: "/lien-he" },
   ],

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { getCustomerSupabaseAdmin } from '@/lib/customer-supabase-server';
 
 const PRIVATE_KEY = process.env.ZALO_MINI_APP_PRIVATE_KEY || '';
 
@@ -19,13 +20,37 @@ export async function POST(request: Request) {
     const params = new URLSearchParams(data);
     const orderId = params.get('orderId');
     const method = params.get('method');
+    const extradataRaw = params.get('extradata') || '{}';
+    let extradata: { centralOrderId?: string; orderCode?: string } = {};
+    try {
+      extradata = JSON.parse(extradataRaw);
+    } catch {
+      extradata = {};
+    }
 
     if (method === 'COD') {
       console.log(`[Zalo Checkout] Order ${orderId} confirmed with COD.`);
-      
-      // TODO: In the future, if you want to sync this COD order to Supabase 
-      // or send a Zalo ZNS message, you can do it here.
-      // Currently, it just acknowledges the Zalo Checkout SDK webhook.
+
+      if (extradata.centralOrderId) {
+        const supabase = getCustomerSupabaseAdmin();
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            payment_status: 'cod',
+            external_payment_order_id: orderId,
+          })
+          .eq('id', extradata.centralOrderId);
+        if (updateError) throw updateError;
+
+        const { error: historyError } = await supabase.from('order_history').insert({
+          order_id: extradata.centralOrderId,
+          action: 'zalo_checkout_confirmed',
+          actor: 'zalo_checkout',
+          note: `Zalo Checkout xác nhận COD ${orderId || ''}`,
+          payload: { orderCode: extradata.orderCode || '', externalOrderId: orderId },
+        });
+        if (historyError) throw historyError;
+      }
     }
 
     // 3. Return success to Zalo Checkout SDK so it can complete the order

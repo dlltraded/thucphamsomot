@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const adminToken = process.env.ADMIN_TOKEN?.trim() || "88888888";
+const adminToken = process.env.ADMIN_TOKEN?.trim() || "19871988";
 
 export async function POST(req: Request) {
   try {

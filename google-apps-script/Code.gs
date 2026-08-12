@@ -38,7 +38,17 @@ const LEAD_HEADERS = [
   "Zalo Avatar",        // W
   "Zalo Phone Token",   // X
   "Zalo Follow OA",     // Y
-  "Mini App Source"     // Z
+  "Mini App Source",    // Z
+  "Customer Code",
+  "Customer Tier",
+  "Discount Percent",
+  "Delivery Type",
+  "Delivery Alias",
+  "Delivery Address",
+  "Delivery Recipient",
+  "Delivery Phone",
+  "Order ID",
+  "Order Code"
 ];
 
 // ─── TIỆN ÍCH ─────────────────────────────────────────────────────
@@ -119,6 +129,7 @@ function buildSelectedItemsText(payload) {
  * - Nếu không có array → dùng text summary (selectedProducts)
  */
 function buildCartJson(payload) {
+  if (payload.gioHang) return String(payload.gioHang);
   // 1. cartItems (array đầy đủ từ miniapp v2 / website)
   if (Array.isArray(payload.cartItems) && payload.cartItems.length > 0) {
     return JSON.stringify(payload.cartItems.map(function(item) {
@@ -371,6 +382,16 @@ function doPost(e) {
       "Zalo Phone Token":   isZalo ? (payload.zaloPhoneToken    || "") : "",
       "Zalo Follow OA":     isZalo ? normalizeBoolean(payload.zaloFollowOA) : "",
       "Mini App Source":    isZalo ? (payload.miniAppSource     || "quote_form") : "",
+      "Customer Code":      payload.customerCode || "",
+      "Customer Tier":      payload.customerTier || "",
+      "Discount Percent":   payload.discountPercent !== undefined ? payload.discountPercent : "",
+      "Delivery Type":      payload.deliveryType || "",
+      "Delivery Alias":     payload.deliveryAlias || "",
+      "Delivery Address":   payload.deliveryAddress || payload.deliveryArea || "",
+      "Delivery Recipient": payload.deliveryName || "",
+      "Delivery Phone":     payload.deliveryPhone || "",
+      "Order ID":           payload.orderId || "",
+      "Order Code":         payload.orderCode || "",
       "Contact Role":       payload.contactRole || "",
       "Has Buying List":    payload.hasBuyingList || (payload.attachmentName ? "Có" : ""),
       "Consent":            normalizeBoolean(payload.consent),

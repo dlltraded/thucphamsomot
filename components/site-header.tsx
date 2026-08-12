@@ -154,25 +154,22 @@ export function SiteHeader() {
 
         <div id="site-mobile-nav" className={`site-mobile-nav${menuOpen ? " is-open" : ""}`}>
           <div className="container-shell site-mobile-nav__panel">
-            <div className="site-mobile-nav__actions">
+            <div className="site-mobile-nav__cta-group">
               <Link
-                href={siteConfig.profilePagePath}
-                className="site-mobile-nav__link site-mobile-nav__link--profile"
+                href={isEnglish ? "/en/portal" : "/portal"}
+                className="btn-header-outline"
                 onClick={() => setMenuOpen(false)}
               >
-                <span>{isEnglish ? "Company Profile" : "Hồ Sơ Năng Lực"}</span>
-                <span>→</span>
+                <Users size={14} />
+                {isEnglish ? "VIP Portal" : "Cổng Đối Tác VIP"}
               </Link>
-              <a
-                href={siteConfig.profileDownloadUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="site-mobile-nav__link site-mobile-nav__link--download"
+              <Link
+                href={isEnglish ? "/en/bao-gia" : "/bao-gia"}
+                className="btn-header-primary"
                 onClick={() => setMenuOpen(false)}
               >
-                <span>{isEnglish ? "Download HSNL" : "Tải HSNL"}</span>
-                <span>↓</span>
-              </a>
+                {isEnglish ? "Request Quote" : "Yêu Cầu Báo Giá"}
+              </Link>
             </div>
             {navItems.map((item) => (
               <Link

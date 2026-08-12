@@ -58,5 +58,5 @@ npm run build
 
 - Vercel khong tu lay `.env.local` trong repo de dung cho production.
 - Vao `Project Settings` -> `Environment Variables` tren Vercel va them `GOOGLE_SHEET_WEBHOOK_URL` cho moi environment can dung.
-- Neu muon doi mat khau quan tri, them `ADMIN_TOKEN` tren Vercel. Mac dinh cua repo la `88888888`.
+- Dat `ADMIN_TOKEN` tren Vercel trung voi ma mo khoa Admin. Mac dinh local hien tai la `19871988`.
 - Sau khi doi env, can redeploy lai deployment moi co hieu luc.

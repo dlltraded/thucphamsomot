@@ -21,6 +21,7 @@
       "node"
     ],
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": [
         "./*"
@@ -44,6 +45,7 @@
     "TPS1",
     "namecard-app",
     "tps1-miniapp",
+    "tps1-miniapp_b2b_backup",
     "zaui-market-template"
   ]
 }
