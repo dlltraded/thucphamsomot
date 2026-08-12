@@ -3,17 +3,40 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  ArrowRight,
+  Building2,
+  KeyRound,
+  LogOut,
+  Mail,
+  MapPin,
+  PackageCheck,
+  Phone,
+  ReceiptText,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import type { CustomerSession } from "@/lib/customer-session";
 
 const TIER_LABEL: Record<string, string> = {
-  VIP1: "VIP1 — Khách thân thiết",
-  VIP2: "VIP2 — Khách lớn",
-  VIP3: "VIP3 — Đối tác chiến lược",
+  VIP1: "Khách thân thiết",
+  VIP2: "Khách hàng lớn",
+  VIP3: "Đối tác chiến lược",
 };
 
 export function AccountCard({ session }: { session: CustomerSession }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const initials = session.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const shipping = session.defaultShippingAddress;
 
   const handleLogout = async () => {
     setLoading(true);
@@ -23,97 +46,102 @@ export function AccountCard({ session }: { session: CustomerSession }) {
   };
 
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto" }}>
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 16,
-          padding: 24,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-          border: "1px solid #eee",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 18 }}>Tài khoản khách hàng</h2>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              background: "rgba(27,122,61,0.1)",
-              color: "#1B7A3D",
-              borderRadius: 999,
-              padding: "4px 10px",
-            }}
-          >
-            {TIER_LABEL[session.tier] || session.tier}
-          </span>
+    <div className="customer-portal">
+      <section className="customer-hero">
+        <div className="customer-hero__identity">
+          <div className="customer-avatar" aria-hidden="true">{initials || "VIP"}</div>
+          <div>
+            <div className="customer-hero__badges">
+              <span className="customer-pill customer-pill--vip"><Sparkles size={14} />{session.tier}</span>
+              <span className="customer-pill"><ShieldCheck size={14} /> Tài khoản đã xác thực</span>
+            </div>
+            <p className="customer-hero__welcome">Xin chào đối tác,</p>
+            <h2>{session.name}</h2>
+            <p>{session.company || "Khách hàng Thực Phẩm Số Một"}</p>
+          </div>
+        </div>
+        <div className="customer-discount">
+          <span>Ưu đãi hiện tại</span>
+          <strong>{session.discountPercent}%</strong>
+          <small>áp dụng trên mỗi đơn hàng</small>
+        </div>
+      </section>
+
+      <div className="customer-layout">
+        <div className="customer-main-column">
+          <section className="customer-panel">
+            <div className="customer-panel__heading">
+              <div><span className="customer-section-kicker">Hồ sơ đối tác</span><h3>Thông tin khách hàng</h3></div>
+              <span className="customer-code">Mã KH: {session.code}</span>
+            </div>
+            <div className="customer-info-grid">
+              <Info icon={<UserRound />} label="Người liên hệ" value={session.name} />
+              <Info icon={<Phone />} label="Số điện thoại" value={session.phone} />
+              <Info icon={<Building2 />} label="Công ty / đơn vị" value={session.company || "Chưa cập nhật"} />
+              <Info icon={<Mail />} label="Email" value={session.email || "Chưa cập nhật"} />
+              {session.taxCode && <Info icon={<ReceiptText />} label="Mã số thuế" value={session.taxCode} />}
+              {session.address && <Info icon={<MapPin />} label="Địa chỉ đơn vị" value={session.address} wide />}
+            </div>
+          </section>
+
+          <section className="customer-panel customer-shipping-panel">
+            <div className="customer-panel__heading">
+              <div><span className="customer-section-kicker">Giao nhận</span><h3>Địa chỉ giao hàng mặc định</h3></div>
+              <span className="customer-default-tag">Mặc định</span>
+            </div>
+            {shipping?.address ? (
+              <div className="customer-address-card">
+                <div className="customer-address-card__icon"><MapPin /></div>
+                <div>
+                  <strong>{shipping.alias || "Địa chỉ giao hàng"}</strong>
+                  <p>{shipping.address}</p>
+                  <span>{shipping.name || session.name} · {shipping.phone || session.phone}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="customer-empty-inline"><MapPin /><span>Chưa có địa chỉ mặc định. Anh/chị vẫn có thể thêm địa chỉ mới khi đặt hàng.</span></div>
+            )}
+          </section>
         </div>
 
-        <dl style={{ display: "grid", gap: 10, margin: 0, fontSize: 14 }}>
-          <Row label="Mã khách hàng" value={session.code} />
-          <Row label="Tên" value={session.name} />
-          {session.company && <Row label="Công ty" value={session.company} />}
-          <Row label="Số điện thoại" value={session.phone} />
-          {session.email && <Row label="Email" value={session.email} />}
-          {session.taxCode && <Row label="Mã số thuế" value={session.taxCode} />}
-          {session.address && <Row label="Địa chỉ đơn vị" value={session.address} />}
-          {session.defaultShippingAddress?.address && (
-            <Row
-              label="Địa chỉ giao mặc định"
-              value={`${session.defaultShippingAddress.alias ? `${session.defaultShippingAddress.alias}: ` : ""}${session.defaultShippingAddress.address}`}
-            />
-          )}
-          <Row
-            label="Chiết khấu"
-            value={`${session.discountPercent}% trên mọi đơn hàng`}
-            highlight
-          />
-        </dl>
-
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 10,
-            marginTop: 24,
-          }}
-        >
-          <Link href="/portal/gio-hang" className="btn-primary">
-            Giỏ hàng của tôi
-          </Link>
-          <Link href="/portal/don-hang" className="btn-secondary">
-            Đơn hàng đã đặt
-          </Link>
-          <Link href="/portal/doi-mat-khau" className="btn-secondary">
-            Đổi mật khẩu
-          </Link>
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={loading}
-            className="btn-secondary"
-            style={{ cursor: "pointer" }}
-          >
-            {loading ? "Đang đăng xuất..." : "Đăng xuất"}
-          </button>
-        </div>
+        <aside className="customer-side-column">
+          <section className="customer-panel customer-actions-panel">
+            <span className="customer-section-kicker">Thao tác nhanh</span>
+            <h3>Quản lý mua hàng</h3>
+            <Link href="/portal/gio-hang" className="customer-action customer-action--primary">
+              <span className="customer-action__icon"><ShoppingCart /></span>
+              <span><strong>Giỏ hàng của tôi</strong><small>Kiểm tra sản phẩm và đặt hàng</small></span>
+              <ArrowRight />
+            </Link>
+            <Link href="/portal/don-hang" className="customer-action">
+              <span className="customer-action__icon"><PackageCheck /></span>
+              <span><strong>Đơn hàng đã đặt</strong><small>Theo dõi trạng thái giao hàng</small></span>
+              <ArrowRight />
+            </Link>
+            <Link href="/portal/doi-mat-khau" className="customer-action">
+              <span className="customer-action__icon"><KeyRound /></span>
+              <span><strong>Đổi mật khẩu</strong><small>Bảo vệ tài khoản của anh/chị</small></span>
+              <ArrowRight />
+            </Link>
+            <button type="button" onClick={handleLogout} disabled={loading} className="customer-logout">
+              <LogOut size={17} /> {loading ? "Đang đăng xuất..." : "Đăng xuất tài khoản"}
+            </button>
+          </section>
+          <div className="customer-support-note">
+            <Phone size={18} />
+            <div><span>Cần hỗ trợ đơn hàng?</span><a href="tel:0898902222">089.890.2222</a></div>
+          </div>
+        </aside>
       </div>
     </div>
   );
 }
 
-function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function Info({ icon, label, value, wide }: { icon: React.ReactNode; label: string; value: string; wide?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-      <dt style={{ color: "#666" }}>{label}</dt>
-      <dd style={{ margin: 0, fontWeight: 600, color: highlight ? "#1B7A3D" : "#111" }}>{value}</dd>
+    <div className={`customer-info${wide ? " customer-info--wide" : ""}`}>
+      <span className="customer-info__icon">{icon}</span>
+      <div><span>{label}</span><strong>{value}</strong></div>
     </div>
   );
 }
