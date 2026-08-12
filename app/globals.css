@@ -1413,6 +1413,7 @@ a {
   color: #fff; font-size: 1.05rem; font-weight: 700; backdrop-filter: blur(12px); 
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+}
 
 /* Customer portal */
 .customer-portal,
@@ -1541,6 +1542,7 @@ a {
 @media (max-width: 600px) {
   .customer-hero { display:block;border-radius:18px; }.customer-hero__identity { align-items:flex-start; }.customer-avatar { width:58px;height:58px;border-radius:17px;font-size:18px; }.customer-pill:not(.customer-pill--vip) { display:none; }.customer-discount { display:flex;align-items:center;gap:7px;margin-top:22px;padding:15px 0 0;border-top:1px solid rgba(255,255,255,.16);border-left:0;text-align:left; }.customer-discount strong { font-size:27px; }.customer-discount small { flex:1; }.customer-panel { padding:19px;border-radius:17px; }.customer-panel__heading { display:block; }.customer-code,.customer-default-tag { display:inline-block;margin-top:9px; }.customer-info-grid { grid-template-columns:1fr; }.customer-info--wide { grid-column:auto; }.customer-order-stats { gap:7px; }.customer-order-stats > div { padding:13px 12px; }.customer-order-stats svg { display:none; }.customer-order-stats span { min-height:28px;font-size:9px; }.customer-order-stats strong { font-size:21px; }.customer-orders-toolbar { align-items:flex-start; }.customer-orders-toolbar p { display:none; }.customer-new-order { padding:9px 11px;font-size:10.5px; }.customer-order-card summary { align-items:flex-start;padding:15px; }.customer-order-icon { display:none; }.customer-order-summary__meta { flex-direction:column-reverse;align-items:flex-end;gap:5px; }.customer-order-summary__meta > div { min-width:0; }.customer-order-chevron { display:none; }.customer-order-status { font-size:9px; }.customer-order-detail { padding:15px 12px; }.customer-order-progress { overflow-x:auto; }.customer-order-step small { display:block;max-width:55px;margin:auto;line-height:1.2; }.customer-order-totals { width:100%; }
 }
+@media (max-width: 768px) {
 .btn-hero-secondary:hover { 
   background: rgba(255,255,255,0.15); 
   transform: translateY(-3px);
