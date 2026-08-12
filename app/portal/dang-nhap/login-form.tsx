@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { KeyRound } from "lucide-react";
+import { PortalPasswordField } from "@/components/portal-password-field";
 
 export function LoginForm() {
   const router = useRouter();
@@ -91,16 +92,17 @@ export function LoginForm() {
           />
         </div>
 
-        <div className="quote-landing__field">
-          <label className="portal-form__label">Mật khẩu</label>
-          <input
-            className="lead-form__input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Nhập mật khẩu"
-          />
-        </div>
+        <PortalPasswordField
+          label="Mật khẩu"
+          value={password}
+          onChange={setPassword}
+          placeholder="Nhập mật khẩu"
+          autoComplete="current-password"
+        />
+
+        <p style={{ margin: "-4px 0 10px", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+          Mật khẩu phân biệt chữ hoa và chữ thường. Dùng biểu tượng con mắt để kiểm tra trước khi đăng nhập.
+        </p>
 
         {error && <p className="lead-form__error">{error}</p>}
 

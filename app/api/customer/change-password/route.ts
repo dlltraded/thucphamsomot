@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getCustomerSupabase();
-  const { error } = await supabase.rpc("customer_change_password", {
+  const { data: changed, error } = await supabase.rpc("customer_change_password", {
     p_code: session.code,
     p_old_password: oldPassword,
     p_new_password: newPassword,
@@ -45,7 +45,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const nextSession = { ...session, mustChangePassword: false };
+  if (changed !== true) {
+    return NextResponse.json(
+      { ok: false, error: "Supabase chưa xác nhận việc đổi mật khẩu, vui lòng thử lại" },
+      { status: 500 }
+    );
+  }
+  if (newPassword !== newPassword.trim()) {
+    return NextResponse.json(
+      { ok: false, error: "Mật khẩu mới không được có khoảng trắng ở đầu hoặc cuối" },
+      { status: 400 }
+    );
+  }
+
+  // Không báo thành công chỉ dựa trên RPC update: đăng nhập thử bằng mật khẩu mới
+  // để bảo đảm hash vừa lưu có thể dùng cho lần đăng nhập tiếp theo.
+  const { data: verifiedData, error: verifyError } = await supabase.rpc(
+    "verify_customer_login",
+    {
+      p_code: session.code,
+      p_password: newPassword,
+    }
+  );
+  const verified = Array.isArray(verifiedData) ? verifiedData[0] : verifiedData;
+  if (verifyError || !verified || verified.id !== session.id) {
+    console.error("verify changed customer password error:", verifyError);
+    return NextResponse.json(
+      { ok: false, error: "Mật khẩu mới chưa được xác nhận, vui lòng thử đổi lại" },
+      { status: 500 }
+    );
+  }
+
+  const nextSession = {
+    ...session,
+    mustChangePassword: false,
+    orderSessionToken: verified.order_session_token || session.orderSessionToken || "",
+  };
   const response = NextResponse.json({ ok: true, session: nextSession });
   response.cookies.set(CUSTOMER_SESSION_COOKIE, createSessionCookieValue(nextSession), {
     httpOnly: true,

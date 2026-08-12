@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, X, Minus, Plus, ArrowRight, PackageCheck } from "lucide-react";
+import { ShoppingBag, X, Minus, Plus, ArrowRight, PackageCheck, LogIn, Phone, MessageCircle } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import type { Locale } from "@/lib/site";
+import { useCustomerSession } from "@/lib/customer-session-context";
 
 // Inline styles để đảm bảo render đúng bất kể CSS cache/Turbopack
 const S = {
@@ -147,6 +148,32 @@ const S = {
     lineHeight: 1.6,
     background: "rgba(255,255,255,0.5)",
   } as React.CSSProperties,
+  vipPrompt: {
+    display: "grid",
+    gridTemplateColumns: "auto 1fr",
+    gap: 12,
+    padding: "14px 16px",
+    marginBottom: 18,
+    border: "1px solid rgba(15,111,75,0.2)",
+    borderRadius: 12,
+    background: "linear-gradient(135deg, rgba(15,111,75,0.08), rgba(255,255,255,0.7))",
+  } as React.CSSProperties,
+  vipPromptIcon: {
+    width: 38,
+    height: 38,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    background: "#0f6f4b",
+    color: "#fff",
+  } as React.CSSProperties,
+  vipPromptLinks: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  } as React.CSSProperties,
 };
 
 const UI = {
@@ -162,7 +189,11 @@ const UI = {
     increase: "Tăng",
     remove: "Xóa",
     note: "Các mặt hàng đã chọn sẽ được gắn tự động vào yêu cầu báo giá. Giá sẽ được báo riêng theo khối lượng thực tế.",
-    productsLink: "/san-pham"
+    productsLink: "/san-pham",
+    vipTitle: "Đã có tài khoản đối tác TPS1?",
+    vipCopy: "Đăng nhập Cổng Đối Tác VIP để xem giá chiết khấu, chọn địa chỉ giao hàng và thanh toán đơn hàng.",
+    vipLogin: "Đăng nhập Cổng Đối Tác VIP",
+    vipContact: "Chưa có tài khoản? Liên hệ SĐT/Zalo 089.890.2222 để được cấp tài khoản.",
   },
   en: {
     emptyTitle: "RFQ basket is empty",
@@ -176,16 +207,48 @@ const UI = {
     increase: "Increase",
     remove: "Remove",
     note: "Selected items are automatically attached to this request. Pricing is provided after submission.",
-    productsLink: "/en/products"
+    productsLink: "/en/products",
+    vipTitle: "Already a TPS1 partner?",
+    vipCopy: "Sign in to the VIP Partner Portal for account pricing, delivery addresses, and checkout.",
+    vipLogin: "Sign in to VIP Portal",
+    vipContact: "Need an account? Contact Phone/Zalo 089.890.2222.",
   }
 };
 
 export function QuoteCartSummary({ locale = "vi" }: { locale?: Locale }) {
   const { items, count, removeItem, updateQty } = useCart();
+  const { session } = useCustomerSession();
   const text = UI[locale];
+  const vipPrompt = session ? null : (
+    <aside style={S.vipPrompt} aria-label={text.vipTitle}>
+      <span style={S.vipPromptIcon}><LogIn size={19} /></span>
+      <div>
+        <strong style={{ display: "block", color: "#123c2e", fontSize: 14 }}>{text.vipTitle}</strong>
+        <p style={{ margin: "3px 0 0", color: "#4b6359", fontSize: 12.5, lineHeight: 1.55 }}>
+          {text.vipCopy}
+        </p>
+        <div style={S.vipPromptLinks}>
+          <Link href="/portal/dang-nhap" className="btn-primary" style={{ padding: "8px 12px", fontSize: 12 }}>
+            <LogIn size={14} /> {text.vipLogin}
+          </Link>
+          <a href="tel:0898902222" className="btn-secondary" style={{ padding: "8px 12px", fontSize: 12 }}>
+            <Phone size={14} /> 089.890.2222
+          </a>
+          <a href="https://zalo.me/0898902222" target="_blank" rel="noreferrer" className="btn-secondary" style={{ padding: "8px 12px", fontSize: 12 }}>
+            <MessageCircle size={14} /> Zalo
+          </a>
+        </div>
+        <p style={{ margin: "9px 0 0", color: "#6b5b32", fontSize: 11.5, fontWeight: 650 }}>
+          {text.vipContact}
+        </p>
+      </div>
+    </aside>
+  );
 
   if (items.length === 0) {
     return (
+      <>
+      {vipPrompt}
       <div style={S.empty}>
         <ShoppingBag size={26} strokeWidth={1.4} color="#59665f" style={{ flexShrink: 0, marginTop: 2 }} />
         <div style={S.emptyText}>
@@ -199,10 +262,13 @@ export function QuoteCartSummary({ locale = "vi" }: { locale?: Locale }) {
           </p>
         </div>
       </div>
+      </>
     );
   }
 
   return (
+    <>
+    {vipPrompt}
     <div style={S.box}>
       {/* Header */}
       <div style={S.header}>
@@ -264,5 +330,6 @@ export function QuoteCartSummary({ locale = "vi" }: { locale?: Locale }) {
         {text.note}
       </p>
     </div>
+    </>
   );
 }

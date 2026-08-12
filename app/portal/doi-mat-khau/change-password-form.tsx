@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ShieldCheck } from "lucide-react";
+import { PortalPasswordField } from "@/components/portal-password-field";
 
 export function ChangePasswordForm({ code, forced }: { code: string; forced: boolean }) {
   const router = useRouter();
@@ -22,6 +23,10 @@ export function ChangePasswordForm({ code, forced }: { code: string; forced: boo
     }
     if (newPassword.length < 6) {
       setError("Mật khẩu mới phải từ 6 ký tự trở lên");
+      return;
+    }
+    if (newPassword !== newPassword.trim()) {
+      setError("Mật khẩu mới không được có khoảng trắng ở đầu hoặc cuối");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -94,38 +99,33 @@ export function ChangePasswordForm({ code, forced }: { code: string; forced: boo
         )}
       </p>
 
-      <div className="quote-landing__field">
-        <label className="portal-form__label">Mật khẩu hiện tại</label>
-        <input
-          className="lead-form__input"
-          type="password"
-          value={oldPassword}
-          onChange={(e) => setOldPassword(e.target.value)}
-          placeholder="Nhập mật khẩu hiện tại"
-        />
-      </div>
+      <PortalPasswordField
+        label="Mật khẩu hiện tại"
+        value={oldPassword}
+        onChange={setOldPassword}
+        placeholder="Nhập mật khẩu hiện tại"
+        autoComplete="current-password"
+      />
 
-      <div className="quote-landing__field">
-        <label className="portal-form__label">Mật khẩu mới</label>
-        <input
-          className="lead-form__input"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Ít nhất 6 ký tự"
-        />
-      </div>
+      <PortalPasswordField
+        label="Mật khẩu mới"
+        value={newPassword}
+        onChange={setNewPassword}
+        placeholder="Ít nhất 6 ký tự"
+        autoComplete="new-password"
+      />
 
-      <div className="quote-landing__field">
-        <label className="portal-form__label">Xác nhận mật khẩu mới</label>
-        <input
-          className="lead-form__input"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Nhập lại mật khẩu mới"
-        />
-      </div>
+      <PortalPasswordField
+        label="Xác nhận mật khẩu mới"
+        value={confirmPassword}
+        onChange={setConfirmPassword}
+        placeholder="Nhập lại mật khẩu mới"
+        autoComplete="new-password"
+      />
+
+      <p style={{ margin: "-4px 0 10px", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+        Mật khẩu phân biệt chữ hoa và chữ thường, không dùng khoảng trắng ở đầu hoặc cuối.
+      </p>
 
       {error && <p className="lead-form__error">{error}</p>}
 
