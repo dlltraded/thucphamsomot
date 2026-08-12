@@ -15,6 +15,7 @@ import { CartProvider } from "@/lib/cart-context";
 import { siteConfig } from "@/lib/site";
 import { FloatingCart } from "@/components/floating-cart";
 import { MetaPixel } from "@/components/meta-pixel";
+import { CustomerSessionProvider } from "@/lib/customer-session-context";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -71,15 +72,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body>
         <MetaPixel />
-        <CartProvider>
-          <SeoJsonLd />
-          <SiteHeader />
-          {children}
-          <CompanyProfileWidget />
-          <SocialWidget />
-          <SiteFooter />
-          <FloatingCart />
-        </CartProvider>
+        <CustomerSessionProvider>
+          <CartProvider>
+            <SeoJsonLd />
+            <SiteHeader />
+            {children}
+            <CompanyProfileWidget />
+            <SocialWidget />
+            <SiteFooter />
+            <FloatingCart />
+          </CartProvider>
+        </CustomerSessionProvider>
       </body>
     </html>
   );

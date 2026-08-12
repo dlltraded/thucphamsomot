@@ -4,6 +4,7 @@ import Link from "next/link";
 import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import type { Locale } from "@/lib/site";
+import { useCustomerSession } from "@/lib/customer-session-context";
 
 type CartDrawerProps = {
   open: boolean;
@@ -55,7 +56,21 @@ const fmt = (n: number, textContact: string) =>
 
 export function CartDrawer({ open, onClose, locale = "vi" }: CartDrawerProps) {
   const { items, count, removeItem, updateQty, clear } = useCart();
-  const text = UI[locale];
+  const { session } = useCustomerSession();
+  const baseText = UI[locale];
+  const text = session
+    ? {
+        ...baseText,
+        contact: "Liên hệ",
+        title: "Giỏ hàng đặt hàng",
+        close: "Đóng giỏ hàng",
+        empty: "Giỏ hàng đang trống",
+        emptySub: "Chọn sản phẩm để tạo đơn hàng theo giá VIP của tài khoản.",
+        note: "Giá và chiết khấu sẽ được máy chủ xác nhận khi đặt hàng.",
+        submit: "Kiểm tra và đặt hàng",
+        quoteLink: "/portal/gio-hang",
+      }
+    : baseText;
 
   return (
     <>

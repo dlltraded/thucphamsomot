@@ -7,19 +7,7 @@ import { useCart } from "@/lib/cart-context";
 import type { SkuProduct } from "@/app/api/sku-products/route";
 import type { Locale } from "@/lib/site";
 import type { CustomerSession } from "@/lib/customer-session";
-
-function useCustomerSession() {
-  const [session, setSession] = useState<CustomerSession | null>(null);
-
-  useEffect(() => {
-    fetch("/api/customer/me")
-      .then((res) => res.json())
-      .then((data) => setSession(data?.session || null))
-      .catch(() => setSession(null));
-  }, []);
-
-  return session;
-}
+import { useCustomerSession } from "@/lib/customer-session-context";
 
 // ─── Category tabs ─────────────────────────────────────────────────────────
 const CATEGORIES: Record<Locale, { slug: string; label: string }[]> = {
@@ -203,7 +191,7 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const session = useCustomerSession();
+  const { session } = useCustomerSession();
 
   const text = UI[locale];
   const catList = CATEGORIES[locale];
