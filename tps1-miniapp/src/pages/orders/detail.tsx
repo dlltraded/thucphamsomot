@@ -1,26 +1,23 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Order } from "@/types";
-import OrderSummary from "./order-summary";
-import OrderInfo from "./order-info";
+import { formatPrice } from "@/utils/format";
+import { Button, Icon } from "zmp-ui";
 
-function OrderDetailPage() {
-  // Phía tích hợp có thể lấy id từ query params, từ đó gọi API đến server để lấy thông tin chi tiết đơn hàng.
-  // Tham khảo logic tương tự ở ProductDetailPage (src/pages/catalog/product-detail.tsx)
-  // const { id } = useParams();
-  // const order = useAtomValue(orderState(Number(id)));
+const STEPS = ["pending", "confirmed", "preparing", "shipping", "completed"] as const;
+const LABELS = { pending: "Chờ xác nhận", confirmed: "Đã xác nhận", preparing: "Chuẩn bị", shipping: "Đang giao", completed: "Hoàn thành", canceled: "Đã hủy" };
 
-  // Hoặc đơn giản hơn, lấy thông tin đơn hàng từ router state.
-  // Điểm khác biệt lớn nhất là phương án này bắt buộc phải truy cập trang chi tiết đơn hàng từ trang danh sách đơn hàng,
-  // chứ không thể truy cập trực tiếp từ deeplink như phương án trên.
-  const { state } = useLocation();
-  const order = state as Order;
+export default function OrderDetailPage() {
+  const navigate = useNavigate();
+  const order = useLocation().state as Order | null;
+  if (!order) return <div className="flex min-h-full flex-col items-center justify-center gap-3 p-6 text-center"><Icon icon="zi-inbox" size={42} className="text-inactive" /><div className="text-sm font-bold">Không tìm thấy thông tin đơn hàng</div><Button size="small" onClick={() => navigate("/orders")}>Về danh sách đơn</Button></div>;
+  const status = order.centralStatus || order.status;
+  const currentStep = STEPS.indexOf(status as (typeof STEPS)[number]);
 
-  return (
-    <div className="w-full p-4 space-y-2">
-      <OrderInfo order={order} />
-      <OrderSummary full order={order} />
-    </div>
-  );
+  return <div className="min-h-full space-y-3 bg-background p-4 pb-8">
+    <section className="rounded-2xl bg-gradient-to-br from-[#0d6545] to-[#16905f] p-4 text-white shadow-lg"><div className="text-2xs text-white/60">Mã đơn hàng</div><div className="mt-1 text-lg font-bold">{order.id}</div><div className="mt-2 text-xs text-white/70">Đặt lúc {new Date(order.createdAt).toLocaleString("vi-VN")}</div><div className="mt-4 flex items-end justify-between"><span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold">{LABELS[status] || status}</span><div className="text-right"><div className="text-2xs text-white/60">Tổng thanh toán</div><div className="text-lg font-bold text-amber-200">{formatPrice(order.total)}</div></div></div></section>
+    {status === "canceled" ? <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-xs font-medium text-red-600">Đơn hàng này đã được hủy.</div> : <section className="rounded-2xl bg-section p-4 shadow-sm border-[0.5px] border-black/10"><div className="flex justify-between">{STEPS.map((step,index)=><div key={step} className="relative flex flex-1 flex-col items-center text-center"><div className={`z-10 flex h-7 w-7 items-center justify-center rounded-full text-2xs font-bold ${index<=currentStep?"bg-primary text-white":"bg-skeleton text-subtitle"}`}>{index<currentStep?<Icon icon="zi-check" size={13}/>:index+1}</div><div className={`mt-1 text-[8px] leading-3 ${index<=currentStep?"text-primary":"text-subtitle"}`}>{LABELS[step]}</div></div>)}</div></section>}
+    <section className="overflow-hidden rounded-2xl bg-section shadow-sm border-[0.5px] border-black/10"><div className="flex items-center gap-2 border-b border-black/5 p-4 text-sm font-bold"><Icon icon="zi-inbox" size={18} className="text-primary" />Sản phẩm ({order.items.length})</div>{order.items.map((item,index)=><div key={`${item.product.id}-${index}`} className="flex items-center gap-3 border-b border-black/5 p-4 last:border-0"><img src={item.product.image} className="h-12 w-12 rounded-xl bg-background object-cover"/><div className="min-w-0 flex-1"><div className="truncate text-xs font-medium">{item.product.name}</div><div className="mt-1 text-2xs text-subtitle">{item.quantity} × {formatPrice(item.product.price)}</div></div><div className="text-xs font-bold text-primary">{formatPrice(item.product.price*item.quantity)}</div></div>)}</section>
+    <section className="rounded-2xl bg-section p-4 shadow-sm border-[0.5px] border-black/10"><div className="flex items-center gap-2 text-sm font-bold"><Icon icon="zi-location" size={18} className="text-primary" />Thông tin giao nhận</div><div className="mt-3 rounded-xl bg-background p-3"><div className="text-xs font-bold">{order.delivery.type === "shipping" ? order.delivery.alias : order.delivery.name}</div><div className="mt-1 text-xs leading-5 text-subtitle">{order.delivery.address}</div>{order.delivery.type === "shipping" && <div className="mt-2 text-2xs text-subtitle">{order.delivery.name} · {order.delivery.phone}</div>}</div></section>
+    <section className="rounded-2xl bg-section p-4 shadow-sm border-[0.5px] border-black/10 space-y-2 text-xs"><div className="flex justify-between"><span className="text-subtitle">Tạm tính</span><strong>{formatPrice(order.subtotal ?? order.total)}</strong></div>{!!order.discountAmount&&<div className="flex justify-between"><span className="text-subtitle">Chiết khấu</span><strong className="text-primary">-{formatPrice(order.discountAmount)}</strong></div>}<div className="flex justify-between border-t border-black/5 pt-3 text-sm"><span className="font-bold">Tổng thanh toán</span><strong className="text-primary">{formatPrice(order.total)}</strong></div></section>
+  </div>;
 }
-
-export default OrderDetailPage;

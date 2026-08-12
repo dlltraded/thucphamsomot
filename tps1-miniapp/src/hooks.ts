@@ -11,12 +11,14 @@ import {
   deliveryModeState,
   shippingAddressState,
   selectedStationState,
-  localOrdersState
+  localOrdersState,
+  customerAuthState
 } from "@/state";
 import { Product } from "@/types";
 import { getConfig } from "@/utils/template";
 import { authorize, createOrder, openChat } from "zmp-sdk/apis";
 import { useAtomCallback } from "jotai/utils";
+import CONFIG from "@/config";
 
 export function useRealHeight(
   element: MutableRefObject<HTMLDivElement | null>,
@@ -116,26 +118,42 @@ export function useToBeImplemented() {
 }
 
 export function useCheckout() {
-  const { totalAmount } = useAtomValue(cartTotalState);
+  const { discountPercent } = useAtomValue(cartTotalState);
   const [cart, setCart] = useAtom(cartState);
   const requestInfo = useRequestInformation();
   const navigate = useNavigate();
   const refreshNewOrders = useSetAtom(ordersState("pending"));
   const [localOrders, setLocalOrders] = useAtom(localOrdersState);
-  
+  const customerAuth = useAtomValue(customerAuthState);
+
   // Lấy thông tin giao hàng
   const deliveryMode = useAtomValue(deliveryModeState);
   const shippingAddress = useAtomValue(shippingAddressState);
   const selectedStation = useAtomValue(selectedStationState);
 
   return async () => {
+    // Chặn đặt hàng nếu khách chưa đăng nhập bằng mã khách hàng —
+    // giá bán lẻ trong app chỉ để tham khảo, phải đăng nhập mới đặt được
+    // và mới áp dụng chiết khấu theo nhóm VIP1/VIP2/VIP3.
+    if (!customerAuth) {
+      navigate("/login?redirect=/cart");
+      return;
+    }
+    if ((deliveryMode || "shipping") === "shipping" && !shippingAddress?.address) {
+      toast.error("Vui lòng nhập địa chỉ giao hàng");
+      navigate("/shipping-address");
+      return;
+    }
+
     try {
       const userInfo = await requestInfo();
-      
+
+      // Áp % chiết khấu theo nhóm khách hàng ngay ở từng dòng sản phẩm để
+      // tổng các item.amount luôn khớp chính xác paymentAmount (bắt buộc với Zalo Pay).
       const orderItems = cart.map((item) => ({
         id: item.product.id,
         name: item.product.name,
-        price: Math.round(item.product.price),
+        price: Math.round(item.product.price * (1 - discountPercent / 100)),
         quantity: item.quantity,
       }));
 
@@ -143,6 +161,8 @@ export function useCheckout() {
       let deliveryType    = deliveryMode || "shipping";
       let deliveryAddress = "";
       let deliveryAlias   = "";
+      let deliveryName    = customerAuth.name || "";
+      let deliveryPhone   = customerAuth.phone || "";
       let addressText     = "Trống";
 
       if (deliveryMode === "shipping" && shippingAddress) {
@@ -150,6 +170,8 @@ export function useCheckout() {
         deliveryType    = "shipping";
         deliveryAddress = shippingAddress.address || "";
         deliveryAlias   = shippingAddress.alias   || "";
+        deliveryName    = shippingAddress.name    || deliveryName;
+        deliveryPhone   = shippingAddress.phone   || deliveryPhone;
       } else if (deliveryMode === "pickup" && selectedStation) {
         addressText     = `Tự đến lấy: ${selectedStation.name} - ${selectedStation.address}`;
         deliveryType    = "pickup";
@@ -157,43 +179,44 @@ export function useCheckout() {
         deliveryAlias   = "Tự đến lấy";
       }
 
-      const orderCode = `DH${Date.now().toString().slice(-6)}`;
-
-      const payload = {
-        vaiTro: "Người mua", 
-        loaiForm: "dat_hang",
-        kenh: "Zalo Mini App",
-        name: userInfo?.name || "Khách Zalo",
-        phone: userInfo?.phone || "Không rõ",
-        email: "",
-        company: "",
-        source: "Zalo Mini App",
-        // Structured delivery fields (for Google Sheets columns + Admin mapping)
-        deliveryType,
-        deliveryAddress,
-        deliveryAlias,
-        // Message field giữ nguyên cho backward compat
-        message: `Mã đơn: ${orderCode}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${Math.round(totalAmount)}đ\nChi tiết:\n${orderItems.map(i => `${i.name} x${i.quantity} - ${i.price}đ`).join('\n')}`,
-        selectedItems: orderItems.map(i => `${i.name} x${i.quantity}`).join(' | '),
-        selectedCount: orderItems.length,
-        miniAppSource: "quote_form",
-        gioHang: JSON.stringify(orderItems.map(i => ({ name: i.name, qty: i.quantity, price: i.price })))
-      };
-
-      const webhookUrl = import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK || "";
-      if (webhookUrl) {
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          body: JSON.stringify(payload),
-        });
+      const apiUrl = CONFIG.API_BASE;
+      const idempotencyKey = `zalo-${customerAuth.id}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      const centralOrderResponse = await fetch(`${apiUrl}/api/customer/order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "zalo_mini_app",
+          orderSessionToken: customerAuth.orderSessionToken,
+          idempotencyKey,
+          items: cart.map((item) => ({
+            productId: String(item.product.id),
+            name: item.product.name,
+            quantity: item.quantity,
+          })),
+          deliveryType,
+          deliveryAddress,
+          deliveryAlias,
+          deliveryName,
+          deliveryPhone,
+          note: addressText,
+        }),
+      });
+      const centralOrder = await centralOrderResponse.json();
+      if (!centralOrderResponse.ok || !centralOrder.ok) {
+        if (centralOrderResponse.status === 401) {
+          navigate("/login?redirect=/cart");
+        }
+        throw new Error(centralOrder.error || "Không tạo được đơn hàng trung tâm");
       }
+
+      const orderCode = String(centralOrder.orderCode);
+      const discountedOrderTotal = Number(centralOrder.total || 0);
+      const centralItems = Array.isArray(centralOrder.items) ? centralOrder.items : [];
+      const orderMessage = `Mã đơn: ${orderCode}\nKhách hàng: ${customerAuth.code} (${customerAuth.tier} - chiết khấu ${discountPercent}%)\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${Math.round(discountedOrderTotal)}đ`;
 
       // Save local order to show immediately
       const newLocalOrder = {
-        id: "DH" + Date.now().toString().slice(-6),
+        id: orderCode,
         status: "pending" as any,
         paymentStatus: "pending" as any,
         createdAt: new Date(),
@@ -202,29 +225,36 @@ export function useCheckout() {
         delivery: deliveryMode === "shipping" && shippingAddress 
           ? { type: "shipping" as any, ...shippingAddress } 
           : { type: "pickup" as any, stationId: selectedStation ? Number(selectedStation.id) : 0 },
-        total: totalAmount,
-        note: payload.message
+        total: discountedOrderTotal,
+        note: orderMessage
       };
 
       setLocalOrders((prev) => [...prev, newLocalOrder]);
 
-      const apiUrl = 'https://thucphamsomot.vn';
       let mac = '';
       
       const paymentDesc = `Thanh toan don hang ${orderCode}`; // Bỏ dấu tiếng Việt để tránh lỗi encoding khi tạo MAC qua SDK
-      const paymentExtradata = "{}"; // QUAN TRỌNG: Phải là chuỗi khác rỗng (VD: "{}") để ZMP SDK chịu gửi lên server Zalo, nếu rỗng ("") SDK sẽ bỏ qua dẫn đến sai MAC.
+      const paymentExtradata = JSON.stringify({
+        centralOrderId: centralOrder.orderId,
+        orderCode,
+      });
       const paymentMethodStr = JSON.stringify({ id: "COD", isCustom: false });
       
       // Quan trọng: item.amount phải là TỔNG tiền của món đó (đơn giá * số lượng) VÀ LÀ SỐ NGUYÊN (tránh lỗi decimal)
       // Cắt id còn 32 ký tự vì Zalo Pay giới hạn độ dài mã item
-      const paymentItemObj = orderItems.map(it => ({ 
-        id: String(it.id).substring(0, 32), 
-        amount: Math.round((it.price || 10000) * it.quantity)
-      }));
+      const paymentItemObj = centralItems.length > 0
+        ? centralItems.map((it: any) => ({
+            id: String(it.productId || it.id || orderCode).substring(0, 32),
+            amount: Math.round(Number(it.lineTotal || 0)),
+          }))
+        : orderItems.map(it => ({
+            id: String(it.id).substring(0, 32),
+            amount: Math.round((it.price || 10000) * it.quantity),
+          }));
       
       // BẮT BUỘC: paymentAmount phải BẰNG CHÍNH XÁC tổng các item.amount đã được làm tròn. 
       // Nếu tổng item.amount khác paymentAmount, Zalo sẽ báo lỗi MAC hoặc lỗi logic thanh toán.
-      const paymentAmount = paymentItemObj.reduce((sum, item) => sum + item.amount, 0) || 10000;
+      const paymentAmount = paymentItemObj.reduce((sum: number, item: { amount: number }) => sum + item.amount, 0) || Math.round(discountedOrderTotal) || 10000;
       
       const paymentItemStr = JSON.stringify(paymentItemObj);
 
@@ -237,13 +267,23 @@ export function useCheckout() {
             desc: paymentDesc,
             extradata: paymentExtradata,
             method: paymentMethodStr,
-            item: paymentItemStr
+            item: paymentItemStr,
+            centralOrderId: centralOrder.orderId,
+            orderSessionToken: customerAuth.orderSessionToken,
           })
         });
         const data = await response.json();
         mac = data.mac;
       } catch (err) {
         console.error("Lỗi lấy MAC:", err);
+      }
+
+      if (!mac) {
+        setCart([]);
+        refreshNewOrders();
+        toast.success(`Đã ghi nhận đơn hàng ${orderCode}`);
+        navigate("/checkout-success", { viewTransition: true, replace: true, state: { orderCode } });
+        return;
       }
 
       await createOrder({
@@ -259,7 +299,8 @@ export function useCheckout() {
           refreshNewOrders();
           navigate("/checkout-success", {
             viewTransition: true,
-            replace: true
+            replace: true,
+            state: { orderCode }
           });
         },
         fail: (err) => {
@@ -269,9 +310,7 @@ export function useCheckout() {
       });
     } catch (error) {
       console.warn(error);
-      toast.error(
-        "Gửi yêu cầu thất bại. Vui lòng thử lại."
-      );
+      toast.error(error instanceof Error ? error.message : "Gửi yêu cầu thất bại. Vui lòng thử lại.");
     }
   };
 }

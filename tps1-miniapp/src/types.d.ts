@@ -42,6 +42,8 @@ export interface ShippingAddress {
   address: string;
   name: string;
   phone: string;
+  customerId?: string;
+  isDefault?: boolean;
 }
 
 export interface Station {
@@ -59,6 +61,8 @@ export type Delivery =
   | {
       type: "pickup";
       stationId: number;
+      name?: string;
+      address?: string;
     };
 
 export type OrderStatus = "pending" | "shipping" | "completed";
@@ -74,4 +78,7 @@ export interface Order {
   delivery: Delivery;
   total: number;
   note: string;
+  centralStatus?: "pending" | "confirmed" | "preparing" | "shipping" | "completed" | "canceled";
+  subtotal?: number;
+  discountAmount?: number;
 }

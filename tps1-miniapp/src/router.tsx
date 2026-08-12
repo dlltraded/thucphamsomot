@@ -15,6 +15,8 @@ import OrderDetailPage from "./pages/orders/detail";
 import ProfileEditorPage from "./pages/profile/editor";
 import ShopInfoPage from "./pages/shop-info";
 import CheckoutSuccessPage from "./pages/checkout-success";
+import LoginPage from "./pages/login";
+import ChangePasswordPage from "./pages/change-password";
 
 const router = createBrowserRouter(
   [
@@ -137,6 +139,24 @@ const router = createBrowserRouter(
             noFooter: true,
             noFloatingCart: true,
             noBack: true,
+          },
+        },
+        {
+          path: "/login",
+          element: <LoginPage />,
+          handle: {
+            title: "Đăng nhập khách hàng",
+            noFooter: true,
+            noFloatingCart: true,
+          },
+        },
+        {
+          path: "/change-password",
+          element: <ChangePasswordPage />,
+          handle: {
+            title: "Đặt mật khẩu mới",
+            noFooter: true,
+            noFloatingCart: true,
           },
         },
       ],

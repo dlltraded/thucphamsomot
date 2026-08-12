@@ -1,9 +1,10 @@
 import React from "react";
 import { Button, Header, Icon, Page, Text } from "zmp-ui";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function CheckoutSuccessPage() {
   const navigate = useNavigate();
+  const orderCode = (useLocation().state as { orderCode?: string } | null)?.orderCode;
 
   return (
     <Page className="bg-background flex flex-col h-full">
@@ -21,15 +22,17 @@ export default function CheckoutSuccessPage() {
           <Text className="text-subtitle">
             Yêu cầu đặt hàng của bạn đã được gửi thành công. Nhân viên của chúng tôi sẽ sớm liên hệ để xác nhận đơn hàng và thời gian giao hàng.
           </Text>
+          {orderCode && <div className="mx-auto mt-4 inline-flex rounded-full bg-primary/10 px-4 py-2 text-sm font-bold text-primary">Mã đơn: {orderCode}</div>}
         </div>
 
         <div className="pt-8 w-full px-4">
           <Button
             fullWidth
-            onClick={() => navigate("/", { viewTransition: true, replace: true })}
+            onClick={() => navigate("/orders/pending", { viewTransition: true, replace: true })}
           >
-            Quay về trang chủ
+            Theo dõi đơn hàng
           </Button>
+          <Button className="mt-2" fullWidth variant="tertiary" onClick={() => navigate("/", { viewTransition: true, replace: true })}>Tiếp tục mua hàng</Button>
         </div>
       </div>
     </Page>

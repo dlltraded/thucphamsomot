@@ -1,5 +1,6 @@
-import { shippingAddressState } from "@/state";
-import { useAtom } from "jotai";
+import { customerAuthState, shippingAddressState } from "@/state";
+import type { ShippingAddress } from "@/types";
+import { useAtom, useAtomValue } from "jotai";
 import { useResetAtom } from "jotai/utils";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +8,7 @@ import { Button, Icon, Input } from "zmp-ui";
 
 function ShippingAddressPage() {
   const [address, setAddress] = useAtom(shippingAddressState);
+  const customer = useAtomValue(customerAuthState);
   const resetAddress = useResetAtom(shippingAddressState);
   const navigate = useNavigate();
 
@@ -16,12 +18,21 @@ function ShippingAddressPage() {
       onSubmit={(e) => {
         e.preventDefault();
         const data = new FormData(e.currentTarget);
-        const newAddress = {};
+        const newAddress: Partial<ShippingAddress> = {};
         data.forEach((value, key) => {
-          newAddress[key] = value;
+          if (key === "alias" || key === "address" || key === "name" || key === "phone") {
+            newAddress[key] = String(value);
+          }
         });
-        setAddress(newAddress as typeof address);
-        toast.success("Đã cập nhật địa chỉ");
+        setAddress({
+          alias: newAddress.alias || "Địa chỉ giao hàng",
+          address: newAddress.address || "",
+          name: newAddress.name || customer?.name || "",
+          phone: newAddress.phone || customer?.phone || "",
+          customerId: customer?.id,
+          isDefault: false,
+        });
+        toast.success("Đã chọn địa chỉ cho đơn hàng này");
         navigate(-1);
       }}
     >
@@ -79,6 +90,11 @@ function ShippingAddressPage() {
         >
           Xóa địa chỉ này
         </Button>
+        {customer && (
+          <button type="button" onClick={() => navigate("/profile/edit")} className="w-full bg-section px-4 py-3 text-center text-xs font-medium text-primary">
+            Cập nhật địa chỉ mặc định trên hệ thống
+          </button>
+        )}
       </div>
       <div className="p-6 pt-4 bg-section">
         <Button htmlType="submit" fullWidth>
