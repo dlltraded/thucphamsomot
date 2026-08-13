@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { CheckCircle2, ShoppingCart } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
@@ -119,12 +120,12 @@ export function CartReview({
           >
             <CheckCircle2 size={28} />
           </div>
-          <h2 style={{ color: "#1B7A3D", margin: "0 0 8px" }}>Đặt hàng thành công!</h2>
+          <h2 style={{ color: "#1B7A3D", margin: "0 0 8px" }}>Đã gửi đơn tạm tính!</h2>
           <p style={{ margin: "0 0 8px" }}>
             Mã đơn: <strong>{successCode}</strong>
           </p>
           <p style={{ color: "#666", fontSize: 14, margin: 0 }}>
-            Đội ngũ TPS1 sẽ liên hệ xác nhận và sắp xếp giao hàng trong thời gian sớm nhất.
+            Sale TPS1 sẽ kiểm tra phân loại khách, chốt đơn giá cuối và gửi PDF xác nhận trước khi thanh toán/giao hàng.
           </p>
           <button
             type="button"
@@ -169,9 +170,9 @@ export function CartReview({
             <ShoppingCart size={26} />
           </div>
           <p style={{ margin: 0 }}>Giỏ hàng đang trống.</p>
-          <a href="/san-pham" className="btn-primary" style={{ display: "inline-block", marginTop: 16 }}>
+          <Link href="/san-pham" className="btn-primary" style={{ display: "inline-block", marginTop: 16 }}>
             Chọn sản phẩm
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -230,11 +231,14 @@ export function CartReview({
       >
         <Row label="Tạm tính" value={fmt(subtotal)} />
         {discountPercent > 0 && (
-          <Row label={`Chiết khấu ${tier} (-${discountPercent}%)`} value={`-${fmt(subtotal - discountedTotal)}`} accent />
+          <Row label={`Giá đề xuất ${tier} (-${discountPercent}%)`} value={`-${fmt(subtotal - discountedTotal)}`} accent />
         )}
         <div style={{ borderTop: "1px solid #eee", marginTop: 8, paddingTop: 8 }}>
-          <Row label="Tổng thanh toán" value={fmt(discountedTotal)} bold />
+          <Row label="Tổng tạm tính" value={fmt(discountedTotal)} bold />
         </div>
+        <p style={{ margin: "10px 0 0", padding: 10, borderRadius: 8, background: "#fffbeb", color: "#92400e", fontSize: 12 }}>
+          Đơn giá cuối cùng chỉ có hiệu lực sau khi sale TPS1 xác nhận đơn.
+        </p>
       </div>
 
       {defaultShippingAddress?.address && (

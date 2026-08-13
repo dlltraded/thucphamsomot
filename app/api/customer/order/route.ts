@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
           deliveryAddress,
           deliveryName,
           deliveryPhone,
-          message: `Mã đơn: ${order.order_code}\nĐịa chỉ giao: ${deliveryAddress || "Nhận tại điểm"}\nNgười nhận: ${deliveryName} - ${deliveryPhone}\nGhi chú: ${note || "Không có"}\nTổng tiền: ${order.grand_total}đ`,
+          message: `Mã đơn tạm tính: ${order.order_code}\nĐịa chỉ giao: ${deliveryAddress || "Nhận tại điểm"}\nNgười nhận: ${deliveryName} - ${deliveryPhone}\nGhi chú: ${note || "Không có"}\nTạm tính: ${order.grand_total}đ\nSale sẽ liên hệ phân loại khách và xác nhận đơn giá cuối cùng.`,
           selectedItems: items
             .map((item) => `${item.name || item.productId} x${item.quantity}`)
             .join(" | "),
@@ -181,6 +181,7 @@ export async function POST(req: NextRequest) {
     orderId: order.id,
     orderCode: order.order_code,
     status: order.status,
+    pricingStatus: fullOrder?.pricing_status || "provisional",
     total: Number(order.grand_total || 0),
     items: fullOrder?.items || [],
     idempotencyKey,

@@ -4,6 +4,7 @@ import { PageShell } from "@/components/page-shell";
 import { makeMetadata } from "@/lib/seo";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { AccountCard } from "./account-card";
+import { loadCustomerSessionByToken } from "@/lib/customer-session-server";
 
 export const metadata = makeMetadata({
   title: "Cổng đối tác VIP",
@@ -16,7 +17,10 @@ export const dynamic = "force-dynamic";
 
 export default async function PortalPage() {
   const cookieStore = await cookies();
-  const session = parseSessionCookieValue(cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value);
+  const cookieSession = parseSessionCookieValue(cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value);
+  const session = cookieSession?.orderSessionToken
+    ? await loadCustomerSessionByToken(cookieSession.orderSessionToken)
+    : cookieSession;
 
   if (!session) {
     redirect("/portal/dang-nhap");

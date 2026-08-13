@@ -6,6 +6,7 @@ const CONFIG = {
     SHIPPING_ADDRESS: "shippingAddress",
     LOCAL_ORDERS: "localOrders",
     CUSTOMER_AUTH: "customerAuth",
+    CART: "guestCart",
   },
 };
 

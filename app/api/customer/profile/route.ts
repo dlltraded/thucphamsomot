@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest) {
       })
       .eq("id", customerId)
       .eq("is_active", true)
-      .select("id, partner_code, name, phone, company, email, tax_code, address, default_shipping_alias, default_shipping_address, default_shipping_name, default_shipping_phone, discount_tier, must_change_password")
+      .select("id, partner_code, name, phone, company, email, tax_code, address, default_shipping_alias, default_shipping_address, default_shipping_name, default_shipping_phone, discount_tier, verification_status, must_change_password")
       .single();
 
     if (updateError || !customer) {
@@ -114,8 +114,9 @@ export async function PATCH(req: NextRequest) {
         name: customer.default_shipping_name || customer.name,
         phone: customer.default_shipping_phone || customer.phone,
       },
-      tier: customer.discount_tier || websiteSession?.tier || "VIP1",
+      tier: customer.discount_tier || websiteSession?.tier || "VIP0",
       discountPercent: Number(tier?.discount_percent ?? websiteSession?.discountPercent ?? 0),
+      verificationStatus: customer.verification_status || websiteSession?.verificationStatus || "pending",
       mustChangePassword: !!customer.must_change_password,
       orderSessionToken,
     };

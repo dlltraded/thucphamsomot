@@ -21,6 +21,7 @@ interface LoginRpcRow {
   default_shipping_phone: string;
   tier: string;
   discount_percent: number;
+  verification_status?: "pending" | "verified" | "rejected";
   must_change_password: boolean;
   order_session_token: string;
 }
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
     },
     tier: row.tier,
     discountPercent: Number(row.discount_percent) || 0,
+    verificationStatus: row.verification_status || "verified",
     mustChangePassword: !!row.must_change_password,
     orderSessionToken: row.order_session_token || "",
   };

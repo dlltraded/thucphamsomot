@@ -17,6 +17,7 @@ export interface CustomerSession {
   };
   tier: string;
   discountPercent: number;
+  verificationStatus?: "pending" | "verified" | "rejected";
   mustChangePassword: boolean;
   orderSessionToken?: string;
 }

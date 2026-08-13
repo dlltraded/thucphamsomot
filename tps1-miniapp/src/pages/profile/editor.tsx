@@ -92,6 +92,7 @@ export default function ProfileEditorPage() {
         },
         tier: session.tier || customer.tier,
         discountPercent: Number(session.discountPercent ?? customer.discountPercent) || 0,
+        verificationStatus: session.verificationStatus || customer.verificationStatus || "pending",
         orderSessionToken: session.orderSessionToken || customer.orderSessionToken,
       };
       setCustomer(nextCustomer);

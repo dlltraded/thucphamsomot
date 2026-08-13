@@ -23,12 +23,12 @@ export default function CartPage() {
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
         {!customerAuth && (
           <TransitionLink
-            to="/login?redirect=/cart"
+            to="/register?redirect=/cart"
             className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs rounded-lg px-3 py-2"
           >
             <Icon icon="zi-user" size={16} />
             <span className="flex-1">
-              Đăng nhập bằng mã khách hàng để nhận giá ưu đãi và đặt hàng.
+              Đăng ký tài khoản để gửi đơn. TPS1 sẽ kiểm tra và xác nhận đơn giá cuối cùng.
             </span>
             <Icon icon="zi-chevron-right" size={16} />
           </TransitionLink>

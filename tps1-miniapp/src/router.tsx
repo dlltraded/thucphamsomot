@@ -17,6 +17,7 @@ import ShopInfoPage from "./pages/shop-info";
 import CheckoutSuccessPage from "./pages/checkout-success";
 import LoginPage from "./pages/login";
 import ChangePasswordPage from "./pages/change-password";
+import RegisterPage from "./pages/register";
 
 const router = createBrowserRouter(
   [
@@ -139,6 +140,15 @@ const router = createBrowserRouter(
             noFooter: true,
             noFloatingCart: true,
             noBack: true,
+          },
+        },
+        {
+          path: "/register",
+          element: <RegisterPage />,
+          handle: {
+            title: "Đăng ký tài khoản",
+            noFooter: true,
+            noFloatingCart: true,
           },
         },
         {

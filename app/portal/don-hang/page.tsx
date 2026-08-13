@@ -15,7 +15,7 @@ const PAYMENT_LABEL: Record<string, string> = { pending: "Chờ xử lý", cod: 
 const STEPS = ["pending", "confirmed", "preparing", "shipping", "completed"];
 
 type OrderItem = { id?: string; name?: string; sku?: string; unit?: string; quantity?: number; qty?: number; price?: number; unitPrice?: number; lineTotal?: number };
-type CustomerOrder = { id: string; order_code?: string; status?: string; payment_status?: string; payment_method?: string; delivery_alias?: string; delivery_address?: string; delivery_name?: string; delivery_phone?: string; note?: string; subtotal?: number; discount_amount?: number; grand_total?: number; created_at: string; items?: OrderItem[] };
+type CustomerOrder = { id: string; order_code?: string; status?: string; pricing_status?: "provisional" | "finalized"; price_revision?: number; confirmation_document_id?: string; payment_status?: string; payment_method?: string; delivery_alias?: string; delivery_address?: string; delivery_name?: string; delivery_phone?: string; note?: string; subtotal?: number; discount_amount?: number; grand_total?: number; created_at: string; items?: OrderItem[] };
 const fmtMoney = (n?: number) => new Intl.NumberFormat("vi-VN").format(Number(n) || 0) + "đ";
 const fmtDate = (iso: string) => new Date(iso).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -52,7 +52,7 @@ export default async function CustomerOrdersPage() {
               <details className="customer-order-card" key={order.id} open={index === 0}>
                 <summary>
                   <div className="customer-order-summary__main"><span className="customer-order-icon"><ReceiptText /></span><div><span>Mã đơn hàng</span><strong>{order.order_code || order.id}</strong><small><CalendarDays size={13} /> {fmtDate(order.created_at)}</small></div></div>
-                  <div className="customer-order-summary__meta"><span className={`customer-order-status status-${order.status || "pending"}`}>{STATUS_LABEL[order.status || ""] || order.status || "—"}</span><div><strong>{fmtMoney(order.grand_total || order.subtotal)}</strong><small>{items.length} sản phẩm</small></div><ChevronDown className="customer-order-chevron" /></div>
+                  <div className="customer-order-summary__meta"><span className={`customer-order-status status-${order.status || "pending"}`}>{order.pricing_status === "finalized" ? (STATUS_LABEL[order.status || ""] || order.status || "—") : "Chờ xác nhận giá"}</span><div><strong>{fmtMoney(order.grand_total || order.subtotal)}</strong><small>{order.pricing_status === "finalized" ? `${items.length} sản phẩm` : "Tổng tạm tính"}</small></div><ChevronDown className="customer-order-chevron" /></div>
                 </summary>
                 <div className="customer-order-detail">
                   {order.status === "canceled" ? <div className="customer-order-canceled">Đơn hàng này đã được hủy.</div> : <div className="customer-order-progress">{STEPS.map((step, stepIndex) => <div className={`customer-order-step${stepIndex <= currentStep ? " is-done" : ""}${stepIndex === currentStep ? " is-current" : ""}`} key={step}><span>{stepIndex < currentStep ? <Check /> : stepIndex + 1}</span><small>{STATUS_LABEL[step]}</small></div>)}</div>}
@@ -64,7 +64,9 @@ export default async function CustomerOrdersPage() {
                     </aside>
                   </div>
                   {order.note && <div className="customer-order-note"><strong>Ghi chú đơn hàng:</strong> {order.note}</div>}
-                  <div className="customer-order-totals"><div><span>Tạm tính</span><strong>{fmtMoney(order.subtotal)}</strong></div><div><span>Chiết khấu</span><strong>-{fmtMoney(order.discount_amount)}</strong></div><div className="customer-order-grand-total"><span>Tổng thanh toán</span><strong>{fmtMoney(order.grand_total || order.subtotal)}</strong></div></div>
+                  {order.pricing_status !== "finalized" && <div className="customer-orders-message">Đơn đang được sale TPS1 kiểm tra phân loại khách hàng và đơn giá. Tổng hiện tại chỉ là tạm tính.</div>}
+                  <div className="customer-order-totals"><div><span>Tạm tính</span><strong>{fmtMoney(order.subtotal)}</strong></div><div><span>Giảm/điều chỉnh</span><strong>-{fmtMoney(order.discount_amount)}</strong></div><div className="customer-order-grand-total"><span>{order.pricing_status === "finalized" ? "Tổng thanh toán" : "Tổng tạm tính"}</span><strong>{fmtMoney(order.grand_total || order.subtotal)}</strong></div></div>
+                  {order.pricing_status === "finalized" && order.confirmation_document_id && <a className="customer-new-order" href={`/api/customer/order-confirmation?orderId=${encodeURIComponent(order.id)}`}>Tải PDF xác nhận đơn hàng R{order.price_revision || 1}</a>}
                 </div>
               </details>
             );

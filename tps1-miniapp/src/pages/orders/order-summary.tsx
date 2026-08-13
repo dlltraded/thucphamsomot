@@ -34,7 +34,7 @@ function OrderSummary({ order, full }: { order: Order; full?: boolean }) {
           <div className="flex-1"><div className="text-xs font-medium">{order.items[0]?.product.name || "Đơn hàng TPS1"}</div><div className="mt-1 text-2xs text-subtitle">{order.items.length} sản phẩm{order.items.length > 1 ? ` · và ${order.items.length - 1} món khác` : ""}</div></div>
           {!full && <Icon icon="zi-chevron-right" size={18} className="text-inactive" />}
         </div>
-        <div className="mt-4 flex items-end justify-between border-t border-black/5 pt-3"><div><div className="text-2xs text-subtitle">Giao đến</div><div className="mt-1 max-w-[190px] truncate text-xs">{order.delivery.address || "Nhận tại điểm"}</div></div><div className="text-right"><div className="text-2xs text-subtitle">Tổng thanh toán</div><div className="mt-1 text-sm font-bold text-primary">{formatPrice(order.total)}</div></div></div>
+        <div className="mt-4 flex items-end justify-between border-t border-black/5 pt-3"><div><div className="text-2xs text-subtitle">Giao đến</div><div className="mt-1 max-w-[190px] truncate text-xs">{order.delivery.address || "Nhận tại điểm"}</div></div><div className="text-right"><div className="text-2xs text-subtitle">{order.pricingStatus === "finalized" ? "Tổng đã xác nhận" : "Tổng tạm tính"}</div><div className="mt-1 text-sm font-bold text-primary">{formatPrice(order.total)}</div>{order.pricingStatus !== "finalized" && <div className="mt-1 text-[9px] font-medium text-amber-700">Chờ sale chốt giá</div>}</div></div>
       </div>
     </article>
   );

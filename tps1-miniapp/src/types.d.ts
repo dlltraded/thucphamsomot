@@ -70,6 +70,7 @@ export type PaymentStatus = "pending" | "quoted" | "shipping" | "success" | "fai
 
 export interface Order {
   id: string | number;
+  centralOrderId?: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   createdAt: Date;
@@ -81,4 +82,8 @@ export interface Order {
   centralStatus?: "pending" | "confirmed" | "preparing" | "shipping" | "completed" | "canceled";
   subtotal?: number;
   discountAmount?: number;
+  pricingStatus?: "provisional" | "finalized";
+  pricingMode?: "tier" | "order_discount" | "manual_item_price";
+  priceRevision?: number;
+  confirmationDocumentId?: string;
 }

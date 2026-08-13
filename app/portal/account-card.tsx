@@ -23,6 +23,7 @@ import {
 import type { CustomerSession } from "@/lib/customer-session";
 
 const TIER_LABEL: Record<string, string> = {
+  VIP0: "Khách hàng chưa có chiết khấu",
   VIP1: "Khách thân thiết",
   VIP2: "Khách hàng lớn",
   VIP3: "Đối tác chiến lược",
@@ -98,7 +99,7 @@ export function AccountCard({ session }: { session: CustomerSession }) {
           <div>
             <div className="customer-hero__badges">
               <span className="customer-pill customer-pill--vip"><Sparkles size={14} />{session.tier}</span>
-              <span className="customer-pill"><ShieldCheck size={14} /> Tài khoản đã xác thực</span>
+              <span className="customer-pill"><ShieldCheck size={14} /> {session.verificationStatus === "verified" ? "Tài khoản đã xác thực" : "Đang chờ xác thực"}</span>
             </div>
             <p className="customer-hero__welcome">Xin chào đối tác,</p>
             <h2>{session.name}</h2>
@@ -106,9 +107,9 @@ export function AccountCard({ session }: { session: CustomerSession }) {
           </div>
         </div>
         <div className="customer-discount">
-          <span>Ưu đãi hiện tại</span>
-          <strong>{session.discountPercent}%</strong>
-          <small>áp dụng trên mỗi đơn hàng</small>
+          <span>Chính sách giá đề xuất</span>
+          <strong>{session.discountPercent > 0 ? `${session.discountPercent}%` : "VIP0"}</strong>
+          <small>Mọi đơn vẫn được sale kiểm tra và chốt giá cuối</small>
         </div>
       </section>
 

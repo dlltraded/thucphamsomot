@@ -195,7 +195,7 @@ export const productState = atomFamily((id: string | number) =>
   })
 );
 
-export const cartState = atom<Cart>([]);
+export const cartState = atomWithStorage<Cart>(CONFIG.STORAGE_KEYS.CART, []);
 
 export const selectedCartItemIdsState = atom<number[]>([]);
 
@@ -211,6 +211,7 @@ export interface CustomerAuth {
   defaultShippingAddress: ShippingAddress;
   tier: string;
   discountPercent: number;
+  verificationStatus: "pending" | "verified" | "rejected";
   orderSessionToken: string;
 }
 
@@ -346,6 +347,7 @@ export const ordersState = atomFamily((status: OrderStatus) =>
 
         return {
           id: row.order_code || row.id,
+          centralOrderId: row.id,
           status: mappedStatus,
           paymentStatus: mappedPaymentStatus,
           createdAt: new Date(row.created_at),
@@ -386,6 +388,10 @@ export const ordersState = atomFamily((status: OrderStatus) =>
           centralStatus: centralStatus as CentralOrderStatus,
           subtotal: Number(row.subtotal || 0),
           discountAmount: Number(row.discount_amount || 0),
+          pricingStatus: row.pricing_status || "provisional",
+          pricingMode: row.pricing_mode || "tier",
+          priceRevision: Number(row.price_revision || 0),
+          confirmationDocumentId: row.confirmation_document_id || undefined,
         };
       });
 

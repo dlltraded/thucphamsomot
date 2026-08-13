@@ -16,7 +16,7 @@ import {
 } from "@/state";
 import { Product } from "@/types";
 import { getConfig } from "@/utils/template";
-import { authorize, createOrder, openChat } from "zmp-sdk/apis";
+import { authorize, openChat } from "zmp-sdk/apis";
 import { useAtomCallback } from "jotai/utils";
 import CONFIG from "@/config";
 
@@ -120,7 +120,6 @@ export function useToBeImplemented() {
 export function useCheckout() {
   const { discountPercent } = useAtomValue(cartTotalState);
   const [cart, setCart] = useAtom(cartState);
-  const requestInfo = useRequestInformation();
   const navigate = useNavigate();
   const refreshNewOrders = useSetAtom(ordersState("pending"));
   const [localOrders, setLocalOrders] = useAtom(localOrdersState);
@@ -136,7 +135,7 @@ export function useCheckout() {
     // giá bán lẻ trong app chỉ để tham khảo, phải đăng nhập mới đặt được
     // và mới áp dụng chiết khấu theo nhóm VIP1/VIP2/VIP3.
     if (!customerAuth) {
-      navigate("/login?redirect=/cart");
+      navigate("/register?redirect=/cart");
       return;
     }
     if ((deliveryMode || "shipping") === "shipping" && !shippingAddress?.address) {
@@ -146,8 +145,6 @@ export function useCheckout() {
     }
 
     try {
-      const userInfo = await requestInfo();
-
       // Áp % chiết khấu theo nhóm khách hàng ngay ở từng dòng sản phẩm để
       // tổng các item.amount luôn khớp chính xác paymentAmount (bắt buộc với Zalo Pay).
       const orderItems = cart.map((item) => ({
@@ -211,7 +208,6 @@ export function useCheckout() {
 
       const orderCode = String(centralOrder.orderCode);
       const discountedOrderTotal = Number(centralOrder.total || 0);
-      const centralItems = Array.isArray(centralOrder.items) ? centralOrder.items : [];
       const orderMessage = `Mã đơn: ${orderCode}\nKhách hàng: ${customerAuth.code} (${customerAuth.tier} - chiết khấu ${discountPercent}%)\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${Math.round(discountedOrderTotal)}đ`;
 
       // Save local order to show immediately
@@ -231,82 +227,15 @@ export function useCheckout() {
 
       setLocalOrders((prev) => [...prev, newLocalOrder]);
 
-      let mac = '';
-      
-      const paymentDesc = `Thanh toan don hang ${orderCode}`; // Bỏ dấu tiếng Việt để tránh lỗi encoding khi tạo MAC qua SDK
-      const paymentExtradata = JSON.stringify({
-        centralOrderId: centralOrder.orderId,
-        orderCode,
-      });
-      const paymentMethodStr = JSON.stringify({ id: "COD", isCustom: false });
-      
-      // Quan trọng: item.amount phải là TỔNG tiền của món đó (đơn giá * số lượng) VÀ LÀ SỐ NGUYÊN (tránh lỗi decimal)
-      // Cắt id còn 32 ký tự vì Zalo Pay giới hạn độ dài mã item
-      const paymentItemObj = centralItems.length > 0
-        ? centralItems.map((it: any) => ({
-            id: String(it.productId || it.id || orderCode).substring(0, 32),
-            amount: Math.round(Number(it.lineTotal || 0)),
-          }))
-        : orderItems.map(it => ({
-            id: String(it.id).substring(0, 32),
-            amount: Math.round((it.price || 10000) * it.quantity),
-          }));
-      
-      // BẮT BUỘC: paymentAmount phải BẰNG CHÍNH XÁC tổng các item.amount đã được làm tròn. 
-      // Nếu tổng item.amount khác paymentAmount, Zalo sẽ báo lỗi MAC hoặc lỗi logic thanh toán.
-      const paymentAmount = paymentItemObj.reduce((sum: number, item: { amount: number }) => sum + item.amount, 0) || Math.round(discountedOrderTotal) || 10000;
-      
-      const paymentItemStr = JSON.stringify(paymentItemObj);
-
-      try {
-        const response = await fetch(`${apiUrl}/api/payment/create-order-mac`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: paymentAmount,
-            desc: paymentDesc,
-            extradata: paymentExtradata,
-            method: paymentMethodStr,
-            item: paymentItemStr,
-            centralOrderId: centralOrder.orderId,
-            orderSessionToken: customerAuth.orderSessionToken,
-          })
-        });
-        const data = await response.json();
-        mac = data.mac;
-      } catch (err) {
-        console.error("Lỗi lấy MAC:", err);
-      }
-
-      if (!mac) {
-        setCart([]);
-        refreshNewOrders();
-        toast.success(`Đã ghi nhận đơn hàng ${orderCode}`);
-        navigate("/checkout-success", { viewTransition: true, replace: true, state: { orderCode } });
-        return;
-      }
-
-      await createOrder({
-        amount: paymentAmount,
-        desc: paymentDesc,
-        extradata: paymentExtradata,
-        item: paymentItemObj,
-        method: paymentMethodStr, // BẮT BUỘC TRUYỀN CHUỖI JSON ĐỂ KHÔNG SAI LỆCH MAC ("Nếu truyền object trực tiếp, chuỗi băm sẽ không khớp")
-        mac: mac,
-        success: (data) => {
-          console.log("Thanh toán thành công", data);
-          setCart([]);
-          refreshNewOrders();
-          navigate("/checkout-success", {
-            viewTransition: true,
-            replace: true,
-            state: { orderCode }
-          });
-        },
-        fail: (err) => {
-          console.error("Lỗi thanh toán Zalo:", err);
-          toast.error("Lỗi thanh toán: " + JSON.stringify(err));
-        }
+      // Mọi đơn đều phải được sale kiểm tra và chốt đơn giá cuối cùng.
+      // Không gọi thanh toán Zalo khi đơn vẫn ở trạng thái giá tạm tính.
+      setCart([]);
+      refreshNewOrders();
+      toast.success(`Đã gửi đơn tạm tính ${orderCode}`);
+      navigate("/checkout-success", {
+        viewTransition: true,
+        replace: true,
+        state: { orderCode, provisional: true },
       });
     } catch (error) {
       console.warn(error);

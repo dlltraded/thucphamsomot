@@ -5,6 +5,7 @@ import TransitionLink from "@/components/transition-link";
 import toast from "react-hot-toast";
 
 const TIER_LABEL: Record<string, string> = {
+  VIP0: "Khách hàng chưa có chiết khấu",
   VIP1: "Khách thân thiết",
   VIP2: "Khách hàng lớn",
   VIP3: "Đối tác chiến lược",
@@ -45,9 +46,11 @@ export default function CustomerAccount() {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <div className="rounded-xl bg-black/10 p-3"><div className="text-2xs text-white/60">Mã khách hàng</div><div className="mt-1 text-sm font-bold">{customer.code}</div></div>
-          <div className="rounded-xl bg-black/10 p-3"><div className="text-2xs text-white/60">Ưu đãi hiện tại</div><div className="mt-1 text-sm font-bold text-amber-200">-{customer.discountPercent}% mỗi đơn</div></div>
+          <div className="rounded-xl bg-black/10 p-3"><div className="text-2xs text-white/60">Chính sách giá</div><div className="mt-1 text-sm font-bold text-amber-200">{customer.discountPercent > 0 ? `Đề xuất -${customer.discountPercent}%` : "Chưa có chiết khấu"}</div></div>
         </div>
-        <div className="mt-3 text-2xs text-white/65">{TIER_LABEL[customer.tier] || customer.tier} · Tài khoản đã xác thực</div>
+        <div className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-2xs leading-4 text-white/80">
+          {TIER_LABEL[customer.tier] || customer.tier} · {customer.verificationStatus === "verified" ? "Tài khoản đã xác thực" : "Đang chờ TPS1 xác thực"}. Mọi đơn hàng vẫn được sale kiểm tra và chốt đơn giá cuối cùng.
+        </div>
       </section>
 
       <section className="rounded-2xl bg-section p-4 shadow-sm border-[0.5px] border-black/10">

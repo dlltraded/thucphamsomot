@@ -21,6 +21,7 @@ interface LoginRpcRow {
   default_shipping_phone: string;
   tier: string;
   discount_percent: number;
+  verification_status?: "pending" | "verified" | "rejected";
   must_change_password: boolean;
   order_session_token: string;
 }
@@ -32,7 +33,7 @@ export default function LoginPage() {
   const setCustomerAuth = useSetAtom(customerAuthState);
   const [shippingAddress, setShippingAddress] = useAtom(shippingAddressState);
 
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(searchParams.get("code") || "");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -77,6 +78,7 @@ export default function LoginPage() {
         },
         tier: row.tier,
         discountPercent: Number(row.discount_percent) || 0,
+        verificationStatus: row.verification_status || "verified",
         orderSessionToken: row.order_session_token || "",
       };
 
@@ -137,9 +139,21 @@ export default function LoginPage() {
         />
       </div>
       <div className="p-6 pt-4 bg-section">
+        {searchParams.get("registered") === "1" && (
+          <div className="mb-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs leading-5 text-green-800">
+            Đăng ký thành công. Mã khách hàng đã được điền sẵn; hãy nhập mật khẩu vừa tạo để tiếp tục đơn hàng.
+          </div>
+        )}
         <Button htmlType="submit" fullWidth loading={submitting}>
           Đăng nhập
         </Button>
+        <button
+          type="button"
+          className="mt-3 w-full py-2 text-sm font-semibold text-primary"
+          onClick={() => navigate(`/register?redirect=${encodeURIComponent(redirect)}`)}
+        >
+          Chưa có tài khoản? Đăng ký ngay
+        </button>
       </div>
     </form>
   );

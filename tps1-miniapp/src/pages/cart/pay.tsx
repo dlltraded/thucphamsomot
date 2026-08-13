@@ -17,13 +17,13 @@ export default function Pay() {
   return (
     <div className="flex-none flex items-center py-3 px-4 space-x-2 bg-section">
       <div className="space-y-1 flex-1">
-        <div className="text-xs text-subtitle">Tổng thanh toán</div>
+        <div className="text-xs text-subtitle">Tổng tạm tính</div>
         <div className="text-sm font-medium text-primary">
           {formatPrice(displayTotal)}
         </div>
         {customerAuth && discountPercent > 0 && (
           <div className="text-2xs text-subtitle">
-            Đã áp chiết khấu {customerAuth.tier} -{discountPercent}%
+            Giá đề xuất theo {customerAuth.tier} -{discountPercent}%, chờ sale xác nhận
           </div>
         )}
       </div>
@@ -35,7 +35,7 @@ export default function Pay() {
         }}
         disabled={paying}
       >
-        {customerAuth ? "Đặt hàng" : "Đăng nhập để đặt hàng"}
+        {customerAuth ? "Gửi đơn tạm tính" : "Đăng ký để đặt hàng"}
       </Button>
     </div>
   );
