@@ -16,7 +16,7 @@ import {
 } from "@/state";
 import { Product } from "@/types";
 import { getConfig } from "@/utils/template";
-import { authorize, openChat } from "zmp-sdk/apis";
+import { authorize, createOrder, openChat } from "zmp-sdk/apis";
 import { useAtomCallback } from "jotai/utils";
 import CONFIG from "@/config";
 
@@ -208,6 +208,7 @@ export function useCheckout() {
 
       const orderCode = String(centralOrder.orderCode);
       const discountedOrderTotal = Number(centralOrder.total || 0);
+      const centralItems = Array.isArray(centralOrder.items) ? centralOrder.items : [];
       const orderMessage = `Mã đơn: ${orderCode}\nKhách hàng: ${customerAuth.code} (${customerAuth.tier} - chiết khấu ${discountPercent}%)\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${Math.round(discountedOrderTotal)}đ`;
 
       // Save local order to show immediately
@@ -227,16 +228,88 @@ export function useCheckout() {
 
       setLocalOrders((prev) => [...prev, newLocalOrder]);
 
-      // Mọi đơn đều phải được sale kiểm tra và chốt đơn giá cuối cùng.
-      // Không gọi thanh toán Zalo khi đơn vẫn ở trạng thái giá tạm tính.
-      setCart([]);
-      refreshNewOrders();
-      toast.success(`Đã gửi đơn tạm tính ${orderCode}`);
-      navigate("/checkout-success", {
-        viewTransition: true,
-        replace: true,
-        state: { orderCode, provisional: true },
+      // Checkout SDK với phương thức COD là bước xác nhận gửi đơn bắt buộc trong luồng Zalo.
+      // Đây KHÔNG phải thanh toán tiền: order trung tâm vẫn giữ payment_status=pending,
+      // pricing_status=provisional và phải được sale chốt giá cuối cùng.
+      const paymentDesc = `Xac nhan don tam tinh ${orderCode}`;
+      const paymentExtradata = JSON.stringify({
+        centralOrderId: centralOrder.orderId,
+        orderCode,
+        purpose: "provisional_order_confirmation",
       });
+      const paymentMethod = JSON.stringify({ id: "COD", isCustom: false });
+      const paymentItems = centralItems.length
+        ? centralItems.map((item: any) => ({
+            id: String(item.productId || item.id || orderCode).substring(0, 32),
+            amount: Math.round(Number(item.lineTotal || 0)),
+          }))
+        : orderItems.map((item) => ({
+            id: String(item.id).substring(0, 32),
+            amount: Math.round(item.price * item.quantity),
+          }));
+      const paymentAmount =
+        paymentItems.reduce(
+          (sum: number, item: { amount: number }) => sum + item.amount,
+          0
+        ) || Math.round(discountedOrderTotal);
+
+      const finishProvisionalOrder = (checkoutConfirmed: boolean) => {
+        setCart([]);
+        refreshNewOrders();
+        toast.success(
+          checkoutConfirmed
+            ? `Đã xác nhận COD - đơn ${orderCode} đang chờ sale duyệt giá`
+            : `Đã ghi nhận đơn ${orderCode} và chuyển sale xác nhận`
+        );
+        navigate("/checkout-success", {
+          viewTransition: true,
+          replace: true,
+          state: { orderCode, provisional: true, checkoutConfirmed },
+        });
+      };
+
+      const macResponse = await fetch(`${apiUrl}/api/payment/create-order-mac`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: paymentAmount,
+          desc: paymentDesc,
+          extradata: paymentExtradata,
+          method: paymentMethod,
+          item: JSON.stringify(paymentItems),
+          centralOrderId: centralOrder.orderId,
+          orderSessionToken: customerAuth.orderSessionToken,
+        }),
+      });
+      const macData = await macResponse.json().catch(() => ({}));
+      if (!macResponse.ok || !macData.mac) {
+        console.warn("Không tạo được MAC xác nhận COD", macData);
+        finishProvisionalOrder(false);
+        return;
+      }
+
+      try {
+        await createOrder({
+          amount: paymentAmount,
+          desc: paymentDesc,
+          extradata: paymentExtradata,
+          item: paymentItems,
+          method: paymentMethod,
+          mac: macData.mac,
+          success: () => finishProvisionalOrder(true),
+          fail: (error) => {
+            // Đơn đã được ghi an toàn vào Supabase trước khi mở Checkout SDK.
+            // Khách hủy/đóng COD không làm mất đơn và cũng không đánh dấu đã thanh toán.
+            console.warn("Checkout COD chưa hoàn tất", error);
+            finishProvisionalOrder(false);
+          },
+        });
+      } catch (checkoutError) {
+        // Một số phiên bản Zalo có thể từ chối mở giao diện Checkout. Đơn trung tâm
+        // vẫn hợp lệ và phải tiếp tục ở trạng thái chờ sale xác nhận.
+        console.warn("Không mở được Checkout COD", checkoutError);
+        finishProvisionalOrder(false);
+      }
     } catch (error) {
       console.warn(error);
       toast.error(error instanceof Error ? error.message : "Gửi yêu cầu thất bại. Vui lòng thử lại.");

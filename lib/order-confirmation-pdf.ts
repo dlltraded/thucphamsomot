@@ -1,6 +1,8 @@
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 export interface ConfirmationOrderItem {
   id?: string;
@@ -59,6 +61,9 @@ export async function generateOrderConfirmationPdf(
   order: ConfirmationOrderSnapshot
 ): Promise<Buffer> {
   pdfMake.addVirtualFileSystem(pdfFonts);
+  const logoDataUrl = `data:image/png;base64,${readFileSync(
+    path.join(process.cwd(), "public", "images", "tps1-logo-vertical.png")
+  ).toString("base64")}`;
 
   const itemRows = (order.order_items || []).map((item, index) => [
     { text: String(index + 1), alignment: "center" },
@@ -105,7 +110,7 @@ export async function generateOrderConfirmationPdf(
           {
             width: "*",
             stack: [
-              { text: "THỰC PHẨM SỐ MỘT", color: "#087348", bold: true, fontSize: 18 },
+              { image: logoDataUrl, width: 112, margin: [0, 0, 0, 5] },
               { text: "B19 KP15, Tam Hiệp, Biên Hòa, Đồng Nai", color: "#64748b", fontSize: 8, margin: [0, 3, 0, 0] },
               { text: "Hotline/Zalo: 089.890.2222", color: "#64748b", fontSize: 8 },
             ],
