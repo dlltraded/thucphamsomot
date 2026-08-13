@@ -318,14 +318,10 @@ export const ordersState = atomFamily((status: OrderStatus) =>
       const customer = get(customerAuthState);
       if (!customer?.orderSessionToken) return [];
 
-      const { data: centralRows, error } = await supabase.rpc(
-        'customer_list_orders',
-        { p_session_token: customer.orderSessionToken }
-      );
-
-      if (error) {
-        console.error("Lỗi lấy đơn hàng trung tâm:", error);
-      }
+      const orderResponse = await fetch(`${CONFIG.API_BASE}/api/customer/orders?sessionToken=${encodeURIComponent(customer.orderSessionToken)}`);
+      const orderPayload = await orderResponse.json().catch(() => ({ orders: [] }));
+      if (!orderResponse.ok) console.error("Lỗi lấy đơn hàng trung tâm:", orderPayload.error);
+      const centralRows = orderPayload.orders || [];
 
       const allProducts = await get(productsState);
       const centralOrders: Order[] = (centralRows || []).map((row: any) => {
@@ -365,6 +361,7 @@ export const ordersState = atomFamily((status: OrderStatus) =>
                 price: Number(item.price || matchedProduct?.price || 0),
                 image: matchedProduct?.image || "",
                 category: matchedProduct?.category || { id: 0, name: "", image: "" },
+                detail: item.itemNote || "",
               },
               quantity: Number(item.quantity || 1),
             };

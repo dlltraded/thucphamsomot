@@ -38,6 +38,29 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = getCustomerSupabaseAdmin();
+    const productSearch = req.nextUrl.searchParams.get("productSearch")?.trim();
+    if (productSearch) {
+      const { data: products, error: productError } = await supabase
+        .from("products")
+        .select("id, local_product_id, sku, name, category, unit, price_retail, price_wholesale")
+        .eq("active", true)
+        .ilike("name", `%${productSearch.replace(/[%_]/g, "")}%`)
+        .order("name")
+        .limit(20);
+      if (productError) throw productError;
+      return json({
+        ok: true,
+        products: (products || []).map((product) => ({
+          id: product.id,
+          localProductId: product.local_product_id,
+          sku: product.sku,
+          name: product.name,
+          categoryLabel: product.category,
+          unit: product.unit || "Kg",
+          price: Number(product.price_retail) || Number(product.price_wholesale) || 0,
+        })),
+      });
+    }
     const status = req.nextUrl.searchParams.get("status");
     let query = supabase
       .from("orders")
@@ -139,6 +162,123 @@ async function createConfirmationDocument(
   return { ...document, fileName };
 }
 
+async function finalizeOrderWithLegacyLineEditor(
+  supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
+  params: {
+    orderId: string;
+    customerTier: string;
+    pricingMode: string;
+    orderDiscountPercent: number;
+    shippingAmount: number;
+    items: Array<Record<string, unknown>>;
+    verificationNote: string;
+    pricingNote: string;
+    actor: string;
+  }
+) {
+  const { data: current, error: currentError } = await supabase
+    .from("orders")
+    .select("*, order_items(*)")
+    .eq("id", params.orderId)
+    .single();
+  if (currentError || !current) throw currentError || new Error("Không tìm thấy đơn hàng");
+  if (["shipping", "completed", "canceled"].includes(current.status) || ["paid", "refunded"].includes(current.payment_status)) {
+    throw new Error("Đơn đã khóa, không thể thay đổi danh sách sản phẩm");
+  }
+  if (!params.items.length) throw new Error("Đơn cuối cùng phải có ít nhất một sản phẩm");
+
+  const originalItems = current.order_items || [];
+  const originalMap = new Map(originalItems.map((item: Record<string, unknown>) => [String(item.id), item]));
+  const keptIds: string[] = [];
+  const finalItems: Array<{ itemId: string; finalUnitPrice: number; note: string }> = [];
+
+  const restoreOriginalItems = async () => {
+    await supabase.from("order_items").delete().eq("order_id", params.orderId);
+    if (originalItems.length) await supabase.from("order_items").insert(originalItems);
+  };
+
+  try {
+    for (const input of params.items) {
+      const quantity = Number(input.quantity || 0);
+      const finalUnitPrice = Number(input.finalUnitPrice || 0);
+      const note = String(input.note || "").trim();
+      if (!(quantity > 0) || finalUnitPrice < 0) throw new Error("Số lượng hoặc đơn giá sản phẩm không hợp lệ");
+
+      let itemId = String(input.itemId || "");
+      if (itemId) {
+        if (!originalMap.has(itemId)) throw new Error("Một sản phẩm trong đơn không còn tồn tại");
+        const { error } = await supabase
+          .from("order_items")
+          .update({ quantity, pricing_note: note || null })
+          .eq("id", itemId)
+          .eq("order_id", params.orderId);
+        if (error) throw error;
+      } else {
+        const identifier = String(input.productId || input.productLocalId || "").trim();
+        if (!identifier) throw new Error("Thiếu mã sản phẩm cần thêm");
+        const { data: product, error: productError } = await supabase
+          .from("products")
+          .select("id, local_product_id, sku, name, unit, price_retail, price_wholesale")
+          .or(`id.eq.${identifier},local_product_id.eq.${identifier}`)
+          .eq("active", true)
+          .limit(1)
+          .maybeSingle();
+        if (productError || !product) throw productError || new Error(`Không tìm thấy sản phẩm ${identifier}`);
+        const basePrice = Number(product.price_retail) || Number(product.price_wholesale) || 0;
+        const { data: inserted, error: insertError } = await supabase
+          .from("order_items")
+          .insert({
+            order_id: params.orderId,
+            product_id: product.id,
+            product_local_id: product.local_product_id,
+            sku: product.sku,
+            name: product.name,
+            unit: product.unit || "Kg",
+            quantity,
+            base_unit_price: basePrice,
+            original_base_unit_price: basePrice,
+            discount_percent: 0,
+            unit_price: basePrice,
+            line_total: Math.round(basePrice * quantity),
+            pricing_mode: params.pricingMode,
+            pricing_note: note || null,
+          })
+          .select("id")
+          .single();
+        if (insertError || !inserted) throw insertError || new Error("Không thêm được sản phẩm");
+        itemId = inserted.id;
+      }
+      keptIds.push(itemId);
+      finalItems.push({ itemId, finalUnitPrice, note });
+    }
+
+    const removeIds = originalItems
+      .map((item: Record<string, unknown>) => String(item.id))
+      .filter((id: string) => !keptIds.includes(id));
+    if (removeIds.length) {
+      const { error: deleteError } = await supabase.from("order_items").delete().in("id", removeIds).eq("order_id", params.orderId);
+      if (deleteError) throw deleteError;
+    }
+
+    const { data, error } = await supabase.rpc("admin_finalize_order", {
+      p_order_id: params.orderId,
+      p_customer_tier: params.customerTier,
+      p_pricing_mode: params.pricingMode,
+      p_order_discount_percent: params.orderDiscountPercent,
+      p_shipping_amount: params.shippingAmount,
+      p_items: finalItems,
+      p_verification_note: params.verificationNote,
+      p_pricing_note: params.pricingNote,
+      p_actor: params.actor,
+    });
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    await restoreOriginalItems();
+    throw error;
+  }
+}
+
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) {
     return json({ ok: false, error: "Không có quyền chốt giá đơn hàng" }, 401);
@@ -152,7 +292,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const supabase = getCustomerSupabaseAdmin();
-    const { data, error } = await supabase.rpc("admin_finalize_order", {
+    const rpcParams = {
       p_order_id: orderId,
       p_customer_tier: customerTier,
       p_pricing_mode: pricingMode,
@@ -162,7 +302,22 @@ export async function POST(req: NextRequest) {
       p_verification_note: String(body?.verificationNote || "").trim(),
       p_pricing_note: String(body?.pricingNote || "").trim(),
       p_actor: actor,
-    });
+    };
+    let { data, error } = await supabase.rpc("admin_finalize_order_v2", rpcParams);
+    if (error && /admin_finalize_order_v2|schema cache|function/i.test(error.message)) {
+      data = await finalizeOrderWithLegacyLineEditor(supabase, {
+        orderId,
+        customerTier,
+        pricingMode,
+        orderDiscountPercent: Number(body?.orderDiscountPercent || 0),
+        shippingAmount: Number(body?.shippingAmount || 0),
+        items: Array.isArray(body?.items) ? body.items : [],
+        verificationNote: String(body?.verificationNote || "").trim(),
+        pricingNote: String(body?.pricingNote || "").trim(),
+        actor,
+      });
+      error = null;
+    }
     if (error) return json({ ok: false, error: error.message }, 400);
 
     const finalized = data as ConfirmationOrderSnapshot;

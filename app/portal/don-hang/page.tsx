@@ -5,7 +5,7 @@ import { ArrowLeft, CalendarDays, Check, ChevronDown, CircleDollarSign, MapPin, 
 import { PageShell } from "@/components/page-shell";
 import { makeMetadata } from "@/lib/seo";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
-import { getCustomerSupabase } from "@/lib/customer-supabase-server";
+import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 export const metadata = makeMetadata({ title: "Đơn hàng đã đặt", description: "Danh sách đơn hàng đã đặt của tài khoản khách hàng VIP TPS1.", path: "/portal/don-hang" });
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ const STATUS_LABEL: Record<string, string> = { pending: "Chờ xác nhận", con
 const PAYMENT_LABEL: Record<string, string> = { pending: "Chờ xử lý", cod: "Thanh toán khi nhận hàng", paid: "Đã thanh toán", failed: "Thanh toán thất bại", refunded: "Đã hoàn tiền" };
 const STEPS = ["pending", "confirmed", "preparing", "shipping", "completed"];
 
-type OrderItem = { id?: string; name?: string; sku?: string; unit?: string; quantity?: number; qty?: number; price?: number; unitPrice?: number; lineTotal?: number };
+type OrderItem = { id?: string; name?: string; sku?: string; unit?: string; quantity?: number; qty?: number; price?: number; unitPrice?: number; lineTotal?: number; itemNote?: string };
 type CustomerOrder = { id: string; order_code?: string; status?: string; pricing_status?: "provisional" | "finalized"; price_revision?: number; confirmation_document_id?: string; payment_status?: string; payment_method?: string; delivery_alias?: string; delivery_address?: string; delivery_name?: string; delivery_phone?: string; note?: string; subtotal?: number; discount_amount?: number; grand_total?: number; created_at: string; items?: OrderItem[] };
 const fmtMoney = (n?: number) => new Intl.NumberFormat("vi-VN").format(Number(n) || 0) + "đ";
 const fmtDate = (iso: string) => new Date(iso).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
@@ -22,9 +22,32 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleString("vi-VN", { timeZon
 export default async function CustomerOrdersPage() {
   const session = parseSessionCookieValue((await cookies()).get(CUSTOMER_SESSION_COOKIE)?.value);
   if (!session) redirect("/portal/dang-nhap");
-  const supabase = getCustomerSupabase();
-  const { data, error } = session.orderSessionToken ? await supabase.rpc("customer_list_orders", { p_session_token: session.orderSessionToken }) : { data: null, error: new Error("Phiên đơn hàng cũ") };
-  const orders = (error ? [] : data || []) as CustomerOrder[];
+  const supabase = getCustomerSupabaseAdmin();
+  let error: Error | null = null;
+  let orders: CustomerOrder[] = [];
+  if (!session.orderSessionToken) {
+    error = new Error("Phiên đơn hàng cũ");
+  } else {
+    const { data: customerSession, error: sessionError } = await supabase.from("customer_sessions").select("customer_id").eq("token", session.orderSessionToken).gt("expires_at", new Date().toISOString()).maybeSingle();
+    if (sessionError || !customerSession) {
+      error = new Error("Phiên đăng nhập đã hết hạn");
+    } else {
+      const { data, error: orderError } = await supabase.from("orders").select("*, order_items(*), order_documents(id, revision, status)").eq("customer_id", customerSession.customer_id).order("created_at", { ascending: false });
+      error = orderError ? new Error(orderError.message) : null;
+      orders = (data || []).map((order) => {
+        const document = (order.order_documents || []).filter((item: { status?: string }) => item.status === "generated").sort((a: { revision?: number }, b: { revision?: number }) => Number(b.revision || 0) - Number(a.revision || 0))[0];
+        return {
+          ...order,
+          confirmation_document_id: document?.id,
+          items: (order.order_items || []).map((item: Record<string, unknown>) => ({
+            id: String(item.id || ""), name: String(item.name || ""), sku: String(item.sku || ""), unit: String(item.unit || ""),
+            quantity: Number(item.quantity || 0), price: Number(item.unit_price || 0), lineTotal: Number(item.line_total || 0),
+            itemNote: String(item.pricing_note || ""),
+          })),
+        } as CustomerOrder;
+      });
+    }
+  }
   const activeCount = orders.filter((order) => !["completed", "canceled"].includes(order.status || "")).length;
 
   return (
@@ -57,7 +80,7 @@ export default async function CustomerOrdersPage() {
                 <div className="customer-order-detail">
                   {order.status === "canceled" ? <div className="customer-order-canceled">Đơn hàng này đã được hủy.</div> : <div className="customer-order-progress">{STEPS.map((step, stepIndex) => <div className={`customer-order-step${stepIndex <= currentStep ? " is-done" : ""}${stepIndex === currentStep ? " is-current" : ""}`} key={step}><span>{stepIndex < currentStep ? <Check /> : stepIndex + 1}</span><small>{STATUS_LABEL[step]}</small></div>)}</div>}
                   <div className="customer-order-detail-grid">
-                    <section className="customer-order-products"><h4><PackageOpen size={18} /> Sản phẩm trong đơn</h4><div className="customer-order-items">{items.map((item, itemIndex) => { const qty = Number(item.quantity ?? item.qty ?? 1); const lineTotal = Number(item.lineTotal ?? 0); const unitPrice = Number(item.price ?? item.unitPrice ?? (lineTotal && qty ? lineTotal / qty : 0)); return <div className="customer-order-item" key={item.id || itemIndex}><div><strong>{item.name || "Sản phẩm"}</strong><span>{item.sku ? `Mã: ${item.sku} · ` : ""}{qty} {item.unit || "phần"} × {fmtMoney(unitPrice)}</span></div><strong>{fmtMoney(lineTotal || unitPrice * qty)}</strong></div>; })}</div></section>
+                    <section className="customer-order-products"><h4><PackageOpen size={18} /> Sản phẩm trong đơn</h4><div className="customer-order-items">{items.map((item, itemIndex) => { const qty = Number(item.quantity ?? item.qty ?? 1); const lineTotal = Number(item.lineTotal ?? 0); const unitPrice = Number(item.price ?? item.unitPrice ?? (lineTotal && qty ? lineTotal / qty : 0)); return <div className="customer-order-item" key={item.id || itemIndex}><div><strong>{item.name || "Sản phẩm"}</strong><span>{item.sku ? `Mã: ${item.sku} · ` : ""}{qty} {item.unit || "phần"} × {fmtMoney(unitPrice)}</span>{item.itemNote && <small>Quy cách: {item.itemNote}</small>}</div><strong>{fmtMoney(lineTotal || unitPrice * qty)}</strong></div>; })}</div></section>
                     <aside className="customer-order-info">
                       <div><span><MapPin /> Giao hàng</span><strong>{order.delivery_alias || "Địa chỉ nhận hàng"}</strong><p>{order.delivery_address || "Nhận tại điểm"}</p><small><Phone /> {order.delivery_name || session.name} · {order.delivery_phone || session.phone}</small></div>
                       <div><span><CircleDollarSign /> Thanh toán</span><strong>{PAYMENT_LABEL[order.payment_status || "pending"] || order.payment_status}</strong><p>{order.payment_method?.toUpperCase() || "Theo thỏa thuận"}</p></div>

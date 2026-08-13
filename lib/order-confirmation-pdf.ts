@@ -14,6 +14,8 @@ export interface ConfirmationOrderItem {
   discount_percent?: number;
   unit_price: number;
   line_total: number;
+  item_note?: string | null;
+  pricing_note?: string | null;
 }
 
 export interface ConfirmationOrderSnapshot {
@@ -71,6 +73,7 @@ export async function generateOrderConfirmationPdf(
       stack: [
         { text: item.name, bold: true },
         item.sku ? { text: `SKU: ${item.sku}`, color: "#64748b", fontSize: 8 } : { text: "" },
+        item.item_note || item.pricing_note ? { text: `Quy cách: ${item.item_note || item.pricing_note}`, color: "#475569", italics: true, fontSize: 8, margin: [0, 2, 0, 0] } : { text: "" },
       ],
     },
     { text: `${Number(item.quantity)} ${item.unit || ""}`.trim(), alignment: "right" },
