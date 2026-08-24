@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     if (productSearch) {
       const { data: products, error: productError } = await supabase
         .from("products")
-        .select("id, local_product_id, sku, name, category, unit, price_retail, price_wholesale")
+        .select("id, local_product_id, sku, name, category, unit, price_retail, price_wholesale, image_url")
         .eq("active", true)
         .ilike("name", `%${productSearch.replace(/[%_]/g, "")}%`)
         .order("name")
@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
           categoryLabel: product.category,
           unit: product.unit || "Kg",
           price: Number(product.price_retail) || Number(product.price_wholesale) || 0,
+          image_url: product.image_url,
         })),
       });
     }
