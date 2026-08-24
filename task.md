@@ -1,0 +1,22 @@
+# Task List: POS Order Creation for Admin
+
+- `[x]` 1. **Database Backend (RPC)**
+  - `[x]` Create `admin_create_order_full` RPC in `supabase-features-aug24.sql`.
+  - `[x]` Ensure RPC accepts custom products (null `product_id`), overrides prices, and records discounts & vouchers.
+- `[x]` 2. **Next.js API**
+  - `[x]` Update `app/api/admin/orders/create/route.ts` to map new POS payload to the new RPC.
+- `[x]` 3. **Admin UI (HTML & CSS)**
+  - `[x]` Add `tab-create-order-v2` in `quanly/index.html`.
+  - `[x]` Update sidebar menu "Tạo Đơn Hàng" to open the new tab instead of modal.
+  - `[x]` Layout 2 columns: Search/Cart (Left), Checkout/Customer (Right).
+  - `[x]` Add CSS rules in `quanly/css/style.css`.
+- `[x]` 4. **Admin UI (Javascript)**
+  - `[x]` Create `quanly/js/admin-order-create-v2.js`.
+  - `[x]` Load customers & products.
+  - `[x]` Implement Custom Product insertion.
+  - `[x]` Implement cart logic with editable prices.
+  - `[x]` Implement Vouchers & Discounts calculation.
+  - `[x]` Submit to API.
+- `[ ]` 5. **Cleanup & Deploy**
+  - `[ ]` Remove old modal HTML and `admin-order-create.js`.
+  - `[ ]` Push to `quanly` repo and main repo.
