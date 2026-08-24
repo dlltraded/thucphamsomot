@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSupabase } from "@/lib/supabase-server";
+import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 export async function POST(req: NextRequest) {
   let body: any;
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   const idempotencyKey = `admin-${customerId}-${Date.now()}`;
-  const supabase = getAdminSupabase();
+  const supabase = getCustomerSupabaseAdmin();
 
   const { data, error } = await supabase.rpc("customer_create_order", {
     p_session_token: null,
