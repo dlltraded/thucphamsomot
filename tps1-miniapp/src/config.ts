@@ -7,6 +7,7 @@ const CONFIG = {
     LOCAL_ORDERS: "localOrders",
     CUSTOMER_AUTH: "customerAuth",
     CART: "guestCart",
+    WELCOME_SEEN: "welcomeSeen",
   },
 };
 

@@ -34,6 +34,7 @@ export interface ConfirmationOrderSnapshot {
   pricing_mode?: string | null;
   pricing_note?: string | null;
   subtotal: number;
+  discount_percent?: number | null;
   discount_amount: number;
   pricing_adjustment_amount?: number;
   shipping_amount: number;
@@ -208,7 +209,7 @@ export async function generateOrderConfirmationPdf(
               widths: ["*", 85],
               body: [
                 [{ text: "Tạm tính", color: "#64748b" }, { text: money(order.subtotal), alignment: "right", bold: true }],
-                [{ text: adjustment >= 0 ? "Giảm/điều chỉnh" : "Điều chỉnh tăng", color: "#64748b" }, { text: adjustment >= 0 ? `-${money(adjustment)}` : money(Math.abs(adjustment)), alignment: "right", color: adjustment >= 0 ? "#087348" : "#b45309", bold: true }],
+                [{ text: adjustment >= 0 ? (order.discount_percent ? `Chiết khấu (${order.discount_percent}%)` : "Giảm/điều chỉnh") : "Điều chỉnh tăng", color: "#64748b" }, { text: adjustment >= 0 ? `-${money(adjustment)}` : money(Math.abs(adjustment)), alignment: "right", color: adjustment >= 0 ? "#087348" : "#b45309", bold: true }],
                 [{ text: "Phí giao hàng", color: "#64748b" }, { text: money(order.shipping_amount), alignment: "right", bold: true }],
                 [{ text: "TỔNG THANH TOÁN", bold: true, color: "#087348", fontSize: 10 }, { text: money(order.grand_total), alignment: "right", bold: true, color: "#087348", fontSize: 12 }],
               ],

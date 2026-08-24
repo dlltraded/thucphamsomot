@@ -35,6 +35,7 @@ export default function CartPage() {
         )}
         <Delivery />
         <CartList />
+        <ApplyVoucher />
         <PaymentMethod />
         <CartSummary />
       </div>

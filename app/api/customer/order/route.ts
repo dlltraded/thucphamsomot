@@ -109,6 +109,8 @@ export async function POST(req: NextRequest) {
     p_delivery_phone: deliveryPhone,
     p_note: note,
     p_idempotency_key: idempotencyKey,
+    p_voucher_code: (body as any).voucherCode || null,
+    p_admin_id: (body as any).adminId || null,
   });
 
   if (error) {

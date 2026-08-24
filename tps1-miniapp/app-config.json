@@ -10,8 +10,13 @@
     "hideIOSSafeAreaBottom": true,
     "selfControlLoading": false
   },
-  "listCSS": [],
-  "listSyncJS": [],
+  "listCSS": [
+    "./assets/index-CPovrJdZ.css"
+  ],
+  "listSyncJS": [
+    "inline.js",
+    "./assets/index.Db2Eo8i4.module.js"
+  ],
   "listAsyncJS": [],
   "template": {
     "name": "zaui-market",

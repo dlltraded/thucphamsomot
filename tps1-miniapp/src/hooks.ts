@@ -8,6 +8,7 @@ import {
   ordersState,
   userInfoKeyState,
   userInfoState,
+  activeVoucherState,
   deliveryModeState,
   shippingAddressState,
   selectedStationState,
@@ -124,6 +125,7 @@ export function useCheckout() {
   const refreshNewOrders = useSetAtom(ordersState("pending"));
   const [localOrders, setLocalOrders] = useAtom(localOrdersState);
   const customerAuth = useAtomValue(customerAuthState);
+  const voucher = useAtomValue(activeVoucherState);
 
   // Lấy thông tin giao hàng
   const deliveryMode = useAtomValue(deliveryModeState);
@@ -185,6 +187,7 @@ export function useCheckout() {
           source: "zalo_mini_app",
           orderSessionToken: customerAuth.orderSessionToken,
           idempotencyKey,
+          voucherCode: voucher?.code || null,
           items: cart.map((item) => ({
             productId: String(item.product.id),
             name: item.product.name,

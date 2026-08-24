@@ -148,8 +148,27 @@ export const categoriesStateUpwrapped = unwrap(
   (prev) => prev ?? []
 );
 
+export const contractPricesState = atom<Promise<Record<string, number>>>(async (get) => {
+  const customerAuth = get(customerAuthState);
+  if (!customerAuth?.orderSessionToken || customerAuth?.discountTier !== "CUSTOM") return {};
+  
+  try {
+    const res = await fetch(`${CONFIG.API_BASE}/api/customer/contract-prices`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderSessionToken: customerAuth.orderSessionToken })
+    });
+    const data = await res.json();
+    if (data.ok) return data.data;
+  } catch (e) {
+    console.error("Lỗi fetch contract prices", e);
+  }
+  return {};
+});
+
 export const productsState = atom(async (get) => {
   const categories = await get(categoriesState);
+  const contractPrices = await get(contractPricesState);
   
   const { data, error } = await supabase
     .from('products')
@@ -164,7 +183,12 @@ export const productsState = atom(async (get) => {
   return data.map((product) => {
     const superCatInfo = mapToSuperCategory(product.category || "");
     const categoryObj = categories.find(c => c.id === superCatInfo.id);
-    const priceR = Number(product.price_retail) || 0;
+    let priceR = Number(product.price_retail) || 0;
+    
+    // Áp dụng giá hợp đồng nếu có
+    if (contractPrices[product.id] !== undefined) {
+      priceR = contractPrices[product.id];
+    }
 
     return {
       id: product.id,
@@ -228,19 +252,53 @@ export const customerAuthState = atomWithStorage<CustomerAuth | null>(
   null
 );
 
+export interface Voucher {
+  code: string;
+  discount_amount: number;
+  discount_percent: number;
+  max_discount_value: number;
+  min_order_value: number;
+  projectedDiscount: number;
+}
+
+export const activeVoucherState = atom<Voucher | null>(null);
+
 export const cartTotalState = atom((get) => {
   const items = get(cartState);
   const customer = get(customerAuthState);
+  const voucher = get(activeVoucherState);
+  
   const totalAmount = items.reduce(
     (total, item) => total + item.product.price * item.quantity,
     0
   );
+  
   const discountPercent = customer?.discountPercent || 0;
-  const discountedTotal = Math.round(totalAmount * (1 - discountPercent / 100));
+  let discountedTotal = Math.round(totalAmount * (1 - discountPercent / 100));
+  
+  let voucherDiscount = 0;
+  if (voucher && discountedTotal >= voucher.min_order_value) {
+    if (voucher.discount_amount > 0) {
+      voucherDiscount = voucher.discount_amount;
+    } else if (voucher.discount_percent > 0) {
+      voucherDiscount = Math.round(discountedTotal * (voucher.discount_percent / 100));
+      if (voucher.max_discount_value > 0 && voucherDiscount > voucher.max_discount_value) {
+        voucherDiscount = voucher.max_discount_value;
+      }
+    }
+  }
+  
+  if (voucherDiscount > discountedTotal) {
+    voucherDiscount = discountedTotal;
+  }
+  
+  discountedTotal = Math.max(0, discountedTotal - voucherDiscount);
+
   return {
     totalItems: items.length,
     totalAmount,
     discountPercent,
+    voucherDiscount,
     discountedTotal,
   };
 });

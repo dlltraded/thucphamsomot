@@ -18,9 +18,16 @@ import CheckoutSuccessPage from "./pages/checkout-success";
 import LoginPage from "./pages/login";
 import ChangePasswordPage from "./pages/change-password";
 import RegisterPage from "./pages/register";
+import WelcomePage from "./pages/welcome";
+import { redirect } from "react-router-dom";
+import CONFIG from "@/config";
 
 const router = createBrowserRouter(
   [
+    {
+      path: "/welcome",
+      element: <WelcomePage />,
+    },
     {
       path: "/",
       element: <Layout />,
@@ -28,6 +35,13 @@ const router = createBrowserRouter(
         {
           path: "/",
           element: <HomePage />,
+          loader: () => {
+            const seen = localStorage.getItem(CONFIG.STORAGE_KEYS.WELCOME_SEEN);
+            if (!seen) {
+              return redirect("/welcome");
+            }
+            return null;
+          },
           handle: {
             logo: true,
             search: true,

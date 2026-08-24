@@ -46,6 +46,9 @@ function OrdersPage() {
       activeKey={status || "pending"}
       onChange={(status) => navigate(`/orders/${status}`)}
     >
+      <Tabs.Tab key="draft" label="Chờ duyệt">
+        <OrderList ordersState={ordersState("draft")} />
+      </Tabs.Tab>
       <Tabs.Tab key="pending" label="Đang xử lý">
         <OrderList ordersState={ordersState("pending")} />
       </Tabs.Tab>

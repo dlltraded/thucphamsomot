@@ -57,7 +57,7 @@ export default function ShopInfoPage() {
               <Text className="text-gray-500 text-sm mb-1">Mô tả shop</Text>
               <Text className="text-gray-800 text-sm leading-relaxed">
                 Công ty TNHH Thực Phẩm Số Một (TPS1) — thành lập từ năm 2017,
-                chuyên cung cấp thực phẩm sỉ (B2B) với hơn 500+ sản phẩm: rau
+                chuyên cung cấp thực phẩm sỉ (B2B) với hơn 5000+ sản phẩm: rau
                 củ quả, hải sản, thịt & đông lạnh, gia vị, đồ khô, bánh trứng
                 sữa... Phục vụ 100+ khách hàng là bếp ăn tập thể, nhà máy/KCN,
                 trường học, bệnh viện, nhà hàng, khách sạn tại Đồng Nai và khu
