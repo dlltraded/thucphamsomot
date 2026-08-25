@@ -4,7 +4,7 @@ import { verifyAdminAuth } from "@/lib/admin-auth";
 
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
-  if (!auth.ok || auth.role !== 'admin') {
+  if (!auth.ok || auth.profile?.role !== 'admin') {
     return NextResponse.json({ ok: false, error: auth.error || "Permission denied" }, { status: 403 });
   }
 
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
-  if (!auth.ok || auth.role !== 'admin') {
+  if (!auth.ok || auth.profile?.role !== 'admin') {
     return NextResponse.json({ ok: false, error: auth.error || "Permission denied" }, { status: 403 });
   }
 
