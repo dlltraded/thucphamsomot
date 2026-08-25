@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { verifyAdminAuth } from "@/lib/admin-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) {
+    return NextResponse.json({ ok: false, error: auth.error }, { status: 401 });
+  }
+
   let body: any;
   try {
     body = await req.json();
@@ -21,6 +27,13 @@ export async function POST(req: NextRequest) {
   const idempotencyKey = `admin-${customerId}-${Date.now()}`;
   const supabase = getCustomerSupabaseAdmin();
 
+  // If role is sale, they can only create orders for their own customers or any? 
+  // RLS might block it inside admin_create_order_full if we don't use service_role.
+  // Actually, getCustomerSupabaseAdmin uses service_role. 
+  // Let's pass the sales_rep_id to the RPC so it is attached to the order.
+  
+  const salesRepId = auth.profile?.id === "legacy-admin" ? null : auth.profile?.id;
+
   const { data, error } = await supabase.rpc("admin_create_order_full", {
     p_customer_id: customerId,
     p_items: items,
@@ -30,12 +43,12 @@ export async function POST(req: NextRequest) {
     p_discount_amount: discountAmount || 0,
     p_shipping_amount: shippingAmount || 0,
     p_delivery_type: 'shipping',
-    p_delivery_name: deliveryName || 'Trống',
-    p_delivery_phone: deliveryPhone || 'Trống',
-    p_delivery_address: deliveryAddress || 'Trống',
+    p_delivery_name: deliveryName || '',
+    p_delivery_phone: deliveryPhone || '',
+    p_delivery_address: deliveryAddress || '',
     p_note: note || '',
     p_idempotency_key: idempotencyKey,
-    p_admin_id: 'admin'
+    p_admin_id: salesRepId
   });
 
   if (error) {

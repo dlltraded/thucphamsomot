@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
+import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { generateOrderConfirmationPdf, type ConfirmationOrderSnapshot } from "@/lib/order-confirmation-pdf";
 
@@ -23,17 +24,12 @@ function json(body: unknown, status = 200) {
   return NextResponse.json(body, { status, headers: corsHeaders });
 }
 
-function isAuthorized(req: NextRequest) {
-  const expected = process.env.ADMIN_TOKEN?.trim() || "19871988";
-  const supplied =
-    req.headers.get("x-admin-token") ||
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return Boolean(supplied && supplied === expected);
-}
+
 
 export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return json({ ok: false, error: "Không có quyền quản lý đơn hàng" }, 401);
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) {
+    return json({ ok: false, error: auth.error }, 401);
   }
 
   try {
@@ -281,8 +277,9 @@ async function finalizeOrderWithLegacyLineEditor(
 }
 
 export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return json({ ok: false, error: "Không có quyền chốt giá đơn hàng" }, 401);
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) {
+    return json({ ok: false, error: auth.error }, 401);
   }
   const body = await req.json().catch(() => null);
   const orderId = String(body?.orderId || "").trim();
@@ -348,8 +345,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return json({ ok: false, error: "Không có quyền cập nhật đơn hàng" }, 401);
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) {
+    return json({ ok: false, error: auth.error }, 401);
   }
 
   const body = await req.json().catch(() => null);
