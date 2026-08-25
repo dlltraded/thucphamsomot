@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ 
     ok: true, 
+    id: auth.profile?.id,
     role: auth.profile?.role || 'sale',
     name: auth.profile?.name || 'Unknown'
   });
