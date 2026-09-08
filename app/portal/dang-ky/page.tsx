@@ -4,17 +4,17 @@ import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { makeMetadata } from "@/lib/seo";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
-import { LoginForm } from "./login-form";
+import { RegisterForm } from "./register-form";
 
 export const metadata = makeMetadata({
-  title: "Đăng nhập tài khoản khách hàng",
-  description: "Đăng nhập bằng Mã khách hàng và Mật khẩu do sale TPS1 cung cấp.",
-  path: "/portal/dang-nhap",
+  title: "Đăng ký tài khoản khách hàng",
+  description: "Tạo tài khoản khách hàng VIP TPS1 để xem giá chiết khấu và đặt hàng trực tuyến.",
+  path: "/portal/dang-ky",
 });
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalLoginPage() {
+export default async function PortalRegisterPage() {
   const cookieStore = await cookies();
   const session = parseSessionCookieValue(cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value);
   if (session) {
@@ -22,9 +22,9 @@ export default async function PortalLoginPage() {
   }
 
   return (
-    <PageShell eyebrow="Portal báo giá" title="Đăng nhập tài khoản khách hàng" compact>
+    <PageShell eyebrow="Portal đối tác VIP" title="Đăng ký tài khoản" compact>
       <Suspense>
-        <LoginForm />
+        <RegisterForm />
       </Suspense>
     </PageShell>
   );

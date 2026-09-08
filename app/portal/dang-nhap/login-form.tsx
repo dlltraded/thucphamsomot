@@ -1,13 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import { PortalPasswordField } from "@/components/portal-password-field";
 
 export function LoginForm() {
   const router = useRouter();
-  const [code, setCode] = useState("");
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/portal";
+  const registered = searchParams.get("registered") === "1";
+
+  const [code, setCode] = useState(searchParams.get("code") || "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +43,7 @@ export function LoginForm() {
       if (data.session?.mustChangePassword) {
         router.push("/portal/doi-mat-khau");
       } else {
-        router.push("/portal");
+        router.push(redirectTo);
       }
       router.refresh();
     } catch {
@@ -76,10 +81,28 @@ export function LoginForm() {
           <KeyRound size={22} />
         </div>
 
-        <p style={{ color: "#666", fontSize: 14, textAlign: "center", marginBottom: 24, lineHeight: 1.6 }}>
-          Nhập Mã khách hàng và Mật khẩu do sale TPS1 cung cấp để xem giá
-          chiết khấu riêng, đặt hàng và quản lý đơn hàng đã đặt.
-        </p>
+        {registered && (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              color: "#166534",
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
+            🎉 Đăng ký thành công! Mã khách hàng đã được điền sẵn. Nhập mật khẩu vừa tạo để tiếp tục.
+          </div>
+        )}
+
+        {!registered && (
+          <p style={{ color: "#666", fontSize: 14, textAlign: "center", marginBottom: 24, lineHeight: 1.6 }}>
+            Nhập Mã khách hàng và Mật khẩu để xem giá chiết khấu riêng, đặt hàng và quản lý đơn hàng.
+          </p>
+        )}
 
         <div className="quote-landing__field">
           <label className="portal-form__label">Mã khách hàng</label>
@@ -114,6 +137,16 @@ export function LoginForm() {
         >
           {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
         </button>
+
+        <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: "#64748b" }}>
+          Chưa có tài khoản?{" "}
+          <Link
+            href={`/portal/dang-ky?redirect=${encodeURIComponent(redirectTo)}`}
+            style={{ color: "#147a52", fontWeight: 700 }}
+          >
+            Đăng ký ngay
+          </Link>
+        </p>
       </form>
     </div>
   );

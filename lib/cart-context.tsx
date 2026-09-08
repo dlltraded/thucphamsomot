@@ -18,7 +18,8 @@ type CartAction =
   | { type: "REMOVE"; slug: string }
   | { type: "UPDATE_QTY"; slug: string; qty: number }
   | { type: "CLEAR" }
-  | { type: "INIT"; items: QuoteBasketItem[] };
+  | { type: "INIT"; items: QuoteBasketItem[] }
+  | { type: "REPLACE"; items: QuoteBasketItem[] };
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -48,6 +49,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       };
     case "CLEAR":
       return { items: [] };
+    case "REPLACE":
+      return { items: action.items };
     default:
       return state;
   }
@@ -62,6 +65,7 @@ type CartContextValue = {
   removeItem: (slug: string) => void;
   updateQty: (slug: string, qty: number) => void;
   clear: () => void;
+  replaceCart: (items: QuoteBasketItem[]) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -96,11 +100,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const clear = useCallback(() => dispatch({ type: "CLEAR" }), []);
+  const replaceCart = useCallback(
+    (items: QuoteBasketItem[]) => dispatch({ type: "REPLACE", items }),
+    []
+  );
 
   const count = state.items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items: state.items, count, addItem, removeItem, updateQty, clear }}>
+    <CartContext.Provider value={{ items: state.items, count, addItem, removeItem, updateQty, clear, replaceCart }}>
       {children}
     </CartContext.Provider>
   );

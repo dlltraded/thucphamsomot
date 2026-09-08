@@ -8,6 +8,7 @@ import { useAtomValue } from "jotai";
 import { customerAuthState } from "@/state";
 import CONFIG from "@/config";
 import toast from "react-hot-toast";
+import { useReorder } from "@/hooks";
 
 const STEPS = ["draft", "pending", "confirmed", "preparing", "shipping", "completed"] as const;
 const LABELS = { draft: "Chờ xác nhận từ bạn", pending: "Chờ xử lý", confirmed: "Đã xác nhận", preparing: "Chuẩn bị", shipping: "Đang giao", completed: "Hoàn thành", canceled: "Đã hủy" };
@@ -17,6 +18,8 @@ export default function OrderDetailPage() {
   const customer = useAtomValue(customerAuthState);
   const order = useLocation().state as Order | null;
   const [openingPdf, setOpeningPdf] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const reorder = useReorder();
   if (!order) return <div className="flex min-h-full flex-col items-center justify-center gap-3 p-6 text-center"><Icon icon="zi-inbox" size={42} className="text-inactive" /><div className="text-sm font-bold">Không tìm thấy thông tin đơn hàng</div><Button size="small" onClick={() => navigate("/orders")}>Về danh sách đơn</Button></div>;
   const status = order.centralStatus || order.status;
   const currentStep = STEPS.indexOf(status as (typeof STEPS)[number]);
@@ -74,7 +77,7 @@ export default function OrderDetailPage() {
     <section className="rounded-2xl bg-section p-4 shadow-sm border-[0.5px] border-black/10"><div className="flex items-center gap-2 text-sm font-bold"><Icon icon="zi-location" size={18} className="text-primary" />Thông tin giao nhận</div><div className="mt-3 rounded-xl bg-background p-3"><div className="text-xs font-bold">{order.delivery.type === "shipping" ? order.delivery.alias : order.delivery.name}</div><div className="mt-1 text-xs leading-5 text-subtitle">{order.delivery.address}</div>{order.delivery.type === "shipping" && <div className="mt-2 text-2xs text-subtitle">{order.delivery.name} · {order.delivery.phone}</div>}</div></section>
     <section className="rounded-2xl bg-section p-4 shadow-sm border-[0.5px] border-black/10 space-y-2 text-xs"><div className="flex justify-between"><span className="text-subtitle">Tạm tính</span><strong>{formatPrice(order.subtotal ?? order.total)}</strong></div>{!!order.discountAmount&&<div className="flex justify-between"><span className="text-subtitle">Giảm/điều chỉnh</span><strong className="text-primary">-{formatPrice(order.discountAmount)}</strong></div>}<div className="flex justify-between border-t border-black/5 pt-3 text-sm"><span className="font-bold">{order.pricingStatus === "finalized" ? "Tổng thanh toán" : "Tổng tạm tính"}</span><strong className="text-primary">{formatPrice(order.total)}</strong></div></section>
     {order.pricingStatus === "finalized" && order.confirmationDocumentId && customer?.orderSessionToken && order.centralOrderId && <Button fullWidth loading={openingPdf} disabled={openingPdf} onClick={handleOpenConfirmationPdf}>Tải PDF xác nhận đơn hàng</Button>}
-    {status === "draft" && (
+    {(status as string) === "draft" && (
       <Button 
         fullWidth 
         loading={openingPdf} 
@@ -107,5 +110,24 @@ export default function OrderDetailPage() {
         Xác nhận đặt hàng
       </Button>
     )}
+    <button
+      type="button"
+      disabled={reordering}
+      onClick={async () => {
+        setReordering(true);
+        await reorder(order);
+        setReordering(false);
+      }}
+      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary active:bg-primary/10 disabled:opacity-50"
+    >
+      {reordering ? (
+        <span className="text-xs">Đang xử lý…</span>
+      ) : (
+        <>
+          <Icon icon="zi-reorder-solid" size={16} />
+          Đặt lại đơn này
+        </>
+      )}
+    </button>
   </div>;
 }

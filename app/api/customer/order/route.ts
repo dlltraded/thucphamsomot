@@ -115,7 +115,9 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("customer_create_order error:", error);
-    const isSessionError = /phiên khách hàng|session/i.test(error.message || "");
+    const isSessionError =
+      error.message?.includes("Phiên khách hàng không hợp lệ") ||
+      error.message?.includes("hết hạn");
     return json(
       {
         ok: false,

@@ -2,8 +2,11 @@ import { Order } from "@/types";
 import { formatPrice } from "@/utils/format";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "zmp-ui";
+import { useState } from "react";
+import { useReorder } from "@/hooks";
 
-const STATUS_LABEL = {
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Chờ bạn xác nhận",
   pending: "Chờ xác nhận",
   confirmed: "Đã xác nhận",
   preparing: "Đang chuẩn bị",
@@ -15,6 +18,9 @@ const STATUS_LABEL = {
 function OrderSummary({ order, full }: { order: Order; full?: boolean }) {
   const navigate = useNavigate();
   const status = order.centralStatus || order.status;
+  const reorder = useReorder();
+  const [reordering, setReordering] = useState(false);
+
   return (
     <article
       className="overflow-hidden rounded-2xl border-[0.5px] border-black/10 bg-section shadow-sm"
@@ -34,7 +40,37 @@ function OrderSummary({ order, full }: { order: Order; full?: boolean }) {
           <div className="flex-1"><div className="text-xs font-medium">{order.items[0]?.product.name || "Đơn hàng TPS1"}</div><div className="mt-1 text-2xs text-subtitle">{order.items.length} sản phẩm{order.items.length > 1 ? ` · và ${order.items.length - 1} món khác` : ""}</div></div>
           {!full && <Icon icon="zi-chevron-right" size={18} className="text-inactive" />}
         </div>
-        <div className="mt-4 flex items-end justify-between border-t border-black/5 pt-3"><div><div className="text-2xs text-subtitle">Giao đến</div><div className="mt-1 max-w-[190px] truncate text-xs">{order.delivery.address || "Nhận tại điểm"}</div></div><div className="text-right"><div className="text-2xs text-subtitle">{order.pricingStatus === "finalized" ? "Tổng đã xác nhận" : "Tổng tạm tính"}</div><div className="mt-1 text-sm font-bold text-primary">{formatPrice(order.total)}</div>{order.pricingStatus !== "finalized" && <div className="mt-1 text-[9px] font-medium text-amber-700">Chờ sale chốt giá</div>}</div></div>
+        <div className="mt-4 flex items-end justify-between border-t border-black/5 pt-3">
+          <div>
+            <div className="text-2xs text-subtitle">Giao đến</div>
+            <div className="mt-1 max-w-[190px] truncate text-xs">{order.delivery.address || "Nhận tại điểm"}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xs text-subtitle">{order.pricingStatus === "finalized" ? "Tổng đã xác nhận" : "Tổng tạm tính"}</div>
+            <div className="mt-1 text-sm font-bold text-primary">{formatPrice(order.total)}</div>
+            {order.pricingStatus !== "finalized" && <div className="mt-1 text-[9px] font-medium text-amber-700">Chờ sale chốt giá</div>}
+          </div>
+        </div>
+        {/* Quick reorder button – stops card click from propagating */}
+        <button
+          type="button"
+          disabled={reordering}
+          onClick={(e) => {
+            e.stopPropagation();
+            setReordering(true);
+            reorder(order).then(() => setReordering(false)).catch(() => setReordering(false));
+          }}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 py-2 text-xs font-semibold text-primary active:bg-primary/10 disabled:opacity-50"
+        >
+          {reordering ? (
+            <span>Đang xử lý…</span>
+          ) : (
+            <>
+              <Icon icon="zi-reorder-solid" size={13} />
+              Đặt lại đơn này
+            </>
+          )}
+        </button>
       </div>
     </article>
   );

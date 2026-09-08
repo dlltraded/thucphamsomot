@@ -6,6 +6,7 @@ import { PageShell } from "@/components/page-shell";
 import { makeMetadata } from "@/lib/seo";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { ReorderButton } from "./reorder-button";
 
 export const metadata = makeMetadata({ title: "Đơn hàng đã đặt", description: "Danh sách đơn hàng đã đặt của tài khoản khách hàng VIP TPS1.", path: "/portal/don-hang" });
 export const dynamic = "force-dynamic";
@@ -90,6 +91,7 @@ export default async function CustomerOrdersPage() {
                   {order.pricing_status !== "finalized" && <div className="customer-orders-message">Đơn đang được sale TPS1 kiểm tra phân loại khách hàng và đơn giá. Tổng hiện tại chỉ là tạm tính.</div>}
                   <div className="customer-order-totals"><div><span>Tạm tính</span><strong>{fmtMoney(order.subtotal)}</strong></div><div><span>Giảm/điều chỉnh</span><strong>-{fmtMoney(order.discount_amount)}</strong></div><div className="customer-order-grand-total"><span>{order.pricing_status === "finalized" ? "Tổng thanh toán" : "Tổng tạm tính"}</span><strong>{fmtMoney(order.grand_total || order.subtotal)}</strong></div></div>
                   {order.pricing_status === "finalized" && order.confirmation_document_id && <a className="customer-new-order" href={`/api/customer/order-confirmation?orderId=${encodeURIComponent(order.id)}`}>Tải PDF xác nhận đơn hàng R{order.price_revision || 1}</a>}
+                  <ReorderButton items={items} orderId={order.order_code || order.id} />
                 </div>
               </details>
             );

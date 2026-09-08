@@ -338,3 +338,58 @@ export function useRouteHandle() {
 
   return [lastMatch.handle, lastMatch, matches] as const;
 }
+
+/**
+ * useReorder – copies all items from a completed/canceled order back into the
+ * cart, then navigates to /cart so the customer can tweak quantities or add
+ * more products before placing the new order.
+ *
+ * Only items that still exist in the current product catalogue are added.
+ * If none of the original items are found the hook shows a warning instead.
+ */
+export function useReorder() {
+  const navigate = useNavigate();
+  const [, setCart] = useAtom(cartState);
+  const getProducts = useAtomCallback(async (get) => {
+    const { productsState } = await import("@/state");
+    return get(productsState);
+  });
+
+  return async (order: import("@/types").Order) => {
+    const toastId = toast.loading("Đang tải lại đơn hàng…");
+    try {
+      const products = await getProducts();
+      const newItems: import("@/types").CartItem[] = [];
+
+      for (const item of order.items) {
+        // Match by id (may be string or number) or by name as fallback
+        const found = products.find(
+          (p) =>
+            String(p.id) === String(item.product.id) ||
+            p.name === item.product.name
+        );
+        if (found) {
+          newItems.push({ product: found, quantity: item.quantity });
+        }
+      }
+
+      if (newItems.length === 0) {
+        toast.error("Không tìm thấy sản phẩm nào còn kinh doanh trong đơn cũ.", { id: toastId });
+        return;
+      }
+
+      setCart(newItems);
+
+      const skipped = order.items.length - newItems.length;
+      const msg =
+        skipped > 0
+          ? `Đã thêm ${newItems.length} sản phẩm vào giỏ (${skipped} món đã ngừng kinh doanh).`
+          : `Đã thêm ${newItems.length} sản phẩm vào giỏ hàng!`;
+
+      toast.success(msg, { id: toastId, duration: 3000 });
+      navigate("/cart", { viewTransition: true });
+    } catch {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại.", { id: toastId });
+    }
+  };
+}
