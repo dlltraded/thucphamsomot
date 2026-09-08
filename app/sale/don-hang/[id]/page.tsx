@@ -1,5 +1,5 @@
 import { getAdminSession } from "@/lib/admin-session";
-import { getAdminSupabase } from "@/lib/supabase-server";
+import { getCustomerSupabaseAdmin as getAdminSupabase } from "@/lib/customer-supabase-server";
 import { notFound } from "next/navigation";
 import OrderDetailClient from "./client-page";
 

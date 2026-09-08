@@ -1,5 +1,5 @@
 import { getAdminSession } from "@/lib/admin-session";
-import { getAdminSupabase } from "@/lib/supabase-server";
+import { getCustomerSupabaseAdmin as getAdminSupabase } from "@/lib/customer-supabase-server";
 import { PackageOpen, Download, AlertCircle } from "lucide-react";
 import SoanHangClient from "./client-page";
 
@@ -47,7 +47,7 @@ export default async function SoanHangPage() {
   //   }
   // ]
 
-  const productMap = new Map();
+  const productMap = new Map<string, { productName: string; totalQty: number; customersMap: Map<string, number> }>();
 
   orderItems.forEach((item: any) => {
     const pName = item.name;
@@ -58,7 +58,7 @@ export default async function SoanHangPage() {
       productMap.set(pName, { productName: pName, totalQty: 0, customersMap: new Map() });
     }
 
-    const pData = productMap.get(pName);
+    const pData = productMap.get(pName)!;
     pData.totalQty += qty;
     
     const cQty = pData.customersMap.get(cName) || 0;

@@ -1,5 +1,5 @@
 import { getAdminSession } from "@/lib/admin-session";
-import { getAdminSupabase } from "@/lib/supabase-server";
+import { getCustomerSupabaseAdmin as getAdminSupabase } from "@/lib/customer-supabase-server";
 import { fmtDate, fmtMoney } from "@/lib/utils";
 import Link from "next/link";
 import { Search, Filter, ReceiptText, CalendarDays } from "lucide-react";

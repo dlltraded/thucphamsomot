@@ -1,5 +1,5 @@
 import { getAdminSession } from "@/lib/admin-session";
-import { getAdminSupabase } from "@/lib/supabase-server";
+import { getCustomerSupabaseAdmin as getAdminSupabase } from "@/lib/customer-supabase-server";
 import { PackageOpen, Users, CircleDollarSign, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { fmtMoney } from "@/lib/utils";

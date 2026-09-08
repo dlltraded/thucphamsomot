@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSupabase } from "@/lib/supabase-server";
+import { getCustomerSupabaseAdmin as getAdminSupabase } from "@/lib/customer-supabase-server";
 import { getAdminSession } from "@/lib/admin-session";
 
 export async function POST(req: NextRequest) {
