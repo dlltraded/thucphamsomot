@@ -246,3 +246,5 @@ Các file đã được normalize để đọc dữ liệu cũ sang bộ status 
   2. tối ưu quote management
   3. cải thiện sync và lịch sử trạng thái
   4. làm backup/import/export dữ liệu đầy đủ hơn
+ 
+ 

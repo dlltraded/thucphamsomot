@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Ảnh Zalo OA - Thực Phẩm Số 1</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+            color: white;
+        }
+        .toolbar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #0068ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0054cc;
+        }
+        /* Khu vực hiển thị kích thước đúng 1024x576 (Tỷ lệ 16:9 của Zalo) */
+        .canvas-container {
+            width: 1024px;
+            height: 576px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            background-color: #000;
+        }
+        .bg-image {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s;
+        }
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, rgba(10, 37, 64, 0.95) 0%, rgba(10, 37, 64, 0.8) 45%, rgba(10, 37, 64, 0.1) 100%);
+        }
+        .content {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: white;
+            width: 60%;
+        }
+        .logo {
+            position: absolute;
+            top: 40px;
+            left: 60px;
+            height: 70px;
+            object-fit: contain;
+        }
+        .tag {
+            background-color: #FF3B30;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 18px;
+            display: inline-block;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            width: fit-content;
+            letter-spacing: 1px;
+        }
+        .title {
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1.25;
+            margin: 0;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .subtitle {
+            margin-top: 25px;
+            font-size: 20px;
+            font-weight: 400;
+            opacity: 0.9;
+            line-height: 1.6;
+            border-left: 4px solid #FFD700;
+            padding-left: 15px;
+        }
+        .warning {
+            color: #FFD700;
+        }
+        .instructions {
+            margin-top: 20px;
+            text-align: center;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="toolbar">
+        <button onclick="changeBackground()">🔄 Đổi Ảnh Nền Khác</button>
+        <button onclick="alert('Dùng công cụ Snipping Tool (Windows + Shift + S) để chụp lại vùng ảnh này nhé!')">📸 Cách Lưu Ảnh</button>
+    </div>
+
+    <!-- Khung ảnh đúng chuẩn Zalo OA 1024x576 -->
+    <div class="canvas-container" id="capture-area">
+        <img id="bg-layer" class="bg-image" src="_preview_8615.jpg" alt="Background">
+        <div class="overlay"></div>
+        <img src="logo.png" alt="TPS1 Logo" class="logo" onerror="this.src='LOGO TPSM_MÀU DỌC.pdf.png'">
+        
+        <div class="content">
+            <div class="tag">⚠️ THÔNG BÁO QUAN TRỌNG</div>
+            <h1 class="title">BẾP ĂN QUY MÔ LỚN<br><span class="warning">CẦN SIẾT KIỂM SOÁT ĐẦU VÀO</span></h1>
+            <p class="subtitle">
+                Truy xuất nguồn gốc - Đảm bảo an toàn thực phẩm.<br>
+                TPS1 sẵn sàng đồng hành chuẩn hóa quy trình.
+            </p>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <p>Đây là file công cụ giúp anh ghép tự động Logo và hình ảnh thực tế của công ty thành banner Zalo OA chuẩn tỷ lệ 16:9.</p>
+    </div>
+
+    <script>
+        // Danh sách các ảnh thực tế trong folder của anh
+        const images = [
+            '_preview_6972.jpg',
+            '_preview_7682.jpg',
+            '_preview_7982.jpg',
+            '_preview_8582.jpg',
+            '_preview_8583.jpg',
+            '_preview_8615.jpg',
+            '_preview_9135.jpg',
+            '_preview_9564.jpg',
+            '_preview_9600.jpg',
+            '_preview_9676.jpg'
+        ];
+        
+        let currentIndex = Math.floor(Math.random() * images.length);
+
+        function changeBackground() {
+            currentIndex = (currentIndex + 1) % images.length;
+            document.getElementById('bg-layer').src = images[currentIndex];
+        }
+    </script>
+</body>
+</html>
