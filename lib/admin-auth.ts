@@ -16,9 +16,13 @@ export async function verifyAdminAuth(req: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   
   if (authError || !user) {
-    // Fallback to legacy static token for old clients if needed
-    const expected = process.env.ADMIN_TOKEN?.trim() || "19871988";
-    if (token === expected) {
+    // Cổng thoát khẩn cấp (break-glass): CHỈ hoạt động khi biến môi trường
+    // ADMIN_TOKEN được cấu hình rõ ràng trên server. Trước đây có giá trị
+    // mặc định "19871988" hardcode sẵn trong code -> bất kỳ ai cũng có thể
+    // giả làm admin bằng cách gửi đúng chuỗi đó, kể cả khi .env không hề
+    // cấu hình ADMIN_TOKEN. Đã gỡ bỏ giá trị mặc định này.
+    const expected = process.env.ADMIN_TOKEN?.trim();
+    if (expected && token === expected) {
       return { 
         ok: true, 
         user: { id: "legacy-admin" }, 

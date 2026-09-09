@@ -58,19 +58,32 @@ export async function GET(req: NextRequest) {
         })),
       });
     }
+    const orderId = req.nextUrl.searchParams.get("id")?.trim();
     const status = req.nextUrl.searchParams.get("status");
     let query = supabase
       .from("orders")
       .select("*, order_items(*), order_history(*)")
-      .order("created_at", { ascending: false })
-      .limit(500);
+      .order("created_at", { ascending: false });
 
-    if (status && ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
-      query = query.eq("status", status);
+    if (orderId) {
+      query = query.eq("id", orderId);
+    } else {
+      query = query.limit(500);
+      if (status && ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
+        query = query.eq("status", status);
+      }
     }
 
     const { data, error } = await query;
     if (error) throw error;
+
+    if (orderId) {
+      const singleOrder = data && data.length > 0 ? data[0] : null;
+      return json({
+        ok: true,
+        order: singleOrder,
+      });
+    }
     const customerIds = [...new Set((data || []).map((order) => order.customer_id).filter(Boolean))];
     const { data: accounts } = customerIds.length
       ? await supabase
