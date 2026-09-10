@@ -41,9 +41,14 @@ async function sendTelegram(message: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify webhook secret
+    // Verify webhook secret. LUU Y BAO MAT: truoc day dieu kien la
+    // "WEBHOOK_SECRET && secret !== WEBHOOK_SECRET" -- neu bien moi truong
+    // SUPABASE_WEBHOOK_SECRET vo tinh chua duoc cau hinh (rong), toan bo kiem
+    // tra bi bo qua va route nay nhan bat ky request nao la webhook that.
+    // Hien tai SUPABASE_WEBHOOK_SECRET DA duoc cau hinh trong .env nen chua
+    // bi khai thac, nhung sua lai de luon that bai an toan (fail-closed).
     const secret = req.headers.get("x-webhook-secret") || req.headers.get("x-supabase-secret");
-    if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) {
+    if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 

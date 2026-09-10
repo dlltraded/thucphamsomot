@@ -8,3 +8,10 @@ dist/
 out/
 *.pdf
 !.env.example
+
+# File chứa credential thật dùng để test tay tại local, không được commit
+check_order.cjs
+check_rpc.cjs
+
+# Export dữ liệu hàng hóa/giá thật từ KiotViet — dữ liệu kinh doanh, không đưa lên repo public
+data/imports/
