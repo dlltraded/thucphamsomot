@@ -50,6 +50,17 @@ const CATEGORY_MAP = {
   'MẶT HÀNG BÚN PHÚ MỸ TS': 'Bún tươi',
 };
 
+// Nhóm hàng "...TS" (Tươi Sống) = soạn hàng theo ngày, KHÔNG lưu kho -> không
+// theo dõi tồn kho. Nhóm "...ĐK"/"CP" = bảo quản qua ngày -> có theo dõi.
+// Ngoại lệ: "Đông Lạnh" tuy hậu tố TS nhưng có trữ đông qua ngày như gia vị/đồ
+// khô -> vẫn tính là có theo dõi tồn kho (xác nhận với chủ hệ thống 2026-09-10).
+const NO_INVENTORY_TRACKING_EXCEPT = new Set(['MẶT HÀNG ĐÔNG LẠNH TS']);
+function resolveTrackInventory(kiotGroup) {
+  if (!kiotGroup) return true;
+  if (NO_INVENTORY_TRACKING_EXCEPT.has(kiotGroup)) return true;
+  return !kiotGroup.trim().toUpperCase().endsWith('TS');
+}
+
 function normalizeUnit(u) {
   if (!u) return 'Kg';
   const s = String(u).trim();
@@ -155,6 +166,7 @@ async function main() {
       stock_qty: tonKho,
       min_stock: tonNhoNhat,
       max_stock: tonLonNhat,
+      track_inventory: resolveTrackInventory(kiotGroup),
       active,
       data_source: 'kiotviet',
       last_synced_at: new Date().toISOString(),
