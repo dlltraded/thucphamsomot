@@ -82,8 +82,8 @@ interface MatchResult {
   quantity: number;
   note: string;
   status: "matched" | "ambiguous" | "not_found" | "invalid_quantity";
-  product?: { id: string; sku: string; name: string; unit: string; price: number };
-  suggestions?: { id: string; sku: string; name: string; unit: string; price: number; score: number }[];
+  product?: { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest: boolean };
+  suggestions?: { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest: boolean; score: number }[];
 }
 
 export async function POST(req: NextRequest) {
@@ -104,14 +104,10 @@ export async function POST(req: NextRequest) {
     if (rows.length === 0) return json({ ok: false, error: "File không có dữ liệu" }, 400);
     if (rows.length > 300) return json({ ok: false, error: "File quá nhiều dòng (tối đa 300/lần)" }, 400);
 
-    // Loại mã chưa có giá (price_retail/price_wholesale đều = 0, ~45% catalog
-    // tính tới 2026-09-10 — thu mua chưa nhập giá sau đồng bộ KiotViet) khỏi
-    // danh sách khớp, tránh khách đặt nhầm hàng chưa có giá thật.
     const { data: products, error } = await supabase
       .from("products")
       .select("id, sku, name, unit, price_retail, price_wholesale")
-      .eq("active", true)
-      .or("price_retail.gt.0,price_wholesale.gt.0");
+      .eq("active", true);
     if (error) throw error;
 
     // Tính giá cho TẤT CẢ sản phẩm 1 lần trong bộ nhớ (thay vì gọi RPC
@@ -167,18 +163,20 @@ export async function POST(req: NextRequest) {
       // 1. Khớp đúng mã hàng (SKU)
       const skuMatch = bySkuLower.get(input.toLowerCase());
       if (skuMatch) {
+        const price = priceFor(skuMatch);
         results.push({
           row: rowNum, input, quantity, note, status: "matched",
-          product: { id: skuMatch.id, sku: skuMatch.sku, name: skuMatch.name, unit: skuMatch.unit || "Kg", price: priceFor(skuMatch) },
+          product: { id: skuMatch.id, sku: skuMatch.sku, name: skuMatch.name, unit: skuMatch.unit || "Kg", price, priceOnRequest: price <= 0 },
         });
         continue;
       }
       // 2. Khớp đúng tên (đã chuẩn hóa)
       const nameMatch = byNormalizedName.get(normalize(input));
       if (nameMatch) {
+        const price = priceFor(nameMatch);
         results.push({
           row: rowNum, input, quantity, note, status: "matched",
-          product: { id: nameMatch.id, sku: nameMatch.sku, name: nameMatch.name, unit: nameMatch.unit || "Kg", price: priceFor(nameMatch) },
+          product: { id: nameMatch.id, sku: nameMatch.sku, name: nameMatch.name, unit: nameMatch.unit || "Kg", price, priceOnRequest: price <= 0 },
         });
         continue;
       }
@@ -191,9 +189,10 @@ export async function POST(req: NextRequest) {
         .slice(0, 3);
 
       if (scored.length > 0) {
-        const suggestions = scored.map(({ p, score }) => ({
-          id: p.id, sku: p.sku, name: p.name, unit: p.unit || "Kg", price: priceFor(p), score: Math.round(score * 100) / 100,
-        }));
+        const suggestions = scored.map(({ p, score }) => {
+          const price = priceFor(p);
+          return { id: p.id, sku: p.sku, name: p.name, unit: p.unit || "Kg", price, priceOnRequest: price <= 0, score: Math.round(score * 100) / 100 };
+        });
         results.push({ row: rowNum, input, quantity, note, status: "ambiguous", suggestions });
       } else {
         results.push({ row: rowNum, input, quantity, note, status: "not_found" });

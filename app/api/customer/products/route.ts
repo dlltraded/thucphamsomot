@@ -34,13 +34,20 @@ async function resolveCustomerId(req: NextRequest, supabase: ReturnType<typeof g
 }
 
 // Giai đoạn E — trang "Đặt hàng": khách tìm sản phẩm để tự lên đơn, thấy
-// đúng giá theo hạng/hợp đồng riêng của mình (resolve_product_price, xem
-// migration Giai đoạn B) — KHÔNG hiện số tồn kho chính xác cho khách (thông
-// tin nội bộ), chỉ hiện còn/hết hàng.
+// đúng giá theo hạng/hợp đồng riêng của mình. Giá tính trong bộ nhớ (không
+// gọi RPC resolve_product_price cho từng sản phẩm — 24 sp/trang x gọi tuần
+// tự/song song vẫn chậm và có thể trông như "không tải được") — cùng cách
+// tối ưu đã dùng ở app/api/customer/order/import-excel.
+//
+// 2026-09-10: theo đúng yêu cầu — KHÔNG ẩn mã chưa có giá (price = 0) nữa
+// (trước đó ẩn hẳn), vì đơn nào cũng qua bước chốt giá lại bởi sale trước
+// khi giao nên khách vẫn đặt được, chỉ cần gắn nhãn "Liên hệ báo giá" để
+// khách biết giá hiển thị chưa chính xác. Không hiện số tồn kho chính xác
+// cho khách (thông tin nội bộ), chỉ hiện còn/hết hàng.
 export async function GET(req: NextRequest) {
   const supabase = getCustomerSupabaseAdmin();
   const customerId = await resolveCustomerId(req, supabase);
-  if (!customerId) return json({ ok: false, error: "Vui lòng đăng nhập lại" }, 401);
+  if (!customerId) return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
 
   if (req.nextUrl.searchParams.get("meta") === "1") {
     const { data: catRows } = await supabase.from("products").select("category").eq("active", true).not("category", "is", null);
@@ -58,12 +65,6 @@ export async function GET(req: NextRequest) {
       .from("products")
       .select("id, sku, name, category, unit, image_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock", { count: "exact" })
       .eq("active", true)
-      // ~45% catalog (2.379/5.295 mã, kiểm tra 2026-09-10) đang có cả
-      // price_retail và price_wholesale = 0 (thu mua chưa kịp nhập giá thật
-      // sau khi đồng bộ KiotViet — xem KE_HOACH... mục 6). Nhân viên POS vẫn
-      // thấy và sửa giá tay được, nhưng khách tự đặt hàng thì KHÔNG được
-      // hiện mã chưa có giá, tránh đặt nhầm với giá 0đ.
-      .or("price_retail.gt.0,price_wholesale.gt.0")
       .order("name")
       .range(page * pageSize, page * pageSize + pageSize - 1);
     if (search) {
@@ -75,29 +76,41 @@ export async function GET(req: NextRequest) {
     const { data: products, count, error } = await query;
     if (error) throw error;
 
-    const resolved = await Promise.all(
-      (products || []).map(async (p) => {
-        const { data: price, error: priceError } = await supabase.rpc("resolve_product_price", {
-          p_product_id: p.id,
-          p_customer_id: customerId,
-        });
-        const base = Number(p.price_retail) || Number(p.price_wholesale) || 0;
-        return {
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          category: p.category,
-          unit: p.unit || "Kg",
-          imageUrl: p.image_url,
-          price: priceError ? base : Number(price) || base,
-          available: !p.track_inventory || Number(p.stock_qty) > 0,
-        };
-      })
+    // Giá theo hạng/hợp đồng riêng — tính 1 lần trong bộ nhớ cho cả trang,
+    // giống hệt thứ tự ưu tiên của hàm SQL resolve_product_price.
+    const [{ data: customer }, { data: contractRows }] = await Promise.all([
+      supabase.from("vip_accounts").select("discount_tier").eq("id", customerId).maybeSingle(),
+      supabase.from("customer_contract_prices").select("product_id, price, valid_until").eq("customer_id", customerId),
+    ]);
+    const tier = customer?.discount_tier || null;
+    const now = new Date();
+    const contractByProduct = new Map(
+      (contractRows || []).filter((c) => !c.valid_until || new Date(c.valid_until) > now).map((c) => [c.product_id, Number(c.price)])
     );
+    const { data: tierPriceRows } = tier
+      ? await supabase.from("product_tier_prices").select("product_id, price").eq("tier", tier)
+      : { data: [] as { product_id: string; price: number }[] };
+    const tierPriceByProduct = new Map((tierPriceRows || []).map((t) => [t.product_id, Number(t.price)]));
+
+    const resolved = (products || []).map((p) => {
+      const base = Number(p.price_retail) || Number(p.price_wholesale) || 0;
+      const price = contractByProduct.has(p.id) ? contractByProduct.get(p.id)! : tierPriceByProduct.has(p.id) ? tierPriceByProduct.get(p.id)! : base;
+      return {
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        category: p.category,
+        unit: p.unit || "Kg",
+        imageUrl: p.image_url,
+        price,
+        priceOnRequest: price <= 0,
+        available: !p.track_inventory || Number(p.stock_qty) > 0,
+      };
+    });
 
     return json({ ok: true, total: count || 0, page, pageSize, products: resolved });
   } catch (error) {
     console.error("GET /api/customer/products lỗi:", error);
-    return json({ ok: false, error: "Không tải được danh sách sản phẩm" }, 500);
+    return json({ ok: false, error: "Không tải được danh sách sản phẩm, vui lòng thử lại" }, 500);
   }
 }

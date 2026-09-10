@@ -5,11 +5,11 @@ import { ArrowLeft, Download, Upload, CheckCircle2, AlertTriangle, HelpCircle, X
 
 function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ'; }
 
-interface Suggestion { id: string; sku: string; name: string; unit: string; price: number; score: number }
+interface Suggestion { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest?: boolean; score: number }
 interface ResultRow {
   row: number; input: string; quantity: number; note: string;
   status: 'matched' | 'ambiguous' | 'not_found' | 'invalid_quantity';
-  product?: { id: string; sku: string; name: string; unit: string; price: number };
+  product?: { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest?: boolean };
   suggestions?: Suggestion[];
 }
 
@@ -178,7 +178,10 @@ export default function DatHangExcelPage() {
                   <CheckCircle2 size={18} className="text-[#0f6f4b] shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[#14231c]">{r.product.name}</p>
-                    <p className="text-xs text-[#59665f]">Dòng {r.row} · "{r.input}" · {r.quantity} {r.product.unit} · {money(r.product.price * r.quantity)}</p>
+                    <p className="text-xs text-[#59665f]">
+                      Dòng {r.row} · "{r.input}" · {r.quantity} {r.product.unit} ·{' '}
+                      {r.product.priceOnRequest ? <span className="text-[#f5c84c] font-semibold">Liên hệ báo giá</span> : money(r.product.price * r.quantity)}
+                    </p>
                   </div>
                   <label className="flex items-center gap-1.5 text-xs text-[#59665f]">
                     <input type="checkbox" checked={!skippedRows[r.row]} onChange={(e) => setSkippedRows((s) => ({ ...s, [r.row]: !e.target.checked }))} />
@@ -198,7 +201,7 @@ export default function DatHangExcelPage() {
                         <input type="radio" name={`row-${r.row}`} checked={chosenSuggestion[r.row] === s.id}
                           onChange={() => setChosenSuggestion((c) => ({ ...c, [r.row]: s.id }))} />
                         <span className="text-[#14231c]">{s.name}</span>
-                        <span className="text-xs text-[#59665f]">({money(s.price)}/{s.unit} · giống {Math.round(s.score * 100)}%)</span>
+                        <span className="text-xs text-[#59665f]">({s.priceOnRequest ? 'Liên hệ báo giá' : `${money(s.price)}/${s.unit}`} · giống {Math.round(s.score * 100)}%)</span>
                       </label>
                     ))}
                     <label className="flex items-center gap-2 text-sm cursor-pointer text-[#59665f]">

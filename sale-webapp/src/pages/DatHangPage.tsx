@@ -9,7 +9,7 @@ function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Number(
 
 interface Product {
   id: string; sku: string; name: string; category: string | null;
-  unit: string; imageUrl: string | null; price: number; available: boolean;
+  unit: string; imageUrl: string | null; price: number; priceOnRequest?: boolean; available: boolean;
 }
 interface CartLine { product: Product; quantity: number }
 
@@ -18,7 +18,7 @@ interface CartLine { product: Product; quantity: number }
 // của website TPS1 (xanh rêu đậm #0f6f4b, nền kem, font Be Vietnam Pro —
 // xem sale-webapp/src/index.css) thay vì màu xanh generic trước đây.
 export default function DatHangPage() {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
   const apiBase = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -27,6 +27,7 @@ export default function DatHangPage() {
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const pageSize = 24;
@@ -46,17 +47,31 @@ export default function DatHangPage() {
       .then((data) => { if (data.ok) setCategories(data.categories || []); });
   }, [apiBase, token]);
 
+  // Trước đây lỗi (vd phiên hết hạn) bị nuốt âm thầm, chỉ hiện "không có sản
+  // phẩm nào" khiến khách tưởng hệ thống trống hàng — giờ hiện rõ lỗi thật,
+  // và tự đăng xuất nếu phiên hết hạn để khách đăng nhập lại ngay.
   const fetchProducts = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const params = new URLSearchParams({ page: String(page) });
       if (search.trim()) params.set('search', search.trim());
       if (category) params.set('category', category);
       const res = await fetch(`${apiBase}/api/customer/products?${params}`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      if (data.ok) { setProducts(data.products || []); setTotal(data.total || 0); }
+      if (data.ok) {
+        setProducts(data.products || []);
+        setTotal(data.total || 0);
+      } else if (res.status === 401) {
+        alert(data.error || 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
+        logout();
+      } else {
+        setLoadError(data.error || 'Không tải được sản phẩm');
+      }
+    } catch {
+      setLoadError('Không kết nối được tới máy chủ, vui lòng thử lại');
     } finally { setLoading(false); }
-  }, [apiBase, token, page, search, category]);
+  }, [apiBase, token, page, search, category, logout]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
@@ -186,6 +201,11 @@ export default function DatHangPage() {
             <div key={i} className="bg-white rounded-2xl border border-[#14231c]/8 h-56 animate-pulse" />
           ))}
         </div>
+      ) : loadError ? (
+        <div className="bg-white rounded-2xl border border-[#c7372f]/20 py-16 text-center space-y-3">
+          <p className="text-[#c7372f] text-sm">{loadError}</p>
+          <button onClick={fetchProducts} className="px-4 py-2 rounded-xl bg-[#0f6f4b] text-white text-sm font-medium hover:bg-[#0b5a3c]">Thử lại</button>
+        </div>
       ) : products.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#14231c]/8 py-20 text-center text-[#59665f]">Không tìm thấy sản phẩm nào</div>
       ) : (
@@ -210,7 +230,11 @@ export default function DatHangPage() {
                   <div className="p-3 flex-1 flex flex-col gap-2">
                     <p className="text-sm font-medium text-[#14231c] line-clamp-2 leading-snug flex-1">{p.name}</p>
                     <p className="text-xs text-[#59665f]">{p.unit}</p>
-                    <p className="font-bold text-[#0f6f4b]">{money(p.price)}</p>
+                    {p.priceOnRequest ? (
+                      <p className="font-bold text-[#f5c84c] bg-[#14231c] inline-block px-2 py-0.5 rounded-md text-xs w-fit">Liên hệ báo giá</p>
+                    ) : (
+                      <p className="font-bold text-[#0f6f4b]">{money(p.price)}</p>
+                    )}
                     {inCart > 0 ? (
                       <div className="flex items-center gap-2 bg-[#f6f7f4] rounded-xl p-1">
                         <button onClick={() => setQty(p.id, inCart - 1)} className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-[#0f6f4b] shadow-sm"><Minus size={14} /></button>
@@ -274,7 +298,11 @@ export default function DatHangPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#14231c] truncate">{l.product.name}</p>
-                    <p className="text-xs text-[#0f6f4b] font-semibold">{money(l.product.price)}</p>
+                    {l.product.priceOnRequest ? (
+                      <p className="text-xs text-[#f5c84c] font-semibold">Liên hệ báo giá</p>
+                    ) : (
+                      <p className="text-xs text-[#0f6f4b] font-semibold">{money(l.product.price)}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => setQty(l.product.id, l.quantity - 1)} className="w-6 h-6 rounded-md bg-[#f6f7f4] flex items-center justify-center text-[#0f6f4b]"><Minus size={12} /></button>
