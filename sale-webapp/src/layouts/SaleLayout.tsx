@@ -107,6 +107,13 @@ export default function SaleLayout() {
             </Link>
           );
         })}
+        <button
+          onClick={logout}
+          className="flex flex-col items-center justify-center w-full h-full text-red-500 hover:text-red-600 transition-colors"
+        >
+          <div className="mb-1"><LogOut size={20} /></div>
+          <span className="text-[10px] font-medium whitespace-nowrap">Đăng xuất</span>
+        </button>
       </nav>
     </div>
   );
