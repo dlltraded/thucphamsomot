@@ -2,19 +2,32 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LayoutDashboard, ShoppingCart, Users, PackageOpen, LogOut, PlusSquare } from 'lucide-react';
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Quản trị viên',
+  sale: 'Nhân viên Sale',
+  truong_phong: 'Trưởng phòng',
+  thu_mua: 'Thu mua',
+};
+
+// GIAI ĐOẠN A: 2 bộ khung điều hướng riêng theo userType — khách hàng chỉ
+// thấy "Đơn hàng của tôi" (chưa có "Đặt hàng" tự phục vụ, việc đó là Giai
+// đoạn E). Đây chỉ là ẩn menu cho gọn giao diện — chặn thật sự nằm ở route
+// guard trong App.tsx, không dựa vào việc ẩn nút này.
 export default function SaleLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const isAdmin = user?.role === 'admin';
+  const isCustomer = user?.userType === 'customer';
 
-  const navItems = [
-    { path: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { path: '/don-hang', icon: <ShoppingCart size={20} />, label: 'Quản lý Đơn hàng' },
-    { path: '/tao-don-hang', icon: <PlusSquare size={20} />, label: 'Tạo đơn (POS)' },
-    { path: '/khach-hang', icon: <Users size={20} />, label: 'Quản lý Khách hàng' },
-    { path: '/soan-hang', icon: <PackageOpen size={20} />, label: 'Soạn hàng' },
-  ];
+  const navItems = isCustomer
+    ? [{ path: '/', icon: <ShoppingCart size={20} />, label: 'Đơn hàng của tôi' }]
+    : [
+        { path: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
+        { path: '/don-hang', icon: <ShoppingCart size={20} />, label: 'Quản lý Đơn hàng' },
+        { path: '/tao-don-hang', icon: <PlusSquare size={20} />, label: 'Tạo đơn (POS)' },
+        { path: '/khach-hang', icon: <Users size={20} />, label: 'Quản lý Khách hàng' },
+        { path: '/soan-hang', icon: <PackageOpen size={20} />, label: 'Soạn hàng' },
+      ];
 
   return (
     <div className="flex h-screen bg-[#F4F7F6] text-slate-800 overflow-hidden font-sans">
@@ -26,7 +39,9 @@ export default function SaleLayout() {
           </div>
           <div>
             <h1 className="font-bold text-green-900 leading-tight">TPS1 System</h1>
-            <p className="text-xs text-slate-500">{isAdmin ? 'Quản trị viên' : 'Nhân viên Sale'}</p>
+            <p className="text-xs text-slate-500">
+              {isCustomer ? `Khách hàng ${user?.tier || ''}`.trim() : ROLE_LABELS[user?.role || ''] || user?.role}
+            </p>
           </div>
         </div>
 

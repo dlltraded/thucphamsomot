@@ -4,14 +4,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { Lock, User, Key, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginStaff, loginCustomer } = useAuth();
   const navigate = useNavigate();
 
+  // Màn đăng nhập DUY NHẤT cho cả nhân viên và khách hàng (Giai đoạn A) —
+  // không hỏi trước "bạn là ai". Backend (/api/sale-auth) tự thử nhân viên
+  // trước rồi đến khách hàng, trả về userType để biết đường điều hướng.
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -23,11 +26,17 @@ export default function LoginPage() {
       const res = await fetch(`${apiUrl}/sale-auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
       const data = await res.json();
-      if (res.ok && data.ok) {
-        await login(data.user, { accessToken: data.accessToken, refreshToken: data.refreshToken });
+      if (res.ok && data.ok && data.userType === 'staff') {
+        await loginStaff(
+          { ...data.user, userType: 'staff' },
+          { accessToken: data.accessToken, refreshToken: data.refreshToken }
+        );
+        navigate('/');
+      } else if (res.ok && data.ok && data.userType === 'customer') {
+        loginCustomer({ ...data.user, userType: 'customer' }, data.customerToken);
         navigate('/');
       } else {
         setError(data.error || 'Đăng nhập thất bại');
@@ -53,22 +62,23 @@ export default function LoginPage() {
             <Lock className="text-green-500 w-10 h-10" />
           </div>
           <h1 className="text-2xl font-bold text-white text-center">TPS1 HỆ THỐNG</h1>
-          <p className="text-sm text-green-100/60 mt-1">Quản lý Leads & Đơn hàng Sale</p>
+          <p className="text-sm text-green-100/60 mt-1">Dành cho nhân viên &amp; khách hàng TPS1</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-green-100/60 uppercase tracking-wider mb-2">
-              Email đăng nhập
+              Email nhân viên hoặc Mã khách hàng
             </label>
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all"
-                placeholder="Nhập email đăng nhập..."
+                placeholder="vd: sale@tps1.vn hoặc VIP001"
+                autoCapitalize="none"
                 required
               />
             </div>
@@ -114,7 +124,7 @@ export default function LoginPage() {
         </form>
         
         <p className="text-center text-xs text-white/30 mt-8">
-          © 2026 Thực phẩm số một.<br />Dành cho nội bộ Sales & Marketing.
+          © 2026 Thực phẩm số một.<br />Hệ thống bán hàng nội bộ.
         </p>
       </div>
     </div>

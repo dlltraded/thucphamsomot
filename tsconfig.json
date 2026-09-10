@@ -46,6 +46,7 @@
     "namecard-app",
     "tps1-miniapp",
     "tps1-miniapp_b2b_backup",
-    "zaui-market-template"
+    "zaui-market-template",
+    "sale-webapp"
   ]
 }

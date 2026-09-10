@@ -4,11 +4,20 @@ import { supabase } from '../lib/supabase';
 export interface User {
   id: string;
   name: string;
-  role: string;
+  userType: 'staff' | 'customer';
+  // Nhân viên
+  role?: string;
   email?: string;
+  // Khách hàng
+  code?: string;
+  phone?: string;
+  company?: string;
+  tier?: string;
+  discountPercent?: number;
+  mustChangePassword?: boolean;
 }
 
-interface LoginTokens {
+interface StaffLoginTokens {
   accessToken: string;
   refreshToken: string;
 }
@@ -17,7 +26,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (user: User, tokens: LoginTokens) => Promise<void>;
+  loginStaff: (user: User, tokens: StaffLoginTokens) => Promise<void>;
+  loginCustomer: (user: User, customerToken: string) => void;
   logout: () => Promise<void>;
 }
 
@@ -25,17 +35,28 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   loading: true,
-  login: async () => {},
+  loginStaff: async () => {},
+  loginCustomer: () => {},
   logout: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
+const STORAGE_USER_KEY = 'tps1_sale_user';
+const STORAGE_CUSTOMER_TOKEN_KEY = 'tps1_sale_customer_token';
+
 // LƯU Ý BẢO MẬT (2026-09-09): trước đây file này tự tạo một phiên "admin"
 // giả mặc định khi localStorage trống, nghĩa là bất kỳ ai mở app này lần đầu
 // (localStorage rỗng) đều tự động thành admin toàn quyền mà không cần đăng
 // nhập. Đã viết lại để nguồn sự thật duy nhất là phiên đăng nhập THẬT của
-// Supabase Auth (JWT), không phải một object tự khai trong localStorage.
+// Supabase Auth (JWT) cho nhân viên, hoặc customerToken hợp lệ (được backend
+// xác thực qua RPC verify_customer_login) cho khách hàng.
+//
+// GIAI ĐOẠN A (2026-09-10): hỗ trợ 2 loại phiên — nhân viên (Supabase Auth
+// thật, cho phép supabase.from(...) chạy trực tiếp qua RLS) và khách hàng
+// (không có Supabase Auth session — mọi truy vấn của khách phải đi qua API
+// /api/customer/** kèm header Authorization: Bearer <customerToken>, KHÔNG
+// được gọi supabase.from(...) trực tiếp vì RLS sẽ chặn do không có auth.uid()).
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -48,28 +69,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
+        // Có phiên Supabase Auth thật -> chỉ có thể là nhân viên.
         let profile: User | null = null;
         try {
-          const stored = localStorage.getItem('tps1_sale_user');
+          const stored = localStorage.getItem(STORAGE_USER_KEY);
           profile = stored ? JSON.parse(stored) : null;
         } catch {
           profile = null;
         }
 
-        // Chỉ tin hồ sơ (tên/role) đã lưu nếu nó khớp đúng id của phiên đăng
-        // nhập thật đang có. Nếu không khớp (hoặc không có), buộc đăng nhập
-        // lại thay vì đoán/gán quyền mặc định.
-        if (profile && profile.id === session.user.id) {
+        if (profile && profile.userType === 'staff' && profile.id === session.user.id) {
           if (mounted) {
             setUser(profile);
             setToken(session.access_token);
           }
         } else {
           await supabase.auth.signOut();
-          localStorage.removeItem('tps1_sale_user');
+          localStorage.removeItem(STORAGE_USER_KEY);
+          localStorage.removeItem(STORAGE_CUSTOMER_TOKEN_KEY);
         }
       } else {
-        localStorage.removeItem('tps1_sale_user');
+        // Không có phiên Supabase Auth -> thử khôi phục phiên khách hàng.
+        try {
+          const storedUser = localStorage.getItem(STORAGE_USER_KEY);
+          const storedToken = localStorage.getItem(STORAGE_CUSTOMER_TOKEN_KEY);
+          const profile: User | null = storedUser ? JSON.parse(storedUser) : null;
+          if (profile && profile.userType === 'customer' && storedToken) {
+            if (mounted) {
+              setUser(profile);
+              setToken(storedToken);
+            }
+          } else {
+            localStorage.removeItem(STORAGE_USER_KEY);
+            localStorage.removeItem(STORAGE_CUSTOMER_TOKEN_KEY);
+          }
+        } catch {
+          localStorage.removeItem(STORAGE_USER_KEY);
+          localStorage.removeItem(STORAGE_CUSTOMER_TOKEN_KEY);
+        }
       }
 
       if (mounted) setLoading(false);
@@ -78,13 +115,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     restore();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('tps1_sale_user');
-      } else {
+      // Chỉ can thiệp khi phiên hiện tại là của nhân viên — tránh việc Supabase
+      // Auth "không có session" (vốn luôn đúng với khách hàng) vô tình đăng
+      // xuất khách hàng đang dùng customerToken.
+      setUser((current) => {
+        if (current?.userType !== 'staff') return current;
+        if (!session) {
+          setToken(null);
+          localStorage.removeItem(STORAGE_USER_KEY);
+          return null;
+        }
         setToken(session.access_token);
-      }
+        return current;
+      });
     });
 
     return () => {
@@ -93,27 +136,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (userData: User, tokens: LoginTokens) => {
+  const loginStaff = async (userData: User, tokens: StaffLoginTokens) => {
     // Gắn token thật của Supabase Auth vào client dùng chung (sale-webapp/src/lib/supabase.ts)
     // để mọi truy vấn supabase.from(...) sau đó đều được RLS nhận đúng danh tính (auth.uid()).
     await supabase.auth.setSession({
       access_token: tokens.accessToken,
       refresh_token: tokens.refreshToken,
     });
+    localStorage.removeItem(STORAGE_CUSTOMER_TOKEN_KEY);
     setUser(userData);
     setToken(tokens.accessToken);
-    localStorage.setItem('tps1_sale_user', JSON.stringify(userData));
+    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userData));
+  };
+
+  const loginCustomer = (userData: User, customerToken: string) => {
+    setUser(userData);
+    setToken(customerToken);
+    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userData));
+    localStorage.setItem(STORAGE_CUSTOMER_TOKEN_KEY, customerToken);
   };
 
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setToken(null);
-    localStorage.removeItem('tps1_sale_user');
+    localStorage.removeItem(STORAGE_USER_KEY);
+    localStorage.removeItem(STORAGE_CUSTOMER_TOKEN_KEY);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, loginStaff, loginCustomer, logout }}>
       {children}
     </AuthContext.Provider>
   );
