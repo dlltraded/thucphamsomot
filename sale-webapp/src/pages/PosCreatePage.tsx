@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Search, Plus, Tag, Truck, RefreshCw, ShoppingCart, User, X, CheckCircle2
+  Search, Plus, Tag, Truck, RefreshCw, ShoppingCart, User, X, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 
 function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ'; }
@@ -29,6 +29,8 @@ export default function PosCreatePage() {
 
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [customerDebt, setCustomerDebt] = useState<number | null>(null);
+  const [loadingDebt, setLoadingDebt] = useState(false);
   const [deliveryName, setDeliveryName] = useState('');
   const [deliveryPhone, setDeliveryPhone] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
@@ -56,9 +58,12 @@ export default function PosCreatePage() {
   const loadCustomers = useCallback(async () => {
     try {
       if (user?.role === 'sale' && user.id && user.id !== 'legacy-admin') {
+        // LƯU Ý: cột đúng là "company", không phải "company_name" — trước đây
+        // sai tên cột khiến query này lỗi 400 im lặng, sale KHÔNG chọn được
+        // khách hàng nào cả (bug Giai đoạn C, 2026-09-10).
         const { data } = await supabase
           .from('vip_accounts')
-          .select('id, name, phone, partner_code, company_name, default_shipping_address, default_shipping_name, default_shipping_phone')
+          .select('id, name, phone, partner_code, company, discount_tier, credit_limit, default_shipping_address, default_shipping_name, default_shipping_phone')
           .eq('sales_rep_id', user.id)
           .eq('is_active', true);
         setCustomers(data || []);
@@ -82,6 +87,33 @@ export default function PosCreatePage() {
       setDeliveryAddress(cust.default_shipping_address || '');
     } else {
       setDeliveryName(''); setDeliveryPhone(''); setDeliveryAddress('');
+    }
+    setCustomerDebt(null);
+    if (id) fetchCustomerDebt(id);
+  };
+
+  // Giai đoạn C: hiện công nợ hiện tại của khách khi chọn (mục 13.5). Chưa có
+  // bảng order_payments (Giai đoạn C phần thanh toán tách 3 phần — cần chạy
+  // migration riêng), nên đây là số TẠM TÍNH: cộng dồn grand_total của các
+  // đơn chưa hủy và chưa đánh dấu "đã thanh toán đủ" (payment_status != 'paid').
+  // Sẽ chính xác hơn khi order_payments/debt_amount đi vào hoạt động.
+  const fetchCustomerDebt = async (customerId: string) => {
+    setLoadingDebt(true);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('grand_total')
+        .eq('customer_id', customerId)
+        .neq('status', 'canceled')
+        .neq('payment_status', 'paid');
+      if (error) throw error;
+      const total = (data || []).reduce((s, o: any) => s + (Number(o.grand_total) || 0), 0);
+      setCustomerDebt(total);
+    } catch (err) {
+      console.error('Lỗi tải công nợ khách hàng:', err);
+      setCustomerDebt(null);
+    } finally {
+      setLoadingDebt(false);
     }
   };
 
@@ -157,7 +189,26 @@ export default function PosCreatePage() {
   const submitOrder = async () => {
     if (!selectedCustomerId) { alert('Vui lòng chọn khách hàng!'); return; }
     if (cart.length === 0) { alert('Giỏ hàng đang trống!'); return; }
-    if (!confirm(`Xác nhận tạo đơn nháp cho ${customers.find(c => c.id === selectedCustomerId)?.name || 'khách hàng'}?`)) return;
+
+    // Giai đoạn C: chặn vượt hạn mức công nợ, trừ khi Trưởng phòng/Admin
+    // duyệt (ghi log vào order_history sau khi tạo đơn thành công).
+    const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+    const creditLimit = Number(selectedCustomer?.credit_limit) || 0;
+    const projectedDebt = (customerDebt || 0) + total;
+    const overLimit = creditLimit > 0 && projectedDebt > creditLimit;
+    const canOverride = user?.role === 'admin' || user?.role === 'truong_phong';
+    let overrideNote = '';
+
+    if (overLimit && !canOverride) {
+      alert(`❌ Đơn này sẽ khiến công nợ khách vượt hạn mức (hạn mức ${money(creditLimit)}, dự kiến công nợ sau đơn ${money(projectedDebt)}). Liên hệ Trưởng phòng để duyệt.`);
+      return;
+    }
+    if (overLimit && canOverride) {
+      overrideNote = prompt(`⚠️ Đơn này vượt hạn mức công nợ (hạn mức ${money(creditLimit)}, dự kiến ${money(projectedDebt)}). Nhập lý do để duyệt vượt hạn mức:`, '') || '';
+      if (!overrideNote.trim()) { alert('Cần nhập lý do để duyệt vượt hạn mức.'); return; }
+    }
+
+    if (!confirm(`Xác nhận tạo đơn nháp cho ${selectedCustomer?.name || 'khách hàng'}?`)) return;
     setSubmitting(true);
     try {
       const { data, error } = await supabase.rpc('admin_create_order', {
@@ -180,12 +231,33 @@ export default function PosCreatePage() {
         p_admin_id: user?.id !== 'legacy-admin' ? user?.id : null,
       });
       if (error) throw error;
-      const orderCode = data?.[0]?.order_code || data?.order_code || '';
+      const createdOrder = Array.isArray(data) ? data[0] : data;
+      const orderCode = createdOrder?.order_code || '';
+
+      if (overLimit && canOverride && createdOrder?.id) {
+        // Ghi log duyệt vượt hạn mức qua API (service-role) — order_history
+        // chỉ có policy SELECT cho client, không insert thẳng được. Không
+        // chặn tạo đơn nếu bước log lỗi.
+        try {
+          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+          await fetch(`${apiBase}/api/admin/orders/credit-override`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              orderId: createdOrder.id,
+              note: `Duyệt vượt hạn mức công nợ (hạn mức ${money(creditLimit)}, dự kiến ${money(projectedDebt)}). Lý do: ${overrideNote}`,
+            }),
+          });
+        } catch (logErr) {
+          console.error('Lỗi ghi log duyệt vượt hạn mức:', logErr);
+        }
+      }
+
       alert(`✅ Đã tạo đơn nháp ${orderCode} thành công! Khách hàng vào Mini App xác nhận.`);
       // Reset form
       setCart([]); setSelectedCustomerId(''); setDeliveryName(''); setDeliveryPhone('');
       setDeliveryAddress(''); setNote(''); setVoucherCode(''); setVoucherDiscount(0);
-      setDiscountAmount(0); setShippingAmount(0);
+      setDiscountAmount(0); setShippingAmount(0); setCustomerDebt(null);
       navigate('/don-hang');
     } catch (err: any) {
       alert('❌ Lỗi tạo đơn: ' + (err.message || 'Không xác định'));
@@ -215,6 +287,32 @@ export default function PosCreatePage() {
                 ))}
               </select>
             </div>
+
+            {selectedCustomerId && (() => {
+              const cust = customers.find(c => c.id === selectedCustomerId);
+              const creditLimit = Number(cust?.credit_limit) || 0;
+              const projectedTotal = (customerDebt || 0) + total;
+              const overLimit = creditLimit > 0 && projectedTotal > creditLimit;
+              return (
+                <div className={`rounded-xl p-3 text-sm flex flex-wrap gap-x-6 gap-y-1 ${overLimit ? 'bg-red-50 border border-red-200' : 'bg-slate-50 border border-slate-100'}`}>
+                  {cust?.discount_tier && (
+                    <span className="text-slate-600">Hạng: <b className="text-slate-800">{cust.discount_tier}</b></span>
+                  )}
+                  <span className="text-slate-600">
+                    Hạn mức công nợ: <b className="text-slate-800">{creditLimit > 0 ? money(creditLimit) : 'Không giới hạn'}</b>
+                  </span>
+                  <span className="text-slate-600">
+                    Công nợ hiện tại: <b className="text-slate-800">{loadingDebt ? '...' : money(customerDebt || 0)}</b>
+                  </span>
+                  {overLimit && (
+                    <span className="text-red-600 font-semibold flex items-center gap-1 w-full">
+                      <AlertTriangle size={14} /> Đơn này sẽ vượt hạn mức (dự kiến {money(projectedTotal)})
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Người nhận hàng</label>
