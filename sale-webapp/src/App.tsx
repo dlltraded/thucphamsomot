@@ -9,6 +9,7 @@ import PosCreatePage from './pages/PosCreatePage';
 import CustomersPage from './pages/CustomersPage';
 import SoanHangPage from './pages/SoanHangPage';
 import MyOrdersPage from './pages/MyOrdersPage';
+import ProductsPage from './pages/ProductsPage';
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#0B130E] text-white">Đang tải...</div>
@@ -52,6 +53,7 @@ function App() {
             <Route path="don-hang/:id" element={<StaffOnlyRoute><OrderDetailPage /></StaffOnlyRoute>} />
             <Route path="tao-don-hang" element={<StaffOnlyRoute><PosCreatePage /></StaffOnlyRoute>} />
             <Route path="khach-hang" element={<StaffOnlyRoute><CustomersPage /></StaffOnlyRoute>} />
+            <Route path="hang-hoa" element={<StaffOnlyRoute><ProductsPage /></StaffOnlyRoute>} />
             <Route path="soan-hang" element={<StaffOnlyRoute><SoanHangPage /></StaffOnlyRoute>} />
           </Route>
         </Routes>

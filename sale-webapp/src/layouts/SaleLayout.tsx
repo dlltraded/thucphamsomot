@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, ShoppingCart, Users, PackageOpen, LogOut, PlusSquare } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, PackageOpen, LogOut, PlusSquare, Package } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Quản trị viên',
@@ -26,6 +26,7 @@ export default function SaleLayout() {
         { path: '/don-hang', icon: <ShoppingCart size={20} />, label: 'Quản lý Đơn hàng' },
         { path: '/tao-don-hang', icon: <PlusSquare size={20} />, label: 'Tạo đơn (POS)' },
         { path: '/khach-hang', icon: <Users size={20} />, label: 'Quản lý Khách hàng' },
+        { path: '/hang-hoa', icon: <Package size={20} />, label: 'Hàng hóa' },
         { path: '/soan-hang', icon: <PackageOpen size={20} />, label: 'Soạn hàng' },
       ];
 
