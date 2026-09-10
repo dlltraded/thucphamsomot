@@ -90,7 +90,8 @@ export default function PosCreatePage() {
     setSearching(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-      const res = await fetch(`${apiBase}/api/admin/orders?productSearch=${encodeURIComponent(searchTerm)}`, {
+      const customerParam = selectedCustomerId ? `&customerId=${encodeURIComponent(selectedCustomerId)}` : '';
+      const res = await fetch(`${apiBase}/api/admin/orders?productSearch=${encodeURIComponent(searchTerm)}${customerParam}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
@@ -267,10 +268,19 @@ export default function PosCreatePage() {
                     {getImgUrl(p.image_url) && <img src={getImgUrl(p.image_url)!} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-100" />}
                     <div className="flex-1">
                       <p className="font-medium text-slate-800 text-sm">{p.name}</p>
-                      <p className="text-xs text-slate-400">{p.categoryLabel || ''} · {p.unit || 'Kg'}</p>
+                      <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                        {p.categoryLabel || ''} · {p.unit || 'Kg'}
+                        {p.trackInventory && (
+                          <span className={p.lowStock ? 'text-red-500 font-semibold' : 'text-slate-400'}>
+                            · Tồn {p.stockQty ?? 0}{p.lowStock ? ' (sắp hết)' : ''}
+                          </span>
+                        )}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-green-700">{money(p.price)}</p>
+                      <p className={`font-semibold ${p.basePrice != null && p.price !== p.basePrice ? 'text-red-600' : 'text-green-700'}`}>
+                        {money(p.price)}
+                      </p>
                       <Plus size={16} className="text-green-500 ml-auto" />
                     </div>
                   </button>

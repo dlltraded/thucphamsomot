@@ -36,25 +36,46 @@ export async function GET(req: NextRequest) {
     const supabase = getCustomerSupabaseAdmin();
     const productSearch = req.nextUrl.searchParams.get("productSearch")?.trim();
     if (productSearch) {
+      const customerId = req.nextUrl.searchParams.get("customerId")?.trim() || null;
       const { data: products, error: productError } = await supabase
         .from("products")
-        .select("id, local_product_id, sku, name, category, unit, price_retail, price_wholesale, image_url")
+        .select("id, local_product_id, sku, name, category, unit, price_retail, price_wholesale, image_url, track_inventory, stock_qty, min_stock")
         .eq("active", true)
         .ilike("name", `%${productSearch.replace(/[%_]/g, "")}%`)
         .order("name")
         .limit(20);
       if (productError) throw productError;
+
+      // Giá theo hạng/hợp đồng riêng — chỉ tính khi đã chọn khách (Giai đoạn
+      // B, xem migration resolve_product_price). Không chọn khách -> giữ giá
+      // gốc như trước đây, sale vẫn sửa tay được từng dòng trong giỏ như cũ.
+      const basePrice = (p: { price_retail: number | null; price_wholesale: number | null }) =>
+        Number(p.price_retail) || Number(p.price_wholesale) || 0;
+      const resolvedPrices = customerId
+        ? await Promise.all(
+            (products || []).map((p) =>
+              supabase
+                .rpc("resolve_product_price", { p_product_id: p.id, p_customer_id: customerId })
+                .then(({ data, error }) => (error ? basePrice(p) : Number(data) || basePrice(p)))
+            )
+          )
+        : null;
+
       return json({
         ok: true,
-        products: (products || []).map((product) => ({
+        products: (products || []).map((product, idx) => ({
           id: product.id,
           localProductId: product.local_product_id,
           sku: product.sku,
           name: product.name,
           categoryLabel: product.category,
           unit: product.unit || "Kg",
-          price: Number(product.price_retail) || Number(product.price_wholesale) || 0,
+          price: resolvedPrices ? resolvedPrices[idx] : basePrice(product),
+          basePrice: basePrice(product),
           image_url: product.image_url,
+          trackInventory: product.track_inventory,
+          stockQty: product.track_inventory ? Number(product.stock_qty) || 0 : null,
+          lowStock: product.track_inventory ? Number(product.stock_qty) <= Number(product.min_stock || 0) : false,
         })),
       });
     }
@@ -438,6 +459,19 @@ export async function PATCH(req: NextRequest) {
       payload: paymentStatus ? { paymentStatus } : {},
     });
     if (historyError) throw historyError;
+
+    // Trừ kho đúng lúc đơn được XÁC NHẬN (không phải lúc tạo nháp) — chỉ áp
+    // dụng cho sản phẩm track_inventory = true, tự bỏ qua nếu đã trừ rồi
+    // (idempotent). Không chặn việc đổi trạng thái nếu bước này lỗi — trạng
+    // thái đơn quan trọng hơn, lệch tồn kho có thể chỉnh tay sau qua trang
+    // Hàng hóa (inventory_transactions là nguồn sự thật, xem lại được).
+    if (nextStatus === "confirmed" && current.status !== "confirmed") {
+      const { error: deductError } = await supabase.rpc("deduct_inventory_for_order", {
+        p_order_id: orderId,
+        p_actor: auth.profile?.name || "admin",
+      });
+      if (deductError) console.error("deduct_inventory_for_order lỗi:", deductError.message);
+    }
 
     return json({ ok: true, order: updated });
   } catch (error) {
