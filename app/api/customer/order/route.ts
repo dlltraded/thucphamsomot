@@ -13,7 +13,7 @@ interface OrderItemInput {
 
 interface CreateOrderBody {
   items?: OrderItemInput[];
-  source?: "website" | "zalo_mini_app";
+  source?: "website" | "zalo_mini_app" | "sale_webapp";
   orderSessionToken?: string;
   deliveryArea?: string;
   deliveryType?: "shipping" | "pickup";
@@ -47,11 +47,16 @@ export async function POST(req: NextRequest) {
     return json({ ok: false, error: "Dữ liệu không hợp lệ" }, 400);
   }
 
+  // Giai đoạn E: trang "Đặt hàng" trong sale-webapp là 1 origin khác (không
+  // có cookie CUSTOMER_SESSION_COOKIE của website chính), nên gửi thẳng
+  // customerToken trong body — cùng cơ chế body.orderSessionToken đã dùng
+  // cho Zalo Mini App, chỉ khác nguồn gọi. Ưu tiên token gửi kèm body trước,
+  // rồi mới đến cookie (đúng thứ tự /api/customer/orders GET đã dùng).
+  // "sale_webapp" tính chung nhãn "website" vì orders.source đang bị giới
+  // hạn CHECK constraint chỉ nhận ('website','zalo_mini_app','admin') — chưa
+  // cần thêm migration riêng chỉ để phân biệt thêm 1 nhãn.
   const source = body.source === "zalo_mini_app" ? "zalo_mini_app" : "website";
-  const orderSessionToken =
-    source === "website"
-      ? websiteSession?.orderSessionToken
-      : body.orderSessionToken;
+  const orderSessionToken = body.orderSessionToken || websiteSession?.orderSessionToken;
 
   if (!orderSessionToken) {
     return json(

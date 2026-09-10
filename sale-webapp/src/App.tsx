@@ -13,6 +13,8 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CongNoPage from './pages/CongNoPage';
 import BaoCaoPage from './pages/BaoCaoPage';
+import DatHangPage from './pages/DatHangPage';
+import DatHangExcelPage from './pages/DatHangExcelPage';
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#0B130E] text-white">Đang tải...</div>
@@ -37,11 +39,22 @@ const StaffOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Trang chủ ("/") khác nhau theo userType: nhân viên thấy Dashboard, khách
-// hàng thấy đơn hàng của chính họ.
+// Giai đoạn E: khách hàng vào "/" giờ thấy trang Đặt hàng (tự lên đơn) thay
+// vì chỉ xem lại đơn cũ như trước — "Đơn hàng của tôi" chuyển thành mục
+// riêng /don-hang-cua-toi.
 const HomeRoute = () => {
   const { user } = useAuth();
-  return user?.userType === 'customer' ? <MyOrdersPage /> : <DashboardPage />;
+  return user?.userType === 'customer' ? <DatHangPage /> : <DashboardPage />;
+};
+
+// Ngược lại với StaffOnlyRoute — chặn nhân viên vào nhầm luồng đặt hàng của
+// khách (vd gõ thẳng URL), không chỉ dựa vào việc ẩn menu.
+const CustomerOnlyRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/dang-nhap" />;
+  if (user.userType !== 'customer') return <Navigate to="/" replace />;
+  return <>{children}</>;
 };
 
 function App() {
@@ -61,6 +74,8 @@ function App() {
             <Route path="soan-hang" element={<StaffOnlyRoute><SoanHangPage /></StaffOnlyRoute>} />
             <Route path="cong-no" element={<StaffOnlyRoute><CongNoPage /></StaffOnlyRoute>} />
             <Route path="bao-cao" element={<StaffOnlyRoute><BaoCaoPage /></StaffOnlyRoute>} />
+            <Route path="don-hang-cua-toi" element={<CustomerOnlyRoute><MyOrdersPage /></CustomerOnlyRoute>} />
+            <Route path="dat-hang/excel" element={<CustomerOnlyRoute><DatHangExcelPage /></CustomerOnlyRoute>} />
           </Route>
         </Routes>
       </Router>

@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, Users, PackageOpen, LogOut, PlusSquare, Package,
-  Wallet, BarChart3, MoreHorizontal, X,
+  Wallet, BarChart3, MoreHorizontal, X, ClipboardList,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -13,10 +13,9 @@ const ROLE_LABELS: Record<string, string> = {
   thu_mua: 'Thu mua',
 };
 
-// GIAI ĐOẠN A: 2 bộ khung điều hướng riêng theo userType — khách hàng chỉ
-// thấy "Đơn hàng của tôi" (chưa có "Đặt hàng" tự phục vụ, việc đó là Giai
-// đoạn E). Đây chỉ là ẩn menu cho gọn giao diện — chặn thật sự nằm ở route
-// guard trong App.tsx, không dựa vào việc ẩn nút này.
+// GIAI ĐOẠN A/E: 2 bộ khung điều hướng riêng theo userType — chặn thật sự
+// nằm ở route guard trong App.tsx (StaffOnlyRoute/CustomerOnlyRoute), đây
+// chỉ là ẩn/hiện menu cho gọn giao diện.
 export default function SaleLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -25,7 +24,10 @@ export default function SaleLayout() {
   const isCustomer = user?.userType === 'customer';
 
   const navItems = isCustomer
-    ? [{ path: '/', icon: <ShoppingCart size={20} />, label: 'Đơn hàng của tôi' }]
+    ? [
+        { path: '/', icon: <ShoppingCart size={20} />, label: 'Đặt hàng' },
+        { path: '/don-hang-cua-toi', icon: <ClipboardList size={20} />, label: 'Đơn hàng của tôi' },
+      ]
     : [
         { path: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
         { path: '/don-hang', icon: <ShoppingCart size={20} />, label: 'Quản lý Đơn hàng' },
