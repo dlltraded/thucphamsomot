@@ -11,6 +11,8 @@ import SoanHangPage from './pages/SoanHangPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import CongNoPage from './pages/CongNoPage';
+import BaoCaoPage from './pages/BaoCaoPage';
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#0B130E] text-white">Đang tải...</div>
@@ -57,6 +59,8 @@ function App() {
             <Route path="hang-hoa" element={<StaffOnlyRoute><ProductsPage /></StaffOnlyRoute>} />
             <Route path="hang-hoa/:id" element={<StaffOnlyRoute><ProductDetailPage /></StaffOnlyRoute>} />
             <Route path="soan-hang" element={<StaffOnlyRoute><SoanHangPage /></StaffOnlyRoute>} />
+            <Route path="cong-no" element={<StaffOnlyRoute><CongNoPage /></StaffOnlyRoute>} />
+            <Route path="bao-cao" element={<StaffOnlyRoute><BaoCaoPage /></StaffOnlyRoute>} />
           </Route>
         </Routes>
       </Router>
