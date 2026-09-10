@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, User, Phone, MapPin, RefreshCw, CheckCircle2,
-  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet
+  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet, Truck
 } from 'lucide-react';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -595,11 +595,42 @@ export default function OrderDetailPage() {
               <div className="flex items-center gap-3 text-slate-600">
                 <Phone size={16} className="text-slate-400 shrink-0" />{order.customer_phone || '—'}
               </div>
-              <div className="flex items-start gap-3 text-slate-600">
-                <MapPin size={16} className="text-slate-400 mt-0.5 shrink-0" />{order.delivery_address || 'Nhận tại điểm'}
-              </div>
               {order.note && <div className="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-100">{order.note}</div>}
             </dl>
+          </div>
+
+          {/* Giao hàng — hoàn thiện Giai đoạn C: hiện rõ người nhận khi khác
+              chủ tài khoản (đơn tạo qua POS cho phép nhập người nhận riêng),
+              trước đây chỉ hiện địa chỉ, không hiện tên/SĐT người nhận. */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+            <h2 className="font-bold text-slate-800 flex items-center gap-2"><Truck size={18} className="text-green-600" />Giao hàng</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                {order.delivery_type === 'pickup' ? 'Nhận tại điểm' : 'Giao tận nơi'}
+              </span>
+            </div>
+            {order.delivery_type !== 'pickup' && (
+              <dl className="space-y-2 text-sm">
+                {(order.delivery_name && order.delivery_name !== order.customer_name) || (order.delivery_phone && order.delivery_phone !== order.customer_phone) ? (
+                  <div className="flex items-start gap-3">
+                    <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-slate-800">{order.delivery_name || order.customer_name}</p>
+                      <p className="text-xs text-amber-600">Người nhận khác chủ tài khoản</p>
+                    </div>
+                  </div>
+                ) : null}
+                {order.delivery_phone && order.delivery_phone !== order.customer_phone && (
+                  <div className="flex items-center gap-3 text-slate-600">
+                    <Phone size={16} className="text-slate-400 shrink-0" />{order.delivery_phone}
+                  </div>
+                )}
+                <div className="flex items-start gap-3 text-slate-600">
+                  <MapPin size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                  <span>{order.delivery_address || 'Chưa có địa chỉ'}{order.delivery_alias ? ` (${order.delivery_alias})` : ''}</span>
+                </div>
+              </dl>
+            )}
           </div>
 
           {/* Order Summary */}
