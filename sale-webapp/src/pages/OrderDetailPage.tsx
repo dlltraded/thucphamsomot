@@ -4,8 +4,12 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, User, Phone, MapPin, RefreshCw, CheckCircle2,
-  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon
+  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet
 } from 'lucide-react';
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: 'Tiền mặt', transfer: 'Chuyển khoản', cod: 'Thu hộ COD', debt_collection: 'Thu công nợ',
+};
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Đơn nháp', pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận',
@@ -63,6 +67,56 @@ export default function OrderDetailPage() {
   const [productSearch, setProductSearch] = useState('');
   const [productResults, setProductResults] = useState<any[]>([]);
   const [searchingProducts, setSearchingProducts] = useState(false);
+
+  // Giai đoạn C: ghi nhận thanh toán tách 3 phần (order_payments — cần
+  // migration 20260910d_order_payments.sql). Nếu migration CHƯA chạy, API
+  // trả lỗi -> paymentsAvailable=false, ẩn cả khối này thay vì hiện lỗi vỡ
+  // giao diện, để trang vẫn dùng tốt các phần khác trong lúc chờ.
+  const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsAvailable, setPaymentsAvailable] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentNote, setPaymentNote] = useState('');
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+
+  const fetchPayments = useCallback(async () => {
+    if (!id) return;
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/orders/payments?orderId=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.ok) { setPaymentsAvailable(false); return; }
+      setPayments(data.payments || []);
+      setPaymentsAvailable(true);
+    } catch {
+      setPaymentsAvailable(false);
+    }
+  }, [id, token]);
+
+  useEffect(() => { fetchPayments(); }, [fetchPayments]);
+
+  const submitPayment = async () => {
+    const amount = Number(paymentAmount);
+    if (!amount || amount <= 0) { alert('Nhập số tiền hợp lệ'); return; }
+    setSubmittingPayment(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/orders/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId: id, method: paymentMethod, amount, note: paymentNote || undefined }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      setPaymentAmount(''); setPaymentNote('');
+      await Promise.all([fetchPayments(), fetchOrder()]);
+      alert('✅ Đã ghi nhận thanh toán');
+    } catch (err: any) {
+      alert('Lỗi: ' + (err.message || 'Không ghi nhận được'));
+    } finally { setSubmittingPayment(false); }
+  };
 
   const fetchOrder = useCallback(async () => {
     setLoading(true);
@@ -567,6 +621,48 @@ export default function OrderDetailPage() {
               }`}>{PAYMENT_LABELS[order.payment_status] || order.payment_status}</span>
             </div>
           </div>
+
+          {/* Payments (Giai đoạn C) */}
+          {paymentsAvailable && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
+              <h2 className="font-bold text-slate-800 flex items-center gap-2"><Wallet size={18} className="text-green-600" />Thanh toán</h2>
+
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-slate-500">Đã thu</span><span className="font-semibold text-green-700">{money(order.paid_amount || 0)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Còn nợ</span><span className="font-semibold text-red-600">{money(order.debt_amount ?? order.grand_total)}</span></div>
+              </dl>
+
+              {Number(order.debt_amount ?? order.grand_total) > 0 && (
+                <div className="space-y-2 pt-3 border-t border-slate-50">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
+                      className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm">
+                      {Object.entries(PAYMENT_METHOD_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                    <input type="number" min="0" step="1000" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)}
+                      placeholder="Số tiền" className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm" />
+                  </div>
+                  <input type="text" value={paymentNote} onChange={e => setPaymentNote(e.target.value)}
+                    placeholder="Ghi chú (không bắt buộc)" className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm" />
+                  <button onClick={submitPayment} disabled={submittingPayment}
+                    className="w-full py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50">
+                    {submittingPayment ? 'Đang lưu...' : 'Ghi nhận thanh toán'}
+                  </button>
+                </div>
+              )}
+
+              {payments.length > 0 && (
+                <div className="pt-3 border-t border-slate-50 space-y-1.5 max-h-48 overflow-y-auto">
+                  {payments.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between text-xs text-slate-500">
+                      <span>{p.methodLabel} {p.note ? `— ${p.note}` : ''}</span>
+                      <span className="font-semibold text-slate-700 shrink-0 ml-2">{money(p.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* History */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
