@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { PackageOpen, AlertCircle, RefreshCw, ChevronDown, ChevronUp, BarChart3, ListChecks } from 'lucide-react';
+import { PackageOpen, AlertCircle, RefreshCw, ChevronDown, ChevronUp, BarChart3, ListChecks, FileSpreadsheet } from 'lucide-react';
 
 // LƯU Ý (Giai đoạn C, 2026-09-10): trang này trước đây chỉ gom từ bảng
 // "quotes" (status='won') — bỏ sót toàn bộ đơn tạo qua orders/order_items
@@ -224,6 +224,23 @@ function SalesReport() {
   useEffect(() => { fetchReport(); }, [fetchReport]);
 
   const [from, to] = computeRange();
+  const [exporting, setExporting] = useState(false);
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch(`${apiBase}/api/admin/reports/sales-detail/export?from=${from}&to=${to}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Không xuất được báo cáo');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `bao-cao-ban-hang-chi-tiet_${from}_${to}.xlsx`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Lỗi: ' + (err.message || 'Không xuất được báo cáo'));
+    } finally { setExporting(false); }
+  };
 
   return (
     <div className="space-y-6">
@@ -245,6 +262,10 @@ function SalesReport() {
             <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </>
         )}
+        <button onClick={exportExcel} disabled={exporting}
+          className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-1.5">
+          <FileSpreadsheet size={16} /> {exporting ? 'Đang xuất...' : 'Xuất Excel'}
+        </button>
         <button onClick={fetchReport} className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50" title="Tải lại">
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>

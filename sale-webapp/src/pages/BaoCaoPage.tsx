@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { RefreshCw, TrendingUp, ShoppingCart, Wallet, Clock3 } from 'lucide-react';
+import { RefreshCw, TrendingUp, ShoppingCart, Wallet, Clock3, FileSpreadsheet } from 'lucide-react';
 
 function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ'; }
 
@@ -33,6 +33,7 @@ export default function BaoCaoPage() {
   const [summary, setSummary] = useState<any>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -58,6 +59,23 @@ export default function BaoCaoPage() {
     setTo(addDays(t, 1));
   };
 
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch(`${apiBase}/api/admin/reports/export?from=${from}&to=${to}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Không xuất được báo cáo');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `bao-cao-ban-hang_${from}_${to}.xlsx`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Lỗi: ' + (err.message || 'Không xuất được báo cáo'));
+    } finally { setExporting(false); }
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -65,9 +83,15 @@ export default function BaoCaoPage() {
           <h1 className="text-2xl font-bold text-slate-800">Báo cáo</h1>
           <p className="text-slate-500 text-sm">Doanh thu &amp; hoạt động bán hàng theo khoảng thời gian</p>
         </div>
-        <button onClick={fetchReport} className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 self-start" title="Tải lại">
-          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex gap-2 self-start">
+          <button onClick={exportExcel} disabled={exporting}
+            className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-1.5">
+            <FileSpreadsheet size={16} /> {exporting ? 'Đang xuất...' : 'Xuất Excel'}
+          </button>
+          <button onClick={fetchReport} className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50" title="Tải lại">
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-2 items-center">
