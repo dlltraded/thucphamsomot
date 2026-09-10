@@ -16,11 +16,11 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
+// Thực tế TPS1 chỉ có 2 hình thức: COD (khách trả ngay khi giao) và công nợ
+// (thu sau) — không dùng tiền mặt/chuyển khoản như 2 mục riêng.
 const METHOD_LABELS: Record<string, string> = {
-  cash: "Tiền mặt",
-  transfer: "Chuyển khoản",
-  cod: "Thu hộ COD",
-  debt_collection: "Thu công nợ",
+  cod: "COD (trả ngay)",
+  debt_collection: "Thu công nợ (trả sau)",
 };
 
 // Giai đoạn C — ghi nhận thanh toán tách 3 phần cho 1 đơn (trả ngay/COD/công

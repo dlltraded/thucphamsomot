@@ -7,8 +7,10 @@ import {
   Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet, Truck
 } from 'lucide-react';
 
+// Thực tế TPS1 chỉ có 2 hình thức thanh toán: COD (trả ngay khi giao) và
+// công nợ (trả sau) — không dùng tiền mặt/chuyển khoản như 2 mục riêng.
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: 'Tiền mặt', transfer: 'Chuyển khoản', cod: 'Thu hộ COD', debt_collection: 'Thu công nợ',
+  cod: 'COD (trả ngay)', debt_collection: 'Thu công nợ (trả sau)',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -74,7 +76,7 @@ export default function OrderDetailPage() {
   // giao diện, để trang vẫn dùng tốt các phần khác trong lúc chờ.
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsAvailable, setPaymentsAvailable] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState('cod');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
