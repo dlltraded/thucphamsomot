@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Plus, ChevronRight as Arrow } from 'lucide-react';
+import { Search, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Plus, ChevronRight as Arrow, Upload, Download, X, CheckCircle2 } from 'lucide-react';
 
 function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ'; }
 
@@ -39,6 +39,7 @@ export default function ProductsPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -80,18 +81,33 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-slate-800">Hàng hóa</h1>
           <p className="text-slate-500 text-sm">{total} mã hàng {!canEdit && '· chỉ xem (cần quyền Admin/Thu mua để sửa)'}</p>
         </div>
-        <div className="flex gap-2 self-start">
+        <div className="flex gap-2 self-start flex-wrap">
           {canEdit && (
-            <button onClick={() => navigate('/hang-hoa/moi')}
-              className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-1.5">
-              <Plus size={16} /> Thêm sản phẩm
-            </button>
+            <>
+              <button onClick={() => setShowImport(true)}
+                className="px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-1.5">
+                <Upload size={16} /> Nhập kho từ Excel
+              </button>
+              <button onClick={() => navigate('/hang-hoa/moi')}
+                className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-1.5">
+                <Plus size={16} /> Thêm sản phẩm
+              </button>
+            </>
           )}
           <button onClick={fetchProducts} className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50" title="Tải lại">
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
       </header>
+
+      {showImport && (
+        <ImportInventoryModal
+          apiBase={apiBase}
+          token={token}
+          onClose={() => setShowImport(false)}
+          onDone={() => { setShowImport(false); fetchProducts(); }}
+        />
+      )}
 
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[220px]">
@@ -166,6 +182,132 @@ export default function ProductsPage() {
             className="p-2 border border-slate-200 rounded-lg disabled:opacity-40"><ChevronRight size={16} /></button>
         </div>
       )}
+    </div>
+  );
+}
+
+const PROBLEM_LABELS: Record<string, string> = {
+  not_found: 'Không tìm thấy mã hàng',
+  not_tracked: 'Mã hàng không theo dõi tồn kho (hàng tươi sống)',
+  invalid_quantity: 'Số lượng không hợp lệ',
+};
+
+interface ImportSummary {
+  total: number; ok: number; notFound: number; notTracked: number; invalidQuantity: number;
+}
+interface ImportProblem {
+  row: number; sku: string; quantity: number; status: string; productName?: string;
+}
+
+// Modal "Nhập kho từ Excel" — 2 bước: xem trước (không ghi gì) rồi mới xác
+// nhận ghi thật, giống nguyên tắc dry-run của script đồng bộ catalog, để
+// tránh nhập nhầm hàng loạt vào inventory_transactions.
+function ImportInventoryModal({ apiBase, token, onClose, onDone }: { apiBase: string; token: string | null; onClose: () => void; onDone: () => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const [problems, setProblems] = useState<ImportProblem[]>([]);
+  const [error, setError] = useState('');
+
+  const runImport = async (apply: boolean) => {
+    if (!file) return;
+    setError('');
+    apply ? setApplying(true) : setChecking(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      if (apply) form.append('apply', '1');
+      const res = await fetch(`${apiBase}/api/admin/products/import-inventory`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      setSummary(data.summary);
+      setProblems(data.problems || []);
+      if (apply) {
+        alert(`✅ Đã nhập kho ${data.summary.ok} mã hàng`);
+        onDone();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Không xử lý được file');
+    } finally {
+      apply ? setApplying(false) : setChecking(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-slate-800">Nhập kho từ Excel</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+        </div>
+
+        <a href={`${apiBase}/api/admin/products/import-inventory`} target="_blank" rel="noreferrer"
+          onClick={(e) => {
+            e.preventDefault();
+            fetch(`${apiBase}/api/admin/products/import-inventory`, { headers: { Authorization: `Bearer ${token}` } })
+              .then((r) => r.blob())
+              .then((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'mau-nhap-kho.xlsx'; a.click();
+                URL.revokeObjectURL(url);
+              });
+          }}
+          className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 font-medium">
+          <Download size={14} /> Tải file mẫu
+        </a>
+
+        <div>
+          <input type="file" accept=".xlsx,.xls" onChange={(e) => { setFile(e.target.files?.[0] || null); setSummary(null); setProblems([]); setError(''); }}
+            className="text-sm w-full border border-slate-200 rounded-lg px-3 py-2" />
+        </div>
+
+        {error && <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{error}</div>}
+
+        {summary && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="p-2.5 bg-green-50 rounded-lg text-green-700 flex items-center gap-2">
+                <CheckCircle2 size={16} /> Hợp lệ: <b>{summary.ok}</b>
+              </div>
+              <div className="p-2.5 bg-slate-50 rounded-lg text-slate-600">Tổng dòng: <b>{summary.total}</b></div>
+              {summary.notFound > 0 && <div className="p-2.5 bg-red-50 rounded-lg text-red-600">Không tìm thấy: <b>{summary.notFound}</b></div>}
+              {summary.notTracked > 0 && <div className="p-2.5 bg-amber-50 rounded-lg text-amber-700">Hàng theo ngày: <b>{summary.notTracked}</b></div>}
+              {summary.invalidQuantity > 0 && <div className="p-2.5 bg-red-50 rounded-lg text-red-600">SL không hợp lệ: <b>{summary.invalidQuantity}</b></div>}
+            </div>
+            {problems.length > 0 && (
+              <div className="border border-slate-200 rounded-lg max-h-40 overflow-y-auto text-xs">
+                {problems.map((p, i) => (
+                  <div key={i} className="px-2.5 py-1.5 border-b border-slate-50 last:border-0 flex justify-between gap-2">
+                    <span>Dòng {p.row}: {p.sku} {p.productName ? `(${p.productName})` : ''}</span>
+                    <span className="text-slate-400 shrink-0">{PROBLEM_LABELS[p.status] || p.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
+          <button onClick={onClose} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Đóng</button>
+          {!summary ? (
+            <button onClick={() => runImport(false)} disabled={!file || checking}
+              className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50">
+              {checking ? 'Đang kiểm tra...' : 'Xem trước'}
+            </button>
+          ) : (
+            <button onClick={() => runImport(true)} disabled={applying || summary.ok === 0}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+              {applying ? 'Đang ghi...' : `Xác nhận nhập ${summary.ok} mã`}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
