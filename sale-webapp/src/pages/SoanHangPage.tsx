@@ -1,50 +1,65 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { PackageOpen, AlertCircle } from 'lucide-react';
+import { PackageOpen, AlertCircle, RefreshCw } from 'lucide-react';
+
+// LƯU Ý (Giai đoạn C, 2026-09-10): trang này trước đây chỉ gom từ bảng
+// "quotes" (status='won') — bỏ sót toàn bộ đơn tạo qua orders/order_items
+// (POS, khách tự đặt qua Mini App). Theo đúng kế hoạch mục 13.5: đọc từ
+// orders/order_items với status đã xác nhận trở lên (confirmed/preparing/
+// shipping — completed thì đã giao xong, không cần soạn nữa).
+const PACKING_STATUSES = ['confirmed', 'preparing', 'shipping'];
+
+interface AggregatedItem {
+  name: string;
+  unit: string;
+  qty: number;
+  customers: { name: string; qty: number }[];
+}
 
 export default function SoanHangPage() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<AggregatedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [orderCount, setOrderCount] = useState(0);
 
   useEffect(() => {
     fetchConfirmedOrders();
   }, []);
 
   const fetchConfirmedOrders = async () => {
+    setLoading(true);
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const { data: quotes } = await supabase
-        .from('quotes')
-        .select('*')
-        .eq('status', 'won')
-        .gte('updated_at', today.toISOString());
-      
-      if (quotes) {
-        // Aggregate items
-        const itemMap: Record<string, any> = {};
-        quotes.forEach(quote => {
-          const customerName = quote.lead_name || 'Khách lẻ';
-          (quote.items || []).forEach((item: any) => {
-            if (!itemMap[item.name]) {
-              itemMap[item.name] = { name: item.name, qty: 0, unit: item.unit || 'Kg', customers: [] };
-            }
-            itemMap[item.name].qty += Number(item.qty);
-            
-            const existingCust = itemMap[item.name].customers.find((c: any) => c.name === customerName);
-            if (existingCust) {
-              existingCust.qty += Number(item.qty);
-            } else {
-              itemMap[item.name].customers.push({ name: customerName, qty: Number(item.qty) });
-            }
-          });
-        });
 
-        const sorted = Object.values(itemMap).sort((a: any, b: any) => b.qty - a.qty);
-        setData(sorted);
-      }
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('id, customer_name, customer_company, status, confirmed_at, order_items(name, quantity, unit)')
+        .in('status', PACKING_STATUSES)
+        .gte('confirmed_at', today.toISOString());
+      if (error) throw error;
+
+      setOrderCount((orders || []).length);
+
+      const itemMap: Record<string, AggregatedItem> = {};
+      (orders || []).forEach((order: any) => {
+        const customerName = order.customer_company ? `${order.customer_name} (${order.customer_company})` : order.customer_name || 'Khách lẻ';
+        (order.order_items || []).forEach((item: any) => {
+          const key = `${item.name}__${item.unit || 'Kg'}`;
+          if (!itemMap[key]) {
+            itemMap[key] = { name: item.name, unit: item.unit || 'Kg', qty: 0, customers: [] };
+          }
+          const qty = Number(item.quantity) || 0;
+          itemMap[key].qty += qty;
+
+          const existingCust = itemMap[key].customers.find((c) => c.name === customerName);
+          if (existingCust) existingCust.qty += qty;
+          else itemMap[key].customers.push({ name: customerName, qty });
+        });
+      });
+
+      setData(Object.values(itemMap).sort((a, b) => b.qty - a.qty));
     } catch (err) {
-      console.error(err);
+      console.error('Lỗi tải bảng soạn hàng:', err);
     } finally {
       setLoading(false);
     }
@@ -52,16 +67,21 @@ export default function SoanHangPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-800">Bảng Soạn Hàng</h1>
-        <p className="text-slate-500">Tổng hợp số lượng cần chuẩn bị cho các đơn Đã Chốt trong ngày</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Bảng Soạn Hàng</h1>
+          <p className="text-slate-500">Tổng hợp số lượng cần chuẩn bị từ {orderCount} đơn hàng đã xác nhận hôm nay</p>
+        </div>
+        <button onClick={fetchConfirmedOrders} className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50" title="Tải lại">
+          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+        </button>
       </header>
 
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 text-amber-800 text-sm">
         <AlertCircle className="shrink-0 mt-0.5" size={18} />
         <div>
           <strong className="block mb-1">Lưu ý khi soạn hàng:</strong>
-          Bảng dưới đây tự động gom số lượng từ tất cả các báo giá đang ở trạng thái <b>Đã chốt (Won)</b>. Các đơn Nháp hoặc Đang báo giá sẽ không được tính vào đây để tránh xuất dư kho.
+          Bảng dưới đây tự động gom số lượng từ các đơn hàng đã <b>xác nhận</b> (đã chốt giá) trong hôm nay — gồm cả đơn tạo qua POS và đơn khách tự đặt. Đơn Nháp, Chờ xác nhận, Đã hủy hoặc Đã hoàn thành sẽ không được tính vào đây.
         </div>
       </div>
 
@@ -91,7 +111,7 @@ export default function SoanHangPage() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap gap-2">
-                        {item.customers.map((c: any, cIdx: number) => (
+                        {item.customers.map((c, cIdx) => (
                           <span key={cIdx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-700">
                             <span className="font-medium">{c.name}:</span>
                             <span className="font-bold text-green-700">{c.qty} {item.unit}</span>
