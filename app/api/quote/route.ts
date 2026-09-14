@@ -262,21 +262,29 @@ export async function POST(req: Request) {
     );
   }
 
-  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-  const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID?.trim();
   if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+    const esc = (s: unknown) => {
+      if (!s && s !== 0) return '—';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    };
+
     const roleLabel = parsed.data.inquiryType === 'supplier' ? '🏭 NHÀ CUNG CẤP CHÀO HÀNG' : '📝 LEAD BÁO GIÁ MỚI';
     const telegramMessage = `
 ${roleLabel} — WEBSITE TPS1
 ━━━━━━━━━━━━━━━━━
-👤 Khách: <b>${payload.name || '—'}</b>
-📞 SĐT: <b>${payload.phone || '—'}</b>
-🏢 Công ty: ${payload.company || '—'}
-📦 Quan tâm: ${payload.interestedIn || payload.goodsServices || '—'}
-🚚 Khu vực: ${payload.deliveryArea || payload.supplyArea || '—'}
-🕒 Cần trước: ${payload.needBy || '—'}
-💬 Ghi chú: ${payload.message || '—'}
-${payload.selectedProducts ? `🛒 Sản phẩm: ${payload.selectedProducts}` : ''}
+👤 Khách: <b>${esc(payload.name)}</b>
+📞 SĐT: <b>${esc(payload.phone)}</b>
+🏢 Công ty: ${esc(payload.company)}
+📦 Quan tâm: ${esc(payload.interestedIn || payload.goodsServices)}
+🚚 Khu vực: ${esc(payload.deliveryArea || payload.supplyArea)}
+🕒 Cần trước: ${esc(payload.needBy)}
+💬 Ghi chú: ${esc(payload.message)}
+${payload.selectedProducts ? `🛒 Sản phẩm: ${esc(payload.selectedProducts)}` : ''}
 ━━━━━━━━━━━━━━━━━
 👉 Nguồn: ${payload.source}
     `.trim();
@@ -292,7 +300,20 @@ ${payload.selectedProducts ? `🛒 Sản phẩm: ${payload.selectedProducts}` : 
         }),
       })
         .then(r => r.json())
-        .then(d => { if (!d.ok) console.error('Telegram lead error:', JSON.stringify(d)); })
+        .then(d => {
+          if (!d.ok) {
+            console.error('Telegram lead error:', JSON.stringify(d));
+            // Retry plain text fallback if HTML formatting failed
+            return fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: `${roleLabel} - WEBSITE TPS1\nKhách: ${payload.name || '—'}\nSĐT: ${payload.phone || '—'}\nCty: ${payload.company || '—'}\nNhu cầu: ${payload.interestedIn || payload.goodsServices || '—'}\nNguồn: ${payload.source}`,
+              }),
+            });
+          }
+        })
         .catch((err) => console.error('Telegram lead notification error:', err))
     );
   }

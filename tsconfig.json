@@ -47,6 +47,11 @@
     "tps1-miniapp",
     "tps1-miniapp_b2b_backup",
     "zaui-market-template",
-    "sale-webapp"
+    "sale-webapp",
+    "order-webapp",
+    "manage",
+    "quanly",
+    "ai-business",
+    "zalo-mini-app"
   ]
 }
