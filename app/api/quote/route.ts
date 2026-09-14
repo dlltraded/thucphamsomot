@@ -244,7 +244,10 @@ export async function POST(req: Request) {
     },
   };
 
-  // Gửi ZNS xác nhận tiếp nhận yêu cầu trong background
+  // Gửi ZNS + Telegram song song, PHẢI await trước khi return để không bị
+  // Vercel serverless kill request giữa chừng (fire-and-forget bị truncate).
+  const backgroundTasks: Promise<unknown>[] = [];
+
   if (parsed.data.phone && parsed.data.name) {
     const ZNS_LEAD_RECEIVED_TEMPLATE_ID = process.env.ZNS_LEAD_RECEIVED_TEMPLATE_ID || '555234';
     const znsTemplateData = {
@@ -252,10 +255,51 @@ export async function POST(req: Request) {
       nguon_dang_ky: 'Website TPS1',
       thoi_gian: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
     };
-    sendZNSTemplate(parsed.data.phone, ZNS_LEAD_RECEIVED_TEMPLATE_ID, znsTemplateData)
-      .then((res) => console.log('Zalo ZNS website quote success response:', res))
-      .catch((err) => console.error('Zalo ZNS website quote error:', err));
+    backgroundTasks.push(
+      sendZNSTemplate(parsed.data.phone, ZNS_LEAD_RECEIVED_TEMPLATE_ID, znsTemplateData)
+        .then((res) => console.log('Zalo ZNS website quote success response:', res))
+        .catch((err) => console.error('Zalo ZNS website quote error:', err))
+    );
   }
+
+  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+  if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+    const roleLabel = parsed.data.inquiryType === 'supplier' ? '🏭 NHÀ CUNG CẤP CHÀO HÀNG' : '📝 LEAD BÁO GIÁ MỚI';
+    const telegramMessage = `
+${roleLabel} — WEBSITE TPS1
+━━━━━━━━━━━━━━━━━
+👤 Khách: <b>${payload.name || '—'}</b>
+📞 SĐT: <b>${payload.phone || '—'}</b>
+🏢 Công ty: ${payload.company || '—'}
+📦 Quan tâm: ${(parsed.data as { interestedIn?: string; goodsServices?: string }).interestedIn || (parsed.data as { interestedIn?: string; goodsServices?: string }).goodsServices || '—'}
+🚚 Khu vực: ${(parsed.data as { deliveryArea?: string; supplyArea?: string }).deliveryArea || (parsed.data as { deliveryArea?: string; supplyArea?: string }).supplyArea || '—'}
+🕒 Cần trước: ${(payload as { needBy?: string }).needBy || '—'}
+💬 Ghi chú: ${payload.message || '—'}
+${payload.selectedProducts ? `🛒 Sản phẩm: ${payload.selectedProducts}` : ''}
+━━━━━━━━━━━━━━━━━
+👉 Nguồn: ${payload.source}
+    `.trim();
+
+    backgroundTasks.push(
+      fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: telegramMessage,
+          parse_mode: 'HTML',
+        }),
+      })
+        .then(r => r.json())
+        .then(d => { if (!d.ok) console.error('Telegram lead error:', JSON.stringify(d)); })
+        .catch((err) => console.error('Telegram lead notification error:', err))
+    );
+  }
+
+  // Chờ tất cả background tasks hoàn thành trước khi return response
+  await Promise.allSettled(backgroundTasks);
+
 
   if (!wantsJsonResponse(req)) {
     return quoteRedirectResponse(req, notice);
