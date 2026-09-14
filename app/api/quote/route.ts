@@ -272,9 +272,9 @@ ${roleLabel} — WEBSITE TPS1
 👤 Khách: <b>${payload.name || '—'}</b>
 📞 SĐT: <b>${payload.phone || '—'}</b>
 🏢 Công ty: ${payload.company || '—'}
-📦 Quan tâm: ${(parsed.data as { interestedIn?: string; goodsServices?: string }).interestedIn || (parsed.data as { interestedIn?: string; goodsServices?: string }).goodsServices || '—'}
-🚚 Khu vực: ${(parsed.data as { deliveryArea?: string; supplyArea?: string }).deliveryArea || (parsed.data as { deliveryArea?: string; supplyArea?: string }).supplyArea || '—'}
-🕒 Cần trước: ${(payload as { needBy?: string }).needBy || '—'}
+📦 Quan tâm: ${payload.interestedIn || payload.goodsServices || '—'}
+🚚 Khu vực: ${payload.deliveryArea || payload.supplyArea || '—'}
+🕒 Cần trước: ${payload.needBy || '—'}
 💬 Ghi chú: ${payload.message || '—'}
 ${payload.selectedProducts ? `🛒 Sản phẩm: ${payload.selectedProducts}` : ''}
 ━━━━━━━━━━━━━━━━━
