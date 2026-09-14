@@ -286,7 +286,7 @@ ${roleLabel} — WEBSITE TPS1
 💬 Ghi chú: ${esc(payload.message)}
 ${payload.selectedProducts ? `🛒 Sản phẩm: ${esc(payload.selectedProducts)}` : ''}
 ━━━━━━━━━━━━━━━━━
-👉 Nguồn: ${payload.source}
+👉 Nguồn: 🌐 Website
     `.trim();
 
     backgroundTasks.push(
@@ -309,7 +309,7 @@ ${payload.selectedProducts ? `🛒 Sản phẩm: ${esc(payload.selectedProducts)
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 chat_id: TELEGRAM_CHAT_ID,
-                text: `${roleLabel} - WEBSITE TPS1\nKhách: ${payload.name || '—'}\nSĐT: ${payload.phone || '—'}\nCty: ${payload.company || '—'}\nNhu cầu: ${payload.interestedIn || payload.goodsServices || '—'}\nNguồn: ${payload.source}`,
+                text: `${roleLabel} - WEBSITE TPS1\nKhách: ${payload.name || '—'}\nSĐT: ${payload.phone || '—'}\nCty: ${payload.company || '—'}\nNhu cầu: ${payload.interestedIn || payload.goodsServices || '—'}\nNguồn: 🌐 Website`,
               }),
             });
           }
