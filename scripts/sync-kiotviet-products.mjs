@@ -61,10 +61,15 @@ function resolveTrackInventory(kiotGroup) {
   return !kiotGroup.trim().toUpperCase().endsWith('TS');
 }
 
+// SỬA (2026-09-11): trước đây mặc định 'Kg' khi file KiotViet để trống ĐVT —
+// sai cho rất nhiều mặt hàng không bán theo cân (VD "Áo giấy cúng" lẽ ra
+// "Bộ" lại bị gán "Kg"). Không đoán bừa 1 đơn vị cụ thể (dễ sai như cũ) —
+// để trống, ProductsPage/ProductDetailPage đã hiển thị được ô ĐVT trống để
+// thu mua tự điền đúng, thay vì âm thầm hiện sai đơn vị.
 function normalizeUnit(u) {
-  if (!u) return 'Kg';
+  if (!u) return '';
   const s = String(u).trim();
-  if (!s) return 'Kg';
+  if (!s) return '';
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 

@@ -58,6 +58,16 @@ export async function OPTIONS() {
 // được SỬA giá theo hạng hoặc điều chỉnh tồn kho (đúng người chịu trách
 // nhiệm nhập liệu theo kế hoạch mục 4).
 const CAN_EDIT_ROLES = new Set(["admin", "thu_mua"]);
+// Sale được TẠO sản phẩm mới (không sửa giá/tồn của hàng có sẵn) — khớp
+// "+Thêm mới hàng hóa" trong lúc bán của Sale/POS KiotViet thật, để sale
+// không phải dừng lại chờ thu mua khi gặp mặt hàng chưa có trong hệ thống.
+const CAN_CREATE_ROLES = new Set(["admin", "thu_mua", "sale"]);
+// Nhập hàng (tăng tồn) vẫn chỉ dành cho thu mua/admin — KHÔNG cho sale, vì
+// một số mặt hàng mới bật theo dõi tồn kho và hàng tươi/chế biến trong ngày
+// vốn không theo dõi tồn (track_inventory=false, luôn coi là còn hàng), nên
+// việc nhập kho vẫn phải qua đúng người chịu trách nhiệm mua hàng (đã chỉnh
+// lại theo yêu cầu 2026-09-11, tắt quyền nhập hàng vừa cấp cho sale trước đó
+// — dùng chung CAN_EDIT_ROLES ở PATCH bên dưới, không cần set riêng nữa).
 
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
@@ -257,8 +267,8 @@ export async function PATCH(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!CAN_EDIT_ROLES.has(auth.profile?.role || "")) {
-    return json({ ok: false, error: "Chỉ Quản trị viên hoặc Thu mua được thêm sản phẩm" }, 403);
+  if (!CAN_CREATE_ROLES.has(auth.profile?.role || "")) {
+    return json({ ok: false, error: "Không có quyền thêm sản phẩm" }, 403);
   }
 
   const body = await req.json().catch(() => null);

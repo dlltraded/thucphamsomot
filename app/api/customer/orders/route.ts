@@ -30,18 +30,29 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabase
       .from("orders")
-      .select("*, order_items(*), order_documents(id, revision, status)")
+      .select("*, order_items(*), order_documents(id, document_type, revision, status)")
       .eq("customer_id", customerSession.customer_id)
       .order("created_at", { ascending: false });
     if (error) throw error;
 
-    const orders = (data || []).map((order) => {
-      const document = (order.order_documents || [])
-        .filter((item: { status?: string }) => item.status === "generated")
+    // Phiếu xác nhận (order_confirmation, xem được ngay khi chốt giá) và hóa
+    // đơn bán hàng (invoice, chỉ có khi đơn "completed") là 2 loại chứng từ
+    // KHÁC NHAU — phải lọc riêng theo document_type, không gộp chung rồi lấy
+    // theo revision cao nhất (2 loại đều có thể revision=1, dễ lấy nhầm).
+    const latestDoc = (order: any, type: string) =>
+      (order.order_documents || [])
+        .filter((item: { status?: string; document_type?: string }) => item.status === "generated" && item.document_type === type)
         .sort((a: { revision?: number }, b: { revision?: number }) => Number(b.revision || 0) - Number(a.revision || 0))[0];
+
+    const orders = (data || []).map((order) => {
+      const confirmationDoc = latestDoc(order, "order_confirmation");
+      const invoiceDoc = latestDoc(order, "invoice");
       return {
         ...order,
-        confirmation_document_id: document?.id || null,
+        confirmation_document_id: confirmationDoc?.id || null,
+        // Chỉ trả invoice_document_id khi đơn đã completed — Mini App chỉ nên
+        // hiện nút tải hóa đơn lúc đó (mục brief 2026-09-11).
+        invoice_document_id: order.status === "completed" ? invoiceDoc?.id || null : null,
         items: (order.order_items || []).map((item: Record<string, unknown>) => ({
           id: item.id,
           productId: item.product_id,

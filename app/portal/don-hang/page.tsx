@@ -16,7 +16,7 @@ const PAYMENT_LABEL: Record<string, string> = { pending: "Chờ xử lý", cod: 
 const STEPS = ["pending", "confirmed", "preparing", "shipping", "completed"];
 
 type OrderItem = { id?: string; name?: string; sku?: string; unit?: string; quantity?: number; qty?: number; price?: number; unitPrice?: number; lineTotal?: number; itemNote?: string };
-type CustomerOrder = { id: string; order_code?: string; status?: string; pricing_status?: "provisional" | "finalized"; price_revision?: number; confirmation_document_id?: string; payment_status?: string; payment_method?: string; delivery_alias?: string; delivery_address?: string; delivery_name?: string; delivery_phone?: string; note?: string; subtotal?: number; discount_amount?: number; grand_total?: number; created_at: string; items?: OrderItem[] };
+type CustomerOrder = { id: string; order_code?: string; status?: string; pricing_status?: "provisional" | "finalized"; price_revision?: number; confirmation_document_id?: string; invoice_document_id?: string; payment_status?: string; payment_method?: string; delivery_alias?: string; delivery_address?: string; delivery_name?: string; delivery_phone?: string; note?: string; subtotal?: number; discount_amount?: number; grand_total?: number; created_at: string; items?: OrderItem[] };
 const fmtMoney = (n?: number) => new Intl.NumberFormat("vi-VN").format(Number(n) || 0) + "đ";
 const fmtDate = (iso: string) => new Date(iso).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -33,13 +33,26 @@ export default async function CustomerOrdersPage() {
     if (sessionError || !customerSession) {
       error = new Error("Phiên đăng nhập đã hết hạn");
     } else {
-      const { data, error: orderError } = await supabase.from("orders").select("*, order_items(*), order_documents(id, revision, status)").eq("customer_id", customerSession.customer_id).order("created_at", { ascending: false });
+      const { data, error: orderError } = await supabase.from("orders").select("*, order_items(*), order_documents(id, document_type, revision, status)").eq("customer_id", customerSession.customer_id).order("created_at", { ascending: false });
       error = orderError ? new Error(orderError.message) : null;
+      // Phiếu xác nhận (order_confirmation, có ngay khi chốt giá) và hóa đơn
+      // bán hàng (invoice, chỉ có khi đơn "completed") là 2 loại chứng từ
+      // KHÁC NHAU — phải lọc riêng theo document_type, không gộp chung rồi
+      // lấy theo revision cao nhất (trước đây lấy nhầm document mới nhất bất
+      // kể loại, đồng bộ lại với /api/customer/orders — 2026-09-11).
+      const latestDoc = (order: { order_documents?: { id: string; document_type?: string; status?: string; revision?: number }[] }, type: string) =>
+        (order.order_documents || [])
+          .filter((item) => item.status === "generated" && item.document_type === type)
+          .sort((a, b) => Number(b.revision || 0) - Number(a.revision || 0))[0];
       orders = (data || []).map((order) => {
-        const document = (order.order_documents || []).filter((item: { status?: string }) => item.status === "generated").sort((a: { revision?: number }, b: { revision?: number }) => Number(b.revision || 0) - Number(a.revision || 0))[0];
+        const confirmationDoc = latestDoc(order, "order_confirmation");
+        const invoiceDoc = latestDoc(order, "invoice");
         return {
           ...order,
-          confirmation_document_id: document?.id,
+          confirmation_document_id: confirmationDoc?.id,
+          // Chỉ trả invoice_document_id khi đơn đã completed — chỉ hiện nút
+          // tải hóa đơn lúc đó (mục brief 2026-09-11).
+          invoice_document_id: order.status === "completed" ? invoiceDoc?.id : undefined,
           items: (order.order_items || []).map((item: Record<string, unknown>) => ({
             id: String(item.id || ""), name: String(item.name || ""), sku: String(item.sku || ""), unit: String(item.unit || ""),
             quantity: Number(item.quantity || 0), price: Number(item.unit_price || 0), lineTotal: Number(item.line_total || 0),
@@ -91,6 +104,7 @@ export default async function CustomerOrdersPage() {
                   {order.pricing_status !== "finalized" && <div className="customer-orders-message">Đơn đang được sale TPS1 kiểm tra phân loại khách hàng và đơn giá. Tổng hiện tại chỉ là tạm tính.</div>}
                   <div className="customer-order-totals"><div><span>Tạm tính</span><strong>{fmtMoney(order.subtotal)}</strong></div><div><span>Giảm/điều chỉnh</span><strong>-{fmtMoney(order.discount_amount)}</strong></div><div className="customer-order-grand-total"><span>{order.pricing_status === "finalized" ? "Tổng thanh toán" : "Tổng tạm tính"}</span><strong>{fmtMoney(order.grand_total || order.subtotal)}</strong></div></div>
                   {order.pricing_status === "finalized" && order.confirmation_document_id && <a className="customer-new-order" href={`/api/customer/order-confirmation?orderId=${encodeURIComponent(order.id)}`}>Tải PDF xác nhận đơn hàng R{order.price_revision || 1}</a>}
+                  {order.status === "completed" && order.invoice_document_id && <a className="customer-new-order" href={`/api/customer/order-invoice?orderId=${encodeURIComponent(order.id)}`}>Tải hóa đơn</a>}
                   <ReorderButton items={items} orderId={order.order_code || order.id} />
                 </div>
               </details>

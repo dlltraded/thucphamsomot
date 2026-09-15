@@ -58,7 +58,8 @@ export async function GET(req: NextRequest) {
   const search = req.nextUrl.searchParams.get("search")?.trim() || "";
   const category = req.nextUrl.searchParams.get("category")?.trim() || "";
   const page = Math.max(0, Number(req.nextUrl.searchParams.get("page") || 0));
-  const pageSize = 24;
+  // Nếu đang tìm kiếm autocomplete thì trả về tối đa 50 kết quả để xổ dropdown
+  const pageSize = search ? 50 : 24;
 
   try {
     let query = supabase
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
       .range(page * pageSize, page * pageSize + pageSize - 1);
     if (search) {
       const safe = search.replace(/[%_]/g, "");
-      query = query.ilike("name", `%${safe}%`);
+      query = query.or(`name.ilike.%${safe}%,sku.ilike.%${safe}%`);
     }
     if (category) query = query.eq("category", category);
 
@@ -104,7 +105,9 @@ export async function GET(req: NextRequest) {
         imageUrl: p.image_url,
         price,
         priceOnRequest: price <= 0,
-        available: !p.track_inventory || Number(p.stock_qty) > 0,
+        // Hàng tươi sống tồn kho = 0 vẫn nhận đặt hàng, bộ phận thu mua sẽ sắp xếp nhập giao khách
+        available: true,
+        stockQty: Number(p.stock_qty) || 0,
       };
     });
 

@@ -23,8 +23,11 @@ export default function RegisterPage() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.name.trim() || !form.phone.trim() || form.password.length < 8) {
-      toast.error("Vui lòng nhập họ tên, số điện thoại và mật khẩu từ 8 ký tự");
+    // TPS1 chỉ bán sỉ cho công ty/cửa hàng, không bán lẻ — bắt buộc có tên
+    // công ty/cửa hàng, người liên hệ và SĐT ngay từ lúc đăng ký, không để
+    // "Công ty" tùy chọn như trước (yêu cầu 2026-09-11).
+    if (!form.company.trim() || !form.name.trim() || !form.phone.trim() || form.password.length < 8) {
+      toast.error("Vui lòng nhập đầy đủ tên công ty/cửa hàng, người liên hệ, số điện thoại và mật khẩu từ 8 ký tự");
       return;
     }
     if (form.password !== form.confirmPassword) {
@@ -58,14 +61,14 @@ export default function RegisterPage() {
         </div>
         <h1 className="text-xl font-bold">Đăng ký tài khoản mua hàng</h1>
         <p className="mt-2 text-sm leading-6 text-white/85">
-          Tài khoản mới được tạo ở hạng VIP0. Nhân viên TPS1 sẽ kiểm tra, phân loại và xác nhận đơn giá cuối cùng cho từng đơn hàng.
+          TPS1 chỉ bán sỉ cho công ty/cửa hàng, không bán lẻ. Tài khoản mới được tạo ở hạng VIP0. Nhân viên TPS1 sẽ kiểm tra, phân loại và xác nhận đơn giá cuối cùng cho từng đơn hàng.
         </p>
       </section>
 
       <section className="mx-4 -mt-3 grid gap-4 rounded-3xl bg-white p-5 shadow-[0_14px_38px_rgba(15,80,52,0.12)]">
-        <Input label="Họ và tên *" value={form.name} onChange={update("name")} placeholder="Nguyễn Văn A" />
+        <Input label="Tên công ty / cửa hàng *" value={form.company} onChange={update("company")} placeholder="Công ty TNHH ABC / Quán ăn ABC" />
+        <Input label="Người liên hệ *" value={form.name} onChange={update("name")} placeholder="Nguyễn Văn A" />
         <Input label="Số điện thoại *" value={form.phone} onChange={update("phone")} placeholder="09xxxxxxxx" />
-        <Input label="Công ty / đơn vị" value={form.company} onChange={update("company")} placeholder="Không bắt buộc" />
         <Input label="Email" value={form.email} onChange={update("email")} placeholder="Không bắt buộc" />
         <Input label="Mật khẩu *" type="password" value={form.password} onChange={update("password")} placeholder="Tối thiểu 8 ký tự" />
         <Input label="Xác nhận mật khẩu *" type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="Nhập lại mật khẩu" />

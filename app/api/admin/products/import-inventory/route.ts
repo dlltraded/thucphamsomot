@@ -27,10 +27,10 @@ export async function GET(req: NextRequest) {
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([
-    ["Mã hàng", "Số lượng nhập", "Ghi chú"],
-    ["VD: k-cafearabica250", 20, "Nhập từ NCC ABC, phiếu #123"],
+    ["Mã hàng", "Số lượng nhập", "Đơn giá nhập", "Ghi chú"],
+    ["VD: k-cafearabica250", 20, 105000, "Nhập từ NCC ABC, phiếu #123"],
   ]);
-  ws["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 36 }];
+  ws["!cols"] = [{ wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 36 }];
   XLSX.utils.book_append_sheet(wb, ws, "Nhap kho");
   const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 
@@ -92,12 +92,16 @@ export async function POST(req: NextRequest) {
 
     const results: RowResult[] = [];
     const toInsert: { product_id: string; type: "in"; quantity: number; note: string; created_by: string | null }[] = [];
+    // Giá nhập cuối (mục 14.3-4 KE_HOACH) — cập nhật kèm theo khi dòng nhập
+    // kho có ghi đơn giá, không bắt buộc (nhiều lần chỉ kiểm kê không có giá).
+    const lastImportPriceUpdates: { id: string; last_import_price: number }[] = [];
     const noteTag = `Nhập kho từ file "${file.name}" (${new Date().toLocaleDateString("vi-VN")})`;
     const createdBy = auth.profile?.id !== "legacy-admin" ? auth.profile?.id ?? null : null;
 
     rows.forEach((r, idx) => {
       const skuRaw = String(r["Mã hàng"] ?? r["SKU"] ?? r["Mã hàng "] ?? "").trim();
       const qtyRaw = r["Số lượng nhập"] ?? r["Số lượng"] ?? r["Quantity"];
+      const priceRaw = r["Đơn giá nhập"] ?? r["Giá nhập"] ?? r["Đơn giá"];
       const noteRaw = r["Ghi chú"] ?? r["Note"] ?? "";
       const rowNum = idx + 2; // dòng 1 là header
 
@@ -126,6 +130,9 @@ export async function POST(req: NextRequest) {
         note: noteRaw ? `${noteTag} — ${noteRaw}` : noteTag,
         created_by: createdBy,
       });
+      if (priceRaw !== null && priceRaw !== undefined && priceRaw !== "" && Number.isFinite(Number(priceRaw)) && Number(priceRaw) >= 0) {
+        lastImportPriceUpdates.push({ id: product.id, last_import_price: Number(priceRaw) });
+      }
     });
 
     const summary = {
@@ -139,6 +146,15 @@ export async function POST(req: NextRequest) {
     if (apply && toInsert.length) {
       const { error: insertError } = await supabase.from("inventory_transactions").insert(toInsert);
       if (insertError) throw insertError;
+    }
+    if (apply && lastImportPriceUpdates.length) {
+      for (const update of lastImportPriceUpdates) {
+        const { error: priceError } = await supabase
+          .from("products")
+          .update({ last_import_price: update.last_import_price })
+          .eq("id", update.id);
+        if (priceError) throw priceError;
+      }
     }
 
     return json({

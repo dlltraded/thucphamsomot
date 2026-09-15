@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
-import { generateOrderConfirmationPdf, type ConfirmationOrderSnapshot } from "@/lib/order-confirmation-pdf";
+import { type ConfirmationOrderItem } from "@/lib/order-confirmation-pdf";
+import { generateSalesInvoicePdf, type SalesInvoiceSnapshot } from "@/lib/sales-invoice-pdf";
+import { finalizeOrderCore } from "@/lib/order-finalize";
+import { sendPushToCustomer } from "@/lib/push";
 
 const ORDER_STATUSES = [
   "pending",
@@ -98,11 +101,43 @@ export async function GET(req: NextRequest) {
     const { data, error } = await query;
     if (error) throw error;
 
+    // Tên sale lên đơn (chưa hiện trên order trước đây — chỉ có sales_rep_id).
+    // Khớp yêu cầu "tên của sale lên đơn như kiotviet" — join admin_profiles.
+    const salesRepIds = [...new Set((data || []).map((order) => order.sales_rep_id).filter(Boolean))];
+    const { data: salesReps } = salesRepIds.length
+      ? await supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
+      : { data: [] as { id: string; name: string }[] };
+    const salesRepMap = new Map((salesReps || []).map((r) => [r.id, r.name]));
+
     if (orderId) {
       const singleOrder = data && data.length > 0 ? data[0] : null;
+      // Gắn tồn kho hiện tại vào từng dòng hàng để màn "Xử lý đơn hàng" (POS)
+      // biết ngay dòng nào thiếu hàng và cảnh báo + cho nhập hàng tại chỗ —
+      // không còn chặn khách đặt hàng hết tồn nữa (yêu cầu 2026-09-11), việc
+      // xử lý hết hàng chuyển hết sang cho sale lúc xác nhận đơn.
+      const productIds = [...new Set((singleOrder?.order_items || []).map((it: any) => it.product_id).filter(Boolean))];
+      let stockMap = new Map<string, { track_inventory: boolean; stock_qty: number; min_stock: number }>();
+      if (productIds.length) {
+        const { data: stockRows } = await supabase
+          .from("products")
+          .select("id, track_inventory, stock_qty, min_stock")
+          .in("id", productIds);
+        stockMap = new Map((stockRows || []).map((r) => [r.id, r]));
+      }
+      if (singleOrder) {
+        singleOrder.order_items = (singleOrder.order_items || []).map((it: any) => {
+          const stock = it.product_id ? stockMap.get(it.product_id) : null;
+          return {
+            ...it,
+            track_inventory: stock?.track_inventory || false,
+            stock_qty: stock ? Number(stock.stock_qty) || 0 : null,
+            low_stock: stock?.track_inventory ? Number(stock.stock_qty) <= Number(stock.min_stock || 0) : false,
+          };
+        });
+      }
       return json({
         ok: true,
-        order: singleOrder,
+        order: singleOrder ? { ...singleOrder, sales_rep_name: salesRepMap.get(singleOrder.sales_rep_id) || null } : null,
       });
     }
     const customerIds = [...new Set((data || []).map((order) => order.customer_id).filter(Boolean))];
@@ -122,6 +157,7 @@ export async function GET(req: NextRequest) {
       orders: (data || []).map((order) => ({
         ...order,
         customer_account: accountMap.get(order.customer_id) || null,
+        sales_rep_name: salesRepMap.get(order.sales_rep_id) || null,
       })),
       tiers: tiers || [],
     });
@@ -137,177 +173,79 @@ export async function GET(req: NextRequest) {
   }
 }
 
-async function createConfirmationDocument(
+// Hóa đơn bán hàng — phát hành khi đơn chuyển sang "completed" (đã hoàn
+// thành giao hàng), khác với phiếu xác nhận ở trên (phát hành lúc chốt giá,
+// vẫn là phiếu tạm). Xem lib/sales-invoice-pdf.ts.
+async function createInvoiceDocument(
   supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
-  order: ConfirmationOrderSnapshot,
+  orderId: string,
   actor: string
 ) {
-  const revision = Number(order.price_revision || 1);
-  const fileName = `XAC-NHAN-DON-HANG_${order.order_code}_R${revision}.pdf`;
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("id, order_code, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_name, delivery_phone, delivery_address, note, subtotal, discount_amount, shipping_amount, grand_total, paid_amount, debt_amount, completed_at, sales_rep_id, order_items(id, sku, name, unit, quantity, unit_price, line_total)")
+    .eq("id", orderId)
+    .single();
+  if (orderError || !order) throw orderError || new Error("Không tìm thấy đơn hàng để tạo hóa đơn");
+
+  const [{ data: customer }, { data: rep }] = await Promise.all([
+    supabase.from("vip_accounts").select("tax_code").eq("id", order.customer_id).maybeSingle(),
+    order.sales_rep_id
+      ? supabase.from("admin_profiles").select("name").eq("id", order.sales_rep_id).maybeSingle()
+      : Promise.resolve({ data: null as { name: string } | null }),
+  ]);
+
+  const snapshot: SalesInvoiceSnapshot = {
+    id: order.id,
+    order_code: order.order_code,
+    customer_code: order.customer_code,
+    customer_name: order.customer_name,
+    customer_phone: order.customer_phone,
+    customer_company: order.customer_company,
+    customer_tax_code: customer?.tax_code || null,
+    delivery_name: order.delivery_name,
+    delivery_phone: order.delivery_phone,
+    delivery_address: order.delivery_address,
+    note: order.note,
+    subtotal: Number(order.subtotal),
+    discount_amount: Number(order.discount_amount),
+    shipping_amount: Number(order.shipping_amount),
+    grand_total: Number(order.grand_total),
+    paid_amount: Number(order.paid_amount) || 0,
+    debt_amount: order.debt_amount != null ? Number(order.debt_amount) : null,
+    completed_at: order.completed_at,
+    sales_rep_name: rep?.name || null,
+    order_items: (order.order_items || []) as ConfirmationOrderItem[],
+  };
+
+  const fileName = `HOA-DON_${order.order_code}.pdf`;
   const storagePath = `${order.id}/${fileName}`;
-  const pdf = await generateOrderConfirmationPdf(order);
+  const pdf = await generateSalesInvoicePdf(snapshot);
   const fileHash = createHash("sha256").update(pdf).digest("hex");
 
-  const bucketName = "order-confirmations";
-  const { error: bucketError } = await supabase.storage.getBucket(bucketName);
-  if (bucketError) {
-    const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
-      public: false,
-      fileSizeLimit: 10 * 1024 * 1024,
-      allowedMimeTypes: ["application/pdf"],
-    });
-    if (createBucketError && !/already exists/i.test(createBucketError.message)) {
-      throw createBucketError;
-    }
-  }
-
   const { error: uploadError } = await supabase.storage
-    .from(bucketName)
+    .from("order-confirmations")
     .upload(storagePath, pdf, { contentType: "application/pdf", upsert: true });
   if (uploadError) throw uploadError;
 
-  const { data: document, error: documentError } = await supabase
-    .from("order_documents")
-    .upsert(
-      {
-        order_id: order.id,
-        document_type: "order_confirmation",
-        revision,
-        storage_path: storagePath,
-        file_hash: fileHash,
-        snapshot: order,
-        status: "generated",
-        generated_by: actor,
-        generated_at: new Date().toISOString(),
-      },
-      { onConflict: "order_id,document_type,revision" }
-    )
-    .select("id, revision, storage_path, file_hash, generated_at")
-    .single();
+  const { error: documentError } = await supabase.from("order_documents").upsert(
+    {
+      order_id: order.id,
+      document_type: "invoice",
+      revision: 1,
+      storage_path: storagePath,
+      file_hash: fileHash,
+      snapshot,
+      status: "generated",
+      generated_by: actor,
+      generated_at: new Date().toISOString(),
+    },
+    { onConflict: "order_id,document_type,revision" }
+  );
   if (documentError) throw documentError;
 
-  await supabase
-    .from("orders")
-    .update({ confirmation_document_status: "generated" })
-    .eq("id", order.id);
-  return { ...document, fileName };
-}
-
-async function finalizeOrderWithLegacyLineEditor(
-  supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
-  params: {
-    orderId: string;
-    customerTier: string;
-    pricingMode: string;
-    orderDiscountPercent: number;
-    shippingAmount: number;
-    items: Array<Record<string, unknown>>;
-    verificationNote: string;
-    pricingNote: string;
-    actor: string;
-  }
-) {
-  const { data: current, error: currentError } = await supabase
-    .from("orders")
-    .select("*, order_items(*)")
-    .eq("id", params.orderId)
-    .single();
-  if (currentError || !current) throw currentError || new Error("Không tìm thấy đơn hàng");
-  if (["shipping", "completed", "canceled"].includes(current.status) || ["paid", "refunded"].includes(current.payment_status)) {
-    throw new Error("Đơn đã khóa, không thể thay đổi danh sách sản phẩm");
-  }
-  if (!params.items.length) throw new Error("Đơn cuối cùng phải có ít nhất một sản phẩm");
-
-  const originalItems = current.order_items || [];
-  const originalMap = new Map(originalItems.map((item: Record<string, unknown>) => [String(item.id), item]));
-  const keptIds: string[] = [];
-  const finalItems: Array<{ itemId: string; finalUnitPrice: number; note: string }> = [];
-
-  const restoreOriginalItems = async () => {
-    await supabase.from("order_items").delete().eq("order_id", params.orderId);
-    if (originalItems.length) await supabase.from("order_items").insert(originalItems);
-  };
-
-  try {
-    for (const input of params.items) {
-      const quantity = Number(input.quantity || 0);
-      const finalUnitPrice = Number(input.finalUnitPrice || 0);
-      const note = String(input.note || "").trim();
-      if (!(quantity > 0) || finalUnitPrice < 0) throw new Error("Số lượng hoặc đơn giá sản phẩm không hợp lệ");
-
-      let itemId = String(input.itemId || "");
-      if (itemId) {
-        if (!originalMap.has(itemId)) throw new Error("Một sản phẩm trong đơn không còn tồn tại");
-        const { error } = await supabase
-          .from("order_items")
-          .update({ quantity, pricing_note: note || null })
-          .eq("id", itemId)
-          .eq("order_id", params.orderId);
-        if (error) throw error;
-      } else {
-        const identifier = String(input.productId || input.productLocalId || "").trim();
-        if (!identifier) throw new Error("Thiếu mã sản phẩm cần thêm");
-        const { data: product, error: productError } = await supabase
-          .from("products")
-          .select("id, local_product_id, sku, name, unit, price_retail, price_wholesale")
-          .or(`id.eq.${identifier},local_product_id.eq.${identifier}`)
-          .eq("active", true)
-          .limit(1)
-          .maybeSingle();
-        if (productError || !product) throw productError || new Error(`Không tìm thấy sản phẩm ${identifier}`);
-        const basePrice = Number(product.price_retail) || Number(product.price_wholesale) || 0;
-        const { data: inserted, error: insertError } = await supabase
-          .from("order_items")
-          .insert({
-            order_id: params.orderId,
-            product_id: product.id,
-            product_local_id: product.local_product_id,
-            sku: product.sku,
-            name: product.name,
-            unit: product.unit || "Kg",
-            quantity,
-            base_unit_price: basePrice,
-            original_base_unit_price: basePrice,
-            discount_percent: 0,
-            unit_price: basePrice,
-            line_total: Math.round(basePrice * quantity),
-            pricing_mode: params.pricingMode,
-            pricing_note: note || null,
-          })
-          .select("id")
-          .single();
-        if (insertError || !inserted) throw insertError || new Error("Không thêm được sản phẩm");
-        itemId = inserted.id;
-      }
-      keptIds.push(itemId);
-      finalItems.push({ itemId, finalUnitPrice, note });
-    }
-
-    const removeIds = originalItems
-      .map((item: Record<string, unknown>) => String(item.id))
-      .filter((id: string) => !keptIds.includes(id));
-    if (removeIds.length) {
-      const { error: deleteError } = await supabase.from("order_items").delete().in("id", removeIds).eq("order_id", params.orderId);
-      if (deleteError) throw deleteError;
-    }
-
-    const { data, error } = await supabase.rpc("admin_finalize_order", {
-      p_order_id: params.orderId,
-      p_customer_tier: params.customerTier,
-      p_pricing_mode: params.pricingMode,
-      p_order_discount_percent: params.orderDiscountPercent,
-      p_shipping_amount: params.shippingAmount,
-      p_items: finalItems,
-      p_verification_note: params.verificationNote,
-      p_pricing_note: params.pricingNote,
-      p_actor: params.actor,
-    });
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    await restoreOriginalItems();
-    throw error;
-  }
+  await supabase.from("orders").update({ invoice_document_status: "generated" }).eq("id", order.id);
+  return { fileName };
 }
 
 export async function POST(req: NextRequest) {
@@ -324,54 +262,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const supabase = getCustomerSupabaseAdmin();
-    const rpcParams = {
-      p_order_id: orderId,
-      p_customer_tier: customerTier,
-      p_pricing_mode: pricingMode,
-      p_order_discount_percent: Number(body?.orderDiscountPercent || 0),
-      p_shipping_amount: Number(body?.shippingAmount || 0),
-      p_items: Array.isArray(body?.items) ? body.items : [],
-      p_verification_note: String(body?.verificationNote || "").trim(),
-      p_pricing_note: String(body?.pricingNote || "").trim(),
-      p_actor: actor,
-    };
-    let { data, error } = await supabase.rpc("admin_finalize_order_v2", rpcParams);
-    if (error && /admin_finalize_order_v2|schema cache|function/i.test(error.message)) {
-      data = await finalizeOrderWithLegacyLineEditor(supabase, {
-        orderId,
-        customerTier,
-        pricingMode,
-        orderDiscountPercent: Number(body?.orderDiscountPercent || 0),
-        shippingAmount: Number(body?.shippingAmount || 0),
-        items: Array.isArray(body?.items) ? body.items : [],
-        verificationNote: String(body?.verificationNote || "").trim(),
-        pricingNote: String(body?.pricingNote || "").trim(),
-        actor,
-      });
-      error = null;
-    }
-    if (error) return json({ ok: false, error: error.message }, 400);
-
-    const finalized = data as ConfirmationOrderSnapshot;
-    let document = null;
-    let documentWarning = "";
-    try {
-      document = await createConfirmationDocument(supabase, finalized, actor);
-    } catch (pdfError) {
-      console.error("Order confirmation PDF error:", pdfError);
-      documentWarning = "Đơn đã được chốt giá nhưng chưa tạo được PDF. Có thể bấm tạo lại chứng từ.";
-      await supabase
-        .from("orders")
-        .update({ confirmation_document_status: "failed" })
-        .eq("id", orderId);
-    }
-
-    const { data: fullOrder } = await supabase
-      .from("orders")
-      .select("*, order_items(*), order_history(*), order_documents(*)")
-      .eq("id", orderId)
-      .single();
-    return json({ ok: true, order: fullOrder || finalized, document, warning: documentWarning });
+    const result = await finalizeOrderCore(supabase, {
+      orderId,
+      customerTier,
+      pricingMode,
+      orderDiscountPercent: Number(body?.orderDiscountPercent || 0),
+      shippingAmount: Number(body?.shippingAmount || 0),
+      items: Array.isArray(body?.items) ? body.items : [],
+      verificationNote: String(body?.verificationNote || "").trim(),
+      pricingNote: String(body?.pricingNote || "").trim(),
+      actor,
+    });
+    return json({ ok: true, order: result.order, document: result.document, warning: result.warning });
   } catch (error) {
     console.error("Admin order finalize error:", error);
     return json({ ok: false, error: error instanceof Error ? error.message : "Không chốt được giá đơn hàng" }, 500);
@@ -386,14 +288,34 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const orderId = String(body?.orderId || "").trim();
+  const hasStatusChange = body?.status !== undefined && body?.status !== null && String(body.status).trim() !== "";
   const nextStatus = String(body?.status || "").trim();
   const paymentStatus = body?.paymentStatus
     ? String(body.paymentStatus).trim()
     : undefined;
   const note = String(body?.note || "").trim();
+  // Giao hàng tự vận chuyển (mục 14.2-1 KE_HOACH) — cập nhật độc lập với đổi
+  // trạng thái, vì soạn/giao hàng có thể chỉnh nhiều lần trước khi đơn hoàn tất.
+  const delivery = body?.delivery && typeof body.delivery === "object" ? body.delivery : null;
+  // Số lượng đã giao thực tế theo dòng (mục 14.2-2) — [{itemId, quantityDelivered}]
+  const itemDeliveries: Array<{ itemId: string; quantityDelivered: number }> = Array.isArray(body?.itemDeliveries)
+    ? body.itemDeliveries
+        .map((row: Record<string, unknown>) => ({
+          itemId: String(row?.itemId || "").trim(),
+          quantityDelivered: Number(row?.quantityDelivered),
+        }))
+        .filter((row: { itemId: string; quantityDelivered: number }) => row.itemId && Number.isFinite(row.quantityDelivered) && row.quantityDelivered >= 0)
+    : [];
+  const regenerateInvoice = body?.regenerateInvoice === true;
 
-  if (!orderId || !ORDER_STATUSES.includes(nextStatus as (typeof ORDER_STATUSES)[number])) {
-    return json({ ok: false, error: "Đơn hàng hoặc trạng thái không hợp lệ" }, 400);
+  if (!orderId) {
+    return json({ ok: false, error: "Thiếu mã đơn hàng" }, 400);
+  }
+  if (hasStatusChange && !ORDER_STATUSES.includes(nextStatus as (typeof ORDER_STATUSES)[number])) {
+    return json({ ok: false, error: "Trạng thái đơn hàng không hợp lệ" }, 400);
+  }
+  if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice) {
+    return json({ ok: false, error: "Không có nội dung cần cập nhật" }, 400);
   }
   if (
     paymentStatus &&
@@ -411,6 +333,51 @@ export async function PATCH(req: NextRequest) {
       .single();
     if (currentError || !current) {
       return json({ ok: false, error: "Không tìm thấy đơn hàng" }, 404);
+    }
+
+    if (itemDeliveries.length) {
+      for (const row of itemDeliveries) {
+        const { error: itemError } = await supabase
+          .from("order_items")
+          .update({ quantity_delivered: row.quantityDelivered })
+          .eq("id", row.itemId)
+          .eq("order_id", orderId);
+        if (itemError) throw itemError;
+      }
+    }
+
+    if (!hasStatusChange) {
+      const deliveryUpdates: Record<string, unknown> = {};
+      if (delivery) {
+        if (delivery.packageWeightG !== undefined) deliveryUpdates.package_weight_g = delivery.packageWeightG === null ? null : Number(delivery.packageWeightG) || null;
+        if (delivery.packageDimensions !== undefined) deliveryUpdates.package_dimensions = String(delivery.packageDimensions || "").trim() || null;
+        if (delivery.assignedDriver !== undefined) deliveryUpdates.assigned_driver = String(delivery.assignedDriver || "").trim() || null;
+        if (delivery.codCollectAmount !== undefined) deliveryUpdates.cod_collect_amount = Number(delivery.codCollectAmount) || 0;
+        // Địa chỉ/người nhận/ghi chú — cần khi "Xử lý đơn hàng" sửa lại các
+        // trường này ngay trong màn Bán hàng (mục brief 2026-09-10).
+        if (delivery.deliveryAddress !== undefined) deliveryUpdates.delivery_address = String(delivery.deliveryAddress || "").trim() || null;
+        if (delivery.deliveryName !== undefined) deliveryUpdates.delivery_name = String(delivery.deliveryName || "").trim() || null;
+        if (delivery.deliveryPhone !== undefined) deliveryUpdates.delivery_phone = String(delivery.deliveryPhone || "").trim() || null;
+        if (delivery.note !== undefined) deliveryUpdates.note = String(delivery.note || "").trim() || null;
+      }
+      const { data: updated, error: updateError } = Object.keys(deliveryUpdates).length
+        ? await supabase.from("orders").update(deliveryUpdates).eq("id", orderId).select("*, order_items(*)").single()
+        : await supabase.from("orders").select("*, order_items(*)").eq("id", orderId).single();
+      if (updateError) throw updateError;
+
+      let regenerateWarning = "";
+      if (regenerateInvoice) {
+        if (current.status !== "completed") {
+          return json({ ok: false, error: "Chỉ tạo lại hóa đơn khi đơn đã hoàn thành" }, 409);
+        }
+        try {
+          await createInvoiceDocument(supabase, orderId, auth.profile?.name || "admin");
+        } catch (invoiceError) {
+          console.error("Tạo lại hóa đơn bán hàng lỗi:", invoiceError);
+          regenerateWarning = "Không tạo lại được hóa đơn, thử lại sau.";
+        }
+      }
+      return json({ ok: true, order: updated, warning: regenerateWarning || undefined });
     }
     if (
       current.pricing_status !== "finalized" &&
@@ -440,6 +407,16 @@ export async function PATCH(req: NextRequest) {
     if (nextStatus === "shipping" && !current.shipping_at) updates.shipping_at = now;
     if (nextStatus === "completed" && !current.completed_at) updates.completed_at = now;
     if (nextStatus === "canceled" && !current.canceled_at) updates.canceled_at = now;
+    if (delivery) {
+      if (delivery.packageWeightG !== undefined) updates.package_weight_g = delivery.packageWeightG === null ? null : Number(delivery.packageWeightG) || null;
+      if (delivery.packageDimensions !== undefined) updates.package_dimensions = String(delivery.packageDimensions || "").trim() || null;
+      if (delivery.assignedDriver !== undefined) updates.assigned_driver = String(delivery.assignedDriver || "").trim() || null;
+      if (delivery.codCollectAmount !== undefined) updates.cod_collect_amount = Number(delivery.codCollectAmount) || 0;
+      if (delivery.deliveryAddress !== undefined) updates.delivery_address = String(delivery.deliveryAddress || "").trim() || null;
+      if (delivery.deliveryName !== undefined) updates.delivery_name = String(delivery.deliveryName || "").trim() || null;
+      if (delivery.deliveryPhone !== undefined) updates.delivery_phone = String(delivery.deliveryPhone || "").trim() || null;
+      if (delivery.note !== undefined) updates.note = String(delivery.note || "").trim() || null;
+    }
 
     const { data: updated, error: updateError } = await supabase
       .from("orders")
@@ -473,7 +450,43 @@ export async function PATCH(req: NextRequest) {
       if (deductError) console.error("deduct_inventory_for_order lỗi:", deductError.message);
     }
 
-    return json({ ok: true, order: updated });
+    // Hóa đơn bán hàng — phát hành đúng lúc HOÀN THÀNH GIAO HÀNG (không phải
+    // lúc chốt giá), khớp yêu cầu "lúc này mới tạo hoá đơn/invoice chứ nhỉ
+    // còn lúc xác nhận đơn hàng chỉ là phiếu tạm thôi" (2026-09-11). Không
+    // chặn đổi trạng thái nếu bước này lỗi — ghi log để tạo lại sau.
+    let invoiceWarning = "";
+    if (nextStatus === "completed" && current.status !== "completed") {
+      try {
+        await createInvoiceDocument(supabase, orderId, auth.profile?.name || "admin");
+      } catch (invoiceError) {
+        console.error("Tạo hóa đơn bán hàng lỗi:", invoiceError);
+        await supabase.from("orders").update({ invoice_document_status: "failed" }).eq("id", orderId);
+        invoiceWarning = "Đơn đã hoàn thành nhưng chưa tạo được hóa đơn. Có thể bấm tạo lại.";
+      }
+    }
+
+    // Push notification cho khách hàng (order-webapp cài PWA) — không chặn
+    // response nếu gửi lỗi/khách chưa bật thông báo, chỉ log lại.
+    const STATUS_PUSH_LABEL: Record<string, string> = {
+      confirmed: "đã được xác nhận",
+      shipping: "đang được giao",
+      completed: "đã giao thành công",
+      canceled: "đã bị hủy",
+    };
+    const pushLabel = STATUS_PUSH_LABEL[nextStatus];
+    if (pushLabel && updated?.customer_id) {
+      sendPushToCustomer(updated.customer_id, {
+        title: `Đơn ${updated.order_code} ${pushLabel}`,
+        body:
+          nextStatus === "completed"
+            ? "Cảm ơn bạn đã đặt hàng tại TPS1! Xem hóa đơn trong mục Đơn hàng của tôi."
+            : "Bấm để xem chi tiết đơn hàng.",
+        url: `/don-hang/${orderId}`,
+        tag: `order-${orderId}`,
+      }).catch((err) => console.error("sendPushToCustomer lỗi:", err));
+    }
+
+    return json({ ok: true, order: updated, warning: invoiceWarning || undefined });
   } catch (error) {
     console.error("Admin orders PATCH error:", error);
     return json(

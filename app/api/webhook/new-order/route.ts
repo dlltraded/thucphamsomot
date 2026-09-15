@@ -79,7 +79,7 @@ ${source ? `📍 Nguồn: ${source}` : ""}
 👤 Khách: <b>${order.customer_name || "—"}</b>
 📞 SĐT: ${order.customer_phone || "—"}
 🏢 Công ty: ${order.customer_company || "—"}
-💰 Tổng tiền: <b>${formatMoney(order.final_amount)}</b>
+💰 Tổng tiền: <b>${formatMoney(order.grand_total)}</b>
 📦 Trạng thái: ${order.status === "draft" ? "📝 Nháp (chờ KH xác nhận)" : "🔔 Chờ xử lý"}
 🕐 Lúc: ${formatDateTime(order.created_at)}
 ━━━━━━━━━━━━━━━━━
@@ -97,7 +97,7 @@ ${source ? `📍 Nguồn: ${source}` : ""}
 📋 Mã đơn: <code>${record.order_code || "—"}</code>
 👤 Khách: <b>${record.customer_name || "—"}</b>
 📞 SĐT: ${record.customer_phone || "—"}
-💰 Tổng tiền: <b>${formatMoney(record.final_amount)}</b>
+💰 Tổng tiền: <b>${formatMoney(record.grand_total)}</b>
 🕐 Xác nhận lúc: ${formatDateTime(record.updated_at)}
 ━━━━━━━━━━━━━━━━━
 👉 Đơn đang chờ chuẩn bị!`.trim();

@@ -23,3 +23,6 @@ tmp/
 *_backup.*
 _preview_*.jpg
 FB_ADS_TPS1_TEST_ASSETS/
+dummy.txt
+snap_*.png
+.temp/

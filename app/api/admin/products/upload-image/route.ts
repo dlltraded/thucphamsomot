@@ -16,7 +16,9 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-const CAN_EDIT_ROLES = new Set(["admin", "thu_mua"]);
+// Sale cũng được up ảnh — chỉ dùng ngay sau khi tự tạo sản phẩm mới trong lúc
+// bán (QuickAddProductModal), không phải để sửa ảnh hàng loạt của thu mua.
+const CAN_EDIT_ROLES = new Set(["admin", "thu_mua", "sale"]);
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
   if (!CAN_EDIT_ROLES.has(auth.profile?.role || "")) {
-    return json({ ok: false, error: "Chỉ Quản trị viên hoặc Thu mua được sửa ảnh sản phẩm" }, 403);
+    return json({ ok: false, error: "Không có quyền sửa ảnh sản phẩm" }, 403);
   }
 
   const formData = await req.formData().catch(() => null);

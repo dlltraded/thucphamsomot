@@ -13,6 +13,16 @@ import { setAdminSession } from "@/lib/admin-session";
 // hàng qua RPC verify_customer_login (RPC gốc đang dùng cho Zalo Mini App,
 // không đổi hành vi của RPC). Hai hệ dữ liệu (admin_profiles / vip_accounts)
 // không gộp vật lý — chỉ gộp ở API/UI đăng nhập này.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -23,21 +33,21 @@ export async function POST(req: NextRequest) {
     const password = typeof body.password === "string" ? body.password : "";
 
     if (!identifier || !password) {
-      return NextResponse.json({ ok: false, error: "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu" }, { status: 400, headers: corsHeaders });
     }
 
     const staffResult = await tryStaffLogin(identifier, password);
-    if (staffResult) return NextResponse.json(staffResult);
+    if (staffResult) return NextResponse.json(staffResult, { headers: corsHeaders });
 
     const customerResult = await tryCustomerLogin(identifier, password);
-    if (customerResult) return NextResponse.json(customerResult);
+    if (customerResult) return NextResponse.json(customerResult, { headers: corsHeaders });
 
     // Không tiết lộ identifier thuộc hệ nào (nhân viên hay khách hàng) để
     // tránh dò tài khoản — luôn trả cùng một thông báo chung.
-    return NextResponse.json({ ok: false, error: "Tên đăng nhập hoặc mật khẩu không đúng" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Tên đăng nhập hoặc mật khẩu không đúng" }, { status: 401, headers: corsHeaders });
   } catch (error) {
     console.error("Sale auth error:", error);
-    return NextResponse.json({ ok: false, error: "Lỗi hệ thống" }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Lỗi hệ thống" }, { status: 500, headers: corsHeaders });
   }
 }
 
@@ -101,8 +111,15 @@ interface CustomerLoginRow {
   name: string;
   phone: string;
   company: string;
+  address: string;
+  tax_code: string;
+  default_shipping_alias: string;
+  default_shipping_address: string;
+  default_shipping_name: string;
+  default_shipping_phone: string;
   tier: string;
   discount_percent: number;
+  verification_status: "pending" | "verified" | "rejected";
   must_change_password: boolean;
   order_session_token: string;
 }
@@ -130,8 +147,20 @@ async function tryCustomerLogin(identifier: string, password: string) {
       name: row.name,
       phone: row.phone,
       company: row.company,
+      address: row.address || "",
+      taxCode: row.tax_code || "",
+      // Khách B2B chỉ giao tới địa chỉ đã ký hợp đồng — nạp sẵn địa chỉ mặc
+      // định để DatHangPage tự điền, không bắt khách gõ tay mỗi lần đặt
+      // (yêu cầu 2026-09-11).
+      defaultShippingAddress: {
+        alias: row.default_shipping_alias || "",
+        address: row.default_shipping_address || row.address || "",
+        name: row.default_shipping_name || row.name || "",
+        phone: row.default_shipping_phone || row.phone || "",
+      },
       tier: row.tier,
       discountPercent: Number(row.discount_percent) || 0,
+      verificationStatus: row.verification_status || "verified",
       mustChangePassword: !!row.must_change_password,
     },
     // Dùng chung customer_sessions với Zalo Mini App — sale-webapp gửi kèm

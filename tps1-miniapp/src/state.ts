@@ -447,6 +447,7 @@ export const ordersState = atomFamily((status: OrderStatus) =>
           pricingMode: row.pricing_mode || "tier",
           priceRevision: Number(row.price_revision || 0),
           confirmationDocumentId: row.confirmation_document_id || undefined,
+          invoiceDocumentId: row.invoice_document_id || undefined,
         };
       });
 

@@ -4,11 +4,14 @@ import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const schema = z
   .object({
+    // "name" là người liên hệ, không phải tên khách lẻ — TPS1 chỉ bán sỉ cho
+    // công ty/cửa hàng nên bắt buộc "company" (tên công ty/cửa hàng), không
+    // còn tùy chọn như trước (yêu cầu 2026-09-11).
     name: z.string().trim().min(2).max(120),
     phone: z.string().trim().min(9).max(20),
     password: z.string().min(8).max(100),
     confirmPassword: z.string().min(8).max(100),
-    company: z.string().trim().max(180).optional().default(""),
+    company: z.string().trim().min(2, "Vui lòng nhập tên công ty / cửa hàng").max(180),
     email: z.union([z.literal(""), z.string().trim().email().max(180)]).optional().default(""),
     source: z.enum(["zalo_mini_app", "website"]).optional().default("zalo_mini_app"),
   })

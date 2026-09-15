@@ -39,8 +39,9 @@ declare
   v_kept_ids uuid[] := array[]::uuid[];
   v_item_count integer := 0;
 begin
-  if p_customer_tier not in ('VIP0', 'VIP1', 'VIP2', 'VIP3') then
-    raise exception 'Hạng khách hàng không hợp lệ';
+  -- Bo hard-check VIP0/VIP1/VIP2/VIP3: chap nhan bat ky ma tier nao (ke ca tier tuy chinh).
+  if coalesce(trim(p_customer_tier), '') = '' then
+    raise exception 'Hang khach hang khong duoc bo trong';
   end if;
   if p_pricing_mode not in ('tier', 'order_discount', 'manual_item_price') then
     raise exception 'Chế độ tính giá không hợp lệ';
@@ -64,8 +65,12 @@ begin
   select * into v_customer from public.vip_accounts where id = v_order.customer_id for update;
   if not found then raise exception 'Không tìm thấy tài khoản khách hàng'; end if;
 
+  -- Tra cuu chiet khau cua tier dong: neu tier chua co trong bang thi mac dinh 0%
   select coalesce(discount_percent, 0) into v_tier_discount
   from public.customer_tiers where code = p_customer_tier;
+  if not found then
+    v_tier_discount := 0;
+  end if;
 
   update public.vip_accounts
   set discount_tier = p_customer_tier,

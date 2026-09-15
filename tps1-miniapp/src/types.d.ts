@@ -86,4 +86,7 @@ export interface Order {
   pricingMode?: "tier" | "order_discount" | "manual_item_price";
   priceRevision?: number;
   confirmationDocumentId?: string;
+  // Hóa đơn bán hàng — chỉ có giá trị khi đơn đã "completed" (hoàn thành giao
+  // hàng), khác với confirmationDocumentId (phiếu tạm, có ngay khi chốt giá).
+  invoiceDocumentId?: string;
 }

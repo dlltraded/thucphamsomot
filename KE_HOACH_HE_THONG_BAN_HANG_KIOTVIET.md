@@ -4,7 +4,9 @@
 
 ## BẮT ĐẦU TỪ ĐÂY (cho AI coding assistant / dev tiếp theo)
 
-**Việc cần làm ngay: Giai đoạn A ở mục 13.3** — nền tảng đăng nhập & phân quyền hợp nhất. Chi tiết đầy đủ nằm ở mục 13.3 bên dưới, tóm tắt nhanh:
+> **Cập nhật 10/09/2026:** Giai đoạn A-D đã xong, Giai đoạn E (khách tự đặt hàng + Excel) đã có bản đầu. **Việc cần làm tiếp theo ngay bây giờ là mục 14** — đối chiếu trực tiếp với KiotViet thật + file export thật, liệt kê khoảng trống cụ thể còn lại (giao hàng tự vận chuyển, import bảng giá hàng loạt, giao thiếu/dư theo dòng...) theo đúng thứ tự ưu tiên ở mục 14.5. Phần dưới đây (Giai đoạn A) là bối cảnh lịch sử, giữ lại để tra cứu.
+
+**Việc cần làm ngay (lịch sử — đã hoàn tất): Giai đoạn A ở mục 13.3** — nền tảng đăng nhập & phân quyền hợp nhất. Chi tiết đầy đủ nằm ở mục 13.3 bên dưới, tóm tắt nhanh:
 
 1. Migration mới trong `tps1-miniapp/supabase/migrations/` (đặt tên theo ngày, ví dụ `20260910_extend_admin_roles.sql`) mở rộng ràng buộc `admin_profiles.role` từ `check (role in ('admin','sale'))` sang thêm `'truong_phong'`, `'thu_mua'`.
 2. Viết lại `app/api/sale-auth/route.ts`: thử xác thực nhân viên (`admin_profiles` + Supabase Auth, cơ chế thật đã có từ đợt vá bảo mật) trước; nếu không khớp, thử xác thực khách hàng qua RPC `verify_customer_login` (đang dùng cho Zalo Mini App); trả về `{ userType: 'staff' | 'customer', role, ...profile }`.
@@ -216,6 +218,209 @@ Chạy xen kẽ B-F, không dồn cuối. Từ Giai đoạn C trở đi, đối 
 
 Phụ thuộc dây chuyền B→C→D→E: thu mua trễ (tuần 1-3) kéo lùi cả chuỗi. Điểm trừ tồn kho "lúc khách xác nhận" cần khớp thực tế vận hành (đơn nháp giữ chỗ lâu có thể gây lệch tạm thời) — theo dõi sát 1-2 tuần đầu. Giai đoạn F làm quá sớm trước khi sale-webapp ổn định sẽ gây gián đoạn — không rút ngắn thời gian dùng thử chỉ để chạy kịp lộ trình.
 
+## 14. Đối chiếu trực tiếp với KiotViet thật + file export thật (10/09/2026)
+
+> Nguồn: cào trực tiếp 5 màn hình KiotViet đang chạy thật của TPS1 (`Customers`, `PriceBook`, `Products`, `Orders`, `Sale/POS`) + 4 file Excel mẫu/export thật do sếp gửi (`MauFileBangGia.xlsx`, `MauFileImportSanPham.xlsx`, `BangGia_KV...xlsx` — 5.296 dòng, `BaoCaoDatHangTheoGiaoDich_KV...xlsx` — 8.101 dòng). Mục đích: xác nhận lại mục 13.2 bằng dữ liệu thật, chỉ ra khoảng trống schema/UI cụ thể còn lại sau Giai đoạn A-D, để hoàn thiện nốt Giai đoạn E theo đúng yêu cầu "đặt hàng như trang Sale KiotViet thật".
+
+### 14.1 Những gì đã khớp đúng (không cần sửa)
+
+- Cấu trúc báo cáo `app/api/admin/reports/sales-detail/export` (nhóm hàng → mặt hàng → đơn/khách) đã đúng đúng logic cột trong `BaoCaoDatHangTheoGiaoDich` thật (mã đơn, khách hàng, mã/tên hàng, đơn vị, số lượng, thành tiền theo dòng).
+- Mô hình bảng giá theo hạng (`customer_contract_prices` ưu tiên hơn `product_tier_prices` ưu tiên hơn giá gốc) đúng thứ tự KiotViet thật dùng (giá hợp đồng riêng > bảng giá chung theo nhóm khách).
+- Đa tab đặt hàng cùng lúc trong `PosCreatePage` đúng cơ chế "Đặt hàng 1/2/3..." của màn Sale thật.
+- Quyết định giữ mặt hàng giá 0đ hiển thị với nhãn "Liên hệ báo giá" thay vì ẩn — khớp thực tế: KiotViet thật cũng có rất nhiều mã hàng "Giá bán = 0" (báo giá tại chỗ) lẫn trong danh sách 5.296 mã.
+
+### 14.2 Khoảng trống mới phát hiện — ưu tiên cao (nên làm trước khi coi Giai đoạn E là xong)
+
+1. **Giao hàng tự vận chuyển thiếu dữ liệu vận đơn.** Màn Sale thật ở chế độ "Bán giao hàng" có: người nhận khác khách đứng đơn (đã có `delivery_name/phone/address`), **khối lượng (gram) + kích thước dài×rộng×cao**, **người giao hàng** (chọn tài xế nội bộ, VD "DOIXE"), **thu hộ tiền COD** (số tiền tài xế cần thu, tách khỏi tổng đơn), và với đối tác giao hàng ngoài thì có **mã vận đơn**. `orders` hiện chưa có cột nào cho khối lượng/kích thước/người giao/COD-tại-giao. Cần thêm vào `orders`: `package_weight_g numeric`, `package_dimensions text` (VD "10x10x10"), `assigned_driver text`, `cod_collect_amount numeric default 0`. Đây là phần TPS1 sẽ dùng nhiều nhất vì chủ yếu tự giao bằng xe công ty (đã ghi ở mục 1).
+2. **Chưa theo dõi giao thiếu/giao nhiều đợt trên từng dòng hàng.** Đơn thật của KiotViet có cột số lượng dạng "đã đặt/đã giao" (VD "0.5/0") và báo cáo có cặp cột "SL Đã nhận / SL còn lại" — rất quan trọng với hàng tươi sống hay thiếu/dư so với đặt. `order_items` cần thêm `quantity_delivered numeric not null default 0`; cập nhật khi soạn hàng/giao hàng xác nhận số lượng thực giao, không bắt buộc bằng số lượng đặt.
+3. **Thiết lập giá (PriceBook) chưa có luồng upload hàng loạt bằng Excel với công thức %.** File `MauFileBangGia.xlsx` thật cho thấy KiotViet cho upload file 5 cột (Mã hàng, Tên hàng, rồi N cột "Tên bảng giá X") để nạp nhiều bảng giá cùng lúc, và trong UI có **tùy chọn nhập theo công thức % từ giá vốn** thay vì gõ tay từng giá — đúng yêu cầu gốc của sếp ở brief ("up bảng giá... có option sử dụng công thức nhập % ra giá bán"). Hiện `ProductsPage`/`ProductDetailPage` chỉ sửa giá từng sản phẩm một hoặc import tồn kho, chưa có import bảng giá hàng loạt. Cần route mới `app/api/admin/products/import-pricebook` (đọc Excel, cột 1-2 là mã/tên để khớp SKU, các cột sau map vào `product_tier_prices` theo hạng khách hoặc số tiền cố định; hỗ trợ chế độ "% từ giá vốn" tính `giá vốn * (1 + %)` khi ô để trống).
+
+### 14.3 Khoảng trống — ưu tiên trung bình (đưa vào Giai đoạn E nốt hoặc đầu Giai đoạn F)
+
+4. **`products.last_import_price` (Giá nhập cuối) chưa tồn tại.** Cột thật trong `BangGia_KV` xuất ra riêng biệt với "Giá vốn" (giá vốn có thể là giá bình quân, giá nhập cuối là lần nhập gần nhất — thu mua dùng để so sánh biến động giá nhà cung cấp). `import-inventory` route đã có sẵn (nhập tồn kho từ Excel) — chỉ cần thêm cột `last_import_price numeric` vào `products` và set giá trị này mỗi lần route đó xử lý một dòng nhập kho có đơn giá.
+5. **Khách hàng B2B thật giao hàng tới nhiều địa chỉ/chi nhánh khác nhau của cùng một công ty.** Quan sát trực tiếp trên đơn thật: cùng một mã khách hàng công ty (VD "HIEPPHATFOOD") có nhiều đơn giao tới các địa điểm khác nhau ("XƯỞNG G8", "NHÀ THIẾU NHI THÀNH PHỐ", "ASIA 2"...) — thực chất là nhiều địa chỉ giao con dưới 1 khách hàng lớn, đúng như tab "Địa chỉ nhận hàng" (bảng nhiều dòng) trong Khách hàng thật. `vip_accounts` hiện chỉ có 1 địa chỉ mặc định (`default_shipping_*`). Cần bảng mới `customer_addresses` (customer_id, label, address, contact_name, contact_phone, is_default) để một khách chọn đúng địa chỉ giao khi đặt hàng, thay vì luôn dùng địa chỉ mặc định hoặc gõ tay lại mỗi lần.
+6. **3 chế độ bán khác nhau trên màn Sale/POS thật (Bán nhanh / Bán thường / Bán giao hàng) chưa có trong `PosCreatePage`.** Không phải 3 luồng dữ liệu khác nhau — cùng 1 `OrderTab`, chỉ khác mật độ thông tin hiển thị: "Bán nhanh" ẩn bớt phần khách hàng/giao hàng để lên đơn tại quầy cực nhanh, "Bán giao hàng" mới hiện đủ khối lượng/kích thước/người giao ở mục 14.2-1. Nên làm thành 1 thanh chuyển chế độ (giống thanh dưới cùng màn Sale thật) chỉ ẩn/hiện field trong cùng form, không tách route.
+
+### 14.4 Khoảng trống — ưu tiên thấp (ghi nhận, chưa cần làm ngay)
+
+7. **Phân cấp nhóm hàng 3 cấp** (`Nhóm hàng(3 Cấp)` trong báo cáo thật) — hệ thống hiện chỉ có `category` phẳng 1 cấp. Đổi sang cây 3 cấp là việc lớn, chỉ nên làm nếu sau này thu mua thấy báo cáo 1 cấp không đủ phân tích — không chặn Giai đoạn E/F.
+8. **Nhập đơn hàng loạt cho nhiều khách trong 1 file** (khác với Excel tự đặt hàng của khách đã có) — cột `Mã khách hàng` trong `MauFileImportSanPham.xlsx` cho thấy KiotViet hỗ trợ nhân viên nhập sẵn đơn cho nhiều khách gọi điện đặt hàng trong cùng 1 file. Có giá trị nhưng không cấp thiết vì sale đã có `PosCreatePage` đa tab + khách đã có Excel tự đặt hàng riêng — để dành cho Giai đoạn F nếu sale thấy cần.
+9. **"Thu khác"/"Chênh lệch giá"** trên báo cáo thật — có thể tính ra ngay ở tầng hiển thị report (chênh lệch = giá bán thực - giá niêm yết) mà không cần cột DB mới; chỉ cần khi làm lại báo cáo mới nên thêm 2 cột này vào Excel export nếu sếp thấy cần đối chiếu với thu mua.
+
+### 14.5 Đề xuất thứ tự làm tiếp (khớp vào Giai đoạn E đang dở + đầu Giai đoạn F)
+
+| Việc | Vì sao ưu tiên | Loại thay đổi | Trạng thái |
+|---|---|---|---|
+| 14.2-1: cột giao hàng tự vận chuyển (khối lượng/kích thước/người giao/COD) | Đang là nhu cầu vận hành thật hằng ngày, TPS1 tự giao là chính | Migration + `PosCreatePage`/`OrderDetailPage` | ✅ Đã code xong 10/09/2026, **chờ chạy migration** `20260910f_delivery_fulfillment_lastprice.sql` |
+| 14.2-3: import bảng giá hàng loạt bằng Excel (kèm công thức %) | Sếp yêu cầu trực tiếp trong brief, thu mua cần để nạp giá ban đầu nhanh | Route mới `import-pricebook` + UI trong `ProductsPage` | ✅ Đã code xong 10/09/2026 (không cần migration riêng, dùng lại `product_tier_prices`) |
+| 14.2-2: `quantity_delivered` theo dòng | Cần cho báo cáo giao thiếu/dư chính xác | Migration nhỏ + UI trong `OrderDetailPage` (cột "Đã giao") | ✅ Đã code xong 10/09/2026, **chờ chạy migration** ở trên |
+| 14.3-4: `last_import_price` | Rẻ, tận dụng route `import-inventory` có sẵn (đã thêm cột "Đơn giá nhập" vào mẫu) | Migration 1 cột | ✅ Đã code xong 10/09/2026, **chờ chạy migration** ở trên |
+| 14.3-6: 3 chế độ hiển thị Bán nhanh/thường/giao hàng | Thuần UI, không chặn nghiệp vụ | Chỉ sửa `PosCreatePage` | ✅ Đã code xong 10/09/2026, không cần migration |
+| 14.3-5: `customer_addresses` nhiều địa chỉ giao | Khách công ty lớn cần, nhưng có thể tạm dùng địa chỉ gõ tay trong lúc chờ | Bảng mới + UI chọn địa chỉ | ✅ Đã code xong 11/09/2026, **chờ chạy migration mới** `20260911_customer_addresses.sql` |
+
+Mục 14.4 (7,8,9) không đưa vào lộ trình 8 tuần hiện tại, ghi nhận để cân nhắc sau khi chạy song song ổn định (Giai đoạn G).
+
+## 16. Sửa luồng "Xử lý đơn hàng" + hoàn thiện Đơn hàng/Soạn hàng/Khách hàng (10/09/2026, vòng 2)
+
+Sếp chỉ ra luồng "Xử lý đơn hàng" dựng trước đó (bản đầu, điều hướng sang OrderDetailPage) chưa đúng — đã cào lại trực tiếp thanh hành động thật ở cuối bảng chi tiết đơn KiotViet (`/man/#/Orders`, bấm 1 dòng): **Hủy | Sao chép | Xuất file | Xử lý đơn hàng | Lưu | Lưu | Kết thúc**, trong đó "Xử lý đơn hàng" mở đúng màn Sale/POS (`/sale/#/`) với đầy đủ dữ liệu đơn (kèm mã đơn để dễ theo dõi) — không phải màn chi tiết đơn giản.
+
+**Đã sửa lại đúng theo luồng thật:**
+- `PosCreatePage` nhận `?processOrderId=` (từ nút "Xử lý đơn hàng" ở OrdersPage/OrderDetailPage): nạp đơn có sẵn vào 1 tab mới (khách, giỏ hàng, giao hàng, kiện hàng), hiện banner + tên tab là mã đơn. Nút submit đổi thành "CẬP NHẬT & CHỐT ĐƠN {mã}" — gọi lại đúng endpoint chốt giá đã có (`admin_finalize_order_v2`/legacy line editor, chế độ `manual_item_price`) để SỬA đơn có sẵn, không tạo đơn mới; không đụng `admin_create_order`.
+- `OrdersPage`: đổi từ dạng card sang **bảng + filter** đúng màn Đặt hàng KiotViet (cột Mã đơn/Thời gian/Khách hàng/Sale/SL/Khách cần trả/Đã trả/Trạng thái + dòng tổng ở đầu bảng), thêm bộ lọc theo ngày, nút **Xuất Excel** toàn bộ danh sách (route mới `app/api/admin/orders/export`, có branch `?orderId=` xuất chi tiết 1 đơn đúng cấu trúc file `ChiTietDatHang` thật của KiotViet).
+- `OrderDetailPage`: thêm nút "Xử lý đơn hàng" (mở lại PosCreatePage ở chế độ trên) và nút "Xuất file" (Excel chi tiết đơn).
+- `SoanHangPage` (Soạn hàng hôm nay): trước đây không xuất được gì — thêm nút Xuất Excel (route mới `app/api/admin/reports/packing-list/export`, 2 sheet: tổng hợp theo sản phẩm + chi tiết theo đơn/khách hàng).
+- `CustomersPage`/`CustomerDetailPage` (trang mới): trước đây chỉ xem danh sách, không sửa được gì. Giờ bấm vào 1 khách mở trang sửa đầy đủ — tái dùng đúng các RPC **đã có sẵn và đang chạy thật trong quanly** (`admin_update_customer`, `admin_create_customer`, `admin_toggle_customer_active`, `admin_reset_customer_password`) để không viết trùng logic; thêm quản lý **bảng giá hợp đồng riêng** (`customer_contract_prices` — đã có bảng, chỉ thêm UI), thống kê số đơn/doanh thu/công nợ theo khách, danh sách đơn gần đây, và Xuất Excel toàn bộ khách hàng kèm thống kê (route mới `app/api/admin/customers/export`).
+- **Xuất hóa đơn điện tử (VAT) cho khách B2B có mã số thuế: CHƯA làm** — cần tích hợp nhà cung cấp hóa đơn điện tử thật (MISA/VNPT/Viettel...), ngoài phạm vi có thể tự dựng. Đã lưu sẵn `tax_code` trên form khách hàng và cảnh báo rõ trong UI để không gây hiểu nhầm là đã xuất được hóa đơn thật.
+
+Không cần migration mới cho vòng này — toàn bộ dựa trên bảng/cột/RPC đã có sẵn (kể cả các cột giao hàng/`quantity_delivered` thêm ở mục 14, đã có migration `20260910f_delivery_fulfillment_lastprice.sql` từ vòng trước, cần đã chạy).
+
+**Việc cần làm để dùng được các mục đã ✅ ở trên:** chạy migration `tps1-miniapp/supabase/migrations/20260910f_delivery_fulfillment_lastprice.sql` trên Supabase SQL Editor (chỉ thêm cột mới, không đổi dữ liệu cũ, an toàn chạy bất kỳ lúc nào). Import bảng giá (14.2-3) không phụ thuộc migration này, dùng được ngay.
+
+## 17. `customer_addresses` — nhiều địa chỉ giao hàng cho khách B2B (11/09/2026)
+
+Hoàn tất mục 14.3-5 còn lại — bảng mới `customer_addresses` (migration `20260911_customer_addresses.sql`, RLS cùng nguyên tắc với `customer_contract_prices`: chỉ admin hoặc đúng sale phụ trách khách đó). `default_shipping_*` trên `vip_accounts` vẫn là địa chỉ mặc định, bảng này chỉ thêm các địa chỉ PHỤ (xưởng/bếp/chi nhánh khác của cùng 1 khách công ty).
+
+- `CustomerDetailPage`: thêm/sửa/xóa địa chỉ, đánh dấu 1 địa chỉ ưu tiên (sao vàng).
+- `PosCreatePage`: khi chọn khách, hiện các nút chip địa chỉ đã lưu ngay trên ô "Địa chỉ giao hàng" — bấm 1 phát điền cả địa chỉ + người nhận + SĐT, không cần gõ tay lại mỗi lần; áp dụng cả khi tạo đơn mới lẫn khi "Xử lý đơn hàng" đơn có sẵn.
+
+**Việc cần làm:** chạy thêm migration `tps1-miniapp/supabase/migrations/20260911_customer_addresses.sql` (bảng hoàn toàn mới, không đụng dữ liệu cũ). Trang khách hàng/POS đã có code chờ sẵn — chưa chạy migration thì phần "Các địa chỉ giao hàng khác" chỉ hiện trống, không lỗi vỡ trang.
+
+**Đến đây, toàn bộ mục 14 (đối chiếu KiotViet thật) đã hoàn tất phần code.** Việc còn lại ngoài phạm vi tự dựng: hóa đơn điện tử VAT (mục 16), và Giai đoạn F (chuyển dần khỏi quanly) + Giai đoạn G (chạy song song đối chiếu) theo lộ trình gốc mục 13.8/13.9 — chưa bắt đầu, nên làm sau khi sếp xác nhận các tính năng ở mục 14-17 chạy ổn định thực tế 1-2 tuần.
+
+## 18. Hóa đơn bán hàng phát hành lúc "Hoàn thành" — tách khỏi phiếu tạm (11/09/2026)
+
+Sếp chỉ ra đúng: chứng từ PDF cũ (`order_confirmation`, sinh ra lúc **chốt giá**) chỉ là **phiếu tạm** — khách có thể còn đổi ý/khiếu nại trước khi nhận hàng xong. Hóa đơn thật sự phải phát hành lúc đơn chuyển sang **"Hoàn thành"** (đã giao xong), và Mini App phải đồng bộ: chỉ cho xem hóa đơn khi đơn đã hoàn thành, không phải ngay khi chốt giá như trước.
+
+**Đã làm — 2 loại chứng từ tách biệt hoàn toàn (khác `document_type` trong `order_documents`, không đè lên nhau):**
+- `order_confirmation` (đã có từ trước) — phiếu tạm, sinh lúc chốt giá, không đổi.
+- `invoice` (mới) — **Hóa đơn bán hàng**, tự động sinh khi PATCH đổi `status` sang `completed` (route `app/api/admin/orders` PATCH, hàm `createInvoiceDocument`), dùng template PDF mới `lib/sales-invoice-pdf.ts` — tiêu đề "HÓA ĐƠN BÁN HÀNG", có mã số thuế khách (nếu có), số đã thanh toán/còn nợ tại thời điểm hoàn thành. **Ghi rõ ở footer: không phải hóa đơn GTGT** — hệ thống chưa tích hợp nhà cung cấp hóa đơn điện tử thật (mục 16), tránh gây hiểu nhầm là chứng từ thuế hợp lệ.
+- Migration mới `20260911b_completion_invoice.sql`: thêm cột `orders.invoice_document_status`.
+- Nhân viên: nút "Tải hóa đơn" mới trong `OrderDetailPage` (chỉ hiện khi `status === 'completed'`), route tải mới `app/api/admin/orders/document` (dùng chung cho cả 2 loại chứng từ qua `?type=`). Có thể tạo lại hóa đơn qua PATCH `regenerateInvoice: true` nếu lần đầu lỗi.
+- Khách hàng (Mini App): nút "Tải PDF xác nhận đơn hàng" cũ **giữ nguyên** (vẫn xem được ngay khi chốt giá — đúng vai trò phiếu tạm); thêm nút **"Tải hóa đơn"** mới, chỉ hiện khi `status === 'completed'`, gọi route mới `app/api/customer/order-invoice` (tự chặn 404 nếu đơn chưa hoàn thành, không dựa vào ẩn nút phía client). Sửa luôn 1 lỗi tiềm ẩn ở `app/api/customer/orders`: trước đây lấy nhầm chứng từ mới nhất theo `revision` mà không lọc `document_type`, có thể lấy lộn phiếu tạm/hóa đơn khi 2 loại trùng revision — giờ lọc riêng từng loại.
+
+**Việc cần làm:** chạy thêm migration `tps1-miniapp/supabase/migrations/20260911b_completion_invoice.sql` (chỉ thêm 1 cột, an toàn). Không cần bảng mới — dùng lại đúng `order_documents`/bucket `order-confirmations` đã có.
+
+## 19. "Soạn hàng" → "Xử lý đơn hàng" có nhận-soạn-xuất file rõ ràng (11/09/2026)
+
+Trang Soạn hàng cũ chỉ xem tổng hợp thụ động, không ai "nhận" đơn nào nên dễ nhầm lẫn 2 người cùng soạn 1 đơn hoặc không ai soạn. Thiết kế lại theo đúng yêu cầu, chốt qua 2 câu hỏi với sếp:
+
+**Trạng thái soạn hàng mới trên `orders`** (migration `20260911c_order_packing_workflow.sql`): `packing_status` (`not_started`/`in_progress`/`done`) + `packed_by` (ai đang soạn) + mốc thời gian nhận/xong. Mặc định `not_started` cho mọi đơn — an toàn, không đụng dữ liệu cũ.
+
+**Luồng chuẩn:**
+1. Nhân viên vào "Xử lý đơn hàng", thấy danh sách đơn đã xác nhận nhưng **chưa soạn xong** (lọc nhanh: Cần xử lý/Chưa soạn/Đang soạn/Đã soạn).
+2. Chọn 1 hoặc nhiều đơn "Chưa soạn" → bấm **"Nhận soạn & xuất file"** → hệ thống gán `packed_by` = chính người đó, chuyển `in_progress` (khóa lại — người khác thấy "Đang soạn — Tên X", không chọn trùng được), đồng thời tải ngay 1 file Excel: sheet "Tổng hợp cần soạn" (gộp số lượng theo sản phẩm) + sheet "Danh sách đơn hàng" + **1 sheet riêng cho từng đơn** đã chọn (đúng yêu cầu).
+3. Soạn xong ngoài kho, quay lại chọn đúng các đơn đó (đang hiện "Đang soạn — Tên mình") → bấm **"Đánh dấu đã soạn xong"** → chuyển `done`.
+4. Cần đổi người soạn: **"Hủy nhận (trả đơn)"** — chỉ chính người đã nhận hoặc **Admin/Trưởng phòng** mới bấm được (đã chốt với sếp: nhân viên thường không giành được đơn của người khác, tránh dẫm chân).
+5. "Xuất lại file" nếu lỡ mất bản in mà chưa muốn đổi trạng thái.
+
+API mới: `app/api/admin/orders/packing` (claim/complete/release, tự chặn giành đơn sai người + báo rõ đơn nào bị bỏ qua và lý do); `app/api/admin/reports/packing-list/export` mở rộng thêm `?orderIds=` để xuất đúng các đơn vừa chọn với sheet riêng từng đơn (chế độ cũ theo khoảng ngày vẫn còn, không xóa).
+
+**Việc cần làm:** chạy thêm migration `tps1-miniapp/supabase/migrations/20260911c_order_packing_workflow.sql`.
+
+## 20. Xác thực khách hàng — làm rõ luồng cũ + thêm xác thực thủ công (11/09/2026)
+
+Sếp nhắc đúng: hệ thống **đã có sẵn** cơ chế này từ trước (`register_customer_account`, `admin_finalize_order_v2` trong `20260813_vip0_order_finalization.sql`) — khách tự đăng ký qua web/Mini App luôn tạo ở `verification_status = 'pending'` (VIP0), tự động chuyển `'verified'` khi nhân viên **chốt giá đơn đầu tiên**. Cơ chế backend này vẫn nguyên vẹn, không sửa. Vấn đề là **sale-webapp mới (CustomersPage/CustomerDetailPage/PosCreatePage) chưa hề hiển thị trạng thái này** — nhân viên không biết khách nào mới, chưa xác minh.
+
+**Đã bổ sung:**
+- `CustomersPage`: cột "Xác thực" (badge Chờ xác thực/Đã xác thực/Đã từ chối) + nút lọc nhanh "Chờ xác thực (N)".
+- `CustomerDetailPage`: thẻ "Xác thực khách hàng" riêng — hiện nguồn đăng ký (web/Mini App/nhân viên tạo), thời điểm đăng ký, ai/khi nào đã xác thực. Thêm nút **"Xác thực khách hàng"** / **"Từ chối"** để nhân viên xác minh thủ công **trước khi khách kịp đặt đơn** (ví dụ gọi điện xác minh) — không cần chờ có đơn hàng mới xác thực được như trước, đúng yêu cầu "tránh khách đặt đơn ảo". RPC mới `admin_verify_customer` (migration `20260911d_admin_verify_customer.sql`) — không sửa `admin_update_customer` đang chạy thật trong quanly.
+- `PosCreatePage`: dropdown chọn khách hiện thêm "— chưa xác thực" nếu khách chưa xác minh; khi đã chọn, hiện cảnh báo màu vàng nhắc nhân viên kiểm tra kỹ trước khi lên đơn.
+
+**Việc cần làm:** chạy thêm migration `tps1-miniapp/supabase/migrations/20260911d_admin_verify_customer.sql`.
+
+## 21. Áp giá hàng ngày + xác nhận hàng loạt — bài toán 500 đơn/ngày (11/09/2026)
+
+Vấn đề thật: xác nhận đơn chủ yếu là áp đúng giá cho mặt hàng để 0đ (thịt/hải sản tươi biến động giá mỗi ngày) — không thể mở tay từng đơn khi 1 ngày có hàng trăm đơn từ hàng trăm bếp. Đã chốt 3 quyết định với sếp trước khi làm:
+1. Giá hàng ngày **không ghi đè** giá hợp đồng riêng (khách đã có giá riêng thì giữ nguyên).
+2. Áp giá xong **chưa tự khóa đơn** — vẫn cần bấm "Xác nhận hàng loạt" riêng để rà soát trước.
+3. Phạm vi áp giá **theo ngày cụ thể** (mặc định hôm nay), không gộp lẫn các ngày.
+
+**Trang mới "Áp giá hàng ngày"** (`/ap-gia-hang-ngay`, `BulkPricingPage.tsx`) — luồng 2 bước đúng thứ tự sếp đề xuất ("cập nhật giá → xác nhận đơn hàng → soạn hàng"):
+- **Bước 1 — Áp giá:** bảng liệt kê mọi mặt hàng xuất hiện trong đơn "chờ xác nhận" của ngày đã chọn (mặt hàng còn 0đ lên đầu), nhập giá 1 lần → RPC mới `admin_bulk_apply_price` (migration `20260911e_bulk_daily_pricing.sql`) tự lan ra **mọi dòng hàng cùng SKU** trong các đơn pending đúng ngày đó, dùng lại `resolve_product_price()` có sẵn nên khách có giá hợp đồng riêng tự động được giữ nguyên (đúng quyết định #1), khách theo hạng tự tính theo `product_tier_prices` hoặc giá vừa nhập. Chỉ cập nhật `order_items`, chưa đụng `orders.subtotal/grand_total` (đúng quyết định #2 — vẫn tạm tính).
+- **Bước 2 — Xác nhận hàng loạt:** bảng đơn của ngày đó, đơn nào hết mặt hàng 0đ mới chọn được, bấm "Xác nhận hàng loạt" → route mới `app/api/admin/orders/bulk-finalize` lặp qua từng đơn, **dùng lại đúng lõi chốt giá đơn lẻ** (`finalizeOrderCore`, tách ra `lib/order-finalize.ts` để dùng chung với chốt giá 1 đơn ở OrderDetailPage/PosCreatePage — tránh viết 2 công thức tính tổng khác nhau, rủi ro sai lệch). Đơn nào lỗi/còn thiếu giá bị bỏ qua kèm lý do rõ ràng, không chặn các đơn còn lại.
+- Sau khi xác nhận hàng loạt, đơn chuyển hẳn "Đã xác nhận" — sẵn sàng qua trang "Xử lý đơn hàng" (mục 19) để nhận soạn như bình thường, đúng luồng 3 bước sếp mô tả.
+
+**Việc cần làm:** chạy thêm migration `tps1-miniapp/supabase/migrations/20260911e_bulk_daily_pricing.sql`.
+
+## 22. `order-webapp` — kết quả build & test thật lần đầu (14/09/2026)
+
+Cập nhật mục 14.9 (webapp đặt hàng RIÊNG cho khách hàng, tách khỏi `sale-webapp` nội bộ): bản đầu viết xong lúc môi trường bị chặn npm registry nên chưa từng chạy `npm install`/build. Hôm nay có terminal thật, đã chạy hết checklist bàn giao:
+
+- `npm install` trong `order-webapp/`: sạch, 0 lỗi dependency (`react-router-dom@7.18.3`, `tailwindcss@4.3.3`, `vite@8.2.2`...).
+- `npm run build`: phát hiện 1 lỗi — `tsconfig.app.json` dùng `baseUrl` (đã deprecated ở TypeScript 6). Đã sửa: bỏ `baseUrl`, giữ `paths: { "@/*": ["./src/*"] }` (đủ cho `moduleResolution: "bundler"`). Sau khi sửa, build sạch hoàn toàn, không còn type error nào khác — các interface `Product/Order/CustomerSession/ExcelMatchResult` viết từ trước khớp đúng response thật.
+- Chạy song song `tps1-next` (cổng 3001, đúng cấu hình máy dev hiện tại — xem `.claude/launch.json` và comment trong `sale-webapp/vite.config.ts`) và `order-webapp` (cổng 5174, proxy `/api` → 3001).
+- Test end-to-end bằng 1 tài khoản khách hàng **test tự tạo** qua RPC `admin_create_customer` (dùng `SUPABASE_SERVICE_ROLE_KEY`, không đụng khách thật — mã `TPS1-F17B`, tên "TEST Bàn giao order-webapp", cần dọn/deactivate sau khi hết dùng để test luồng xác nhận đơn phía sale):
+  1. Đăng nhập mã/mật khẩu tạm → tự chuyển `/doi-mat-khau`, không vào được trang khác — đúng.
+  2. Đổi mật khẩu → về `/`, session cập nhật `mustChangePassword: false` — đúng.
+  3. Trang sản phẩm: tìm kiếm, lọc nhóm hàng, phân trang (test thấy 6 trang), hiển thị đúng "Liên hệ báo giá" cho hàng 0đ và "Tạm hết hàng" — đúng như đối chiếu KiotViet thật ở mục 14.1.
+  4. Giỏ hàng → đặt hàng: tạo đơn `DH-20260914-000011` thành công; đã đối chiếu trực tiếp trong bảng `orders`/`order_items` thật (không qua UI sale-webapp vì không có tài khoản nhân viên) — dữ liệu lưu đúng, đầy đủ cột (`packing_status`, `debt_amount`, `pricing_mode`...), cùng schema nhân viên đang dùng.
+  5. Đặt hàng bằng Excel: tải file mẫu qua `/api/customer/order/import-excel` — 200 OK.
+  6. Đơn hàng của tôi + chi tiết đơn: hiển thị đúng, đơn còn "Chờ xác nhận" nên chưa có nút tải PDF — đúng thiết kế mục 18 (phiếu tạm chỉ sinh lúc sale chốt giá, chưa test được vì không có tài khoản sale).
+  7. Trường hợp lỗi: sai mật khẩu → thông báo rõ ràng, không crash. Gọi `/api/customer/orders` không kèm cookie/token → 401 `"Vui lòng đăng nhập lại"`, không crash trắng trang.
+- Không phát hiện lỗi console/network nào suốt quá trình test.
+
+**Phát hiện thêm 1 lỗi nhỏ chưa có trong bàn giao gốc:** `order-webapp` không có route/catch-all cho path lạ (ví dụ gõ nhầm `/login` thay vì đúng `/dang-nhap`) — hiện ra trang trắng thay vì 404 hoặc tự chuyển về `/dang-nhap`. Chưa sửa (nằm ngoài checklist gốc), nên thêm 1 `<Route path="*">` redirect về `/` hoặc `/dang-nhap` trước khi deploy thật.
+
+**Việc cần làm tiếp theo:** dọn tài khoản test `TPS1-F17B` sau khi không cần dùng nữa; test luồng sale xác nhận/chốt giá/soạn hàng cho đơn `DH-20260914-000011` cần tài khoản nhân viên thật; thêm route catch-all; sau đó mới deploy `order-webapp` lên Vercel domain riêng theo README.
+
+## 23. Thiết kế lại giao diện khách hàng + PWA cài điện thoại + Web Push (14/09/2026, vòng 2)
+
+Sếp yêu cầu: (1) giao diện `order-webapp` phải "có hồn", chuyên nghiệp, không như bản nháp cũ trông chung chung; (2) khách cài được lên điện thoại như app thật; (3) push notification 2 chiều để xử lý đơn nhanh. Đã chốt với sếp: dùng **PWA (Thêm vào màn hình chính)**, không đóng gói app native lên App Store/CH Play (nhanh, rẻ, không cần tài khoản Apple Developer).
+
+**Thiết kế lại (`order-webapp`):**
+- Vẽ minh hoạ SVG riêng [ProduceScene.tsx](../order-webapp/src/components/ProduceScene.tsx) (sọt rau củ + lá xanh cách điệu) thay cho các khối gradient mờ chung chung — không dùng ảnh stock ngoài để tránh vấn đề bản quyền.
+- [LoginPage](../order-webapp/src/pages/LoginPage.tsx): layout 2 cột trên desktop (panel thương hiệu + minh hoạ bên trái, form kính mờ bên phải), gộp lại 1 cột có minh hoạ nền mờ trên mobile.
+- [CustomerLayout](../order-webapp/src/layouts/CustomerLayout.tsx): chuyển hẳn sang app-shell mobile-first — thanh tab dưới cùng (Sản phẩm/Excel/Giỏ hàng/Đơn hàng) đúng cảm giác app cài trên máy, header gradient có lời chào tên khách.
+- [ProductsPage](../order-webapp/src/pages/ProductsPage.tsx): đổi dropdown nhóm hàng thành chip cuộn ngang, thêm skeleton loading, hiệu ứng khi thêm giỏ hàng.
+- Icon app tự vẽ bằng SVG + `sharp` (chữ "T1" gradient xanh thương hiệu, không cần ảnh ngoài) — sinh đủ bộ `favicon/apple-touch-icon/pwa-192/pwa-512/maskable`.
+
+**PWA (cài lên điện thoại):** thêm `vite-plugin-pwa` (chiến lược `injectManifest`, cùng version `sale-webapp` đang dùng) + `manifest.webmanifest` (tên "Đặt hàng TPS1", theme xanh đậm, icon maskable cho Android) + meta tag `apple-mobile-web-app-*` cho iOS (iOS không đọc manifest tốt như Android, cần khai riêng). Khách bấm "Thêm vào màn hình chính" trên Safari/Chrome là có icon riêng, chạy full-screen như app thật.
+
+**Web Push (thông báo cho khách hàng):**
+- Migration mới `tps1-miniapp/supabase/migrations/20260914_push_subscriptions.sql` — bảng `push_subscriptions` + RPC `customer_save_push_subscription`/`customer_remove_push_subscription` (theo đúng khuôn RLS như các RPC `customer_*` khác, không phải `admin_*` nên không bị chặn bởi vòng revoke bảo mật 09/09).
+- `lib/push.ts` (web chính) dùng thư viện `web-push` + VAPID key (đã sinh, lưu `.env`/`.env.example`, cần set trên Vercel prod) để gửi push thật.
+- Route mới `app/api/customer/push-subscribe` (POST đăng ký/DELETE huỷ) + `app/api/push/vapid-public-key` (public, để order-webapp fetch key lúc đăng ký thay vì bake cứng lúc build).
+- `app/api/admin/orders` PATCH: gửi push cho khách mỗi khi đơn chuyển `confirmed/shipping/completed/canceled` — không chặn response nếu gửi lỗi.
+- `order-webapp/src/sw.ts` (service worker tự viết, Workbox `injectManifest`): nhận push, hiện notification, bấm vào mở đúng trang chi tiết đơn. Nút bật/tắt thông báo dạng chuông ở header ([NotificationBell.tsx](../order-webapp/src/components/NotificationBell.tsx)) — chủ động để khách bấm, không tự động xin quyền lúc mở app (tỉ lệ đồng ý thấp hơn nếu xin ngay).
+- Đã test được: build sạch, `/api/push/vapid-public-key` trả đúng key, request đăng ký subscription đi đúng qua auth + RPC (lỗi 500 hiện tại là do **chưa chạy migration**, không phải lỗi code). Chưa test được luồng cấp quyền thật (`Notification.requestPermission()`) vì môi trường trình duyệt tự động dùng để test mặc định chặn quyền thông báo — cần test tay trên điện thoại/trình duyệt thật.
+
+**Phía sale/admin — KHÔNG xây Web Push riêng:** phát hiện hệ thống **đã có sẵn** kênh Telegram cho đơn mới (`app/api/webhook/new-order/route.ts`, dùng Supabase Database Webhook trigger trên bảng `orders`) — chỉ là đang lỗi vì tham chiếu cột cũ `order.final_amount` (đã đổi tên thành `grand_total` từ trước). **Đã sửa lỗi này.** Telegram push đến điện thoại còn nhanh/ổn định hơn Web Push (không bị giới hạn như Safari/iOS), nên ưu tiên khôi phục kênh này thay vì xây trùng. **Việc cần làm:** vào Supabase Dashboard → Database → Webhooks, xác nhận webhook trỏ tới `/api/webhook/new-order` với header `x-webhook-secret` đúng giá trị `SUPABASE_WEBHOOK_SECRET`, bấm test thử (route có sẵn `GET ?test=1`). Nếu sau này sale vẫn muốn có nút bật thông báo ngay trong `sale-webapp` (không phải qua Telegram), có thể tái dùng đúng bảng/hàm `push_subscriptions` ở trên (`subject_type = 'staff'`), chỉ cần thêm UI + gọi `sendPushToCustomer`-style helper mới cho staff.
+
+**Bug phát hiện ngoài phạm vi yêu cầu, đã sửa luôn vì chặn build thật:** `tsconfig.json` gốc thiếu `order-webapp` trong danh sách `exclude` (đã có `sale-webapp` từ trước) — khiến `next build` type-check nhầm vào cả code Vite của `order-webapp`, **làm hỏng hoàn toàn build production của web chính**. Đã thêm `order-webapp` vào exclude, `next build` chạy lại thành công.
+
+**Việc cần làm để dùng được các mục ở trên:**
+1. Chạy migration `tps1-miniapp/supabase/migrations/20260914_push_subscriptions.sql` trên Supabase SQL Editor.
+2. Set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT` trên Vercel (giá trị đã sinh, xem `.env` local — không commit giá trị thật vào git).
+3. Xác nhận Supabase Database Webhook cho bảng `orders` đang trỏ đúng route Telegram (mục trên).
+4. Test tay trên điện thoại thật: cài PWA (Thêm vào màn hình chính) + bấm nút chuông bật thông báo + đổi trạng thái 1 đơn test từ `sale-webapp` để xem thông báo có hiện không.
+5. Nếu vẫn muốn Web Push riêng cho sale-webapp thay vì chỉ dùng Telegram, xác nhận lại — hạ tầng DB đã sẵn sàng mở rộng.
+
+## 24. Hoàn thiện bảng giá hợp đồng riêng theo khách (14/09/2026, vòng 3)
+
+Sếp đặt bài toán: cần chiết khấu % riêng theo hợp đồng (VD FORMUSA: CK 10% toàn bộ) VÀ đồng thời có mặt hàng chốt giá cố định tuyệt đối suốt hợp đồng, không phụ thuộc bảng giá chung (VD FORMUSA: thịt heo 100k/kg cố định 1 năm).
+
+**Phát hiện quan trọng khi rà lại trước khi code:** hệ thống đã có sẵn ~80% hạ tầng nhưng bị đứt kết nối — không phải làm từ đầu:
+- Bảng `customer_contract_prices` (customer_id, product_id, price, valid_until) đã tồn tại và đã được `resolve_product_price()` ưu tiên cao nhất — **đây chính là cơ chế đúng cho ca giá cố định (thịt heo FORMUSA), đã chạy đúng từ trước**, chỉ thiếu UI tốt.
+- Cột `vip_accounts.contract_discount_percent` + `tier_expiry_date` đã có sẵn trên production và UI `CustomerDetailPage.tsx` (hạng "CUSTOM") đã cho nhập từ trước — nhưng đọc thẳng mã nguồn `resolve_product_price()` thì **hàm này chưa bao giờ đọc 2 cột đó**, chỉ tra theo `discount_tier` để join `product_tier_prices`. Hậu quả: khách gắn hạng CUSTOM + nhập % **không hề được áp giá gì cả**, luôn rớt về giá gốc — đúng là lỗ hổng gây ra bài toán sếp hỏi.
+- Cả 2 cột này + RPC `admin_update_customer` đang chạy thật (18 tham số) đều **không nằm trong bất kỳ migration nào được theo dõi** — bị tạo tay ngoài quy trình từ trước (giống pattern rủi ro đã ghi trong sự cố bảo mật 09/09), file migration cũ nhất (`20260825_update_customer_rpc.sql`) chỉ có 16 tham số, thiếu 2 tham số hợp đồng.
+
+**Đã làm — migration mới `tps1-miniapp/supabase/migrations/20260914b_contract_pricing.sql`:**
+1. Chính thức hoá 2 cột trên (idempotent, không đổi dữ liệu — đã xác nhận chưa khách nào dùng, toàn bộ đang `null`).
+2. Sửa `resolve_product_price()` — thêm bước "chiết khấu % theo hợp đồng" (tính trên giá bán chung, còn hạn theo `tier_expiry_date`) ngay sau giá cố định tuyệt đối, trước khi tra theo hạng VIP0-3. Thứ tự ưu tiên đầy đủ: **giá cố định riêng từng mặt hàng → % chiết khấu hợp đồng → giá theo hạng → giá bán chung**. Vì tính trên giá chung tại thời điểm gọi hàm (không snapshot), khách chiết khấu % tự động theo đúng biến động giá hàng ngày — khớp đúng công thức "% × bảng giá chung" sếp yêu cầu.
+3. Viết lại `admin_update_customer` với đúng 18 tham số đang chạy thật (dùng vòng lặp xoá mọi overload cũ theo tên hàm trước khi tạo lại, tránh xung đột chữ ký nếu chạy lại migration từ đầu trên môi trường khác).
+4. RPC mới `admin_bulk_set_contract_prices(customer_id, items jsonb)` — nhập hàng loạt giá cố định, mặc định hạn dùng theo `tier_expiry_date` của khách nếu dòng không ghi riêng (đã chốt với sếp: "mặc định theo hạn hợp đồng, cho sửa riêng khi cần").
+5. Thêm unique constraint `(customer_id, product_id)` cho `customer_contract_prices` để `on conflict` hoạt động đúng khi nhập hàng loạt.
+
+**Đã làm — route mới `app/api/admin/customers/import-contract-prices` (GET tải mẫu / POST nhập):** cùng khuôn với `import-pricebook` đã có — đọc Excel (Mã hàng, Giá cố định, Hết hạn tuỳ chọn), khớp SKU, gọi RPC ở trên.
+
+**Đã làm — UI `CustomerDetailPage.tsx`:** thêm nút "Nhập Excel" trong card "Bảng giá hợp đồng riêng", lộ cột ngày hết hạn từng dòng ra ngoài giao diện (trước đây có sẵn trong DB nhưng ẩn, chỉ sửa được qua `prompt()` giá, không sửa được hạn).
+
+**Quyết định đã chốt với sếp (14/09/2026):** 1 khách chỉ có 1 mức % chiết khấu chung cho toàn bộ hợp đồng (không chia theo nhóm hàng) — khớp đúng thiết kế cột `contract_discount_percent` hiện có, không cần đổi schema thêm.
+
+**Ca FORMUSA áp dụng cụ thể:** gắn `discount_tier = CUSTOM`, `contract_discount_percent = 10`, `tier_expiry_date = <ngày hết hạn hợp đồng>` → toàn bộ mặt hàng khác tự động CK 10% trên giá chung mỗi ngày; riêng thịt heo thêm 1 dòng vào `customer_contract_prices` với `price = 100000` (không cần nhập `valid_until` nếu muốn dùng chung hạn hợp đồng) → dòng thịt heo này luôn thắng % vì được `resolve_product_price()` kiểm tra trước.
+
+**Việc cần làm:** chạy migration `tps1-miniapp/supabase/migrations/20260914b_contract_pricing.sql` trên Supabase SQL Editor. Chưa test được thật (không có tài khoản sale/admin thật trong phiên làm việc này) — cần test tay: tạo 1 khách CUSTOM với % + 1 mặt hàng giá cố định, tạo đơn thử, xác nhận giá tính đúng theo cả 2 quy tắc.
+
 ---
 
-*Bản đầy đủ, có lịch sử cập nhật, được lưu trong Claude Project "TPS1" (`claude/ke-hoach-webapp-ban-hang-thay-kiotviet.md`) — file này là bản export tại thời điểm 10/09/2026 để mang theo khi làm việc trực tiếp trong repo bằng công cụ code.*
+*Bản đầy đủ, có lịch sử cập nhật, được lưu trong Claude Project "TPS1" (`claude/ke-hoach-webapp-ban-hang-thay-kiotviet.md`) — file này là bản export tại thời điểm 10/09/2026 (đã bổ sung mục 22 ngày 14/09/2026) để mang theo khi làm việc trực tiếp trong repo bằng công cụ code.*
