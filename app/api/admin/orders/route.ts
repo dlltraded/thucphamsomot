@@ -391,6 +391,17 @@ export async function PATCH(req: NextRequest) {
       return json({ ok: false, error: "Không tìm thấy đơn hàng" }, 404);
     }
 
+    // Hoàn thành và Đã hủy là hai trạng thái kết thúc. Không cho phép đưa
+    // đơn quay ngược về Chờ xác nhận/Đang xử lý vì sẽ làm lệch lịch sử giao
+    // hàng, công nợ và chứng từ đã phát hành. Nếu cần xử lý ngoại lệ phải có
+    // quy trình điều chỉnh riêng, không dùng dropdown trạng thái thông thường.
+    if (hasStatusChange && current.status !== nextStatus && ["completed", "canceled"].includes(String(current.status))) {
+      return json(
+        { ok: false, error: `Đơn đã ở trạng thái kết thúc "${current.status === "completed" ? "Hoàn thành" : "Đã hủy"}", không thể chuyển ngược trạng thái.` },
+        409,
+      );
+    }
+
     if (itemDeliveries.length) {
       for (const row of itemDeliveries) {
         const { error: itemError } = await supabase
