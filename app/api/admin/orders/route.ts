@@ -20,12 +20,58 @@ const PAYMENT_STATUSES = ["pending", "cod", "paid", "failed", "refunded"] as con
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Token",
 };
 
 function json(body: unknown, status = 200) {
   return NextResponse.json(body, { status, headers: corsHeaders });
+}
+
+// Chỉ Admin được xóa hẳn dữ liệu đơn. Giới hạn ở các trạng thái chưa tạo
+// nghĩa vụ kho/kế toán; đơn đã thu tiền hoặc đã hoàn thành phải được lưu để
+// đối soát, kể cả khi người dùng không còn muốn thấy trong luồng xử lý.
+export async function DELETE(req: NextRequest) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
+  if (auth.profile?.role !== "admin") {
+    return json({ ok: false, error: "Chỉ tài khoản Admin được phép xóa đơn hàng" }, 403);
+  }
+
+  try {
+    const body = await req.json();
+    const orderId = String(body?.orderId || "").trim();
+    if (!orderId) return json({ ok: false, error: "Thiếu mã định danh đơn hàng" }, 400);
+
+    const supabase = getCustomerSupabaseAdmin();
+    const { data: order, error: findError } = await supabase
+      .from("orders")
+      .select("id, order_code, status, payment_status, paid_amount, invoice_document_status")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (findError) throw findError;
+    if (!order) return json({ ok: false, error: "Không tìm thấy đơn hàng" }, 404);
+
+    const allowedStatuses = new Set(["draft", "pending", "canceled"]);
+    const hasFinancialRecord =
+      Number(order.paid_amount || 0) > 0 ||
+      ["paid", "refunded"].includes(String(order.payment_status || "")) ||
+      Boolean(order.invoice_document_status);
+    if (!allowedStatuses.has(order.status) || hasFinancialRecord) {
+      return json({
+        ok: false,
+        error: "Không thể xóa đơn đã xác nhận/giao hàng hoặc đã phát sinh thanh toán. Hãy chuyển trạng thái sang Đã hủy để giữ lịch sử đối soát.",
+      }, 409);
+    }
+
+    const { error: deleteError } = await supabase.from("orders").delete().eq("id", orderId);
+    if (deleteError) throw deleteError;
+    console.info(`[DELETE_ORDER] ${auth.profile?.name || "Admin"} đã xóa ${order.order_code} (${order.id})`);
+    return json({ ok: true, deletedId: order.id, orderCode: order.order_code });
+  } catch (error) {
+    console.error("Admin orders DELETE error:", error);
+    return json({ ok: false, error: error instanceof Error ? error.message : "Không xóa được đơn hàng" }, 500);
+  }
 }
 
 
