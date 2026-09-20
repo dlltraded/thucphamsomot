@@ -4,6 +4,44 @@ import { can } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { resolvePricesForProducts } from "@/lib/customer-pricing";
 
+const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
+type CatalogProduct = {
+  id: string;
+  sku: string | null;
+  name: string;
+  category: string | null;
+  unit: string | null;
+  image_url: string | null;
+  thumb_url: string | null;
+  price_retail: number | null;
+  price_wholesale: number | null;
+  track_inventory: boolean | null;
+  stock_qty: number | null;
+  min_stock: number | null;
+  is_low_stock: boolean | null;
+};
+let baseCatalogCache: { expiresAt: number; products: CatalogProduct[] } | null = null;
+const pricedCatalogCache = new Map<string, { expiresAt: number; products: unknown[] }>();
+
+async function loadBaseCatalog(supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
+  if (baseCatalogCache && baseCatalogCache.expiresAt > Date.now()) return baseCatalogCache.products;
+  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock";
+  const pageSize = 1000;
+  const first = await supabase.from("products").select(fields, { count: "exact" }).eq("active", true).order("name").range(0, pageSize - 1);
+  if (first.error) throw first.error;
+  const total = first.count || (first.data || []).length;
+  const pageStarts: number[] = [];
+  for (let offset = pageSize; offset < total; offset += pageSize) pageStarts.push(offset);
+  const rest = await Promise.all(pageStarts.map(async (offset) => {
+    const page = await supabase.from("products").select(fields).eq("active", true).order("name").range(offset, offset + pageSize - 1);
+    if (page.error) throw page.error;
+    return page.data || [];
+  }));
+  const products = [...(first.data || []), ...rest.flat()] as unknown as CatalogProduct[];
+  baseCatalogCache = { products, expiresAt: Date.now() + CATALOG_CACHE_TTL_MS };
+  return products;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
@@ -62,6 +100,37 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
 
   const supabase = getCustomerSupabaseAdmin();
+
+  // Catalog rút gọn cho POS: tải một lần rồi tìm ngay trên trình duyệt.
+  // Giá vẫn được server xác nhận lại khi tạo/chốt đơn.
+  if (req.nextUrl.searchParams.get("catalog") === "1") {
+    try {
+      const customerId = req.nextUrl.searchParams.get("customerId")?.trim() || "";
+      const cacheKey = customerId || "base";
+      const cached = pricedCatalogCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return json({ ok: true, products: cached.products, cached: true });
+      }
+      const products = await loadBaseCatalog(supabase);
+      const priceMap = customerId ? await resolvePricesForProducts(supabase, customerId, products) : null;
+      const compact = products.map((p) => {
+        const basePrice = Number(p.price_retail) || Number(p.price_wholesale) || 0;
+        const resolved = priceMap?.get(p.id);
+        return [
+          p.id, p.sku || "", p.name, p.category || "", p.unit || "Kg",
+          resolved?.price ?? basePrice, resolved?.basePrice ?? basePrice,
+          p.thumb_url || p.image_url || "", Boolean(p.thumb_url),
+          Boolean(p.track_inventory), p.stock_qty == null ? null : Number(p.stock_qty),
+          Boolean(p.is_low_stock || (p.track_inventory && Number(p.stock_qty) <= Number(p.min_stock || 0))),
+        ];
+      });
+      pricedCatalogCache.set(cacheKey, { products: compact, expiresAt: Date.now() + CATALOG_CACHE_TTL_MS });
+      return json({ ok: true, products: compact, cached: false });
+    } catch (error) {
+      console.error("GET /api/admin/products catalog lỗi:", error);
+      return json({ ok: false, error: "Không tải được catalog sản phẩm" }, 500);
+    }
+  }
 
   // 1. Meta danh mục & tiers — WP4-3B: ưu tiên dùng RPC get_distinct_categories
   if (req.nextUrl.searchParams.get("meta") === "1") {
