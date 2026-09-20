@@ -4,8 +4,20 @@ import { chunkArray } from "./products-fetcher";
 export interface ResolvedProductPrice {
   price: number;
   basePrice: number;
-  priceSource: "contract" | "tier" | "base";
+  priceSource: "contract" | "contract_discount" | "tier" | "base";
   priceOnRequest: boolean;
+}
+
+export interface CustomerPricingContext {
+  tier: string | null;
+  contractDiscountPercent?: number | null;
+  tierExpiryDate?: string | null;
+}
+
+function contractDiscountIsActive(context: CustomerPricingContext) {
+  if (context.contractDiscountPercent == null) return false;
+  if (!context.tierExpiryDate) return true;
+  return context.tierExpiryDate >= new Date().toISOString().slice(0, 10);
 }
 
 /**
@@ -18,29 +30,53 @@ export async function resolvePricesForProducts(
   supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
   customerId: string,
   products: Array<{ id: string; price_retail?: number | null; price_wholesale?: number | null }>,
-  knownTier?: string | null
+  knownContext?: string | null | CustomerPricingContext
 ): Promise<Map<string, ResolvedProductPrice>> {
   const priceMap = new Map<string, ResolvedProductPrice>();
   const productIds = Array.from(new Set(products.map((p) => p.id).filter(Boolean)));
   if (productIds.length === 0) return priceMap;
 
   // 1. Lấy discount_tier của khách
-  let tier = knownTier;
-  if (tier === undefined) {
+  let pricingContext: CustomerPricingContext | undefined =
+    typeof knownContext === "object" && knownContext !== null
+      ? knownContext
+      : knownContext !== undefined
+        ? { tier: knownContext }
+        : undefined;
+  if (!pricingContext) {
     const { data: customer } = await supabase
       .from("vip_accounts")
-      .select("discount_tier")
+      .select("discount_tier, contract_discount_percent, tier_expiry_date")
       .eq("id", customerId)
       .maybeSingle();
-    tier = customer?.discount_tier || null;
+    pricingContext = {
+      tier: customer?.discount_tier || null,
+      contractDiscountPercent: customer?.contract_discount_percent == null
+        ? null
+        : Number(customer.contract_discount_percent),
+      tierExpiryDate: customer?.tier_expiry_date || null,
+    };
   }
+  const tier = pricingContext.tier;
   const now = new Date();
 
   // 2. Lấy giá hợp đồng riêng của khách (chỉ lấy cho các productIds cần thiết, chia lô 100)
   const contractChunks = chunkArray(productIds, 100);
   const contractByProduct = new Map<string, number>();
 
-  await Promise.all(contractChunks.map(async (chunk) => {
+  const loadAllPrices = productIds.length > 300;
+  if (loadAllPrices) {
+    const { data: contractRows, error } = await supabase
+      .from("customer_contract_prices")
+      .select("product_id, price, valid_until")
+      .eq("customer_id", customerId);
+    if (error) console.error("Lỗi tải customer_contract_prices:", error);
+    for (const c of contractRows || []) {
+      if (!c.valid_until || new Date(c.valid_until) > now) {
+        contractByProduct.set(c.product_id, Number(c.price));
+      }
+    }
+  } else await Promise.all(contractChunks.map(async (chunk) => {
     try {
       const { data: contractRows } = await supabase
         .from("customer_contract_prices")
@@ -61,7 +97,24 @@ export async function resolvePricesForProducts(
   // 3. Lấy giá theo hạng (nếu khách có tier)
   const tierPriceByProduct = new Map<string, number>();
   if (tier) {
-    await Promise.all(contractChunks.map(async (chunk) => {
+    if (loadAllPrices) {
+      let offset = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: tierRows, error } = await supabase
+          .from("product_tier_prices")
+          .select("product_id, price")
+          .eq("tier", tier)
+          .range(offset, offset + pageSize - 1);
+        if (error) {
+          console.error("Lỗi tải product_tier_prices:", error);
+          break;
+        }
+        for (const t of tierRows || []) tierPriceByProduct.set(t.product_id, Number(t.price));
+        if (!tierRows || tierRows.length < pageSize) break;
+        offset += pageSize;
+      }
+    } else await Promise.all(contractChunks.map(async (chunk) => {
       try {
         const { data: tierRows } = await supabase
           .from("product_tier_prices")
@@ -82,11 +135,14 @@ export async function resolvePricesForProducts(
   for (const p of products) {
     const base = Number(p.price_retail) || Number(p.price_wholesale) || 0;
     let finalPrice = base;
-    let source: "contract" | "tier" | "base" = "base";
+    let source: "contract" | "contract_discount" | "tier" | "base" = "base";
 
     if (contractByProduct.has(p.id)) {
       finalPrice = contractByProduct.get(p.id)!;
       source = "contract";
+    } else if (contractDiscountIsActive(pricingContext)) {
+      finalPrice = Math.round(base * (1 - Number(pricingContext.contractDiscountPercent) / 100) * 100) / 100;
+      source = "contract_discount";
     } else if (tierPriceByProduct.has(p.id)) {
       finalPrice = tierPriceByProduct.get(p.id)!;
       source = "tier";

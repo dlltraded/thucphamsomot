@@ -9,20 +9,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return NextResponse.json(body, {
     status,
     headers: {
       ...corsHeaders,
       "Cache-Control": "private, max-age=30, stale-while-revalidate=90",
       Vary: "Authorization, Cookie",
+      ...extraHeaders,
     },
   });
 }
 
-type CustomerContext = { customerId: string; tier: string | null; expiresAt: number };
+type CustomerContext = {
+  customerId: string;
+  tier: string | null;
+  contractDiscountPercent: number | null;
+  tierExpiryDate: string | null;
+  expiresAt: number;
+};
 const customerContextCache = new Map<string, CustomerContext>();
 const CUSTOMER_CONTEXT_TTL_MS = 60_000;
+const PRODUCT_CATALOG_TTL_MS = 5 * 60_000;
+const productCatalogCache = new Map<string, { expiresAt: number; body: unknown }>();
+let baseProductCatalogCache: { expiresAt: number; products: any[] } | null = null;
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
@@ -49,16 +59,113 @@ async function resolveCustomerContext(req: NextRequest, supabase: ReturnType<typ
 
   const { data: customer } = await supabase
     .from("vip_accounts")
-    .select("discount_tier")
+    .select("discount_tier, contract_discount_percent, tier_expiry_date")
     .eq("id", data.customer_id)
     .maybeSingle();
   const context: CustomerContext = {
     customerId: data.customer_id,
     tier: customer?.discount_tier || null,
+    contractDiscountPercent: customer?.contract_discount_percent == null
+      ? null
+      : Number(customer.contract_discount_percent),
+    tierExpiryDate: customer?.tier_expiry_date || null,
     expiresAt: Date.now() + CUSTOMER_CONTEXT_TTL_MS,
   };
   customerContextCache.set(token, context);
   return context;
+}
+
+async function loadProductCatalog(
+  supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
+  customerContext: CustomerContext
+) {
+  const cacheKey = customerContext.customerId;
+  const cached = productCatalogCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return { body: cached.body, cacheStatus: "HIT" };
+  }
+
+  let products = baseProductCatalogCache?.expiresAt && baseProductCatalogCache.expiresAt > Date.now()
+    ? baseProductCatalogCache.products
+    : null;
+  if (!products) {
+    const selectFields = "id, sku, name, category, unit, thumb_url, price_retail, price_wholesale";
+    const pageSize = 1000;
+    const first = await supabase
+      .from("products")
+      .select(selectFields, { count: "exact" })
+      .eq("active", true)
+      .order("name")
+      .range(0, pageSize - 1);
+    if (first.error) throw first.error;
+
+    const count = first.count || 0;
+    const pageCount = Math.ceil(count / pageSize);
+    const remainingPages = await Promise.all(
+      Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => {
+        const page = index + 1;
+        return supabase
+          .from("products")
+          .select(selectFields)
+          .eq("active", true)
+          .order("name")
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+      })
+    );
+    for (const page of remainingPages) {
+      if (page.error) throw page.error;
+    }
+
+    products = [
+      ...(first.data || []),
+      ...remainingPages.flatMap((page) => page.data || []),
+    ] as any[];
+    baseProductCatalogCache = {
+      expiresAt: Date.now() + PRODUCT_CATALOG_TTL_MS,
+      products,
+    };
+  }
+  const priceMap = await resolvePricesForProducts(
+    supabase,
+    customerContext.customerId,
+    products,
+    {
+      tier: customerContext.tier,
+      contractDiscountPercent: customerContext.contractDiscountPercent,
+      tierExpiryDate: customerContext.tierExpiryDate,
+    }
+  );
+  const supabaseUrl = (process.env.SUPABASE_PRODUCTS_URL || "").replace(/\/$/, "");
+  const imageBaseUrl = supabaseUrl
+    ? `${supabaseUrl}/storage/v1/object/public/product-images/thumbs`
+    : "";
+
+  // Mảng tuple giảm kích thước JSON khoảng 4 lần so với lặp lại tên field 5.000 lần.
+  // [id, sku, name, category, unit, price, priceOnRequest, hasImage]
+  const items = products.map((product) => {
+    const priceInfo = priceMap.get(product.id);
+    const price = priceInfo?.price ?? (Number(product.price_retail) || Number(product.price_wholesale) || 0);
+    return [
+      product.id,
+      product.sku || "",
+      product.name || "",
+      product.category || null,
+      product.unit || "Kg",
+      price,
+      price <= 0,
+      Boolean(product.thumb_url),
+    ];
+  });
+  const body = { ok: true, count: items.length, imageBaseUrl, items };
+
+  for (const [key, entry] of productCatalogCache) {
+    if (entry.expiresAt <= Date.now()) productCatalogCache.delete(key);
+  }
+  productCatalogCache.set(cacheKey, {
+    expiresAt: Date.now() + PRODUCT_CATALOG_TTL_MS,
+    body,
+  });
+  return { body, cacheStatus: "MISS" };
 }
 
 // Giai đoạn E — trang "Đặt hàng": khách tìm sản phẩm để tự lên đơn, thấy
@@ -91,6 +198,19 @@ export async function GET(req: NextRequest) {
       categories = [...new Set((catRows || []).map((r) => r.category as string))].sort();
     }
     return json({ ok: true, categories });
+  }
+
+  if (req.nextUrl.searchParams.get("catalog") === "1") {
+    try {
+      const catalog = await loadProductCatalog(supabase, customerContext);
+      return json(catalog.body, 200, {
+        "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+        "X-TPS1-Catalog-Cache": catalog.cacheStatus,
+      });
+    } catch (error) {
+      console.error("GET /api/customer/products?catalog=1 lỗi:", error);
+      return json({ ok: false, error: "Không tải được danh mục sản phẩm" }, 500);
+    }
   }
 
   const search = req.nextUrl.searchParams.get("search")?.trim() || "";
@@ -156,7 +276,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Giá theo hạng/hợp đồng riêng dùng chung hàm resolvePricesForProducts (F5)
-    const priceMap = await resolvePricesForProducts(supabase, customerContext.customerId, products || [], customerContext.tier);
+    const priceMap = await resolvePricesForProducts(supabase, customerContext.customerId, products || [], {
+      tier: customerContext.tier,
+      contractDiscountPercent: customerContext.contractDiscountPercent,
+      tierExpiryDate: customerContext.tierExpiryDate,
+    });
 
     const resolved = (products || []).map((p) => {
       const priceInfo = priceMap.get(p.id);
