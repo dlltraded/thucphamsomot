@@ -1,7 +1,14 @@
 # TÀI LIỆU BÀN GIAO NGỮ CẢNH HỆ THỐNG
-## DỰ ÁN: TPS1 Lead Manager - Thực phẩm số 1
+## DỰ ÁN: TPS1 Lead Manager & Hệ Thống Đặt Hàng - Thu Mua Phase 1
 
-Tài liệu này dùng để bàn giao cho agent khác tiếp quản code nhanh nhất có thể. Nội dung đã được cập nhật theo trạng thái hiện tại của repo.
+> [!IMPORTANT]
+> **TÀI LIỆU BÀN GIAO PHASE 1 MỚI NHẤT (Cập nhật 20/09/2026):**  
+> Vui lòng xem tài liệu bàn giao chi tiết toàn diện của Phase 1 tại: **[docs/TAI_LIEU_BAN_GIAO_PHASE1.md](file:///d:/thuc_pham_so_mot/thuc_pham_so_mot/docs/TAI_LIEU_BAN_GIAO_PHASE1.md)**  
+> Và tài liệu bàn giao kỹ thuật giữa Claude & Gemini: **[HANDOFF_CLAUDE_20260920.md](file:///d:/thuc_pham_so_mot/thuc_pham_so_mot/HANDOFF_CLAUDE_20260920.md)**
+
+---
+
+Tài liệu dưới đây lưu giữ ngữ cảnh lịch sử của phân hệ Lead Manager cũ. Nội dung đã được cập nhật theo trạng thái hiện tại của repo.
 
 ---
 

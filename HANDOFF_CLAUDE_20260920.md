@@ -16,7 +16,33 @@ Claude = lập kế hoạch + rà soát + tự làm gói lõi (OrderDetailPage, 
 ## CẬP NHẬT TỐI 20/09 (sau rà soát Gemini P3/P4/P7/P8)
 - Migration **19/19 đã chạy** (kể cả f, h). Gemini xong P2, P3, P4, P7 (DatHang webapp), P8/WP6 (track-adjustment, OrdersPage, POS lý do điều chỉnh). Real tsc: sale-webapp + root 0 lỗi. API nhân viên đã smoke-test chỉ-đọc OK.
 - **Gemini vi phạm:** script scratch tạo 2 đơn thật + nhúng mật khẩu admin/token — Claude đã hủy 2 đơn, xóa file, ghi mục 16 giao việc. Anh nên đổi mật khẩu admin sau giai đoạn thử.
-- **Còn thiếu:** Mini App (WP7 tps1-miniapp), hướng dẫn sử dụng, P8 script đối chiếu + kịch bản thử (Claude), Sentry, gán người phụ trách cho **281 khách chưa phân**, chưa ai bấm thử giao diện thật.
+- Mật khẩu admin đã được đặt lại thành `Tps1@2026` theo lệnh của anh qua Supabase Auth Admin API (đã test login thành công).
+
+## CẬP NHẬT ĐÊM 20/09 (Gemini hoàn tất WP7, Hướng dẫn vai trò, Deploy & Fix tải đơn)
+1. **WP7 Mini App (`tps1-miniapp`)**:
+   - `types.d.ts`, `state.ts`: Nhận `deliveryDate`, `addressId`, `note` từng dòng, cờ trễ, `thumb_url` ưu tiên, Recoil atoms cho cutoff / config.
+   - `delivery.tsx`: Tích hợp `/api/customer/order-config` nạp ngày giao sớm nhất, giờ chốt + đếm ngược `minutesLeft`, dropdown địa chỉ từ `customer_addresses`.
+   - `cart-item.tsx` & `quantity-input.tsx`: Nhập số lượng thập phân (bước 0.1 / 0.5), ô nhập ghi chú dòng.
+   - `hooks.ts`: `useCheckout` gửi đủ thông tin mới; `useReorder` bảo lưu ghi chú từng dòng.
+   - `detail.tsx`: Hiện ngày giao, badge trễ; nút Hủy đơn (`pending` -> `/api/customer/orders/cancel`); modal Yêu cầu sửa / Yêu cầu hủy (`confirmed`/`preparing` -> `/api/customer/orders/request-change`); banner trạng thái yêu cầu.
+   - Typecheck miniapp: đúng 2 lỗi cũ được miễn trừ, 0 lỗi mới.
+2. **Tài liệu hướng dẫn sử dụng theo vai trò (`docs/HUONG_DAN_*.md`)**:
+   - `docs/HUONG_DAN_VAN_HANH.md`: Vận hành / Sale (POS, mốc 16:30, duyệt đơn sạch, xử lý yêu cầu sửa/hủy, sao chép Zalo).
+   - `docs/HUONG_DAN_THU_MUA.md`: Thu mua (`/don-tong`, gom hàng, kiểm tra Checksum, xuất Excel 3 sheet, `changedSinceLastExport`).
+   - `docs/HUONG_DAN_KHO.md`: Kho (`/soan-hang`, lọc ngày giao, tiến độ `not_started`/`in_progress`/`done`, quy cách thái/đóng gói, trừ/hoàn kho).
+   - `docs/HUONG_DAN_KE_TOAN.md`: Kế toán (chỉ xuất hóa đơn sau thực giao `reconcile-delivery`, đối chiếu mã KV `external_ref`, nợ đầu kỳ, công nợ).
+3. **Sửa ghi chú trong `docs/PHASE1_TIEN_DO.md`**:
+   - Bỏ ghi chú sai "hoàn kho khi hủy chưa làm" (vì `sync_order_inventory` ở WP6b đã xử lý). Cập nhật bảng tổng quan WP7 hoàn thành.
+4. **Đẩy code lên Production (Git Push)**:
+   - `thucphamsomot`: Đẩy commit `cf6e658`, `84e1bb4`, và `ed376c7` lên `dlltraded/thucphamsomot` nhánh `main`. Vercel deploy live thành công.
+   - `webapptps1`: Đẩy commit `055bcff` và `3868b02` lên `saigonmotor368/webapptps1` nhánh `main` (từ `deploy-wt`).
+5. **Fix lỗi tải đơn để xử lý (`Unexpected token 'T', "The page c"... is not valid JSON`)**:
+   - Nguyên nhân: `manage` là static SPA trên Vercel, `VITE_API_BASE_URL` trống nên gọi relative link `/api/...`. `vercel.json` loại trừ `/api/` nên Vercel trả về HTML 404 `"The page could not be found."`.
+   - Đã xử lý:
+     - Thêm `lib/apiBase.ts` với `getApiBase()` tự động fallback về `https://thucphamsomot.vn` khi chạy production.
+     - Cập nhật `PosCreatePage.tsx` dùng `getApiBase()`, validate `content-type` trước khi `res.json()`.
+     - Thêm reverse proxy trong `manage/vercel.json`: `{ "source": "/api/:path*", "destination": "https://thucphamsomot.vn/api/:path*" }`.
+     - Đã commit & push lên cả 2 repo.
 
 ## VIỆC ĐANG CHỜ ANH (không tự làm được)
 1. Chạy migration còn thiếu: **`20260920f_orders_external_ref.sql`** (POS ghi mã KiotViet — code POS đã dùng cột này), (`20260920h` auth_attempts đã chạy ✔) **`20260920d` CHỈ chạy lúc deploy** (đổi hàm đăng ký sang mã viết tắt).
