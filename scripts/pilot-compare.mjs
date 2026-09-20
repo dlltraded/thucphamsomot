@@ -114,7 +114,7 @@ function loadKiotViet(file) {
 }
 
 async function loadTps1(date, refs) {
-  const sel = 'id,order_code,external_ref,status,customer_code,customer_name,delivery_date,is_late_order,grand_total,pre_delivery_grand_total,subtotal,discount_amount,pricing_status,created_at,confirmed_at,shipping_at,delivery_confirmed_at,completed_at,canceled_at,paid_amount,payment_status,invoice_document_status,order_items(sku,name,quantity,ordered_quantity,confirmed_quantity,quantity_delivered,unit_price,final_unit_price,line_total,final_line_total,customer_note)';
+  const sel = 'id,order_code,external_ref,status,customer_code,customer_name,delivery_date,is_late_order,grand_total,pre_delivery_grand_total,subtotal,discount_amount,pricing_status,created_at,confirmed_at,shipping_at,delivery_confirmed_at,completed_at,canceled_at,paid_amount,payment_status,invoice_document_status,order_items(product_id,sku,name,quantity,ordered_quantity,confirmed_quantity,quantity_delivered,unit_price,final_unit_price,line_total,final_line_total,customer_note)';
   const byDate = date ? await rest(`orders?select=${sel}&delivery_date=eq.${date}&order=created_at.asc&limit=500`) : [];
   let byRef = [];
   if (refs?.length) {
@@ -123,7 +123,18 @@ async function loadTps1(date, refs) {
   }
   const seen = new Map();
   for (const o of [...byDate, ...byRef]) seen.set(o.id, o);
-  return [...seen.values()];
+  const all = [...seen.values()];
+  // Dòng hàng tạo qua RPC admin_create_order có thể chưa có sku → bù từ bảng products theo product_id
+  const need = [...new Set(all.flatMap((o) => (o.order_items || []).filter((i) => !i.sku && i.product_id).map((i) => i.product_id)))];
+  if (need.length) {
+    const skus = new Map();
+    for (let n = 0; n < need.length; n += 100) {
+      const chunk = need.slice(n, n + 100).join(",");
+      for (const p of await rest(`products?select=id,sku&id=in.(${chunk})`)) skus.set(p.id, p.sku);
+    }
+    for (const o of all) for (const i of o.order_items || []) if (!i.sku && i.product_id) i.sku = skus.get(i.product_id) || "";
+  }
+  return all;
 }
 
 // ---------- chạy ----------

@@ -1,4 +1,7 @@
 # HANDOFF — TRẠNG THÁI DỰ ÁN TPS1 (cuối phiên 20/09/2026, Claude)
+
+> **>>> BẢN MỚI NHẤT (20/09 tối): xem `docs/CONG_VIEC_CON_LAI_PHASE1.md` — danh sách việc đã xong / còn lại theo ưu tiên (P0–P3) và luật bắt buộc. Nếu mâu thuẫn với phần bên dưới, ưu tiên file đó.**
+
 Đọc file này ĐẦU TIÊN khi bắt đầu phiên mới. Kế hoạch tổng: `KE_HOACH_GOLIVE_PILOT_10_DON.md` (có nhật ký tiến độ mục 9). Đặc tả chi tiết: `PHASE1_PLAN_DON_HANG_THU_MUA.md`. Việc giao Gemini + toàn bộ rà soát: `GIAO_VIEC_GEMINI_PHASE1.md` (mục 8–15).
 
 ## Mục tiêu
@@ -16,7 +19,7 @@ Claude = lập kế hoạch + rà soát + tự làm gói lõi (OrderDetailPage, 
 ## CẬP NHẬT TỐI 20/09 (sau rà soát Gemini P3/P4/P7/P8)
 - Migration **19/19 đã chạy** (kể cả f, h). Gemini xong P2, P3, P4, P7 (DatHang webapp), P8/WP6 (track-adjustment, OrdersPage, POS lý do điều chỉnh). Real tsc: sale-webapp + root 0 lỗi. API nhân viên đã smoke-test chỉ-đọc OK.
 - **Gemini vi phạm:** script scratch tạo 2 đơn thật + nhúng mật khẩu admin/token — Claude đã hủy 2 đơn, xóa file, ghi mục 16 giao việc. Anh nên đổi mật khẩu admin sau giai đoạn thử.
-- Mật khẩu admin đã được đặt lại thành `Tps1@2026` theo lệnh của anh qua Supabase Auth Admin API (đã test login thành công).
+- Mật khẩu admin đã được anh đặt lại (giá trị KHÔNG ghi trong file; nếu từng lộ trong git phải đổi ngay).
 
 ## CẬP NHẬT ĐÊM 20/09 (Gemini hoàn tất WP7, Hướng dẫn vai trò, Deploy & Fix tải đơn)
 1. **WP7 Mini App (`tps1-miniapp`)**:

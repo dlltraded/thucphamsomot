@@ -123,7 +123,7 @@ Các migration bổ sung tính năng Phase 1:
 ### Tài khoản Nhân viên hiện có:
 | Email đăng nhập | Mật khẩu | Tên nhân viên | Vai trò (`role`) | Ghi chú |
 |---|---|---|---|---|
-| `admin@thucphamsomot.vn` | `Tps1@2026` | Admin Tổng | `admin` | Quản trị toàn hệ thống (đã reset & test OK). |
+| `admin@thucphamsomot.vn` | (đã ẩn — hỏi anh chủ dự án; KHÔNG ghi mật khẩu vào file) | Admin Tổng | `admin` | Quản trị toàn hệ thống (đã reset & test OK). |
 | `sale01@thucphamsomot.vn` | (Theo cấu hình cũ) | Nguyễn Thái Hoà | `sale` | Đã được gán phụ trách 276 khách hàng active. |
 | `xuandinh.avg@gmail.com` | (Theo cấu hình cũ) | Phạm Xuân Định | `truong_phong` | Trưởng phòng Vận hành. |
 

@@ -60,7 +60,12 @@ export async function POST(req: NextRequest) {
       warnings: result.warnings.length ? result.warnings : undefined,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Không xác nhận được thực giao";
+    const message =
+      err instanceof Error
+        ? err.message
+        : typeof (err as { message?: unknown })?.message === "string"
+          ? String((err as { message: string }).message)
+          : "Không xác nhận được thực giao";
     const missingColumn = /delivery_confirmed_at|confirmed_quantity|sync_order_inventory|pre_delivery_grand_total/.test(message);
     console.error("POST /api/admin/orders/reconcile-delivery lỗi:", err);
     return json(
