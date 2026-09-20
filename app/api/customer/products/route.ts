@@ -10,14 +10,25 @@ const corsHeaders = {
 };
 
 function json(body: unknown, status = 200) {
-  return NextResponse.json(body, { status, headers: corsHeaders });
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Cache-Control": "private, max-age=30, stale-while-revalidate=90",
+      Vary: "Authorization, Cookie",
+    },
+  });
 }
+
+type CustomerContext = { customerId: string; tier: string | null; expiresAt: number };
+const customerContextCache = new Map<string, CustomerContext>();
+const CUSTOMER_CONTEXT_TTL_MS = 60_000;
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-async function resolveCustomerId(req: NextRequest, supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
+async function resolveCustomerContext(req: NextRequest, supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
   const websiteSession = parseSessionCookieValue(req.cookies.get(CUSTOMER_SESSION_COOKIE)?.value);
   const token =
     websiteSession?.orderSessionToken ||
@@ -25,13 +36,29 @@ async function resolveCustomerId(req: NextRequest, supabase: ReturnType<typeof g
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return null;
 
+  const cached = customerContextCache.get(token);
+  if (cached && cached.expiresAt > Date.now()) return cached;
+
   const { data } = await supabase
     .from("customer_sessions")
     .select("customer_id, expires_at")
     .eq("token", token)
     .gt("expires_at", new Date().toISOString())
     .maybeSingle();
-  return data?.customer_id || null;
+  if (!data?.customer_id) return null;
+
+  const { data: customer } = await supabase
+    .from("vip_accounts")
+    .select("discount_tier")
+    .eq("id", data.customer_id)
+    .maybeSingle();
+  const context: CustomerContext = {
+    customerId: data.customer_id,
+    tier: customer?.discount_tier || null,
+    expiresAt: Date.now() + CUSTOMER_CONTEXT_TTL_MS,
+  };
+  customerContextCache.set(token, context);
+  return context;
 }
 
 // Giai đoạn E — trang "Đặt hàng": khách tìm sản phẩm để tự lên đơn, thấy
@@ -47,8 +74,8 @@ async function resolveCustomerId(req: NextRequest, supabase: ReturnType<typeof g
 // cho khách (thông tin nội bộ), chỉ hiện còn/hết hàng.
 export async function GET(req: NextRequest) {
   const supabase = getCustomerSupabaseAdmin();
-  const customerId = await resolveCustomerId(req, supabase);
-  if (!customerId) return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
+  const customerContext = await resolveCustomerContext(req, supabase);
+  if (!customerContext) return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
 
   if (req.nextUrl.searchParams.get("meta") === "1") {
     let categories: string[] = [];
@@ -129,7 +156,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Giá theo hạng/hợp đồng riêng dùng chung hàm resolvePricesForProducts (F5)
-    const priceMap = await resolvePricesForProducts(supabase, customerId, products || []);
+    const priceMap = await resolvePricesForProducts(supabase, customerContext.customerId, products || [], customerContext.tier);
 
     const resolved = (products || []).map((p) => {
       const priceInfo = priceMap.get(p.id);
@@ -140,7 +167,7 @@ export async function GET(req: NextRequest) {
         name: p.name,
         category: p.category,
         unit: p.unit || "Kg",
-        imageUrl: p.image_url,
+        imageUrl: p.thumb_url || p.image_url,
         thumbUrl: p.thumb_url || p.image_url,
         price,
         priceOnRequest: price <= 0,

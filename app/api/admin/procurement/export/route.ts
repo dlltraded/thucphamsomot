@@ -398,7 +398,6 @@ export async function GET(req: NextRequest) {
     s2.columns = [
       { width: 12 }, // Ngày giao
       { width: 14 }, // Mã đơn
-      { width: 14 }, // Mã KiotViet
       { width: 28 }, // Tên khách hàng
       { width: 32 }, // Điểm giao / Địa chỉ
       { width: 18 }, // Nhóm hàng
@@ -412,10 +411,10 @@ export async function GET(req: NextRequest) {
       { width: 14 }, // Trễ giờ chốt
     ];
 
-    titleBlock(s2, `CHI TIẾT THEO KHÁCH HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 14);
+    titleBlock(s2, `CHI TIẾT THEO KHÁCH HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 13);
 
     const s2Header = s2.addRow([
-      "Ngày giao", "Mã đơn", "Mã KiotViet", "Tên khách hàng", "Điểm giao / Địa chỉ", "Nhóm hàng",
+      "Ngày giao", "Mã đơn", "Tên khách hàng", "Điểm giao / Địa chỉ", "Nhóm hàng",
       "Mã hàng", "Tên hàng", "ĐVT", "SL khách đặt", "SL cuối cùng", "Ghi chú dòng", "Trạng thái", "Trễ giờ chốt"
     ]);
     styleHeaderRow(s2Header);
@@ -433,7 +432,6 @@ export async function GET(req: NextRequest) {
       const row = s2.addRow([
         d.deliveryDate,
         d.orderCode,
-        d.externalRef || "-",
         d.customerName,
         d.deliveryAddress,
         d.category,
@@ -449,21 +447,20 @@ export async function GET(req: NextRequest) {
 
       row.getCell(1).alignment = { horizontal: "center" };
       row.getCell(2).alignment = { horizontal: "center" };
-      row.getCell(3).alignment = { horizontal: "center" };
-      row.getCell(9).alignment = { horizontal: "center" };
+      row.getCell(8).alignment = { horizontal: "center" };
+      row.getCell(9).alignment = { horizontal: "right" };
+      row.getCell(9).numFmt = "#,##0.0##";
       row.getCell(10).alignment = { horizontal: "right" };
+      row.getCell(10).font = { bold: true, color: { argb: BRAND.primary } };
       row.getCell(10).numFmt = "#,##0.0##";
-      row.getCell(11).alignment = { horizontal: "right" };
-      row.getCell(11).font = { bold: true, color: { argb: BRAND.primary } };
-      row.getCell(11).numFmt = "#,##0.0##";
+      row.getCell(12).alignment = { horizontal: "center" };
       row.getCell(13).alignment = { horizontal: "center" };
-      row.getCell(14).alignment = { horizontal: "center" };
       if (d.isLate) {
-        row.getCell(14).font = { color: { argb: BRAND.warningText }, bold: true };
+        row.getCell(13).font = { color: { argb: BRAND.warningText }, bold: true };
       }
     }
 
-    s2.autoFilter = { from: "A5", to: "N5" };
+    s2.autoFilter = { from: "A5", to: "M5" };
 
     // ─── SHEET 3: Danh sách đơn ────────────────────────────────────
     const s3 = wb.addWorksheet("Danh sách đơn", {
@@ -473,7 +470,6 @@ export async function GET(req: NextRequest) {
 
     s3.columns = [
       { width: 14 }, // Mã đơn
-      { width: 14 }, // Mã KiotViet
       { width: 28 }, // Khách hàng
       { width: 14 }, // Mã KH
       { width: 32 }, // Điểm giao
@@ -485,17 +481,16 @@ export async function GET(req: NextRequest) {
       { width: 30 }, // Ghi chú đơn
     ];
 
-    titleBlock(s3, `DANH SÁCH ĐƠN HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 11);
+    titleBlock(s3, `DANH SÁCH ĐƠN HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 10);
 
     const s3Header = s3.addRow([
-      "Mã đơn", "Mã KiotViet", "Khách hàng", "Mã KH", "Điểm giao", "Người nhận", "SĐT", "Số dòng hàng", "Trạng thái", "Trễ giờ chốt", "Ghi chú đơn"
+      "Mã đơn", "Khách hàng", "Mã KH", "Điểm giao", "Người nhận", "SĐT", "Số dòng hàng", "Trạng thái", "Trễ giờ chốt", "Ghi chú đơn"
     ]);
     styleHeaderRow(s3Header);
 
     for (const o of orderList) {
       const row = s3.addRow([
         o.order_code,
-        o.external_ref || "-",
         o.customer_name || "",
         o.customer_code || "",
         o.delivery_address || o.delivery_alias || "",
@@ -508,22 +503,21 @@ export async function GET(req: NextRequest) {
       ]);
 
       row.getCell(1).alignment = { horizontal: "center" };
-      row.getCell(2).alignment = { horizontal: "center" };
-      row.getCell(4).alignment = { horizontal: "center" };
+      row.getCell(3).alignment = { horizontal: "center" };
+      row.getCell(6).alignment = { horizontal: "center" };
       row.getCell(7).alignment = { horizontal: "center" };
       row.getCell(8).alignment = { horizontal: "center" };
       row.getCell(9).alignment = { horizontal: "center" };
-      row.getCell(10).alignment = { horizontal: "center" };
       if (o.is_late_order) {
-        row.getCell(10).font = { color: { argb: BRAND.warningText }, bold: true };
+        row.getCell(9).font = { color: { argb: BRAND.warningText }, bold: true };
       }
     }
 
     const s3TotalRow = s3.addRow([
-      `Tổng cộng: ${orderList.length} đơn hàng`, "", "", "", "", "", "", totalLinesCount, "", "", ""
+      `Tổng cộng: ${orderList.length} đơn hàng`, "", "", "", "", "", totalLinesCount, "", "", ""
     ]);
     s3TotalRow.font = { bold: true };
-    s3TotalRow.getCell(8).alignment = { horizontal: "center" };
+    s3TotalRow.getCell(7).alignment = { horizontal: "center" };
     s3TotalRow.eachCell((cell) => {
       cell.border = { top: { style: "medium", color: { argb: BRAND.gold } } };
     });

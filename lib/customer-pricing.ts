@@ -17,27 +17,30 @@ export interface ResolvedProductPrice {
 export async function resolvePricesForProducts(
   supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
   customerId: string,
-  products: Array<{ id: string; price_retail?: number | null; price_wholesale?: number | null }>
+  products: Array<{ id: string; price_retail?: number | null; price_wholesale?: number | null }>,
+  knownTier?: string | null
 ): Promise<Map<string, ResolvedProductPrice>> {
   const priceMap = new Map<string, ResolvedProductPrice>();
   const productIds = Array.from(new Set(products.map((p) => p.id).filter(Boolean)));
   if (productIds.length === 0) return priceMap;
 
   // 1. Lấy discount_tier của khách
-  const { data: customer } = await supabase
-    .from("vip_accounts")
-    .select("discount_tier")
-    .eq("id", customerId)
-    .maybeSingle();
-
-  const tier = customer?.discount_tier || null;
+  let tier = knownTier;
+  if (tier === undefined) {
+    const { data: customer } = await supabase
+      .from("vip_accounts")
+      .select("discount_tier")
+      .eq("id", customerId)
+      .maybeSingle();
+    tier = customer?.discount_tier || null;
+  }
   const now = new Date();
 
   // 2. Lấy giá hợp đồng riêng của khách (chỉ lấy cho các productIds cần thiết, chia lô 100)
   const contractChunks = chunkArray(productIds, 100);
   const contractByProduct = new Map<string, number>();
 
-  for (const chunk of contractChunks) {
+  await Promise.all(contractChunks.map(async (chunk) => {
     try {
       const { data: contractRows } = await supabase
         .from("customer_contract_prices")
@@ -53,12 +56,12 @@ export async function resolvePricesForProducts(
     } catch (err) {
       console.error("Lỗi tải customer_contract_prices:", err);
     }
-  }
+  }));
 
   // 3. Lấy giá theo hạng (nếu khách có tier)
   const tierPriceByProduct = new Map<string, number>();
   if (tier) {
-    for (const chunk of contractChunks) {
+    await Promise.all(contractChunks.map(async (chunk) => {
       try {
         const { data: tierRows } = await supabase
           .from("product_tier_prices")
@@ -72,7 +75,7 @@ export async function resolvePricesForProducts(
       } catch (err) {
         console.error("Lỗi tải product_tier_prices:", err);
       }
-    }
+    }));
   }
 
   // 4. Áp giá theo thứ tự ưu tiên: Hợp đồng riêng > Giá theo hạng > Giá gốc
