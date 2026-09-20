@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabase, getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { setAdminSession } from "@/lib/admin-session";
+import { isLoginBlocked, recordLoginFailure, clearLoginFailures, LOGIN_BLOCKED_MESSAGE } from "@/lib/rate-limit";
 
 // LƯU Ý BẢO MẬT (2026-09-09): route này TRƯỚC ĐÂY không hề kiểm tra mật khẩu
 // (chỉ tra tên/email trong admin_profiles rồi cho đăng nhập luôn), cộng thêm
@@ -36,11 +37,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu" }, { status: 400, headers: corsHeaders });
     }
 
+    // Giới hạn số lần đăng nhập sai theo mã/email và theo IP (yêu cầu 2026-09-20)
+    if (await isLoginBlocked(req, identifier)) {
+      return NextResponse.json({ ok: false, error: LOGIN_BLOCKED_MESSAGE }, { status: 429, headers: corsHeaders });
+    }
+
     const staffResult = await tryStaffLogin(identifier, password);
-    if (staffResult) return NextResponse.json(staffResult, { headers: corsHeaders });
+    if (staffResult) {
+      await clearLoginFailures(identifier);
+      return NextResponse.json(staffResult, { headers: corsHeaders });
+    }
 
     const customerResult = await tryCustomerLogin(identifier, password);
-    if (customerResult) return NextResponse.json(customerResult, { headers: corsHeaders });
+    if (customerResult) {
+      await clearLoginFailures(identifier);
+      return NextResponse.json(customerResult, { headers: corsHeaders });
+    }
+
+    await recordLoginFailure(req, identifier);
 
     // Không tiết lộ identifier thuộc hệ nào (nhân viên hay khách hàng) để
     // tránh dò tài khoản — luôn trả cùng một thông báo chung.
@@ -124,18 +138,46 @@ interface CustomerLoginRow {
   order_session_token: string;
 }
 
+function normalizeCustomerLoginCode(code: string): string {
+  return code
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/\s+/g, "")
+    .toUpperCase();
+}
+
 async function tryCustomerLogin(identifier: string, password: string) {
   const supabase = getCustomerSupabase();
-  const { data, error } = await supabase.rpc("verify_customer_login", {
-    p_code: identifier,
+  const normalizedCode = normalizeCustomerLoginCode(identifier);
+
+  // Thử lần 1: với mã đúng như gõ (đã chuẩn hóa HOA, bỏ dấu/khoảng trắng)
+  let { data, error } = await supabase.rpc("verify_customer_login", {
+    p_code: normalizedCode,
     p_password: password,
   });
-  if (error) {
+
+  let row: CustomerLoginRow | undefined = Array.isArray(data) ? data[0] : data;
+
+  // Thử lần 2: nếu không khớp và chưa có tiền tố TPS1- -> thử lại với TPS1- + mã (yêu cầu 2026-09-20)
+  if ((!row || !row.order_session_token) && !normalizedCode.startsWith("TPS1-")) {
+    const codeWithPrefix = `TPS1-${normalizedCode}`;
+    const retry = await supabase.rpc("verify_customer_login", {
+      p_code: codeWithPrefix,
+      p_password: password,
+    });
+    if (!retry.error && retry.data) {
+      row = Array.isArray(retry.data) ? retry.data[0] : retry.data;
+    }
+  }
+
+  if (error && (!row || !row.order_session_token)) {
     console.error("verify_customer_login error (sale-auth):", error);
     return null;
   }
 
-  const row: CustomerLoginRow | undefined = Array.isArray(data) ? data[0] : data;
   if (!row || !row.order_session_token) return null;
 
   return {

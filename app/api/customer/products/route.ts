@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { resolvePricesForProducts } from "@/lib/customer-pricing";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,8 +51,18 @@ export async function GET(req: NextRequest) {
   if (!customerId) return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
 
   if (req.nextUrl.searchParams.get("meta") === "1") {
-    const { data: catRows } = await supabase.from("products").select("category").eq("active", true).not("category", "is", null);
-    const categories = [...new Set((catRows || []).map((r) => r.category as string))].sort();
+    let categories: string[] = [];
+    try {
+      const { data: rpcCats, error: catErr } = await supabase.rpc("get_distinct_categories");
+      if (!catErr && Array.isArray(rpcCats)) {
+        categories = rpcCats.map((r: any) => r.category).filter(Boolean);
+      }
+    } catch { /* ignore */ }
+
+    if (categories.length === 0) {
+      const { data: catRows } = await supabase.from("products").select("category").eq("active", true).not("category", "is", null);
+      categories = [...new Set((catRows || []).map((r) => r.category as string))].sort();
+    }
     return json({ ok: true, categories });
   }
 
@@ -62,40 +73,67 @@ export async function GET(req: NextRequest) {
   const pageSize = search ? 50 : 24;
 
   try {
-    let query = supabase
-      .from("products")
-      .select("id, sku, name, category, unit, image_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock", { count: "exact" })
-      .eq("active", true)
-      .order("name")
-      .range(page * pageSize, page * pageSize + pageSize - 1);
-    if (search) {
-      const safe = search.replace(/[%_]/g, "");
-      query = query.or(`name.ilike.%${safe}%,sku.ilike.%${safe}%`);
+    let products: any[] = [];
+    let totalCount = 0;
+    let usedRpc = false;
+
+    if (search || category) {
+      try {
+        const { data: rpcRows, error: rpcErr } = await supabase.rpc("search_products", {
+          p_query: search || null,
+          p_category: category || null,
+          p_limit: pageSize,
+          p_offset: page * pageSize,
+        });
+
+        if (!rpcErr && Array.isArray(rpcRows)) {
+          usedRpc = true;
+          totalCount = rpcRows.length > 0 ? Number(rpcRows[0].total) || rpcRows.length : 0;
+          products = rpcRows.map((r: any) => ({
+            id: r.id,
+            sku: r.sku,
+            name: r.name,
+            category: r.category,
+            unit: r.unit,
+            image_url: r.image_url,
+            thumb_url: r.thumb_url,
+            price_retail: r.price_retail,
+            price_wholesale: r.price_wholesale,
+            track_inventory: r.track_inventory,
+            stock_qty: r.stock_qty,
+            min_stock: r.min_stock,
+          }));
+        }
+      } catch {
+        usedRpc = false;
+      }
     }
-    if (category) query = query.eq("category", category);
 
-    const { data: products, count, error } = await query;
-    if (error) throw error;
+    if (!usedRpc) {
+      let query = supabase
+        .from("products")
+        .select("id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock", { count: "exact" })
+        .eq("active", true)
+        .order("name")
+        .range(page * pageSize, page * pageSize + pageSize - 1);
+      if (search) {
+        const safe = search.replace(/[%_]/g, "");
+        query = query.or(`name.ilike.%${safe}%,sku.ilike.%${safe}%`);
+      }
+      if (category) query = query.eq("category", category);
 
-    // Giá theo hạng/hợp đồng riêng — tính 1 lần trong bộ nhớ cho cả trang,
-    // giống hệt thứ tự ưu tiên của hàm SQL resolve_product_price.
-    const [{ data: customer }, { data: contractRows }] = await Promise.all([
-      supabase.from("vip_accounts").select("discount_tier").eq("id", customerId).maybeSingle(),
-      supabase.from("customer_contract_prices").select("product_id, price, valid_until").eq("customer_id", customerId),
-    ]);
-    const tier = customer?.discount_tier || null;
-    const now = new Date();
-    const contractByProduct = new Map(
-      (contractRows || []).filter((c) => !c.valid_until || new Date(c.valid_until) > now).map((c) => [c.product_id, Number(c.price)])
-    );
-    const { data: tierPriceRows } = tier
-      ? await supabase.from("product_tier_prices").select("product_id, price").eq("tier", tier)
-      : { data: [] as { product_id: string; price: number }[] };
-    const tierPriceByProduct = new Map((tierPriceRows || []).map((t) => [t.product_id, Number(t.price)]));
+      const { data: qProducts, count, error } = await query;
+      if (error) throw error;
+      products = qProducts || [];
+      totalCount = count || 0;
+    }
+
+    // Giá theo hạng/hợp đồng riêng dùng chung hàm resolvePricesForProducts (F5)
+    const priceMap = await resolvePricesForProducts(supabase, customerId, products || []);
 
     const resolved = (products || []).map((p) => {
-      const base = Number(p.price_retail) || Number(p.price_wholesale) || 0;
-      const price = contractByProduct.has(p.id) ? contractByProduct.get(p.id)! : tierPriceByProduct.has(p.id) ? tierPriceByProduct.get(p.id)! : base;
+      const priceInfo = priceMap.get(p.id);
+      const price = priceInfo?.price ?? (Number(p.price_retail) || Number(p.price_wholesale) || 0);
       return {
         id: p.id,
         sku: p.sku,
@@ -103,6 +141,7 @@ export async function GET(req: NextRequest) {
         category: p.category,
         unit: p.unit || "Kg",
         imageUrl: p.image_url,
+        thumbUrl: p.thumb_url || p.image_url,
         price,
         priceOnRequest: price <= 0,
         // Hàng tươi sống tồn kho = 0 vẫn nhận đặt hàng, bộ phận thu mua sẽ sắp xếp nhập giao khách
@@ -111,7 +150,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return json({ ok: true, total: count || 0, page, pageSize, products: resolved });
+    return json({ ok: true, total: totalCount, page, pageSize, products: resolved });
   } catch (error) {
     console.error("GET /api/customer/products lỗi:", error);
     return json({ ok: false, error: "Không tải được danh sách sản phẩm, vui lòng thử lại" }, 500);

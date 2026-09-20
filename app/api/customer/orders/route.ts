@@ -44,11 +44,33 @@ export async function GET(req: NextRequest) {
         .filter((item: { status?: string; document_type?: string }) => item.status === "generated" && item.document_type === type)
         .sort((a: { revision?: number }, b: { revision?: number }) => Number(b.revision || 0) - Number(a.revision || 0))[0];
 
+    // Yêu cầu điều chỉnh/hủy mới nhất của từng đơn (WP6b) — bảng chưa có (migration chưa chạy) thì bỏ qua
+    const latestRequestByOrder = new Map<string, Record<string, unknown>>();
+    try {
+      const ids = (data || []).map((o) => o.id).slice(0, 300);
+      if (ids.length) {
+        const { data: reqs, error: reqErr } = await supabase
+          .from("order_change_requests")
+          .select("id, order_id, type, status, message, requested_at, handled_at, handled_note")
+          .in("order_id", ids)
+          .order("requested_at", { ascending: false });
+        if (!reqErr) for (const r of reqs || []) if (!latestRequestByOrder.has(r.order_id)) latestRequestByOrder.set(r.order_id, r);
+      }
+    } catch {
+      /* bảng chưa tạo */
+    }
+
     const orders = (data || []).map((order) => {
       const confirmationDoc = latestDoc(order, "order_confirmation");
       const invoiceDoc = latestDoc(order, "invoice");
       return {
         ...order,
+        change_request: latestRequestByOrder.get(order.id) || null,
+        delivery_date: order.delivery_date || null,
+        delivery_address_id: order.delivery_address_id || null,
+        is_late_order: Boolean(order.is_late_order),
+        cancel_reason: order.cancel_reason || null,
+        canceled_by: order.canceled_by || null,
         confirmation_document_id: confirmationDoc?.id || null,
         // Chỉ trả invoice_document_id khi đơn đã completed — Mini App chỉ nên
         // hiện nút tải hóa đơn lúc đó (mục brief 2026-09-11).
@@ -60,7 +82,10 @@ export async function GET(req: NextRequest) {
           sku: item.sku,
           name: item.name,
           unit: item.unit,
-          quantity: item.quantity,
+          quantity: Number(item.quantity) || 0,
+          orderedQuantity: item.ordered_quantity != null ? Number(item.ordered_quantity) : Number(item.quantity) || 0,
+          orderedProductName: (item.ordered_product_name as string) || (item.name as string) || "",
+          customerNote: (item.customer_note as string) || "",
           baseUnitPrice: item.base_unit_price,
           discountPercent: item.discount_percent,
           price: item.unit_price,

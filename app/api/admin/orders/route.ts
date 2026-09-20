@@ -6,6 +6,7 @@ import { type ConfirmationOrderItem } from "@/lib/order-confirmation-pdf";
 import { generateSalesInvoicePdf, type SalesInvoiceSnapshot } from "@/lib/sales-invoice-pdf";
 import { finalizeOrderCore } from "@/lib/order-finalize";
 import { sendPushToCustomer } from "@/lib/push";
+import { reconcileDelivery } from "@/lib/order-reconcile";
 
 const ORDER_STATUSES = [
   "pending",
@@ -84,6 +85,8 @@ export async function GET(req: NextRequest) {
     }
     const orderId = req.nextUrl.searchParams.get("id")?.trim();
     const status = req.nextUrl.searchParams.get("status");
+    const deliveryDate = req.nextUrl.searchParams.get("deliveryDate")?.trim();
+    const late = req.nextUrl.searchParams.get("late")?.trim();
     let query = supabase
       .from("orders")
       .select("*, order_items(*), order_history(*)")
@@ -95,6 +98,12 @@ export async function GET(req: NextRequest) {
       query = query.limit(500);
       if (status && ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
         query = query.eq("status", status);
+      }
+      if (deliveryDate) {
+        query = query.eq("delivery_date", deliveryDate);
+      }
+      if (late === "1") {
+        query = query.eq("is_late_order", true);
       }
     }
 
@@ -215,7 +224,8 @@ async function createInvoiceDocument(
     debt_amount: order.debt_amount != null ? Number(order.debt_amount) : null,
     completed_at: order.completed_at,
     sales_rep_name: rep?.name || null,
-    order_items: (order.order_items || []) as ConfirmationOrderItem[],
+    // Hóa đơn chỉ liệt kê mặt hàng thực giao (SL > 0) — dòng giao 0 (thiếu hàng) vẫn nằm trong đơn để truy vết
+    order_items: (order.order_items || []).filter((item: { quantity?: number }) => Number(item.quantity) > 0) as ConfirmationOrderItem[],
   };
 
   const fileName = `HOA-DON_${order.order_code}.pdf`;
@@ -400,6 +410,32 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    // HOÀN THÀNH phải qua bước XÁC NHẬN THỰC GIAO (yêu cầu 2026-09-20): hóa đơn tính theo số thực giao.
+    // confirmFullDelivery=true => giao đủ 100% (1 chạm). Nếu migration 20260920g chưa chạy
+    // (cột delivery_confirmed_at chưa có) thì bỏ qua chốt chặn để luồng cũ vẫn chạy.
+    if (nextStatus === "completed" && current.status !== "completed" && "delivery_confirmed_at" in current && !current.delivery_confirmed_at) {
+      if (body?.confirmFullDelivery === true) {
+        try {
+          await reconcileDelivery(supabase, {
+            orderId,
+            full: true,
+            actor: String(auth.profile?.name || auth.profile?.email || "admin"),
+            note: "Giao đủ 100% (xác nhận khi hoàn thành)",
+          });
+        } catch (reconcileError) {
+          return json(
+            { ok: false, error: reconcileError instanceof Error ? reconcileError.message : "Không xác nhận được thực giao" },
+            409
+          );
+        }
+      } else {
+        return json(
+          { ok: false, code: "delivery_not_confirmed", error: "Cần xác nhận số lượng thực giao trước khi hoàn thành đơn (hóa đơn tính theo số thực giao)" },
+          409
+        );
+      }
+    }
+
     const now = new Date().toISOString();
     const updates: Record<string, unknown> = { status: nextStatus };
     if (paymentStatus) updates.payment_status = paymentStatus;
@@ -432,7 +468,7 @@ export async function PATCH(req: NextRequest) {
       from_status: current.status,
       to_status: nextStatus,
       note: note || null,
-      actor: "admin",
+      actor: auth.profile?.name || auth.profile?.email || "admin",
       payload: paymentStatus ? { paymentStatus } : {},
     });
     if (historyError) throw historyError;
@@ -448,6 +484,16 @@ export async function PATCH(req: NextRequest) {
         p_actor: auth.profile?.name || "admin",
       });
       if (deductError) console.error("deduct_inventory_for_order lỗi:", deductError.message);
+    }
+
+    // Hủy đơn đã xác nhận/đang soạn: hoàn lại tồn kho đã trừ (idempotent; migration 20260920g). Lỗi không chặn hủy.
+    if (nextStatus === "canceled" && ["confirmed", "preparing"].includes(current.status)) {
+      const { error: restoreError } = await supabase.rpc("sync_order_inventory", {
+        p_order_id: orderId,
+        p_actor: auth.profile?.name || "admin",
+        p_mode: "zero",
+      });
+      if (restoreError) console.error("sync_order_inventory(zero) lỗi:", restoreError.message);
     }
 
     // Hóa đơn bán hàng — phát hành đúng lúc HOÀN THÀNH GIAO HÀNG (không phải

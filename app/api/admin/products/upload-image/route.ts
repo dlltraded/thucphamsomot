@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -16,9 +17,6 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-// Sale cũng được up ảnh — chỉ dùng ngay sau khi tự tạo sản phẩm mới trong lúc
-// bán (QuickAddProductModal), không phải để sửa ảnh hàng loạt của thu mua.
-const CAN_EDIT_ROLES = new Set(["admin", "thu_mua", "sale"]);
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -29,7 +27,7 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!CAN_EDIT_ROLES.has(auth.profile?.role || "")) {
+  if (!can(auth.profile?.role, "products.edit") && !can(auth.profile?.role, "products.create")) {
     return json({ ok: false, error: "Không có quyền sửa ảnh sản phẩm" }, 403);
   }
 

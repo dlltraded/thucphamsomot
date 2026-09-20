@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -16,8 +17,6 @@ function json(body: unknown, status = 200) {
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
-
-const CAN_EDIT_ROLES = new Set(["admin", "thu_mua"]);
 
 // Tải file mẫu Excel (2 cột bắt buộc + 1 cột ghi chú tùy chọn) để phòng thu
 // mua điền theo mỗi khi nhập hàng thật về kho.
@@ -59,7 +58,7 @@ interface RowResult {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!CAN_EDIT_ROLES.has(auth.profile?.role || "")) {
+  if (!can(auth.profile?.role, "products.stock_in")) {
     return json({ ok: false, error: "Chỉ Quản trị viên hoặc Thu mua được nhập kho hàng loạt" }, 403);
   }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -16,8 +17,6 @@ function json(body: unknown, status = 200) {
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
-
-const CAN_EDIT_ROLES = new Set(["admin", "thu_mua"]);
 
 // Import bảng giá hàng loạt bằng Excel — khớp mục 14.2-3 KE_HOACH: file thật
 // KiotViet (MauFileBangGia.xlsx) có cột Mã hàng/Tên hàng rồi N cột "Tên bảng
@@ -83,7 +82,7 @@ interface RowResult {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!CAN_EDIT_ROLES.has(auth.profile?.role || "")) {
+  if (!can(auth.profile?.role, "pricing.edit")) {
     return json({ ok: false, error: "Chỉ Quản trị viên hoặc Thu mua được nhập bảng giá hàng loạt" }, 403);
   }
 
