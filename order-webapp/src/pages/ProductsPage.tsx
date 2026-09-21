@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -19,8 +19,11 @@ import {
   Printer,
   ChevronDown,
   PackageOpen,
+  Heart,
+  Repeat2,
+  ChefHat,
 } from 'lucide-react';
-import { api, type Product, type ProductCatalogResponse, ApiError } from '../lib/api';
+import { api, type Product, type ProductCatalogResponse, type Order, ApiError } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 function money(v: number) {
@@ -205,6 +208,15 @@ export default function ProductsPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedResultIndex, setSelectedResultIndex] = useState(0);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('tps1_favorite_products_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Submit & Modal state
   const [submitting, setSubmitting] = useState(false);
@@ -261,6 +273,24 @@ export default function ProductsPage() {
     void loadProducts('', false);
     return () => searchAbortRef.current?.abort();
   }, [loadProducts]);
+
+  // Lấy lịch sử đơn gần đây để tạo khu vực “Đặt nhanh cho bếp”. Lỗi ở đây
+  // không chặn việc lên đơn: khách vẫn có thể tìm hàng như bình thường.
+  useEffect(() => {
+    let cancelled = false;
+    void api.orders().then((res) => {
+      if (!cancelled) setRecentOrders((res.orders || []).slice(0, 20));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tps1_favorite_products_v1', JSON.stringify(favoriteIds));
+    } catch {
+      // Không ảnh hưởng luồng đặt hàng nếu trình duyệt không cho lưu localStorage.
+    }
+  }, [favoriteIds]);
 
   // KiotViet cho cảm giác nhanh vì tìm trên catalog đã nằm trong trình duyệt.
   // TPS1 áp dụng cùng nguyên lý nhưng catalog vẫn mang đúng giá riêng của từng khách.
@@ -469,6 +499,44 @@ export default function ProductsPage() {
   const discountAmount = 0; // Áp dụng chiết khấu theo tier nếu có
   const finalTotalAmount = Math.max(0, subtotalAmount - discountAmount);
 
+  const frequentProducts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const order of recentOrders) {
+      for (const item of order.items || []) {
+        counts.set(item.productId, (counts.get(item.productId) || 0) + Number(item.quantity || 0));
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => catalogProducts.find((product) => product.id === id))
+      .filter((product): product is Product => Boolean(product))
+      .slice(0, 8);
+  }, [catalogProducts, recentOrders]);
+
+  const favoriteProducts = useMemo(
+    () => favoriteIds
+      .map((id) => catalogProducts.find((product) => product.id === id))
+      .filter((product): product is Product => Boolean(product))
+      .slice(0, 8),
+    [catalogProducts, favoriteIds]
+  );
+
+  const latestOrder = recentOrders[0];
+
+  const toggleFavorite = (productId: string) => {
+    setFavoriteIds((current) => current.includes(productId)
+      ? current.filter((id) => id !== productId)
+      : [...current, productId]);
+  };
+
+  const addOrderAgain = (order: Order) => {
+    const productsById = new Map(catalogProducts.map((product) => [product.id, product]));
+    order.items.forEach((item) => {
+      const product = productsById.get(item.productId);
+      if (product) handleAddProduct(product, Number(item.quantity) || 1);
+    });
+  };
+
   // Gửi đơn hàng (Submit Order)
   const handleSubmitOrder = async () => {
     setErrorMessage('');
@@ -676,6 +744,65 @@ export default function ProductsPage() {
           </button>
         </div>
       </div>
+
+      {/* Khu vực thao tác nhanh cho bếp: ưu tiên món quen thuộc và đơn gần nhất. */}
+      {(latestOrder || frequentProducts.length > 0 || favoriteProducts.length > 0) && (
+        <section className="bg-white rounded-2xl border border-[#14231c]/10 shadow-sm p-3.5 sm:p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-9 h-9 rounded-xl bg-[#0f6f4b]/10 text-[#0f6f4b] flex items-center justify-center">
+                <ChefHat size={19} />
+              </span>
+              <div>
+                <h2 className="font-bold text-sm sm:text-base text-[#14231c]">Đặt nhanh cho bếp</h2>
+                <p className="text-[11px] sm:text-xs text-[#59665f]">Món quen thuộc, thêm vào đơn chỉ bằng một chạm</p>
+              </div>
+            </div>
+            {latestOrder && (
+              <button type="button" onClick={() => addOrderAgain(latestOrder)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0f6f4b] text-white text-xs font-bold hover:bg-[#0b5a3c] active:scale-[.98] transition-all">
+                <Repeat2 size={15} /> <span className="hidden sm:inline">Đặt lại đơn gần nhất</span><span className="sm:hidden">Đặt lại</span>
+              </button>
+            )}
+          </div>
+
+          {favoriteProducts.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#59665f] mb-1.5 flex items-center gap-1"><Heart size={12} className="text-rose-500" /> Yêu thích</p>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {favoriteProducts.map((product) => (
+                  <button key={product.id} type="button" onClick={() => handleAddProduct(product)} className="min-w-[180px] max-w-[220px] flex items-center gap-2 p-2 rounded-xl border border-rose-100 bg-rose-50/50 hover:bg-rose-50 text-left">
+                    <ProductThumbnail product={product} compact />
+                    <span className="min-w-0 flex-1"><span className="block text-xs font-semibold truncate text-[#14231c]">{product.name}</span><span className="block text-[11px] text-[#0f6f4b] font-bold mt-0.5">{product.priceOnRequest ? 'Liên hệ' : money(product.price)}</span></span>
+                    <Heart size={14} className="shrink-0 fill-rose-500 text-rose-500" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {frequentProducts.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#59665f] mb-1.5">Hàng thường đặt</p>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {frequentProducts.map((product) => {
+                  const isFavorite = favoriteIds.includes(product.id);
+                  return (
+                    <div key={product.id} className="min-w-[210px] max-w-[250px] flex items-center gap-2 p-2 rounded-xl border border-[#14231c]/10 bg-[#f8faf7]">
+                      <button type="button" onClick={() => handleAddProduct(product)} className="min-w-0 flex-1 flex items-center gap-2 text-left">
+                        <ProductThumbnail product={product} compact />
+                        <span className="min-w-0"><span className="block text-xs font-semibold truncate text-[#14231c]">{product.name}</span><span className="block text-[11px] text-[#59665f] mt-0.5">{product.unit || 'Kg'} · {product.priceOnRequest ? 'Liên hệ' : money(product.price)}</span></span>
+                      </button>
+                      <button type="button" onClick={() => toggleFavorite(product.id)} className="p-1.5 rounded-lg hover:bg-white text-[#59665f]" aria-label={isFavorite ? `Bỏ yêu thích ${product.name}` : `Yêu thích ${product.name}`}>
+                        <Heart size={15} className={isFavorite ? 'fill-rose-500 text-rose-500' : ''} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ========================================================================= */}
       {/* VÙNG LÀM VIỆC CHÍNH: 2 CỘT (BẢNG HÀNG HÓA 68% + GIAO HÀNG & CHỐT ĐƠN 32%) */}
