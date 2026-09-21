@@ -585,6 +585,15 @@ export default function ProductsPage() {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-[#14231c]">Đặt hàng cho bếp</h1>
+          <p className="text-xs sm:text-sm text-[#59665f] mt-0.5">Chọn món quen thuộc hoặc tìm nhanh theo tên, mã hàng</p>
+        </div>
+        <div className="inline-flex items-center gap-2 self-start sm:self-auto px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+          <Clock size={15} /> Chốt đơn hôm nay: 16:30
+        </div>
+      </div>
       {/* ========================================================================= */}
       {/* THANH TOP BAR: TÌM KIẾM HÀNG HÓA & HỆ THỐNG ĐA TAB */}
       {/* ========================================================================= */}
