@@ -208,6 +208,7 @@ export default function ProductsPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedResultIndex, setSelectedResultIndex] = useState(0);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
     try {
@@ -523,6 +524,16 @@ export default function ProductsPage() {
 
   const latestOrder = recentOrders[0];
 
+  const categories = useMemo(() => {
+    const values = [...new Set(catalogProducts.map((product) => String(product.category || '').trim()).filter(Boolean))];
+    return values.sort((a, b) => a.localeCompare(b, 'vi')).slice(0, 16);
+  }, [catalogProducts]);
+
+  const categoryProducts = useMemo(() => {
+    if (!selectedCategory) return [];
+    return catalogProducts.filter((product) => product.category === selectedCategory).slice(0, 12);
+  }, [catalogProducts, selectedCategory]);
+
   const toggleFavorite = (productId: string) => {
     setFavoriteIds((current) => current.includes(productId)
       ? current.filter((id) => id !== productId)
@@ -755,7 +766,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Khu vực thao tác nhanh cho bếp: ưu tiên món quen thuộc và đơn gần nhất. */}
-      {(latestOrder || frequentProducts.length > 0 || favoriteProducts.length > 0) && (
+      {(latestOrder || frequentProducts.length > 0 || favoriteProducts.length > 0 || categories.length > 0) && (
         <section className="bg-white rounded-2xl border border-[#14231c]/10 shadow-sm p-3.5 sm:p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -773,6 +784,28 @@ export default function ProductsPage() {
               </button>
             )}
           </div>
+
+          {categories.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#59665f] mb-1.5">Duyệt theo nhóm hàng</p>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                <button type="button" onClick={() => setSelectedCategory('')} className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${!selectedCategory ? 'bg-[#0f6f4b] text-white border-[#0f6f4b]' : 'bg-[#f8faf7] text-[#59665f] border-[#14231c]/10 hover:border-[#0f6f4b]/30'}`}>Tất cả nhóm</button>
+                {categories.map((category) => (
+                  <button key={category} type="button" onClick={() => setSelectedCategory(category)} className={`shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${selectedCategory === category ? 'bg-[#0f6f4b] text-white border-[#0f6f4b]' : 'bg-[#f8faf7] text-[#59665f] border-[#14231c]/10 hover:border-[#0f6f4b]/30'}`}>{category}</button>
+                ))}
+              </div>
+              {selectedCategory && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+                  {categoryProducts.map((product) => (
+                    <button key={product.id} type="button" onClick={() => handleAddProduct(product)} className="flex items-center gap-2 min-w-0 p-2 rounded-xl border border-[#14231c]/10 bg-[#fbfcfb] hover:border-[#0f6f4b]/30 hover:bg-[#f4faf6] text-left">
+                      <ProductThumbnail product={product} compact />
+                      <span className="min-w-0"><span className="block text-xs font-semibold truncate">{product.name}</span><span className="block text-[10px] text-[#59665f] mt-0.5">{product.unit || 'Kg'}</span></span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {favoriteProducts.length > 0 && (
             <div>
