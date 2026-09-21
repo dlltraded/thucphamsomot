@@ -136,8 +136,21 @@ function getTomorrowDateStr() {
   return d.toISOString().split('T')[0];
 }
 
+function getDefaultDelivery(session: any) {
+  const shipping = session?.defaultShippingAddress;
+  const address = String(shipping?.address || '').trim();
+  if (!address) {
+    return { deliveryName: '', deliveryPhone: '', deliveryAddress: '' };
+  }
+  return {
+    deliveryName: String(shipping?.name || '').trim(),
+    deliveryPhone: String(shipping?.phone || '').trim(),
+    deliveryAddress: address,
+  };
+}
+
 function createDefaultTab(index: number, session: any): OrderTab {
-  const defaultShipping = session?.defaultShippingAddress;
+  const defaultDelivery = getDefaultDelivery(session);
   return {
     id: `tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     title: `Đặt hàng ${index}`,
@@ -145,9 +158,7 @@ function createDefaultTab(index: number, session: any): OrderTab {
     note: '',
     deliveryDate: getTomorrowDateStr(),
     deliveryShift: 'Ca sáng sớm (05:00 - 07:00)',
-    deliveryName: defaultShipping?.name || session?.name || '',
-    deliveryPhone: defaultShipping?.phone || session?.phone || '',
-    deliveryAddress: defaultShipping?.address || session?.address || '',
+    ...defaultDelivery,
     mode: 'delivery',
   };
 }
@@ -162,7 +173,14 @@ export default function ProductsPage() {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const defaultDelivery = getDefaultDelivery(session);
+          return parsed.map((tab) =>
+            String(tab?.deliveryAddress || '').trim()
+              ? tab
+              : { ...tab, ...defaultDelivery }
+          );
+        }
       }
     } catch {}
     return [createDefaultTab(1, session)];
