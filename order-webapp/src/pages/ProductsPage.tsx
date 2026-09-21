@@ -680,13 +680,58 @@ export default function ProductsPage() {
       {/* ========================================================================= */}
       {/* VÙNG LÀM VIỆC CHÍNH: 2 CỘT (BẢNG HÀNG HÓA 68% + GIAO HÀNG & CHỐT ĐƠN 32%) */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-3 items-start">
         {/* --------------------------------------------------------------------- */}
         {/* CỘT TRÁI: BẢNG DANH SÁCH MẶT HÀNG (8/12) */}
         {/* --------------------------------------------------------------------- */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-[#14231c]/10 shadow-sm flex flex-col min-h-[560px] overflow-hidden">
+        <div className="min-w-0 bg-white rounded-2xl border border-[#14231c]/10 shadow-sm flex flex-col min-h-[560px] overflow-hidden">
           {/* Header Bảng cột */}
-          <div className="overflow-x-auto flex-1">
+          <div className="md:hidden flex-1 divide-y divide-[#14231c]/5">
+            {activeTab.items.length === 0 ? (
+              <div className="py-16 px-6 text-center text-[#59665f]">
+                <div className="w-14 h-14 rounded-full bg-[#f6f7f4] flex items-center justify-center mx-auto mb-3 text-[#59665f]/40">
+                  <Search size={24} />
+                </div>
+                <p className="font-semibold text-sm text-[#14231c]">Chưa có mặt hàng nào</p>
+                <p className="text-xs mt-1">Tìm tên hoặc mã hàng ở phía trên để thêm vào đơn.</p>
+              </div>
+            ) : (
+              activeTab.items.map((item, idx) => {
+                const lineTotal = item.quantity * (item.product.price || 0);
+                return (
+                  <div key={item.product.id} className="p-3.5 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <ProductThumbnail product={item.product} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-[#14231c] leading-tight">{item.product.name}</p>
+                            <p className="text-[11px] text-[#59665f] mt-1 font-mono">{item.product.sku || '—'} · {item.product.unit || 'Kg'}</p>
+                          </div>
+                          <button type="button" onClick={() => handleRemoveItem(item.product.id)} className="p-1.5 -mr-1 text-[#59665f]/50 hover:text-red-600" aria-label={`Xóa ${item.product.name}`}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 mt-3">
+                          <div className="flex items-center gap-1.5">
+                            <button type="button" onClick={() => handleUpdateQty(item.product.id, item.quantity - 1)} className="w-9 h-9 rounded-lg bg-[#f6f7f4] font-bold text-base">−</button>
+                            <input type="number" min={0.1} step={1} value={item.quantity} onChange={(e) => handleUpdateQty(item.product.id, parseFloat(e.target.value) || 0)} className="w-16 h-9 text-center font-bold border border-[#14231c]/15 rounded-lg text-sm" aria-label={`Số lượng ${item.product.name}`} />
+                            <button type="button" onClick={() => handleUpdateQty(item.product.id, item.quantity + 1)} className="w-9 h-9 rounded-lg bg-[#f6f7f4] font-bold text-base">+</button>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[11px] text-[#59665f]">{item.product.priceOnRequest ? 'Liên hệ báo giá' : money(item.product.price)} / {item.product.unit || 'Kg'}</p>
+                            <p className="font-bold text-[#0f6f4b]">{item.product.priceOnRequest ? 'Tạm tính' : money(lineTotal)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[#59665f]">#{idx + 1} · Giá sẽ được xác nhận lại theo đơn cuối cùng.</p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <div className="hidden md:block overflow-x-auto flex-1">
             <table className="w-full text-left border-collapse min-w-[620px]">
               <thead>
                 <tr className="bg-[#f8faf7] border-b border-[#14231c]/10 text-[12px] font-bold text-[#59665f] uppercase tracking-wider">
@@ -854,7 +899,7 @@ export default function ProductsPage() {
         {/* --------------------------------------------------------------------- */}
         {/* CỘT PHẢI: GIAO HÀNG, THÔNG TIN KHÁCH HÀNG & NÚT ĐẶT HÀNG (4/12) */}
         {/* --------------------------------------------------------------------- */}
-        <div className="lg:col-span-4 space-y-3">
+        <div className="min-w-0 space-y-3">
           {/* Card Thông tin khách hàng & Giao nhận */}
           <div className="bg-white rounded-2xl border border-[#14231c]/10 shadow-sm p-4 space-y-3.5">
             {/* Header thông tin khách */}
