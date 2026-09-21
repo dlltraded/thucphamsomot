@@ -23,7 +23,7 @@ import {
   Repeat2,
   ChefHat,
 } from 'lucide-react';
-import { api, type Product, type ProductCatalogResponse, type Order, ApiError } from '../lib/api';
+import { api, type Product, type ProductCatalogResponse, type Order, type FrequentItem, ApiError } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 function money(v: number) {
@@ -210,6 +210,8 @@ export default function ProductsPage() {
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [frequentItems, setFrequentItems] = useState<FrequentItem[]>([]);
+  const [loadingLatestOrder, setLoadingLatestOrder] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('tps1_favorite_products_v1');
@@ -275,14 +277,12 @@ export default function ProductsPage() {
     return () => searchAbortRef.current?.abort();
   }, [loadProducts]);
 
-  // Lấy lịch sử đơn gần đây để tạo khu vực “Đặt nhanh cho bếp”. Lỗi ở đây
-  // không chặn việc lên đơn: khách vẫn có thể tìm hàng như bình thường.
+  // Endpoint này trả đúng 20 mặt hàng hay đặt, nhẹ hơn nhiều so với tải toàn bộ
+  // lịch sử đơn kèm từng dòng hàng ngay khi mở màn hình.
   useEffect(() => {
-    let cancelled = false;
-    void api.orders().then((res) => {
-      if (!cancelled) setRecentOrders((res.orders || []).slice(0, 20));
-    }).catch(() => undefined);
-    return () => { cancelled = true; };
+    const controller = new AbortController();
+    void api.frequentItems(controller.signal).then((res) => setFrequentItems(res.items || [])).catch(() => undefined);
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -500,19 +500,18 @@ export default function ProductsPage() {
   const discountAmount = 0; // Áp dụng chiết khấu theo tier nếu có
   const finalTotalAmount = Math.max(0, subtotalAmount - discountAmount);
 
-  const frequentProducts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const order of recentOrders) {
-      for (const item of order.items || []) {
-        counts.set(item.productId, (counts.get(item.productId) || 0) + Number(item.quantity || 0));
-      }
-    }
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([id]) => catalogProducts.find((product) => product.id === id))
-      .filter((product): product is Product => Boolean(product))
-      .slice(0, 8);
-  }, [catalogProducts, recentOrders]);
+  const frequentProducts = useMemo(() => frequentItems.slice(0, 8).map((item) => ({
+    id: item.productId,
+    sku: item.sku || '',
+    name: item.name,
+    category: item.category || null,
+    unit: item.unit || 'Kg',
+    price: Number(item.price) || 0,
+    priceOnRequest: Boolean(item.priceOnRequest),
+    imageUrl: item.imageUrl || null,
+    thumbUrl: item.imageUrl || null,
+    available: true,
+  } satisfies Product)), [frequentItems]);
 
   const favoriteProducts = useMemo(
     () => favoriteIds
@@ -546,6 +545,26 @@ export default function ProductsPage() {
       const product = productsById.get(item.productId);
       if (product) handleAddProduct(product, Number(item.quantity) || 1);
     });
+  };
+
+  const loadLatestOrderAndAdd = async () => {
+    if (latestOrder) {
+      addOrderAgain(latestOrder);
+      return;
+    }
+    setLoadingLatestOrder(true);
+    try {
+      const res = await api.orders();
+      const order = (res.orders || [])[0];
+      if (order) {
+        setRecentOrders([order]);
+        addOrderAgain(order);
+      }
+    } catch {
+      // Người dùng vẫn có thể đặt bằng danh mục/tìm kiếm nếu lịch sử không tải được.
+    } finally {
+      setLoadingLatestOrder(false);
+    }
   };
 
   // Gửi đơn hàng (Submit Order)
@@ -766,7 +785,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Khu vực thao tác nhanh cho bếp: ưu tiên món quen thuộc và đơn gần nhất. */}
-      {(latestOrder || frequentProducts.length > 0 || favoriteProducts.length > 0 || categories.length > 0) && (
+      {(latestOrder || frequentItems.length > 0 || favoriteProducts.length > 0 || categories.length > 0) && (
         <section className="bg-white rounded-2xl border border-[#14231c]/10 shadow-sm p-3.5 sm:p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -778,9 +797,9 @@ export default function ProductsPage() {
                 <p className="text-[11px] sm:text-xs text-[#59665f]">Món quen thuộc, thêm vào đơn chỉ bằng một chạm</p>
               </div>
             </div>
-            {latestOrder && (
-              <button type="button" onClick={() => addOrderAgain(latestOrder)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0f6f4b] text-white text-xs font-bold hover:bg-[#0b5a3c] active:scale-[.98] transition-all">
-                <Repeat2 size={15} /> <span className="hidden sm:inline">Đặt lại đơn gần nhất</span><span className="sm:hidden">Đặt lại</span>
+            {(latestOrder || frequentItems.length > 0) && (
+              <button type="button" onClick={loadLatestOrderAndAdd} disabled={loadingLatestOrder} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0f6f4b] text-white text-xs font-bold hover:bg-[#0b5a3c] active:scale-[.98] transition-all disabled:opacity-70">
+                <Repeat2 size={15} className={loadingLatestOrder ? 'animate-spin' : ''} /> <span className="hidden sm:inline">{loadingLatestOrder ? 'Đang tải đơn...' : 'Đặt lại đơn gần nhất'}</span><span className="sm:hidden">{loadingLatestOrder ? 'Đang tải' : 'Đặt lại'}</span>
               </button>
             )}
           </div>
