@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, Save, KeyRound, Lock, Unlock, ShoppingBag, Wallet, Clock,
   Trash2, Plus, Search as SearchIcon, RefreshCw, MapPin, Star, ShieldCheck, ShieldAlert, ShieldX,
-  FileSpreadsheet, Download, X, CheckCircle2, CalendarClock,
+  FileSpreadsheet, Download, X, CheckCircle2, CalendarClock, Copy,
 } from 'lucide-react';
 import { can } from '../lib/permissions';
 
@@ -39,13 +39,16 @@ export default function CustomerDetailPage() {
   const { id } = useParams();
   const isNew = id === 'moi';
   const navigate = useNavigate();
-  const { user, token } = useAuth();
-  const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+  const { user, token, authFetch } = useAuth();
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
   const [form, setForm] = useState<Record<string, any>>({ discount_tier: 'VIP0', credit_limit: 0 });
   const [salesReps, setSalesReps] = useState<{ id: string; name: string; role: string }[]>([]);
   const [loading, setLoading] = useState(!isNew);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   const [contractPrices, setContractPrices] = useState<any[]>([]);
   const [productSearch, setProductSearch] = useState('');
@@ -72,13 +75,22 @@ export default function CustomerDetailPage() {
   const loadCustomer = useCallback(async () => {
     if (isNew || !id) return;
     setLoading(true);
+    setLoadError(null);
     try {
-      const { data } = await supabase.rpc('admin_list_customers');
-      const found = (data || []).find((c: any) => c.id === id);
-      if (!found) { alert('Không tìm thấy khách hàng'); navigate('/khach-hang'); return; }
-      setForm(found);
+      // Lấy đúng hồ sơ theo UUID từ API chi tiết với authFetch có tự động refresh token
+      const res = await authFetch(`${apiBase}/api/admin/customers/${encodeURIComponent(id)}`);
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || !payload?.ok || !payload.customer) {
+        throw new Error(payload?.error || 'Không tìm thấy khách hàng');
+      }
+      setForm(payload.customer);
+      if (Array.isArray(payload.addresses)) setAddresses(payload.addresses);
+      if (Array.isArray(payload.orders)) setRecentOrders(payload.orders);
+    } catch (error: any) {
+      console.error('Lỗi tải chi tiết khách hàng:', error);
+      setLoadError(error?.message || 'Không tìm thấy khách hàng');
     } finally { setLoading(false); }
-  }, [id, isNew, navigate]);
+  }, [apiBase, authFetch, id, isNew]);
 
   const loadContractPrices = useCallback(async () => {
     if (isNew || !id) return;
@@ -259,10 +271,50 @@ export default function CustomerDetailPage() {
   const resetPassword = async () => {
     if (!confirm(`Tạo mật khẩu tạm mới cho "${form.name}" (mã ${form.partner_code})? Mật khẩu cũ sẽ không dùng được nữa.`)) return;
     try {
-      const { data, error } = await supabase.rpc('admin_reset_customer_password', { p_code: form.partner_code });
-      if (error) throw error;
-      alert(`✅ Mật khẩu tạm mới cho ${form.partner_code}: ${data}\n\nGửi lại cho khách hàng, khách bắt buộc đổi mật khẩu ở lần đăng nhập tiếp theo.`);
+      const res = await authFetch(`${apiBase}/api/admin/customers/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset-password' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Không reset được mật khẩu');
+      setPasswordCopied(false);
+      setTemporaryPassword(String(data.temporaryPassword || ''));
     } catch (err: any) { alert('Lỗi: ' + err.message); }
+  };
+
+  const deleteCustomer = async () => {
+    if (!confirm(`Xóa vĩnh viễn khách hàng "${form.name}" (${form.partner_code})?\n\nChỉ khách chưa có đơn hàng mới xóa được. Thao tác này không thể hoàn tác.`)) return;
+    try {
+      const res = await authFetch(`${apiBase}/api/admin/customers/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Không xóa được khách hàng');
+      navigate('/khach-hang');
+    } catch (err: any) {
+      alert('Không thể xóa: ' + (err.message || 'Đã xảy ra lỗi'));
+    }
+  };
+
+  const copyTemporaryPassword = async () => {
+    if (!temporaryPassword) return;
+    const credentials = `Mã khách hàng: ${form.partner_code}\nMật khẩu tạm: ${temporaryPassword}`;
+    try {
+      await navigator.clipboard.writeText(credentials);
+      setPasswordCopied(true);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = credentials;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand('copy');
+      textarea.remove();
+      if (copied) setPasswordCopied(true);
+      else alert(credentials);
+    }
   };
 
   const changePartnerCode = async () => {
@@ -293,11 +345,10 @@ export default function CustomerDetailPage() {
     }
 
     try {
-      const res = await fetch(`${apiBase}/api/admin/customers/change-code`, {
+      const res = await authFetch(`${apiBase}/api/admin/customers/change-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           customerId: id,
@@ -377,6 +428,34 @@ export default function CustomerDetailPage() {
     </div>
   );
 
+  if (loadError) return (
+    <div className="max-w-2xl mx-auto py-16 px-4">
+      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center space-y-4 shadow-sm">
+        <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+          <ShieldAlert size={28} />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">Không thể tải thông tin khách hàng</h2>
+          <p className="text-sm text-red-600 mt-1">{loadError}</p>
+        </div>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={loadCustomer}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5"
+          >
+            <RefreshCw size={16} /> Thử lại
+          </button>
+          <button
+            onClick={() => navigate('/khach-hang')}
+            className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-medium transition-colors"
+          >
+            Về danh sách khách hàng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6 pb-8">
       <header className="flex items-start justify-between gap-4 flex-wrap">
@@ -416,13 +495,16 @@ export default function CustomerDetailPage() {
           </div>
         </div>
         {!isNew && (
-          <div className="flex gap-2">
-            <button onClick={resetPassword} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-1.5">
+          <div className="flex gap-2 flex-wrap justify-end">
+            {user?.role === 'admin' && <button onClick={resetPassword} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-1.5">
               <KeyRound size={15} /> Reset mật khẩu
-            </button>
+            </button>}
             <button onClick={toggleActive} className={`px-3 py-2 border rounded-xl text-sm flex items-center gap-1.5 ${form.is_active ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'}`}>
               {form.is_active ? <Lock size={15} /> : <Unlock size={15} />} {form.is_active ? 'Khóa' : 'Mở khóa'}
             </button>
+            {user?.role === 'admin' && <button onClick={deleteCustomer} className="px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 hover:bg-red-100 flex items-center gap-1.5">
+              <Trash2 size={15} /> Xóa khách hàng
+            </button>}
           </div>
         )}
       </header>
@@ -448,6 +530,33 @@ export default function CustomerDetailPage() {
             <div className="w-9 h-9 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center mb-2"><Clock size={18} /></div>
             <div className="font-bold text-slate-800 text-xl">{dt(stats.lastOrderAt || '')}</div>
             <div className="text-xs text-slate-500">Đơn gần nhất</div>
+          </div>
+        </div>
+      )}
+
+      {temporaryPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50" role="dialog" aria-modal="true" aria-labelledby="customer-detail-password-title">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="customer-detail-password-title" className="text-lg font-bold text-slate-800">Đã reset mật khẩu</h2>
+                <p className="text-sm text-slate-500 mt-1">Mã khách hàng: <b className="text-slate-700">{form.partner_code}</b></p>
+              </div>
+              <button onClick={() => setTemporaryPassword(null)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100" aria-label="Đóng"><X size={19} /></button>
+            </div>
+            <label className="block text-xs font-semibold text-slate-500 mt-5 mb-1.5">Mật khẩu tạm thời</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input data-customer-detail-password type="text" value={temporaryPassword} readOnly autoCapitalize="off" autoCorrect="off" spellCheck={false} onFocus={(e) => e.currentTarget.select()}
+                style={{ textTransform: 'none' }}
+                className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 font-mono text-base font-bold tracking-wide text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500/30" />
+              <button onClick={copyTemporaryPassword} title="Copy cả mã khách hàng và mật khẩu tạm" className={`shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold ${passwordCopied ? 'bg-green-100 text-green-700' : 'bg-green-600 text-white hover:bg-green-700'}`}>
+                {passwordCopied ? <CheckCircle2 size={17} /> : <Copy size={17} />} {passwordCopied ? 'Đã copy' : 'Copy thông tin đăng nhập'}
+              </button>
+            </div>
+            <p className="mt-4 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5 text-xs leading-relaxed text-amber-800">
+              Mật khẩu có phân biệt chữ hoa/chữ thường, hệ thống không tự đổi ký tự. Nút copy sẽ lấy cả mã khách hàng và mật khẩu tạm. Khách bắt buộc đổi mật khẩu ở lần đăng nhập tiếp theo.
+            </p>
+            <button onClick={() => setTemporaryPassword(null)} className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Đóng</button>
           </div>
         </div>
       )}

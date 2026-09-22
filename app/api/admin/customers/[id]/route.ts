@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -27,7 +28,7 @@ async function requireAdmin(req: NextRequest) {
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!['admin', 'sale', 'truong_phong'].includes(String(auth.profile?.role || ''))) {
+  if (!can(auth.profile?.role, "customers.view")) {
     return json({ ok: false, error: "Bạn không có quyền xem khách hàng" }, 403);
   }
 
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     if (error) throw error;
     if (!customer) return json({ ok: false, error: "Không tìm thấy khách hàng" }, 404);
 
-    if (auth.profile?.role === 'sale' && customer.sales_rep_id !== auth.profile.id) {
+    if (auth.profile?.role === 'sale' && customer.sales_rep_id && customer.sales_rep_id !== auth.profile.id) {
       return json({ ok: false, error: "Bạn không có quyền xem khách hàng này" }, 403);
     }
 
