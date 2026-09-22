@@ -6,6 +6,7 @@ import { printOrderSlip } from '../lib/printOrder';
 import QuickAddProductModal from '../components/QuickAddProductModal';
 import ProductSearchBox, { type SearchProductItem } from '../components/ProductSearchBox';
 import { getApiBase } from '../lib/apiBase';
+import { can } from '../lib/permissions';
 import {
   Search, Plus, Tag, Truck, RefreshCw, ShoppingCart, User, X, CheckCircle2, AlertTriangle, PlusCircle, ClipboardEdit,
   Calendar, Clock, MapPin
@@ -690,7 +691,7 @@ export default function PosCreatePage() {
     const creditLimit = Number(selectedCustomer?.credit_limit) || 0;
     const projectedDebt = (customerDebt || 0) + total;
     const overLimit = creditLimit > 0 && projectedDebt > creditLimit;
-    const canOverride = user?.role === 'admin' || user?.role === 'truong_phong';
+    const canOverride = can(user?.role, 'orders.credit_override');
     let overrideNote = '';
 
     if (overLimit && !canOverride) {

@@ -456,7 +456,7 @@ export default function OrderDetailPage() {
 
   const handleFinalize = async () => {
     if (!canFinalizePricing) {
-      alert('Chỉ Admin hoặc nhân viên Sale/Văn phòng Vận hành được phân loại khách và chốt giá đơn hàng.');
+      alert('Chỉ Admin, Trưởng phòng phụ trách hoặc Sale/Văn phòng Vận hành được chốt giá đơn hàng.');
       return;
     }
     if (!confirm(`Xác nhận khách ở hạng ${selectedTier} và chốt tổng đơn ${money(totals.total)}?`)) return;
@@ -939,7 +939,7 @@ export default function OrderDetailPage() {
             </div>
             <div className="p-5 space-y-5">
               {isLocked && <div className="p-3 bg-slate-50 text-slate-500 text-sm rounded-lg border border-slate-200">⚠️ Đơn đã thanh toán/đang giao/hoàn thành nên không thể chỉnh giá.</div>}
-              {!canFinalizePricing && !isLocked && <div className="p-3 bg-amber-50 text-amber-800 text-sm rounded-lg border border-amber-200">🔒 Tài khoản này chỉ được theo dõi/bổ sung thông tin. Sale hoặc Admin sẽ phân loại khách và chốt giá cuối.</div>}
+              {!canFinalizePricing && !isLocked && <div className="p-3 bg-amber-50 text-amber-800 text-sm rounded-lg border border-amber-200">🔒 Tài khoản này chỉ được theo dõi/bổ sung thông tin. Sale, Trưởng phòng phụ trách hoặc Admin sẽ chốt giá cuối.</div>}
 
               {/* Banner thông tin hạng khách — auto-load từ vip_accounts */}
               {customerInfo && order.pricing_status !== 'finalized' && (

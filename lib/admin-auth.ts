@@ -33,12 +33,25 @@ export async function verifyAdminAuth(req: NextRequest) {
   }
 
   // Look up admin_profile
-  const { data: profile, error: profileError } = await supabase
+  let { data: profile, error: profileError } = await supabase
     .from("admin_profiles")
-    .select("*")
+    .select("*, departments(code, name, function_group)")
     .eq("id", user.id)
     .eq("is_active", true)
     .single();
+
+  // Tương thích trong khoảng Vercel đã deploy nhưng migration phòng ban chưa
+  // được chạy: xác thực vẫn hoạt động với hồ sơ role cũ, không khóa toàn hệ thống.
+  if (profileError && /department|relationship|schema cache/i.test(profileError.message || "")) {
+    const legacy = await supabase
+      .from("admin_profiles")
+      .select("*")
+      .eq("id", user.id)
+      .eq("is_active", true)
+      .single();
+    profile = legacy.data;
+    profileError = legacy.error;
+  }
 
   if (profileError || !profile) {
     return { ok: false, error: "Tài khoản không có quyền truy cập hoặc đã bị khóa" };

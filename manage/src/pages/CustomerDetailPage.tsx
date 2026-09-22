@@ -7,6 +7,7 @@ import {
   Trash2, Plus, Search as SearchIcon, RefreshCw, MapPin, Star, ShieldCheck, ShieldAlert, ShieldX,
   FileSpreadsheet, Download, X, CheckCircle2, CalendarClock, Copy,
 } from 'lucide-react';
+import { can } from '../lib/permissions';
 
 function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Math.round(Number(v) || 0)) + 'đ'; }
 function dt(v: string) { return v ? new Date(v).toLocaleDateString('vi-VN') : '—'; }
@@ -423,7 +424,7 @@ export default function CustomerDetailPage() {
 
   const [showImportContractPrices, setShowImportContractPrices] = useState(false);
 
-  const canEdit = user?.role === 'admin' || user?.role === 'truong_phong' || user?.role === 'sale';
+  const canEdit = can(user?.role, 'customers.edit');
 
   if (loading) return (
     <div className="flex items-center justify-center py-24 text-slate-500">

@@ -311,7 +311,7 @@ export async function POST(req: NextRequest) {
     return json({ ok: false, error: auth.error }, 401);
   }
   if (!can(auth.profile?.role, "orders.finalize_pricing")) {
-    return json({ ok: false, error: "Chỉ Admin hoặc nhân viên Sale/Văn phòng Vận hành được phân loại khách và chốt giá đơn hàng" }, 403);
+    return json({ ok: false, error: "Chỉ Admin, Trưởng phòng phụ trách hoặc Sale/Văn phòng Vận hành được chốt giá đơn hàng" }, 403);
   }
   const body = await req.json().catch(() => null);
   const orderId = String(body?.orderId || "").trim();

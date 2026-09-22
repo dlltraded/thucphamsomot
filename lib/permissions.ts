@@ -38,15 +38,17 @@ const PERMISSIONS: Record<string, Role[]> = {
   /** Tạo đơn hàng mới (POS) */
   'orders.create': ['admin', 'truong_phong', 'sale'],
   /** Xác nhận/chốt đơn hàng hàng loạt của phòng Vận hành */
-  'orders.bulk_confirm': ['admin', 'sale'],
+  'orders.bulk_confirm': ['admin', 'truong_phong', 'sale'],
   /** Sale/Văn phòng vận hành phân loại khách, chốt giá và chuyển Thu mua */
-  'orders.finalize_pricing': ['admin', 'sale'],
+  'orders.finalize_pricing': ['admin', 'truong_phong', 'sale'],
   /** Sửa thông tin đơn trước khi chốt, bổ sung giá tham khảo/ghi chú */
-  'orders.edit': ['admin', 'sale', 'thu_mua'],
+  'orders.edit': ['admin', 'truong_phong', 'sale', 'thu_mua'],
+  /** Duyệt yêu cầu điều chỉnh sau khi đơn đã xác nhận */
+  'orders.approve_adjustment': ['admin', 'truong_phong'],
   /** Duyệt đơn vượt hạn mức công nợ */
-  'orders.credit_override': ['admin', 'truong_phong'],
+  'orders.credit_override': ['admin'],
   /** Xem/Cập nhật trạng thái soạn hàng (nhận/hoàn tất/trả đơn) */
-  'orders.packing': ['admin', 'sale', 'thu_mua', 'kho'],
+  'orders.packing': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
 
   // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
   /** Xem màn đơn tổng, xuất Excel đơn tổng */
@@ -58,21 +60,21 @@ const PERMISSIONS: Record<string, Role[]> = {
   /** Xem danh sách hàng hóa */
   'products.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   /** Tạo sản phẩm mới */
-  'products.create': ['admin', 'thu_mua', 'sale'],
+  'products.create': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
   /** Sửa thông tin sản phẩm (giá, mô tả, danh mục…) */
-  'products.edit': ['admin', 'thu_mua'],
+  'products.edit': ['admin', 'truong_phong', 'thu_mua', 'ke_toan'],
   /** Nhập kho (tăng tồn kho qua inventory_transactions) */
   'products.stock_in': ['admin', 'thu_mua'],
 
   // ─── Bảng giá ───────────────────────────────────────────────────
   /** Áp giá hàng ngày / sửa bảng giá */
-  'pricing.edit': ['admin', 'sale', 'thu_mua', 'ke_toan'],
+  'pricing.edit': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
 
   // ─── Khách hàng ─────────────────────────────────────────────────
   /** Xem danh sách khách hàng */
   'customers.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
   /** Tạo/sửa khách hàng, địa chỉ, xác thực tài khoản khách */
-  'customers.edit': ['admin', 'sale'],
+  'customers.edit': ['admin', 'truong_phong', 'sale'],
 
   // ─── Công nợ / Thanh toán ───────────────────────────────────────
   /** Xem công nợ */
@@ -98,4 +100,35 @@ export function can(role: string | undefined | null, perm: string): boolean {
   const allowed = PERMISSIONS[perm];
   if (!allowed) return false;
   return (allowed as string[]).includes(role);
+}
+
+export type StaffPermissionProfile = {
+  role?: string | null;
+  position?: string | null;
+  department?: { function_group?: string | null } | { function_group?: string | null }[] | null;
+  departments?: { function_group?: string | null } | { function_group?: string | null }[] | null;
+};
+
+/**
+ * Kiểm tra quyền theo hồ sơ đầy đủ. Nhân viên dùng role nghiệp vụ; Trưởng
+ * phòng kế thừa quyền cao nhất của đúng function_group mình phụ trách.
+ * Giữ `can(role, perm)` để tương thích các màn cũ trong lúc chuyển đổi.
+ */
+export function canForProfile(profile: StaffPermissionProfile | null | undefined, perm: string): boolean {
+  if (!profile) return false;
+  if (profile.role === 'admin') return can('admin', perm);
+
+  const rawDepartment = profile.department ?? profile.departments;
+  const department = Array.isArray(rawDepartment) ? rawDepartment[0] : rawDepartment;
+  const group = department?.function_group || null;
+  if (profile.position === 'truong_phong' && group) {
+    if (perm === 'orders.approve_adjustment') {
+      return group === 'operations' || group === 'procurement';
+    }
+    const inheritedRole = group === 'operations' ? 'sale' : group === 'procurement' ? 'thu_mua' : 'ke_toan';
+    return can(inheritedRole, perm);
+  }
+
+  // Tài khoản Trưởng phòng cũ chưa gán department vẫn dùng role legacy.
+  return can(profile.role, perm);
 }

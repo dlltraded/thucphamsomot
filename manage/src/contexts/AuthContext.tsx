@@ -7,6 +7,9 @@ export interface User {
   userType: 'staff' | 'customer';
   // Nhân viên
   role?: string;
+  position?: string;
+  departmentId?: string | null;
+  department?: { code: string; name: string; function_group: string } | null;
   email?: string;
   // Khách hàng
   code?: string;

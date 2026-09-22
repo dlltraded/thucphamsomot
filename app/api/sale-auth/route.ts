@@ -83,12 +83,23 @@ async function tryStaffLogin(identifier: string, password: string) {
   // Tra hồ sơ nhân viên bằng service-role (không tin bất kỳ dữ liệu role/tên
   // nào do client tự gửi lên) để lấy role thật + kiểm tra tài khoản còn hoạt động.
   const adminSupabase = getCustomerSupabaseAdmin();
-  const { data: profile, error: profileError } = await adminSupabase
+  let { data: profile, error: profileError } = await adminSupabase
     .from("admin_profiles")
-    .select("id, name, role, is_active")
+    .select("id, name, role, position, department_id, is_active, departments(code, name, function_group)")
     .eq("id", authData.user.id)
     .eq("is_active", true)
     .single();
+
+  if (profileError && /department|position|relationship|schema cache/i.test(profileError.message || "")) {
+    const legacy = await adminSupabase
+      .from("admin_profiles")
+      .select("id, name, role, is_active")
+      .eq("id", authData.user.id)
+      .eq("is_active", true)
+      .single();
+    profile = legacy.data ? { ...legacy.data, position: null, department_id: null, departments: null } : null;
+    profileError = legacy.error;
+  }
 
   if (profileError || !profile) {
     // Đăng nhập Supabase Auth thành công nhưng tài khoản này không có hồ sơ
@@ -101,6 +112,9 @@ async function tryStaffLogin(identifier: string, password: string) {
     id: profile.id,
     name: profile.name,
     role: profile.role as string,
+    position: profile.position as string,
+    departmentId: profile.department_id as string | null,
+    department: Array.isArray(profile.departments) ? profile.departments[0] : profile.departments,
     email: authData.user.email || undefined,
   };
 

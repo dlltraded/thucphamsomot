@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { can, canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { sendPushToCustomer } from "@/lib/push";
 
@@ -18,7 +18,8 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-// Xử lý yêu cầu điều chỉnh/hủy của khách (WP6b, D9: sale đủ thẩm quyền, không cần Trưởng phòng).
+// Xử lý yêu cầu điều chỉnh/hủy của khách. Sale tiếp nhận và thực hiện chỉnh
+// sửa; bước approve/reject phải do Trưởng phòng đúng phòng hoặc Admin duyệt.
 // Body: { requestId, action: 'approve' | 'reject' | 'done', note? }
 //  - approve + cancel : hủy đơn (hoàn kho nếu đã trừ kho), báo khách
 //  - approve + adjust : chỉ đánh dấu đã duyệt, trả orderId để mở "Xử lý đơn hàng" sửa đơn
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
   if (!requestId) return json({ ok: false, error: "Thiếu mã yêu cầu" }, 400);
   if (!["approve", "reject", "done"].includes(action)) return json({ ok: false, error: "Hành động không hợp lệ" }, 400);
   if (action === "reject" && note.length < 3) return json({ ok: false, error: "Từ chối phải ghi lý do để báo khách" }, 400);
+  if (["approve", "reject"].includes(action) && !canForProfile(auth.profile, "orders.approve_adjustment")) {
+    return json({ ok: false, error: "Yêu cầu điều chỉnh/hủy phải được Trưởng phòng phụ trách hoặc Admin duyệt" }, 403);
+  }
 
   const actor = String(auth.profile?.name || auth.profile?.email || "NV Vận hành").trim();
   const supabase = getCustomerSupabaseAdmin();

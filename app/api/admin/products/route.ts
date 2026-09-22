@@ -310,7 +310,7 @@ export async function PATCH(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
   if (!can(auth.profile?.role, "products.edit")) {
-    return json({ ok: false, error: "Chỉ Quản trị viên hoặc Thu mua được sửa giá/tồn kho" }, 403);
+    return json({ ok: false, error: "Chỉ Admin, Thu mua hoặc Kế toán được sửa thông tin và giá sản phẩm" }, 403);
   }
 
   const body = await req.json().catch(() => null);
@@ -352,6 +352,9 @@ export async function PATCH(req: NextRequest) {
     // 2. Điều chỉnh tồn kho: insert 1 dòng inventory_transactions, trigger DB
     //    tự cập nhật stock_qty — không sửa tay stock_qty ở đây.
     if (body?.inventoryAdjustment) {
+      if (!can(auth.profile?.role, "products.stock_in")) {
+        return json({ ok: false, error: "Chỉ Admin hoặc Thu mua được điều chỉnh tồn kho" }, 403);
+      }
       const { type, quantity, note } = body.inventoryAdjustment as {
         type?: string;
         quantity?: number;
