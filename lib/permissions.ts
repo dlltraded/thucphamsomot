@@ -37,14 +37,16 @@ const PERMISSIONS: Record<string, Role[]> = {
   'orders.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   /** Tạo đơn hàng mới (POS) */
   'orders.create': ['admin', 'truong_phong', 'sale'],
-  /** Xác nhận/chốt đơn hàng hàng loạt */
-  'orders.bulk_confirm': ['admin', 'truong_phong', 'sale'],
-  /** Chốt giá, sửa đơn */
+  /** Xác nhận/chốt đơn hàng hàng loạt — chỉ người có thẩm quyền */
+  'orders.bulk_confirm': ['admin', 'truong_phong'],
+  /** Phân loại khách, chốt giá cuối và phát hành phiếu xác nhận */
+  'orders.finalize_pricing': ['admin', 'truong_phong'],
+  /** Sửa thông tin đơn trước khi chốt, bổ sung giá tham khảo/ghi chú */
   'orders.edit': ['admin', 'truong_phong', 'sale'],
   /** Duyệt đơn vượt hạn mức công nợ */
   'orders.credit_override': ['admin', 'truong_phong'],
   /** Xem/Cập nhật trạng thái soạn hàng (nhận/hoàn tất/trả đơn) */
-  'orders.packing': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  'orders.packing': ['admin', 'truong_phong', 'thu_mua', 'kho'],
 
   // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
   /** Xem màn đơn tổng, xuất Excel đơn tổng */
@@ -97,4 +99,3 @@ export function can(role: string | undefined | null, perm: string): boolean {
   if (!allowed) return false;
   return (allowed as string[]).includes(role);
 }
-

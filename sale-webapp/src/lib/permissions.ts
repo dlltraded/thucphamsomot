@@ -29,10 +29,11 @@ export const ROLE_LABELS: Record<string, string> = {
 const PERMISSIONS: Record<string, string[]> = {
   'orders.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   'orders.create': ['admin', 'truong_phong', 'sale'],
-  'orders.bulk_confirm': ['admin', 'truong_phong', 'sale'],
+  'orders.bulk_confirm': ['admin', 'truong_phong'],
+  'orders.finalize_pricing': ['admin', 'truong_phong'],
   'orders.edit': ['admin', 'truong_phong', 'sale'],
   'orders.credit_override': ['admin', 'truong_phong'],
-  'orders.packing': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  'orders.packing': ['admin', 'truong_phong', 'thu_mua', 'kho'],
   'procurement.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
   'procurement.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
   'products.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],

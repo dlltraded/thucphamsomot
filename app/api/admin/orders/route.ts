@@ -7,6 +7,7 @@ import { generateSalesInvoicePdf, type SalesInvoiceSnapshot } from "@/lib/sales-
 import { finalizeOrderCore } from "@/lib/order-finalize";
 import { sendPushToCustomer } from "@/lib/push";
 import { reconcileDelivery } from "@/lib/order-reconcile";
+import { can } from "@/lib/permissions";
 
 const ORDER_STATUSES = [
   "pending",
@@ -82,7 +83,6 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) {
     return json({ ok: false, error: auth.error }, 401);
   }
-
   try {
     const supabase = getCustomerSupabaseAdmin();
     const productSearch = req.nextUrl.searchParams.get("productSearch")?.trim();
@@ -310,11 +310,14 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) {
     return json({ ok: false, error: auth.error }, 401);
   }
+  if (!can(auth.profile?.role, "orders.finalize_pricing")) {
+    return json({ ok: false, error: "Chỉ Admin hoặc Trưởng phòng được phân loại khách và chốt giá đơn hàng" }, 403);
+  }
   const body = await req.json().catch(() => null);
   const orderId = String(body?.orderId || "").trim();
   const customerTier = String(body?.customerTier || "VIP0").trim();
   const pricingMode = String(body?.pricingMode || "tier").trim();
-  const actor = String(body?.actor || "admin").trim().slice(0, 120) || "admin";
+  const actor = String(auth.profile?.name || auth.profile?.email || "admin").trim().slice(0, 120) || "admin";
   if (!orderId) return json({ ok: false, error: "Thiếu mã đơn hàng" }, 400);
 
   try {
@@ -407,6 +410,15 @@ export async function PATCH(req: NextRequest) {
         { ok: false, error: `Đơn đã ở trạng thái kết thúc "${current.status === "completed" ? "Hoàn thành" : "Đã hủy"}", không thể chuyển ngược trạng thái.` },
         409,
       );
+    }
+
+    // Chuyển sang Đã xác nhận là điểm chốt nghiệp vụ. Sale vẫn được xem,
+    // bổ sung giá tham khảo và gửi yêu cầu điều chỉnh nhưng không tự chốt.
+    if (hasStatusChange && nextStatus === "confirmed" && !can(auth.profile?.role, "orders.finalize_pricing")) {
+      return json({ ok: false, error: "Sale chưa được phép xác nhận/chốt giá. Vui lòng chuyển Admin hoặc Trưởng phòng duyệt đơn." }, 403);
+    }
+    if (hasStatusChange && ["preparing", "shipping", "completed"].includes(nextStatus) && !can(auth.profile?.role, "orders.packing")) {
+      return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền xử lý đơn hàng." }, 403);
     }
 
     if (itemDeliveries.length) {

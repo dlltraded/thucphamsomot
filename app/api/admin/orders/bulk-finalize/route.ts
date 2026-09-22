@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { finalizeOrderCore } from "@/lib/order-finalize";
+import { can } from "@/lib/permissions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,12 +25,15 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
+  if (!can(auth.profile?.role, "orders.finalize_pricing")) {
+    return json({ ok: false, error: "Chỉ Admin hoặc Trưởng phòng được phân loại khách và chốt giá đơn hàng" }, 403);
+  }
 
   const body = await req.json().catch(() => null);
   const orderIds: string[] = Array.isArray(body?.orderIds) ? body.orderIds.filter((id: unknown) => typeof id === "string" && id) : [];
   if (!orderIds.length) return json({ ok: false, error: "Chưa chọn đơn hàng nào" }, 400);
 
-  const actor = String(body?.actor || auth.profile?.name || "admin").trim().slice(0, 120) || "admin";
+  const actor = String(auth.profile?.name || auth.profile?.email || "admin").trim().slice(0, 120) || "admin";
   const supabase = getCustomerSupabaseAdmin();
 
   const succeeded: string[] = [];
