@@ -58,9 +58,15 @@ export async function POST(req: NextRequest) {
     packageDimensions,
     assignedDriver,
     codCollectAmount,
+    paymentMethod: reqPaymentMethod,
     creditOverrideNote,
     idempotencyKey: reqIdempotencyKey,
   } = body || {};
+
+  const paymentMethod = String(reqPaymentMethod || "COD").trim().toUpperCase();
+  if (!["COD", "CREDIT", "TRANSFER", "CASH"].includes(paymentMethod)) {
+    return json({ ok: false, error: "Phương thức thanh toán không hợp lệ" }, 400);
+  }
 
   if (!customerId || typeof customerId !== "string") {
     return json({ ok: false, error: "Vui lòng chọn khách hàng" }, 400);
@@ -286,6 +292,7 @@ export async function POST(req: NextRequest) {
       delivery_date: deliveryDate,
       is_late_order: isLateOrder,
       delivery_alias: deliveryAlias,
+      payment_method: paymentMethod,
       updated_at: new Date().toISOString(),
     };
 

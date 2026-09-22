@@ -17,6 +17,7 @@ const ORDER_STATUSES = [
   "canceled",
 ] as const;
 const PAYMENT_STATUSES = ["pending", "cod", "paid", "failed", "refunded"] as const;
+const PAYMENT_METHODS = ["COD", "CREDIT", "TRANSFER", "CASH"] as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -349,6 +350,9 @@ export async function PATCH(req: NextRequest) {
   const paymentStatus = body?.paymentStatus
     ? String(body.paymentStatus).trim()
     : undefined;
+  const paymentMethod = body?.paymentMethod
+    ? String(body.paymentMethod).trim().toUpperCase()
+    : undefined;
   const note = String(body?.note || "").trim();
   // Giao hàng tự vận chuyển (mục 14.2-1 KE_HOACH) — cập nhật độc lập với đổi
   // trạng thái, vì soạn/giao hàng có thể chỉnh nhiều lần trước khi đơn hoàn tất.
@@ -370,7 +374,7 @@ export async function PATCH(req: NextRequest) {
   if (hasStatusChange && !ORDER_STATUSES.includes(nextStatus as (typeof ORDER_STATUSES)[number])) {
     return json({ ok: false, error: "Trạng thái đơn hàng không hợp lệ" }, 400);
   }
-  if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice) {
+  if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice && !paymentMethod && !paymentStatus) {
     return json({ ok: false, error: "Không có nội dung cần cập nhật" }, 400);
   }
   if (
@@ -378,6 +382,9 @@ export async function PATCH(req: NextRequest) {
     !PAYMENT_STATUSES.includes(paymentStatus as (typeof PAYMENT_STATUSES)[number])
   ) {
     return json({ ok: false, error: "Trạng thái thanh toán không hợp lệ" }, 400);
+  }
+  if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod as (typeof PAYMENT_METHODS)[number])) {
+    return json({ ok: false, error: "Phương thức thanh toán không hợp lệ" }, 400);
   }
 
   try {
@@ -415,6 +422,8 @@ export async function PATCH(req: NextRequest) {
 
     if (!hasStatusChange) {
       const deliveryUpdates: Record<string, unknown> = {};
+      if (paymentStatus) deliveryUpdates.payment_status = paymentStatus;
+      if (paymentMethod) deliveryUpdates.payment_method = paymentMethod;
       if (delivery) {
         if (delivery.packageWeightG !== undefined) deliveryUpdates.package_weight_g = delivery.packageWeightG === null ? null : Number(delivery.packageWeightG) || null;
         if (delivery.packageDimensions !== undefined) deliveryUpdates.package_dimensions = String(delivery.packageDimensions || "").trim() || null;
@@ -496,6 +505,7 @@ export async function PATCH(req: NextRequest) {
     const now = new Date().toISOString();
     const updates: Record<string, unknown> = { status: nextStatus };
     if (paymentStatus) updates.payment_status = paymentStatus;
+    if (paymentMethod) updates.payment_method = paymentMethod;
     if (nextStatus === "confirmed" && !current.confirmed_at) updates.confirmed_at = now;
     if (nextStatus === "shipping" && !current.shipping_at) updates.shipping_at = now;
     if (nextStatus === "completed" && !current.completed_at) updates.completed_at = now;
