@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
       .from("vip_accounts")
       .select(`
         id, partner_code, name, company, phone, address, tax_code,
+        default_shipping_alias, default_shipping_address,
+        default_shipping_name, default_shipping_phone,
         discount_tier, credit_limit, is_active, verification_status,
         sales_rep_id, kiotviet_code, customer_group, kiotviet_opening_debt,
         created_at, updated_at
@@ -89,6 +91,8 @@ export async function GET(req: NextRequest) {
         .from("vip_accounts")
         .select(`
           id, partner_code, name, company, phone, address, tax_code,
+          default_shipping_alias, default_shipping_address,
+          default_shipping_name, default_shipping_phone,
           discount_tier, credit_limit, is_active, verification_status,
           sales_rep_id, created_at, updated_at
         `, { count: "exact" });
