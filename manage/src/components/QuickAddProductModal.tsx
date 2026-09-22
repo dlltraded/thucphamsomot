@@ -26,7 +26,13 @@ export default function QuickAddProductModal({
   const [name, setName] = useState(initialName);
   const [unit, setUnit] = useState('Kg');
   const [price, setPrice] = useState('');
+  const [wholesalePrice, setWholesalePrice] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [category, setCategory] = useState('');
+  const [packSize, setPackSize] = useState('');
+  const [supplier, setSupplier] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +50,12 @@ export default function QuickAddProductModal({
           unit: unit || 'Kg',
           category: category || undefined,
           priceRetail: Number(price) || 0,
-          priceWholesale: Number(price) || 0,
+          priceWholesale: Number(wholesalePrice) || Number(price) || 0,
+          costPrice: Number(costPrice) || 0,
+          packSize: packSize || undefined,
+          supplier: supplier || undefined,
+          origin: origin || undefined,
+          description: description || undefined,
         }),
       });
       const data = await res.json();
@@ -89,8 +100,24 @@ export default function QuickAddProductModal({
           <input type="number" min="0" step="1000" value={price} onChange={e => setPrice(e.target.value)} placeholder="Giá bán (đ)"
             className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <input type="number" min="0" step="1000" value={wholesalePrice} onChange={e => setWholesalePrice(e.target.value)} placeholder="Giá sỉ / tham chiếu (đ)"
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
+          <input type="number" min="0" step="1000" value={costPrice} onChange={e => setCostPrice(e.target.value)} placeholder="Giá vốn (đ)"
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
+        </div>
         <input type="text" value={category} onChange={e => setCategory(e.target.value)} placeholder="Nhóm hàng (không bắt buộc)"
           className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
+        <div className="grid grid-cols-2 gap-3">
+          <input type="text" value={packSize} onChange={e => setPackSize(e.target.value)} placeholder="Quy cách đóng gói"
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
+          <input type="text" value={origin} onChange={e => setOrigin(e.target.value)} placeholder="Xuất xứ"
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
+        </div>
+        <input type="text" value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Nhà cung cấp (không bắt buộc)"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
+        <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Mô tả / ghi chú sản phẩm" rows={2}
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 resize-none" />
 
         <label className="flex items-center gap-2 border border-dashed border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-500 cursor-pointer hover:border-green-400">
           <Upload size={16} />

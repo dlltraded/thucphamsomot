@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
         .from("products")
         .select("id, local_product_id, sku, name, category, unit, price_retail, price_wholesale, image_url, track_inventory, stock_qty, min_stock")
         .eq("active", true)
-        .ilike("name", `%${productSearch.replace(/[%_]/g, "")}%`)
+        .or(`name.ilike.%${productSearch.replace(/[%_]/g, "")}%,sku.ilike.%${productSearch.replace(/[%_]/g, "")}%,local_product_id.ilike.%${productSearch.replace(/[%_]/g, "")}%`)
         .order("name")
         .limit(20);
       if (productError) throw productError;
