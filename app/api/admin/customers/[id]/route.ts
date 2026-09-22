@@ -4,7 +4,7 @@ import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
@@ -19,6 +19,51 @@ async function requireAdmin(req: NextRequest) {
     return { response: json({ ok: false, error: "Chỉ tài khoản Admin được thực hiện thao tác này" }, 403) };
   }
   return { auth };
+}
+
+// Trang chi tiết khách hàng gọi cùng endpoint này bằng GET. Trước đây route
+// chỉ có POST/DELETE nên mở hồ sơ theo UUID rơi vào nhánh "không tìm thấy"
+// dù khách đã tồn tại trong vip_accounts.
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
+  if (!['admin', 'sale'].includes(String(auth.profile?.role || ''))) {
+    return json({ ok: false, error: "Bạn không có quyền xem khách hàng" }, 403);
+  }
+
+  try {
+    const { id } = await context.params;
+    const supabase = getCustomerSupabaseAdmin();
+    const { data: customer, error } = await supabase
+      .from("vip_accounts")
+      .select(`
+        id, partner_code, name, phone, company, email, tax_code, address,
+        default_shipping_alias, default_shipping_address, default_shipping_name,
+        default_shipping_phone, discount_tier, contract_discount_percent,
+        tier_expiry_date, credit_limit, notes, is_active, verification_status,
+        verification_note, registration_source, registered_at, created_at, updated_at,
+        sales_rep_id
+      `)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!customer) return json({ ok: false, error: "Không tìm thấy khách hàng" }, 404);
+
+    if (auth.profile?.role === 'sale' && customer.sales_rep_id !== auth.profile.id) {
+      return json({ ok: false, error: "Bạn không có quyền xem khách hàng này" }, 403);
+    }
+
+    const [{ data: addresses }, { data: orders, error: ordersError }] = await Promise.all([
+      supabase.from('customer_addresses').select('id, label, address, contact_name, contact_phone, is_default, is_active, created_at').eq('customer_id', id).order('is_default', { ascending: false }).order('created_at', { ascending: false }),
+      supabase.from('orders').select('id, order_code, status, payment_status, payment_method, delivery_date, grand_total, paid_amount, debt_amount, created_at').eq('customer_id', id).order('created_at', { ascending: false }).limit(50),
+    ]);
+    if (ordersError) console.warn('Không tải được lịch sử đơn khách hàng:', ordersError.message);
+
+    return json({ ok: true, customer, addresses: addresses || [], orders: orders || [] });
+  } catch (error) {
+    console.error('GET /api/admin/customers/[id] error:', error);
+    return json({ ok: false, error: error instanceof Error ? error.message : 'Không tải được khách hàng' }, 500);
+  }
 }
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
