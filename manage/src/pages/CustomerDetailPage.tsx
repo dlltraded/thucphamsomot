@@ -74,12 +74,24 @@ export default function CustomerDetailPage() {
     if (isNew || !id) return;
     setLoading(true);
     try {
-      const { data } = await supabase.rpc('admin_list_customers');
-      const found = (data || []).find((c: any) => c.id === id);
-      if (!found) { alert('Không tìm thấy khách hàng'); navigate('/khach-hang'); return; }
-      setForm(found);
+      // Lấy đúng hồ sơ theo UUID từ API chi tiết. Không tìm trong danh sách
+      // RPC nữa vì danh sách có thể bị phân trang/RLS và khiến khách vẫn bị
+      // báo "không tìm thấy" dù tồn tại trong vip_accounts.
+      const res = await fetch(`${apiBase}/api/admin/customers/${encodeURIComponent(id)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || !payload?.ok || !payload.customer) {
+        throw new Error(payload?.error || 'Không tìm thấy khách hàng');
+      }
+      setForm(payload.customer);
+      if (Array.isArray(payload.addresses)) setAddresses(payload.addresses);
+      if (Array.isArray(payload.orders)) setRecentOrders(payload.orders);
+    } catch (error: any) {
+      alert(error?.message || 'Không tìm thấy khách hàng');
+      navigate('/khach-hang');
     } finally { setLoading(false); }
-  }, [id, isNew, navigate]);
+  }, [apiBase, id, isNew, navigate, token]);
 
   const loadContractPrices = useCallback(async () => {
     if (isNew || !id) return;
