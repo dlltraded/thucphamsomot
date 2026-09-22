@@ -8,13 +8,11 @@ import {
 } from "jotai/utils";
 import {
   Cart,
-  Category,
   Delivery,
   Location,
   Order,
   OrderStatus,
   PaymentStatus,
-  Product,
   ShippingAddress,
   Station,
   UserInfo,
@@ -30,7 +28,11 @@ import toast from "react-hot-toast";
 import { calculateDistance } from "./utils/location";
 import { formatDistant } from "./utils/format";
 import CONFIG from "./config";
-import { supabase } from "./utils/supabase";
+import {
+  fetchCatalogCategories,
+  fetchProductPage,
+  type CatalogCategory,
+} from "./utils/catalog";
 
 export const userInfoKeyState = atom(0);
 
@@ -93,54 +95,13 @@ export const tabsState = atom(["Tất cả", "Nam", "Nữ", "Trẻ em"]);
 
 export const selectedTabIndexState = atom(0);
 
-import categoryPlaceholder from "@/static/category-placeholder.png";
-import catFruits from "@/static/cat_fruits.png";
-import catBakeryMilk from "@/static/cat_bakery_milk.png";
-import catSpices from "@/static/cat_spices.png";
-import catDriedGoods from "@/static/cat_dried_goods.png";
-import catFrozen from "@/static/cat_frozen.png";
-import catSeafood from "@/static/cat_seafood.png";
-import catVegetables from "@/static/cat_vegetables.png";
-import catTools from "@/static/cat_tools.png";
-
-const mapToSuperCategory = (rawName: string) => {
-  const upper = rawName?.toUpperCase() || "";
-  if (upper.includes("RAU CỦ QUẢ") || upper.includes("RAU CỦ") || upper.includes("RAU")) return { id: "veg", name: "Rau củ quả", image: catVegetables, priority: 1 };
-  if (upper.includes("TRÁI CÂY")) return { id: "fruits", name: "Trái cây", image: catFruits, priority: 2 };
-  if (upper.includes("HẢI SẢN")) return { id: "seafood", name: "Hải sản", image: catSeafood, priority: 3 };
-  if (upper.includes("BÁNH SỮA") || upper.includes("TRỨNG")) return { id: "bakery", name: "Bánh, Trứng & Sữa", image: catBakeryMilk, priority: 5 };
-  if (upper.includes("GIA VỊ")) return { id: "spices", name: "Gia vị", image: catSpices, priority: 6 };
-  if (upper.includes("ĐỒ KHÔ") || upper.includes("GẠO") || upper.includes("BÚN")) return { id: "dried", name: "Đồ khô & Gạo", image: catDriedGoods, priority: 7 };
-  if (upper.includes("CHAY") || upper.includes("ĐK")) return { id: "vegan", name: "Mặt hàng chay", image: catVegetables, priority: 8 }; 
-  if (upper.includes("CÔNG CỤ") || upper.includes("NONFOOD")) return { id: "tools", name: "Công cụ & Vật tư", image: catTools, priority: 9 };
-  // Default for meat and frozen
-  if (upper.includes("THỊT") || upper.includes("ĐÔNG LẠNH") || upper.includes("GÀ") || upper.includes("CP")) {
-    return { id: "meat", name: "Thịt & Đông lạnh", image: catFrozen, priority: 4 };
-  }
-  return { id: "other", name: "Khác", image: categoryPlaceholder, priority: 10 };
-};
-
 export const categoriesState = atom(async () => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('category')
-    .eq('active', true);
-
-  if (error || !data) return [];
-
-  const rawCats = new Set(data.map(p => p.category));
-  const superCatsMap = new Map<string, Category & { priority: number }>();
-  
-  rawCats.forEach(rawName => {
-    const superCat = mapToSuperCategory(rawName);
-    if (!superCatsMap.has(superCat.id)) {
-      superCatsMap.set(superCat.id, superCat);
-    }
-  });
-
-  return Array.from(superCatsMap.values())
-    .sort((a, b) => a.priority - b.priority)
-    .map(c => ({ id: c.id, name: c.name, image: c.image })) as Category[];
+  try {
+    return await fetchCatalogCategories();
+  } catch (error) {
+    console.error("Không tải được danh mục sản phẩm", error);
+    return [];
+  }
 });
 
 export const categoriesStateUpwrapped = unwrap(
@@ -148,64 +109,15 @@ export const categoriesStateUpwrapped = unwrap(
   (prev) => prev ?? []
 );
 
-export const contractPricesState = atom<Promise<Record<string, number>>>(async (get) => {
-  const customerAuth = get(customerAuthState);
-  if (!customerAuth?.orderSessionToken || customerAuth?.discountTier !== "CUSTOM") return {};
-  
-  try {
-    const res = await fetch(`${CONFIG.API_BASE}/api/customer/contract-prices`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderSessionToken: customerAuth.orderSessionToken })
-    });
-    const data = await res.json();
-    if (data.ok) return data.data;
-  } catch (e) {
-    console.error("Lỗi fetch contract prices", e);
-  }
-  return {};
-});
-
 export const productsState = atom(async (get) => {
-  const categories = await get(categoriesState);
-  const contractPrices = await get(contractPricesState);
-  
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('active', true);
-    
-  if (error) {
-    console.error(error);
+  const customer = get(customerAuthState);
+  try {
+    const page = await fetchProductPage({ sessionToken: customer?.orderSessionToken });
+    return page.products;
+  } catch (error) {
+    console.error("Không tải được sản phẩm", error);
     return [];
   }
-
-  return data.map((product) => {
-    const superCatInfo = mapToSuperCategory(product.category || "");
-    const categoryObj = categories.find(c => c.id === superCatInfo.id);
-    let priceR = Number(product.price_retail) || 0;
-    
-    // Áp dụng giá hợp đồng nếu có
-    if (contractPrices[product.id] !== undefined) {
-      priceR = contractPrices[product.id];
-    }
-
-    return {
-      id: product.id,
-      name: product.name,
-      price: priceR,
-      originalPrice: priceR,
-      image: product.image_url || categoryObj?.image || categoryPlaceholder,
-      category: categoryObj!,
-      categoryId: categoryObj?.id || 'other',
-      detail: product.notes || '',
-    };
-  }).sort((a, b) => {
-    const pA = mapToSuperCategory(a.category?.name || "").priority;
-    const pB = mapToSuperCategory(b.category?.name || "").priority;
-    if (pA !== pB) return pA - pB;
-    return a.name.localeCompare(b.name);
-  });
 });
 
 export const flashSaleProductsState = atom((get) => get(productsState));
@@ -215,7 +127,11 @@ export const recommendedProductsState = atom((get) => get(productsState));
 export const productState = atomFamily((id: string | number) =>
   atom(async (get) => {
     const products = await get(productsState);
-    return products.find((product) => String(product.id) === String(id));
+    const cached = products.find((product) => String(product.id) === String(id));
+    if (cached) return cached;
+    const customer = get(customerAuthState);
+    const page = await fetchProductPage({ id, sessionToken: customer?.orderSessionToken });
+    return page.products[0];
   })
 );
 
@@ -306,19 +222,21 @@ export const cartTotalState = atom((get) => {
 export const keywordState = atom("");
 
 export const searchResultState = atom(async (get) => {
-  const keyword = get(keywordState);
-  const products = await get(productsState);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return products.filter((product) =>
-    product.name.toLowerCase().includes(keyword.toLowerCase())
-  );
+  const keyword = get(keywordState).trim();
+  if (!keyword) return [];
+  const customer = get(customerAuthState);
+  const page = await fetchProductPage({ search: keyword, sessionToken: customer?.orderSessionToken });
+  return page.products;
 });
 
 export const productsByCategoryState = atomFamily((id: string) =>
   atom(async (get) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const products = await get(productsState);
-    return products.filter((product) => String(product.categoryId) === id);
+    const categories = await get(categoriesState);
+    const category = categories.find((item) => String(item.id) === id) as CatalogCategory | undefined;
+    if (!category) return [];
+    const customer = get(customerAuthState);
+    const page = await fetchProductPage({ category, sessionToken: customer?.orderSessionToken });
+    return page.products;
   })
 );
 
@@ -381,7 +299,6 @@ export const ordersState = atomFamily((status: OrderStatus) =>
       if (!orderResponse.ok) console.error("Lỗi lấy đơn hàng trung tâm:", orderPayload.error);
       const centralRows = orderPayload.orders || [];
 
-      const allProducts = await get(productsState);
       const centralOrders: Order[] = (centralRows || []).map((row: any) => {
         const centralStatus = String(row.status || "pending");
         const mappedStatus: OrderStatus =
@@ -389,7 +306,9 @@ export const ordersState = atomFamily((status: OrderStatus) =>
             ? "shipping"
             : centralStatus === "completed" || centralStatus === "canceled"
               ? "completed"
-              : "pending";
+              : centralStatus === "pending"
+                ? "draft"
+                : "pending";
         const mappedPaymentStatus: PaymentStatus =
           row.payment_status === "paid"
             ? "success"
@@ -407,18 +326,15 @@ export const ordersState = atomFamily((status: OrderStatus) =>
           createdAt: new Date(row.created_at),
           receivedAt: new Date(row.updated_at || row.created_at),
           items: Array.isArray(row.items) ? row.items.map((item: any) => {
-            const matchedProduct = allProducts.find(
-              product =>
-                String(product.id) === String(item.productId) ||
-                product.name.toLowerCase() === String(item.name || "").toLowerCase()
-            );
             return {
               product: {
-                id: item.productId || matchedProduct?.id || item.id || 0,
-                name: item.name || matchedProduct?.name || "Sản phẩm",
-                price: Number(item.price || matchedProduct?.price || 0),
-                image: matchedProduct?.image || "",
-                category: matchedProduct?.category || { id: 0, name: "", image: "" },
+                id: item.productId || item.id || 0,
+                sku: item.sku || "",
+                name: item.name || "Sản phẩm",
+                unit: item.unit || "Kg",
+                price: Number(item.price || 0),
+                image: "",
+                category: { id: 0, name: "", image: "" },
                 detail: item.itemNote || "",
               },
               quantity: Number(item.quantity || 1),
@@ -445,9 +361,12 @@ export const ordersState = atomFamily((status: OrderStatus) =>
           discountAmount: Number(row.discount_amount || 0),
           pricingStatus: row.pricing_status || "provisional",
           pricingMode: row.pricing_mode || "tier",
-          priceRevision: Number(row.price_revision || 0),
           confirmationDocumentId: row.confirmation_document_id || undefined,
           invoiceDocumentId: row.invoice_document_id || undefined,
+          deliveryDate: row.delivery_date || undefined,
+          isLateOrder: Boolean(row.is_late_order),
+          changeRequest: row.change_request || undefined,
+          cancelReason: row.cancel_reason || undefined,
         };
       });
 
@@ -482,3 +401,28 @@ export const deliveryModeState = atomWithStorage<Delivery["type"]>(
   CONFIG.STORAGE_KEYS.DELIVERY,
   "shipping"
 );
+
+export interface OrderConfigData {
+  serverNow: string;
+  earliestDate: string;
+  deliveryDate: string;
+  cutoffAt: string;
+  cutoffTime: string;
+  minutesLeft: number;
+  isLate: boolean;
+}
+
+export interface CustomerAddressItem {
+  id: string;
+  label: string;
+  address: string;
+  contact_name?: string;
+  contact_phone?: string;
+  is_default?: boolean;
+}
+
+export const selectedDeliveryDateState = atom<string>("");
+export const selectedAddressIdState = atom<string>("");
+export const orderConfigDataState = atom<OrderConfigData | null>(null);
+export const customerAddressesState = atom<CustomerAddressItem[]>([]);
+export const cutoffInfoState = atom<{ isLate: boolean; cutoffTime: string; minutesLeft: number } | null>(null);

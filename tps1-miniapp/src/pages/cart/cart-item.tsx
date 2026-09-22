@@ -3,25 +3,33 @@ import { CartItem as CartItemProps } from "@/types";
 import { formatPrice } from "@/utils/format";
 import { animated, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
-import { useAtom } from "jotai";
-import { selectedCartItemIdsState } from "@/state";
+import { useSetAtom } from "jotai";
+import { cartState } from "@/state";
 import { useEffect, useState } from "react";
 import { Icon } from "zmp-ui";
+import QuantityInput from "@/components/quantity-input";
 
 const SWIPE_TO_DELTE_OFFSET = 80;
 
 export default function CartItem(props: CartItemProps) {
   const [quantity, setQuantity] = useState(props.quantity);
+  const [note, setNote] = useState(props.note || "");
   const { addToCart } = useAddToCart(props.product);
+  const setCart = useSetAtom(cartState);
 
-  const [selectedItemIds, setSelectedItemIds] = useAtom(
-    selectedCartItemIdsState
-  );
-
-  // update cart
+  // update cart quantity
   useEffect(() => {
     addToCart(quantity);
   }, [quantity]);
+
+  const handleNoteChange = (newNote: string) => {
+    setNote(newNote);
+    setCart((items) =>
+      items.map((it) =>
+        it.product.id === props.product.id ? { ...it, note: newNote } : it
+      )
+    );
+  };
 
   // swipe left to delete animation
   const [{ x }, api] = useSpring(() => ({ x: 0 }));
@@ -61,23 +69,41 @@ export default function CartItem(props: CartItemProps) {
       <animated.div
         {...bind()}
         style={{ x }}
-        className="bg-white p-4 flex items-center space-x-4 relative"
+        className="bg-white p-3.5 space-y-2 relative"
       >
-        <img src={props.product.image} className="w-14 h-14 rounded-lg" />
-        <div className="flex-1 space-y-1">
-          <div className="text-sm">{props.product.name}</div>
-          <div className="flex flex-col">
-            <div className="text-sm font-bold">
-              {formatPrice(props.product.price)}
-            </div>
-            {props.product.originalPrice && (
-              <div className="line-through text-subtitle text-4xs">
-                {formatPrice(props.product.originalPrice)}
+        <div className="flex items-center space-x-3">
+          <img src={props.product.image} className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-background" />
+          <div className="flex-1 min-w-0 space-y-0.5">
+            <div className="text-sm font-medium truncate">{props.product.name}</div>
+            <div className="flex items-baseline gap-2">
+              <div className="text-sm font-bold text-primary">
+                {formatPrice(props.product.price)}
               </div>
-            )}
+              {props.product.originalPrice && props.product.originalPrice > props.product.price && (
+                <div className="line-through text-subtitle text-4xs">
+                  {formatPrice(props.product.originalPrice)}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="w-28 flex-shrink-0">
+            <QuantityInput
+              value={quantity}
+              onChange={(val) => setQuantity(val)}
+              minValue={0}
+              step={0.5}
+            />
           </div>
         </div>
-        <div className="text-sm font-medium">x{quantity}</div>
+        <div className="pt-0.5">
+          <input
+            type="text"
+            placeholder="Ghi chú dòng hàng (vd: cắt khúc, chia 2 túi...)"
+            value={note}
+            onChange={(e) => handleNoteChange(e.target.value)}
+            className="w-full text-2xs bg-background/80 border border-black/5 rounded-lg px-2.5 py-1 text-subtitle focus:outline-none focus:border-primary/50"
+          />
+        </div>
       </animated.div>
     </div>
   );

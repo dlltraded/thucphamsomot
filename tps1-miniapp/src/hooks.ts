@@ -13,7 +13,9 @@ import {
   shippingAddressState,
   selectedStationState,
   localOrdersState,
-  customerAuthState
+  customerAuthState,
+  selectedDeliveryDateState,
+  selectedAddressIdState,
 } from "@/state";
 import { Product } from "@/types";
 import { getConfig } from "@/utils/template";
@@ -131,6 +133,8 @@ export function useCheckout() {
   const deliveryMode = useAtomValue(deliveryModeState);
   const shippingAddress = useAtomValue(shippingAddressState);
   const selectedStation = useAtomValue(selectedStationState);
+  const selectedDeliveryDate = useAtomValue(selectedDeliveryDateState);
+  const selectedAddressId = useAtomValue(selectedAddressIdState);
 
   return async () => {
     // Chặn đặt hàng nếu khách chưa đăng nhập bằng mã khách hàng —
@@ -140,8 +144,12 @@ export function useCheckout() {
       navigate("/register?redirect=/cart");
       return;
     }
-    if ((deliveryMode || "shipping") === "shipping" && !shippingAddress?.address) {
-      toast.error("Vui lòng nhập địa chỉ giao hàng");
+    if (!selectedDeliveryDate) {
+      toast.error("Vui lòng chọn ngày giao hàng");
+      return;
+    }
+    if ((deliveryMode || "shipping") === "shipping" && !shippingAddress?.address && !selectedAddressId) {
+      toast.error("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
       navigate("/shipping-address");
       return;
     }
@@ -188,10 +196,13 @@ export function useCheckout() {
           orderSessionToken: customerAuth.orderSessionToken,
           idempotencyKey,
           voucherCode: voucher?.code || null,
+          deliveryDate: selectedDeliveryDate,
+          addressId: selectedAddressId || shippingAddress?.id || undefined,
           items: cart.map((item) => ({
             productId: String(item.product.id),
             name: item.product.name,
             quantity: item.quantity,
+            note: item.note ? String(item.note).trim() : "",
           })),
           deliveryType,
           deliveryAddress,
@@ -369,7 +380,7 @@ export function useReorder() {
             p.name === item.product.name
         );
         if (found) {
-          newItems.push({ product: found, quantity: item.quantity });
+          newItems.push({ product: found, quantity: item.quantity, note: item.note || "" });
         }
       }
 

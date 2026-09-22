@@ -33,17 +33,24 @@ const CUSTOMER_CONTEXT_TTL_MS = 60_000;
 const PRODUCT_CATALOG_TTL_MS = 5 * 60_000;
 const productCatalogCache = new Map<string, { expiresAt: number; body: unknown }>();
 let baseProductCatalogCache: { expiresAt: number; products: any[] } | null = null;
+let categoryListCache: { expiresAt: number; categories: string[] } | null = null;
+
+function getRequestToken(req: NextRequest) {
+  const websiteSession = parseSessionCookieValue(req.cookies.get(CUSTOMER_SESSION_COOKIE)?.value);
+  return (
+    websiteSession?.orderSessionToken ||
+    req.nextUrl.searchParams.get("sessionToken") ||
+    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
+    ""
+  );
+}
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
 async function resolveCustomerContext(req: NextRequest, supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
-  const websiteSession = parseSessionCookieValue(req.cookies.get(CUSTOMER_SESSION_COOKIE)?.value);
-  const token =
-    websiteSession?.orderSessionToken ||
-    req.nextUrl.searchParams.get("sessionToken") ||
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const token = getRequestToken(req);
   if (!token) return null;
 
   const cached = customerContextCache.get(token);
@@ -77,9 +84,9 @@ async function resolveCustomerContext(req: NextRequest, supabase: ReturnType<typ
 
 async function loadProductCatalog(
   supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
-  customerContext: CustomerContext
+  customerContext: CustomerContext | null
 ) {
-  const cacheKey = customerContext.customerId;
+  const cacheKey = customerContext?.customerId || "guest";
   const cached = productCatalogCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
     return { body: cached.body, cacheStatus: "HIT" };
@@ -125,16 +132,18 @@ async function loadProductCatalog(
       products,
     };
   }
-  const priceMap = await resolvePricesForProducts(
-    supabase,
-    customerContext.customerId,
-    products,
-    {
-      tier: customerContext.tier,
-      contractDiscountPercent: customerContext.contractDiscountPercent,
-      tierExpiryDate: customerContext.tierExpiryDate,
-    }
-  );
+  const priceMap = customerContext
+    ? await resolvePricesForProducts(
+        supabase,
+        customerContext.customerId,
+        products,
+        {
+          tier: customerContext.tier,
+          contractDiscountPercent: customerContext.contractDiscountPercent,
+          tierExpiryDate: customerContext.tierExpiryDate,
+        }
+      )
+    : new Map<string, { price?: number }>();
   const supabaseUrl = (process.env.SUPABASE_PRODUCTS_URL || "").replace(/\/$/, "");
   const imageBaseUrl = supabaseUrl
     ? `${supabaseUrl}/storage/v1/object/public/product-images/thumbs`
@@ -144,7 +153,9 @@ async function loadProductCatalog(
   // [id, sku, name, category, unit, price, priceOnRequest, hasImage]
   const items = products.map((product) => {
     const priceInfo = priceMap.get(product.id);
-    const price = priceInfo?.price ?? (Number(product.price_retail) || Number(product.price_wholesale) || 0);
+    const price = customerContext
+      ? priceInfo?.price ?? (Number(product.price_retail) || Number(product.price_wholesale) || 0)
+      : Number(product.price_retail) || 0;
     return [
       product.id,
       product.sku || "",
@@ -181,30 +192,50 @@ async function loadProductCatalog(
 // cho khách (thông tin nội bộ), chỉ hiện còn/hết hàng.
 export async function GET(req: NextRequest) {
   const supabase = getCustomerSupabaseAdmin();
+  const requestToken = getRequestToken(req);
   const customerContext = await resolveCustomerContext(req, supabase);
-  if (!customerContext) return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
+  // Catalog bán lẻ được mở cho khách chưa đăng nhập để đúng luồng Mini App:
+  // xem hàng trước, đăng ký/đăng nhập khi thanh toán. Nếu client có gửi token
+  // nhưng token đã hết hạn thì vẫn trả 401, tránh vô tình hiển thị giá bán lẻ
+  // thay cho giá hợp đồng mà khách không biết.
+  if (requestToken && !customerContext) {
+    return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
+  }
 
   if (req.nextUrl.searchParams.get("meta") === "1") {
-    let categories: string[] = [];
-    try {
-      const { data: rpcCats, error: catErr } = await supabase.rpc("get_distinct_categories");
-      if (!catErr && Array.isArray(rpcCats)) {
-        categories = rpcCats.map((r: any) => r.category).filter(Boolean);
-      }
-    } catch { /* ignore */ }
-
+    let categories = categoryListCache?.expiresAt && categoryListCache.expiresAt > Date.now()
+      ? categoryListCache.categories
+      : [];
     if (categories.length === 0) {
-      const { data: catRows } = await supabase.from("products").select("category").eq("active", true).not("category", "is", null);
-      categories = [...new Set((catRows || []).map((r) => r.category as string))].sort();
+      try {
+        const { data: rpcCats, error: catErr } = await supabase.rpc("get_distinct_categories");
+        if (!catErr && Array.isArray(rpcCats)) {
+          categories = rpcCats.map((r: any) => r.category).filter(Boolean);
+        }
+      } catch { /* ignore */ }
+
+      if (categories.length === 0) {
+        const { data: catRows } = await supabase.from("products").select("category").eq("active", true).not("category", "is", null);
+        categories = [...new Set((catRows || []).map((r) => r.category as string))].sort();
+      }
+      categoryListCache = { expiresAt: Date.now() + PRODUCT_CATALOG_TTL_MS, categories };
     }
-    return json({ ok: true, categories });
+    return json(
+      { ok: true, categories },
+      200,
+      customerContext
+        ? { "Cache-Control": "private, max-age=300, stale-while-revalidate=600" }
+        : { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" }
+    );
   }
 
   if (req.nextUrl.searchParams.get("catalog") === "1") {
     try {
       const catalog = await loadProductCatalog(supabase, customerContext);
       return json(catalog.body, 200, {
-        "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+        "Cache-Control": customerContext
+          ? "private, max-age=300, stale-while-revalidate=600"
+          : "public, max-age=300, stale-while-revalidate=600",
         "X-TPS1-Catalog-Cache": catalog.cacheStatus,
       });
     } catch (error) {
@@ -215,6 +246,12 @@ export async function GET(req: NextRequest) {
 
   const search = req.nextUrl.searchParams.get("search")?.trim() || "";
   const category = req.nextUrl.searchParams.get("category")?.trim() || "";
+  const categories = (req.nextUrl.searchParams.get("categories") || "")
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 50);
+  const productId = req.nextUrl.searchParams.get("id")?.trim() || "";
   const page = Math.max(0, Number(req.nextUrl.searchParams.get("page") || 0));
   // Nếu đang tìm kiếm autocomplete thì trả về tối đa 50 kết quả để xổ dropdown
   const pageSize = search ? 50 : 24;
@@ -224,7 +261,7 @@ export async function GET(req: NextRequest) {
     let totalCount = 0;
     let usedRpc = false;
 
-    if (search || category) {
+    if ((search || category) && categories.length === 0 && !productId) {
       try {
         const { data: rpcRows, error: rpcErr } = await supabase.rpc("search_products", {
           p_query: search || null,
@@ -263,11 +300,13 @@ export async function GET(req: NextRequest) {
         .eq("active", true)
         .order("name")
         .range(page * pageSize, page * pageSize + pageSize - 1);
+      if (productId) query = query.eq("id", productId);
       if (search) {
         const safe = search.replace(/[%_]/g, "");
         query = query.or(`name.ilike.%${safe}%,sku.ilike.%${safe}%`);
       }
       if (category) query = query.eq("category", category);
+      if (categories.length) query = query.in("category", categories);
 
       const { data: qProducts, count, error } = await query;
       if (error) throw error;
@@ -276,15 +315,19 @@ export async function GET(req: NextRequest) {
     }
 
     // Giá theo hạng/hợp đồng riêng dùng chung hàm resolvePricesForProducts (F5)
-    const priceMap = await resolvePricesForProducts(supabase, customerContext.customerId, products || [], {
-      tier: customerContext.tier,
-      contractDiscountPercent: customerContext.contractDiscountPercent,
-      tierExpiryDate: customerContext.tierExpiryDate,
-    });
+    const priceMap = customerContext
+      ? await resolvePricesForProducts(supabase, customerContext.customerId, products || [], {
+          tier: customerContext.tier,
+          contractDiscountPercent: customerContext.contractDiscountPercent,
+          tierExpiryDate: customerContext.tierExpiryDate,
+        })
+      : new Map<string, { price?: number }>();
 
     const resolved = (products || []).map((p) => {
       const priceInfo = priceMap.get(p.id);
-      const price = priceInfo?.price ?? (Number(p.price_retail) || Number(p.price_wholesale) || 0);
+      const price = customerContext
+        ? priceInfo?.price ?? (Number(p.price_retail) || Number(p.price_wholesale) || 0)
+        : Number(p.price_retail) || 0;
       return {
         id: p.id,
         sku: p.sku,
@@ -301,7 +344,13 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return json({ ok: true, total: totalCount, page, pageSize, products: resolved });
+    return json(
+      { ok: true, total: totalCount, page, pageSize, products: resolved },
+      200,
+      customerContext
+        ? {}
+        : { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" }
+    );
   } catch (error) {
     console.error("GET /api/customer/products lỗi:", error);
     return json({ ok: false, error: "Không tải được danh sách sản phẩm, vui lòng thử lại" }, 500);

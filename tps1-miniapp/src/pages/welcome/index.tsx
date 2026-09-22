@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Page } from "zmp-ui";
 import CONFIG from "@/config";
 import logoUrl from "@/static/logo.png";
-import heroBg from "@/static/cat_vegetables.png";
 
 const TRUST_BADGES = [
   "✅ ISO 22000 & HACCP",
@@ -49,13 +48,11 @@ export default function WelcomePage() {
   return (
     <Page className="flex flex-col h-screen bg-white">
       <div className="flex-1 overflow-y-auto">
-        {/* Hero với ảnh nền thực phẩm */}
+        {/* Hero dùng gradient nhẹ để mở app nhanh ngay cả trên mạng di động yếu. */}
         <div
           className="relative overflow-hidden px-6 pb-6"
           style={{
-            backgroundImage: `linear-gradient(175deg, rgba(15,60,32,0.88) 0%, rgba(27,122,61,0.82) 55%, rgba(61,190,119,0.75) 100%), url(${heroBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundImage: "linear-gradient(175deg, #0f3c20 0%, #1b7a3d 55%, #3dbe77 100%)",
             paddingTop: "calc(var(--safe-top, 30px) + 20px)",
           }}
         >

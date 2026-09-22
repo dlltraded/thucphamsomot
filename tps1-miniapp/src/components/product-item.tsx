@@ -28,6 +28,9 @@ export default function ProductItem(props: ProductItemProps) {
           <img
             className="w-full h-full object-cover"
             src={props.product.image || "https://zalo-miniapp.github.io/zaui-market/dummy/product/image.jpg"}
+            alt={props.product.name}
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               (e.target as HTMLImageElement).src = logoUrl;
               (e.target as HTMLImageElement).className = "w-1/2 h-1/2 object-contain opacity-20";
@@ -44,7 +47,7 @@ export default function ProductItem(props: ProductItemProps) {
             {props.product.name}
           </div>
           <div className="mt-1 text-sm font-bold text-primary flex items-baseline gap-2">
-            {formatPrice(props.product.price)}
+            {props.product.priceOnRequest ? "Liên hệ báo giá" : formatPrice(props.product.price)}
           </div>
           {props.product.originalPrice && props.product.originalPrice > props.product.price && (
             <span className="text-xs text-subtitle line-through font-normal block">

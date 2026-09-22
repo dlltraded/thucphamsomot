@@ -1,32 +1,19 @@
 import Layout from "@/components/layout";
-import CartPage from "@/pages/cart";
-import CategoryDetailPage from "@/pages/catalog/category-detail";
-import CategoryListPage from "@/pages/catalog/category-list";
-import ProductDetailPage from "@/pages/catalog/product-detail";
-import HomePage from "@/pages/home";
-import ProfilePage from "@/pages/profile";
-import SearchPage from "@/pages/search";
 import { createBrowserRouter } from "react-router-dom";
 import { getBasePath } from "@/utils/zma";
-import OrdersPage from "./pages/orders";
-import ShippingAddressPage from "./pages/cart/shipping-address";
-import StationsPage from "./pages/cart/stations";
-import OrderDetailPage from "./pages/orders/detail";
-import ProfileEditorPage from "./pages/profile/editor";
-import ShopInfoPage from "./pages/shop-info";
-import CheckoutSuccessPage from "./pages/checkout-success";
-import LoginPage from "./pages/login";
-import ChangePasswordPage from "./pages/change-password";
-import RegisterPage from "./pages/register";
-import WelcomePage from "./pages/welcome";
 import { redirect } from "react-router-dom";
 import CONFIG from "@/config";
+
+const lazyPage = (load: () => Promise<{ default: React.ComponentType }>) => async () => {
+  const module = await load();
+  return { Component: module.default };
+};
 
 const router = createBrowserRouter(
   [
     {
       path: "/welcome",
-      element: <WelcomePage />,
+      lazy: lazyPage(() => import("@/pages/welcome")),
     },
     {
       path: "/",
@@ -34,7 +21,7 @@ const router = createBrowserRouter(
       children: [
         {
           path: "/",
-          element: <HomePage />,
+          lazy: lazyPage(() => import("@/pages/home")),
           loader: () => {
             const seen = localStorage.getItem(CONFIG.STORAGE_KEYS.WELCOME_SEEN);
             if (!seen) {
@@ -49,7 +36,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/categories",
-          element: <CategoryListPage />,
+          lazy: lazyPage(() => import("@/pages/catalog/category-list")),
           handle: {
             title: "Danh mục",
             noBack: true,
@@ -57,21 +44,21 @@ const router = createBrowserRouter(
         },
         {
           path: "/orders/:status?",
-          element: <OrdersPage />,
+          lazy: lazyPage(() => import("@/pages/orders")),
           handle: {
             title: "Đơn hàng",
           },
         },
         {
           path: "/order/:id",
-          element: <OrderDetailPage />,
+          lazy: lazyPage(() => import("@/pages/orders/detail")),
           handle: {
             title: "Thông tin đơn hàng",
           },
         },
         {
           path: "/cart",
-          element: <CartPage />,
+          lazy: lazyPage(() => import("@/pages/cart")),
           handle: {
             title: "Giỏ hàng",
             noBack: true,
@@ -80,7 +67,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/shipping-address",
-          element: <ShippingAddressPage />,
+          lazy: lazyPage(() => import("@/pages/cart/shipping-address")),
           handle: {
             title: "Địa chỉ nhận hàng",
             noFooter: true,
@@ -89,7 +76,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/stations",
-          element: <StationsPage />,
+          lazy: lazyPage(() => import("@/pages/cart/stations")),
           handle: {
             title: "Điểm nhận hàng",
             noFooter: true,
@@ -97,14 +84,14 @@ const router = createBrowserRouter(
         },
         {
           path: "/profile",
-          element: <ProfilePage />,
+          lazy: lazyPage(() => import("@/pages/profile")),
           handle: {
             logo: true,
           },
         },
         {
           path: "/profile/edit",
-          element: <ProfileEditorPage />,
+          lazy: lazyPage(() => import("@/pages/profile/editor")),
           handle: {
             title: "Thông tin tài khoản",
             noFooter: true,
@@ -113,7 +100,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/category/:id",
-          element: <CategoryDetailPage />,
+          lazy: lazyPage(() => import("@/pages/catalog/category-detail")),
           handle: {
             search: true,
             title: ({ categories, params }) =>
@@ -122,7 +109,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/product/:id",
-          element: <ProductDetailPage />,
+          lazy: lazyPage(() => import("@/pages/catalog/product-detail")),
           handle: {
             scrollRestoration: 0, // when user selects another product in related products, scroll to the top of the page
             noFloatingCart: true,
@@ -130,7 +117,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/search",
-          element: <SearchPage />,
+          lazy: lazyPage(() => import("@/pages/search")),
           handle: {
             search: true,
             title: "Tìm kiếm",
@@ -139,7 +126,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/shop-info",
-          element: <ShopInfoPage />,
+          lazy: lazyPage(() => import("@/pages/shop-info")),
           handle: {
             title: "Thông tin cửa hàng",
             noFooter: true,
@@ -148,7 +135,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/checkout-success",
-          element: <CheckoutSuccessPage />,
+          lazy: lazyPage(() => import("@/pages/checkout-success")),
           handle: {
             title: "Đặt hàng thành công",
             noFooter: true,
@@ -158,7 +145,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/register",
-          element: <RegisterPage />,
+          lazy: lazyPage(() => import("@/pages/register")),
           handle: {
             title: "Đăng ký tài khoản",
             noFooter: true,
@@ -167,7 +154,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/login",
-          element: <LoginPage />,
+          lazy: lazyPage(() => import("@/pages/login")),
           handle: {
             title: "Đăng nhập khách hàng",
             noFooter: true,
@@ -176,7 +163,7 @@ const router = createBrowserRouter(
         },
         {
           path: "/change-password",
-          element: <ChangePasswordPage />,
+          lazy: lazyPage(() => import("@/pages/change-password")),
           handle: {
             title: "Đặt mật khẩu mới",
             noFooter: true,

@@ -12,11 +12,8 @@ export default function CartList() {
     <Section
       title={
         <div className="flex items-center space-x-2">
-          <Icon icon="zi-calendar" />
-          <div>
-            <span className="font-normal text-sm">Thời gian nhận:</span>{" "}
-            <span className="font-medium text-sm">Từ 16h, 20/1/2025</span>
-          </div>
+          <Icon icon="zi-inbox" />
+          <span className="font-semibold text-sm">Danh sách sản phẩm ({cart.length})</span>
         </div>
       }
       className="flex-1 overflow-y-auto rounded-lg"
@@ -25,15 +22,6 @@ export default function CartList() {
         {cart.map((item) => (
           <CartItem key={item.product.id} {...item} />
         ))}
-      </div>
-      <HorizontalDivider />
-      <div className="flex items-center px-4 pt-3 pb-2 space-x-4">
-        <div className="text-sm font-medium">Ghi chú</div>
-        <input
-          type="text"
-          placeholder="Lưu ý cho người bán..."
-          className="text-sm text-right flex-1 focus:outline-none"
-        />
       </div>
     </Section>
   );

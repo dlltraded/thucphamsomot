@@ -14,8 +14,12 @@ export default function Category() {
             to={`/category/${category.id}`}
             className="flex flex-col items-center space-y-2"
           >
-            <div className="w-12 h-12 rounded-full overflow-hidden">
-               <img className="w-full h-full object-cover" src={category.image} />
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-[#eef8f2] flex items-center justify-center text-2xl">
+              {category.image ? (
+                <img loading="lazy" className="w-full h-full object-cover" src={category.image} alt="" />
+              ) : (
+                <span aria-hidden>{category.emoji || "📦"}</span>
+              )}
             </div>
             <span className="text-[10px] text-center font-medium leading-tight text-primary">
               {category.name}

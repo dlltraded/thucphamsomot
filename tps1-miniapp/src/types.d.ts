@@ -9,11 +9,15 @@ export interface UserInfo {
 
 export interface Product {
   id: string | number;
+  sku?: string;
   name: string;
+  unit?: string;
   price: number;
+  priceOnRequest?: boolean;
   originalPrice?: number;
   image: string;
   category: Category;
+  categoryId?: string | number;
   detail?: string;
   sizes?: Size[];
   colors?: Color[];
@@ -23,11 +27,15 @@ export interface Category {
   id: string | number;
   name: string;
   image: string;
+  rawCategories?: string[];
+  priority?: number;
+  emoji?: string;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  note?: string;
 }
 
 export type Cart = CartItem[];
@@ -38,6 +46,7 @@ export interface Location {
 }
 
 export interface ShippingAddress {
+  id?: string;
   alias: string;
   address: string;
   name: string;
@@ -65,8 +74,18 @@ export type Delivery =
       address?: string;
     };
 
-export type OrderStatus = "pending" | "shipping" | "completed";
+export type OrderStatus = "draft" | "pending" | "shipping" | "completed";
 export type PaymentStatus = "pending" | "quoted" | "shipping" | "success" | "failed";
+
+export interface OrderChangeRequestInfo {
+  id: string;
+  type: "adjust" | "cancel";
+  status: "open" | "approved" | "rejected" | "done";
+  message: string;
+  requested_at?: string;
+  handled_at?: string;
+  handled_note?: string;
+}
 
 export interface Order {
   id: string | number;
@@ -89,4 +108,8 @@ export interface Order {
   // Hóa đơn bán hàng — chỉ có giá trị khi đơn đã "completed" (hoàn thành giao
   // hàng), khác với confirmationDocumentId (phiếu tạm, có ngay khi chốt giá).
   invoiceDocumentId?: string;
+  deliveryDate?: string;
+  isLateOrder?: boolean;
+  changeRequest?: OrderChangeRequestInfo | null;
+  cancelReason?: string | null;
 }

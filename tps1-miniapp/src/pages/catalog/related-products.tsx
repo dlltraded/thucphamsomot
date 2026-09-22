@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { productsState } from "@/state";
 
 export interface RelatedProductsProps {
-  currentProductId: number;
+  currentProductId: string | number;
 }
 
 export default function RelatedProducts(props: RelatedProductsProps) {
