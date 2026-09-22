@@ -105,6 +105,22 @@ export async function POST(req: NextRequest) {
   const cutoffInfo = getOrderCutoffInfo(new Date(), deliveryDate, cutoffConfig);
   const isLate = cutoffInfo.isLate;
 
+  // Không nhận đơn trễ giờ chốt ở API. Trước đây chỉ gắn cờ is_late_order rồi
+  // vẫn gọi RPC, khiến khách tưởng đơn đã được tiếp nhận dù ngày giao đã quá
+  // giờ mua hàng. Client có thể bị bypass nên quy tắc phải nằm ở server.
+  if (isLate) {
+    return json(
+      {
+        ok: false,
+        error: `Đã quá giờ chốt đơn cho ngày ${deliveryDate} (${cutoffInfo.cutoffTimeStr}). Vui lòng chọn ngày giao sớm nhất ${cutoffInfo.earliestDate}.`,
+        code: "ORDER_CUTOFF_EXPIRED",
+        earliestDate: cutoffInfo.earliestDate,
+        cutoffAt: cutoffInfo.cutoffAt,
+      },
+      409
+    );
+  }
+
   // 3. Kiểm tra địa chỉ giao hàng (chọn từ customer_addresses, thuộc khách) — quyết định D3
   const addressId = String(body.addressId || "").trim();
   let selectedAddress: {
@@ -179,6 +195,29 @@ export async function POST(req: NextRequest) {
       { ok: false, error: "Vui lòng nhập đầy đủ địa chỉ, người nhận và số điện thoại giao hàng" },
       400
     );
+  }
+
+  // customer_create_order lấy customer_phone từ vip_accounts.phone (NOT NULL).
+  // Một số tài khoản cũ chỉ có SĐT ở địa chỉ giao hàng, vì vậy đồng bộ số này
+  // về hồ sơ trước khi gọi RPC để không làm rơi đơn ở ràng buộc NOT NULL.
+  if (deliveryPhone) {
+    const { data: customerRecord, error: customerRecordError } = await supabaseAdmin
+      .from("vip_accounts")
+      .select("phone")
+      .eq("id", customerId)
+      .maybeSingle();
+    if (customerRecordError) {
+      return json({ ok: false, error: "Không kiểm tra được thông tin số điện thoại khách hàng" }, 500);
+    }
+    if (!String(customerRecord?.phone || "").trim()) {
+      const { error: phoneUpdateError } = await supabaseAdmin
+        .from("vip_accounts")
+        .update({ phone: deliveryPhone })
+        .eq("id", customerId);
+      if (phoneUpdateError) {
+        return json({ ok: false, error: "Không lưu được số điện thoại khách hàng, vui lòng thử lại" }, 400);
+      }
+    }
   }
 
   const idempotencyKey = String(
