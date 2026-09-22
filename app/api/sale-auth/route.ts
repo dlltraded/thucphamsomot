@@ -97,7 +97,9 @@ async function tryStaffLogin(identifier: string, password: string) {
       .eq("id", authData.user.id)
       .eq("is_active", true)
       .single();
-    profile = legacy.data ? { ...legacy.data, position: null, department_id: null, departments: null } : null;
+    // Giữ cùng shape với truy vấn mới; dùng mảng rỗng khi schema cũ chưa có
+    // quan hệ phòng ban để TypeScript và phần dựng phiên xử lý nhất quán.
+    profile = legacy.data ? { ...legacy.data, position: null, department_id: null, departments: [] } : null;
     profileError = legacy.error;
   }
 
