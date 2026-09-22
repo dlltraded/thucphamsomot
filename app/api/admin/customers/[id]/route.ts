@@ -27,7 +27,7 @@ async function requireAdmin(req: NextRequest) {
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!['admin', 'sale'].includes(String(auth.profile?.role || ''))) {
+  if (!['admin', 'sale', 'truong_phong'].includes(String(auth.profile?.role || ''))) {
     return json({ ok: false, error: "Bạn không có quyền xem khách hàng" }, 403);
   }
 

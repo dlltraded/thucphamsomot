@@ -37,16 +37,16 @@ const PERMISSIONS: Record<string, Role[]> = {
   'orders.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   /** Tạo đơn hàng mới (POS) */
   'orders.create': ['admin', 'truong_phong', 'sale'],
-  /** Xác nhận/chốt đơn hàng hàng loạt — chỉ người có thẩm quyền */
-  'orders.bulk_confirm': ['admin', 'truong_phong'],
-  /** Phân loại khách, chốt giá cuối và phát hành phiếu xác nhận */
-  'orders.finalize_pricing': ['admin', 'truong_phong'],
+  /** Xác nhận/chốt đơn hàng hàng loạt của phòng Vận hành */
+  'orders.bulk_confirm': ['admin', 'sale'],
+  /** Sale/Văn phòng vận hành phân loại khách, chốt giá và chuyển Thu mua */
+  'orders.finalize_pricing': ['admin', 'sale'],
   /** Sửa thông tin đơn trước khi chốt, bổ sung giá tham khảo/ghi chú */
-  'orders.edit': ['admin', 'truong_phong', 'sale'],
+  'orders.edit': ['admin', 'sale', 'thu_mua'],
   /** Duyệt đơn vượt hạn mức công nợ */
   'orders.credit_override': ['admin', 'truong_phong'],
   /** Xem/Cập nhật trạng thái soạn hàng (nhận/hoàn tất/trả đơn) */
-  'orders.packing': ['admin', 'truong_phong', 'thu_mua', 'kho'],
+  'orders.packing': ['admin', 'sale', 'thu_mua', 'kho'],
 
   // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
   /** Xem màn đơn tổng, xuất Excel đơn tổng */
@@ -66,13 +66,13 @@ const PERMISSIONS: Record<string, Role[]> = {
 
   // ─── Bảng giá ───────────────────────────────────────────────────
   /** Áp giá hàng ngày / sửa bảng giá */
-  'pricing.edit': ['admin', 'truong_phong', 'sale', 'thu_mua'],
+  'pricing.edit': ['admin', 'sale', 'thu_mua', 'ke_toan'],
 
   // ─── Khách hàng ─────────────────────────────────────────────────
   /** Xem danh sách khách hàng */
   'customers.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
   /** Tạo/sửa khách hàng, địa chỉ, xác thực tài khoản khách */
-  'customers.edit': ['admin', 'truong_phong', 'sale'],
+  'customers.edit': ['admin', 'sale'],
 
   // ─── Công nợ / Thanh toán ───────────────────────────────────────
   /** Xem công nợ */

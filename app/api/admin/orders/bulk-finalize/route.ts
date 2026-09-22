@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
   if (!can(auth.profile?.role, "orders.finalize_pricing")) {
-    return json({ ok: false, error: "Chỉ Admin hoặc Trưởng phòng được phân loại khách và chốt giá đơn hàng" }, 403);
+    return json({ ok: false, error: "Chỉ Admin hoặc nhân viên Sale/Văn phòng Vận hành được phân loại khách và chốt giá đơn hàng" }, 403);
   }
 
   const body = await req.json().catch(() => null);

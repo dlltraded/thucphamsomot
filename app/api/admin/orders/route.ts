@@ -311,7 +311,7 @@ export async function POST(req: NextRequest) {
     return json({ ok: false, error: auth.error }, 401);
   }
   if (!can(auth.profile?.role, "orders.finalize_pricing")) {
-    return json({ ok: false, error: "Chỉ Admin hoặc Trưởng phòng được phân loại khách và chốt giá đơn hàng" }, 403);
+    return json({ ok: false, error: "Chỉ Admin hoặc nhân viên Sale/Văn phòng Vận hành được phân loại khách và chốt giá đơn hàng" }, 403);
   }
   const body = await req.json().catch(() => null);
   const orderId = String(body?.orderId || "").trim();
@@ -412,14 +412,8 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Sale không điều khiển trạng thái trong luồng mới: chỉ theo dõi đơn,
-    // bổ sung thông tin/giá tham khảo và gửi yêu cầu cho người duyệt.
-    if (hasStatusChange && current.status !== nextStatus && auth.profile?.role === "sale") {
-      return json({ ok: false, error: "Sale chỉ được theo dõi và bổ sung thông tin; trạng thái do Admin/Thu mua/Kho xử lý." }, 403);
-    }
-
-    // Chuyển sang Đã xác nhận là điểm chốt nghiệp vụ. Sale vẫn được xem,
-    // bổ sung giá tham khảo và gửi yêu cầu điều chỉnh nhưng không tự chốt.
+    // Chuyển sang Đã xác nhận là điểm chốt nghiệp vụ của Phòng Vận hành.
+    // Quyền thực tế được kiểm tra theo orders.finalize_pricing bên dưới.
     if (hasStatusChange && nextStatus === "confirmed" && !can(auth.profile?.role, "orders.finalize_pricing")) {
       return json({ ok: false, error: "Sale chưa được phép xác nhận/chốt giá. Vui lòng chuyển Admin hoặc Trưởng phòng duyệt đơn." }, 403);
     }
