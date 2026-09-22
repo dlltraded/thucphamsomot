@@ -252,6 +252,11 @@ export async function GET(req: NextRequest) {
     .filter(Boolean)
     .slice(0, 50);
   const productId = req.nextUrl.searchParams.get("id")?.trim() || "";
+  const productIds = (req.nextUrl.searchParams.get("ids") || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 30);
   const page = Math.max(0, Number(req.nextUrl.searchParams.get("page") || 0));
   // Nếu đang tìm kiếm autocomplete thì trả về tối đa 50 kết quả để xổ dropdown
   const pageSize = search ? 50 : 24;
@@ -261,7 +266,7 @@ export async function GET(req: NextRequest) {
     let totalCount = 0;
     let usedRpc = false;
 
-    if ((search || category) && categories.length === 0 && !productId) {
+    if ((search || category) && categories.length === 0 && !productId && productIds.length === 0) {
       try {
         const { data: rpcRows, error: rpcErr } = await supabase.rpc("search_products", {
           p_query: search || null,
@@ -301,6 +306,7 @@ export async function GET(req: NextRequest) {
         .order("name")
         .range(page * pageSize, page * pageSize + pageSize - 1);
       if (productId) query = query.eq("id", productId);
+      if (productIds.length) query = query.in("id", productIds);
       if (search) {
         const safe = search.replace(/[%_]/g, "");
         query = query.or(`name.ilike.%${safe}%,sku.ilike.%${safe}%`);

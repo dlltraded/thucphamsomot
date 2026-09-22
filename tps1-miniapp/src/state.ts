@@ -16,6 +16,7 @@ import {
   ShippingAddress,
   Station,
   UserInfo,
+  Product,
 } from "@/types";
 import { requestWithFallback } from "@/utils/request";
 import {
@@ -121,8 +122,6 @@ export const productsState = atom(async (get) => {
 });
 
 export const flashSaleProductsState = atom((get) => get(productsState));
-
-export const recommendedProductsState = atom((get) => get(productsState));
 
 export const productState = atomFamily((id: string | number) =>
   atom(async (get) => {
@@ -239,6 +238,81 @@ export const productsByCategoryState = atomFamily((id: string) =>
     return page.products;
   })
 );
+
+const favoriteIdsByCustomerState = atomWithStorage<Record<string, string[]>>(
+  "tps1FavoriteProducts",
+  {}
+);
+
+/** Danh sách yêu thích được tách theo tài khoản trên thiết bị hiện tại. */
+export const favoriteProductIdsState = atom(
+  (get) => {
+    const customer = get(customerAuthState);
+    const key = customer?.id || "guest";
+    return get(favoriteIdsByCustomerState)[key] || [];
+  },
+  (get, set, productId: string | number) => {
+    const customer = get(customerAuthState);
+    const key = customer?.id || "guest";
+    const all = get(favoriteIdsByCustomerState);
+    const current = all[key] || [];
+    const id = String(productId);
+    set(favoriteIdsByCustomerState, {
+      ...all,
+      [key]: current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [id, ...current].slice(0, 50),
+    });
+  }
+);
+
+export const favoriteProductsState = atom(async (get) => {
+  const ids = get(favoriteProductIdsState);
+  if (!ids.length) return [];
+  const customer = get(customerAuthState);
+  const page = await fetchProductPage({ ids, sessionToken: customer?.orderSessionToken });
+  const byId = new Map(page.products.map((product) => [String(product.id), product]));
+  return ids.map((id) => byId.get(id)).filter(Boolean) as Product[];
+});
+
+/** Mặt hàng thường mua: xếp hạng theo số lần/số lượng trong lịch sử đơn. */
+export const frequentlyPurchasedProductsState = atom(async (get) => {
+  const customer = get(customerAuthState);
+  if (!customer?.orderSessionToken) return [];
+  try {
+    const response = await fetch(
+      `${CONFIG.API_BASE}/api/customer/orders?sessionToken=${encodeURIComponent(customer.orderSessionToken)}`
+    );
+    const payload = await response.json().catch(() => ({ orders: [] }));
+    if (!response.ok) return [];
+    const score = new Map<string, number>();
+    for (const order of Array.isArray(payload.orders) ? payload.orders : []) {
+      if (String(order.status) === "canceled") continue;
+      for (const item of Array.isArray(order.items) ? order.items : []) {
+        const id = String(item.productId || item.id || "");
+        if (!id) continue;
+        score.set(id, (score.get(id) || 0) + Math.max(1, Number(item.quantity) || 1));
+      }
+    }
+    const ids = [...score.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([id]) => id);
+    if (!ids.length) return [];
+    const page = await fetchProductPage({ ids, sessionToken: customer.orderSessionToken });
+    const byId = new Map(page.products.map((product) => [String(product.id), product]));
+    return ids.map((id) => byId.get(id)).filter(Boolean) as Product[];
+  } catch (error) {
+    console.warn("Không tải được mặt hàng thường mua", error);
+    return [];
+  }
+});
+
+export const recommendedProductsState = atom(async (get) => {
+  const frequent = await get(frequentlyPurchasedProductsState);
+  if (frequent.length) return frequent;
+  return get(productsState);
+});
 
 export const stationsState = atom(async () => {
   let location: Location | undefined;

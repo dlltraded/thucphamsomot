@@ -5,6 +5,9 @@ import { useAddToCart } from "@/hooks";
 import { Button } from "zmp-ui";
 import { useState } from "react";
 import QuantityInput from "./quantity-input";
+import { useAtom } from "jotai";
+import { favoriteProductIdsState } from "@/state";
+import { Icon } from "zmp-ui";
 
 import logoUrl from "@/static/logo.png";
 
@@ -16,6 +19,8 @@ export interface ProductItemProps {
 export default function ProductItem(props: ProductItemProps) {
   const { addToCart, cartQuantity } = useAddToCart(props.product);
   const [qty, setQty] = useState(1);
+  const [favoriteIds, toggleFavorite] = useAtom(favoriteProductIdsState);
+  const isFavorite = favoriteIds.includes(String(props.product.id));
 
   return (
     <div className="bg-background rounded-xl p-3 shadow-[0_10px_24px_#0D0D0D17] flex flex-col gap-2">
@@ -41,6 +46,18 @@ export default function ProductItem(props: ProductItemProps) {
               {cartQuantity}
             </div>
           )}
+          <button
+            type="button"
+            aria-label={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleFavorite(props.product.id);
+            }}
+            className={`absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow ${isFavorite ? "text-red-500" : "text-subtitle"}`}
+          >
+            <Icon icon={isFavorite ? "zi-heart-solid" : "zi-heart"} size={16} />
+          </button>
         </div>
         <div className="flex-1 flex flex-col">
           <div className="text-sm font-medium line-clamp-2">

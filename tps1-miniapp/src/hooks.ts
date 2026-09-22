@@ -361,15 +361,20 @@ export function useRouteHandle() {
 export function useReorder() {
   const navigate = useNavigate();
   const [, setCart] = useAtom(cartState);
-  const getProducts = useAtomCallback(async (get) => {
-    const { productsState } = await import("@/state");
-    return get(productsState);
+  const getCustomer = useAtomCallback((get) => {
+    return get(customerAuthState);
   });
 
   return async (order: import("@/types").Order) => {
     const toastId = toast.loading("Đang tải lại đơn hàng…");
     try {
-      const products = await getProducts();
+      const customer = getCustomer();
+      const ids = order.items.map((item) => item.product.id);
+      const { fetchProductPage } = await import("@/utils/catalog");
+      const products = (await fetchProductPage({
+        ids,
+        sessionToken: customer?.orderSessionToken,
+      })).products;
       const newItems: import("@/types").CartItem[] = [];
 
       for (const item of order.items) {

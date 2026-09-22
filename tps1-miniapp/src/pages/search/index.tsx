@@ -5,6 +5,8 @@ import { useAtomValue } from "jotai";
 import { HTMLAttributes, Suspense } from "react";
 import {
   keywordState,
+  favoriteProductsState,
+  frequentlyPurchasedProductsState,
   recommendedProductsState,
   searchResultState,
 } from "@/state";
@@ -58,22 +60,21 @@ export function ProductGridSkeleton({
 }
 
 export function RecommendedProducts() {
+  const favorites = useAtomValue(favoriteProductsState);
+  const frequent = useAtomValue(frequentlyPurchasedProductsState);
   const recommendedProducts = useAtomValue(recommendedProductsState);
 
   return (
-    <Section title="Gợi ý sản phẩm">
-      <div className="py-2 px-4 pb-6 flex space-x-2 overflow-x-auto">
-        {recommendedProducts.map((product) => (
-          <div
-            key={product.id}
-            className="flex-none"
-            style={{ flexBasis: "calc((100vw - 48px) / 2)" }}
-          >
-            <ProductItem key={product.id} product={product} />
-          </div>
-        ))}
-      </div>
-    </Section>
+    <div className="space-y-2 pb-16">
+      {favorites.length > 0 && (
+        <Section title={`Yêu thích (${favorites.length})`}>
+          <ProductGrid products={favorites} />
+        </Section>
+      )}
+      <Section title={frequent.length ? "Mặt hàng thường mua" : "Gợi ý đặt nhanh"}>
+        <ProductGrid products={(frequent.length ? frequent : recommendedProducts).slice(0, 12)} />
+      </Section>
+    </div>
   );
 }
 

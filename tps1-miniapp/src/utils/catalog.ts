@@ -107,11 +107,13 @@ export async function fetchProductPage(options: {
   search?: string;
   category?: CatalogCategory | Category;
   id?: string | number;
+  ids?: Array<string | number>;
   sessionToken?: string;
 } = {}) {
   const params = new URLSearchParams({ page: String(options.page || 0) });
   if (options.search) params.set("search", options.search.trim());
   if (options.id != null) params.set("id", String(options.id));
+  if (options.ids?.length) params.set("ids", options.ids.slice(0, 30).map(String).join(","));
   const rawCategories = (options.category as CatalogCategory | undefined)?.rawCategories;
   if (rawCategories?.length) params.set("categories", rawCategories.join("|"));
 
