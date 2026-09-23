@@ -1,7 +1,7 @@
 # Nghiệm Thu Tối Ưu Chuyển Đổi Google Ads & Form Báo Giá Nhanh B2B (G0 - G7)
 
 ## 1. Tổng quan kết quả thực hiện
-Đã hoàn thành toàn bộ các giai đoạn từ **G0 đến G7** theo đúng yêu cầu trong tài liệu [GEMINI_CONVERSION_LANDING_PLAN.md](file:///D:/thuc_pham_so_mot/.codex-worktrees/product-catalog-redesign/GEMINI_CONVERSION_LANDING_PLAN.md):
+Đã hoàn thành toàn bộ các giai đoạn từ **G0 đến G7** theo đúng yêu cầu trong tài liệu [GEMINI_CONVERSION_LANDING_PLAN.md](file:///D:/thuc_pham_so_mot/.codex-worktrees/product-catalog-redesign/GEMINI_CONVERSION_LANDING_PLAN.md) (commit `a8a52a4` trên branch `product-catalog-redesign`):
 - **Gửi lead trong 30 giây**: Khách truy cập từ quảng cáo và di động chỉ cần nhập đúng 3 trường: (1) Tên công ty / bếp ăn, (2) Số điện thoại, (3) Nhu cầu ngắn hoặc số suất ăn.
 - **Tái sử dụng API an toàn**: Toàn bộ dữ liệu đi qua `POST /api/quote`, tự động ánh xạ chuẩn xác vào `quoteSchema` của Zod, forward trực tiếp đến Google Sheets, Telegram và Zalo ZNS.
 - **Bảo tồn toàn vẹn tính năng cũ**: Form báo giá chi tiết `#rfq-form` và trang `/bao-gia` giữ nguyên 100%. Luồng đặt hàng `dathang` và `sale-webapp` không bị thay đổi.
