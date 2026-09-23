@@ -70,7 +70,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h4>{text.contact}</h4>
+          <h2>{text.contact}</h2>
           <ul className="site-footer__links">
             <li>
               <Phone size={14} />
@@ -88,7 +88,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h4>{text.served}</h4>
+          <h2>{text.served}</h2>
           <ul className="site-footer__links">
             {text.customers.map((item) => (
               <li key={item}>
@@ -102,7 +102,7 @@ export function SiteFooter() {
 
       <div className="container-shell site-footer__map">
         <div className="site-footer__map-copy">
-          <h4>{text.mapTitle}</h4>
+          <h2>{text.mapTitle}</h2>
           <p>{text.mapCopy}</p>
           <a href={siteConfig.mapPlaceUrl} target="_blank" rel="noreferrer">
             {text.mapLink}

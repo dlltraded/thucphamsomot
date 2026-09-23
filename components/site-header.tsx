@@ -80,6 +80,7 @@ export function SiteHeader() {
           <button
             type="button"
             className="site-menu-toggle"
+            aria-label={menuOpen ? (isEnglish ? "Close menu" : "Đóng menu") : (isEnglish ? "Open menu" : "Mở menu")}
             aria-expanded={menuOpen}
             aria-controls="site-mobile-nav"
             onClick={() => setMenuOpen((v) => !v)}
@@ -104,7 +105,7 @@ export function SiteHeader() {
               <button
                 className="lang-dropdown-toggle"
                 onClick={() => setLangOpen(!langOpen)}
-                aria-label={isEnglish ? "Change language" : "Đổi ngôn ngữ"}
+                aria-label={isEnglish ? "EN – Change language" : "VI – Đổi ngôn ngữ"}
               >
                 {isEnglish ? "EN" : "VI"}
                 <ChevronDown size={14} className={`lang-dropdown-icon ${langOpen ? "is-open" : ""}`} />

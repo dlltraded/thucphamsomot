@@ -52,7 +52,8 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
           alt={text.imageAlt}
           fill
           priority
-          quality={80}
+          fetchPriority="high"
+          quality={65}
           className="object-cover object-center"
           sizes="100vw"
         />

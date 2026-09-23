@@ -370,7 +370,7 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
               onClick={() => fileInputRef.current?.click()}
               role="button"
               tabIndex={0}
-              aria-label={t.dragDropAria}
+              aria-label={t.dragDropTitle}
               onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
             >
               <div className="b2b-dropzone__icon">
