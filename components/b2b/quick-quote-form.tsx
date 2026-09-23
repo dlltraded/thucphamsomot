@@ -48,7 +48,7 @@ export function QuickQuoteForm({
   const validatePhone = (rawPhone: string): boolean => {
     const cleaned = rawPhone.replace(/[\s\.\-\(\)]/g, "");
     const normalized = cleaned.startsWith("+84") ? "0" + cleaned.slice(3) : cleaned;
-    return /^(0[2|3|5|7|8|9])[0-9]{8}$/.test(normalized);
+    return /^(0[235789])[0-9]{8}$/.test(normalized);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
