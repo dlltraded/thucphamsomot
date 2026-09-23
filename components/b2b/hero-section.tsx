@@ -1,41 +1,44 @@
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight, BadgeCheck, FileCheck2, Phone, Truck } from "lucide-react";
-import { siteConfig } from "@/lib/site";
+import { BadgeCheck, FileCheck2, Truck } from "lucide-react";
 import { DeferredThreeBackground } from "./deferred-three-background";
-
-const orderAppUrl = "https://dathang.thucphamsomot.vn/";
+import { QuickQuoteForm } from "@/components/b2b/quick-quote-form";
 
 const copy = {
   vi: {
-    eyebrow: "Nhà cung cấp thực phẩm B2B tại Đồng Nai",
-    title: "Nguồn thực phẩm ổn định cho bếp ăn chuyên nghiệp.",
-    description:
-      "Rau củ, thịt cá, hàng đông lạnh và hàng khô cho nhà máy, trường học, bệnh viện, nhà hàng và bếp ăn công nghiệp.",
-    primary: "Nhận báo giá cho bếp",
-    secondary: "Xem danh mục sản phẩm",
-    order: "Khách hiện hữu đặt hàng",
-    phone: "Gọi tư vấn",
-    highlights: [
-      { icon: Truck, title: "Giao theo lịch bếp", text: "Theo tuyến và khung giờ nhận hàng." },
-      { icon: FileCheck2, title: "Hồ sơ rõ ràng", text: "VAT và hồ sơ an toàn thực phẩm." },
-      { icon: BadgeCheck, title: "Bảng giá theo nhu cầu", text: "Theo sản lượng, quy cách và tần suất giao." },
+    eyebrow: "NGUỒN NGUYÊN LIỆU B2B · HỒ SƠ RÕ RÀNG · GIAO ĐỊNH KỲ",
+    title: "Đối tác cung ứng thực phẩm B2B",
+    titleHighlight: "chuyên nghiệp",
+    titleEnd: "tại Đồng Nai",
+    description: "Phục vụ bếp ăn tập thể, nhà máy, trường học và bệnh viện. Báo giá trong 24h - Giao định kỳ - Hóa đơn VAT đầy đủ.",
+    pills: [
+      { icon: FileCheck2, text: "Hồ sơ ATTP theo yêu cầu" },
+      { icon: BadgeCheck, text: "Báo giá theo sản lượng" },
+      { icon: Truck, text: "Giao định kỳ theo thỏa thuận" },
+    ],
+    stats: [
+      { value: "24h", label: "HOÀN THÀNH BÁO GIÁ" },
+      { value: "30'", label: "XÁC NHẬN YÊU CẦU" },
+      { value: "B2B", label: "BÁO GIÁ THEO SẢN LƯỢNG" },
+      { value: "VAT", label: "CHỨNG TỪ ĐẦY ĐỦ" },
     ],
     imageAlt: "Kho thực phẩm và năng lực cung ứng B2B của TPS1",
   },
   en: {
-    eyebrow: "B2B food supplier in Dong Nai",
-    title: "Reliable food supply for professional kitchens.",
-    description:
-      "TPS1 supplies produce, meat, seafood, frozen food and dry goods to factories, schools, hospitals, restaurants and industrial caterers.",
-    primary: "Request a kitchen quote",
-    secondary: "Browse products",
-    order: "Existing customers order",
-    phone: "Call us",
-    highlights: [
-      { icon: Truck, title: "Scheduled delivery", text: "Delivery routes aligned with each kitchen's receiving window." },
-      { icon: FileCheck2, title: "Clear documentation", text: "VAT invoices and food-safety documents are available on request." },
-      { icon: BadgeCheck, title: "Needs-based pricing", text: "Product lists and pricing tailored to volume, specifications and frequency." },
+    eyebrow: "B2B FOOD SUPPLY · CLEAR DOCUMENTATION · SCHEDULED DELIVERY",
+    title: "Professional B2B food supply partner",
+    titleHighlight: "in Dong Nai",
+    titleEnd: "",
+    description: "Serving industrial caterers, factories, schools and hospitals. 24h quotes - Scheduled delivery - VAT invoices.",
+    pills: [
+      { icon: FileCheck2, text: "Food safety docs available" },
+      { icon: BadgeCheck, text: "Volume-based pricing" },
+      { icon: Truck, text: "Agreed delivery schedule" },
+    ],
+    stats: [
+      { value: "24h", label: "QUOTE TURNAROUND" },
+      { value: "30'", label: "REQUEST CONFIRMATION" },
+      { value: "B2B", label: "VOLUME PRICING" },
+      { value: "VAT", label: "FULL DOCUMENTATION" },
     ],
     imageAlt: "TPS1 warehouse and B2B food supply capability",
   },
@@ -43,7 +46,6 @@ const copy = {
 
 export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
   const text = copy[locale];
-  const catalogHref = locale === "en" ? "/en/products" : "/san-pham";
 
   return (
     <section className="b2b-hero" aria-labelledby="home-hero-title">
@@ -64,44 +66,38 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
 
       <div className="b2b-hero__content">
         <div className="container-shell">
-          <div style={{ maxWidth: 820 }}>
-            <div className="b2b-hero__cert-badge" style={{ marginLeft: 0 }}>
-              <BadgeCheck size={15} /> {text.eyebrow}
-            </div>
-            <h1 id="home-hero-title" className="b2b-hero__title" style={{ marginLeft: 0, textAlign: "left", maxWidth: 820 }}>
-              {text.title}
-            </h1>
-            <p className="b2b-hero__sub" style={{ marginLeft: 0, textAlign: "left", maxWidth: 720 }}>
-              {text.description}
-            </p>
-            <div className="b2b-hero__actions" style={{ justifyContent: "flex-start", marginTop: 28 }}>
-              <a href="#quick-quote" className="btn-hero-primary">
-                {text.primary} <ArrowRight size={18} />
-              </a>
-              <Link href={catalogHref} className="btn-hero-secondary">
-                {text.secondary}
-              </Link>
-              <a href={orderAppUrl} className="btn-hero-secondary">
-                {text.order}
-              </a>
+          <div className="b2b-hero__layout">
+            <div className="b2b-hero__intro">
+              <div className="b2b-hero__cert-badge" style={{ marginLeft: 0, textTransform: "uppercase" }}>
+                <BadgeCheck size={15} /> {text.eyebrow}
+              </div>
+              <h1 id="home-hero-title" className="b2b-hero__title" style={{ marginLeft: 0, textAlign: "left" }}>
+                {text.title} <span style={{ color: "#4ade80" }}>{text.titleHighlight}</span> {text.titleEnd}
+              </h1>
+              <p className="b2b-hero__sub" style={{ marginLeft: 0, textAlign: "left" }}>
+                {text.description}
+              </p>
+              
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "24px", marginBottom: "40px" }}>
+                {text.pills.map(({ icon: Icon, text: pillText }) => (
+                  <div key={pillText} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "8px 16px", borderRadius: "100px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.05)", color: "white", fontSize: "0.85rem", fontWeight: 600 }}>
+                    <Icon size={16} color="#4ade80" /> {pillText}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: "40px", flexWrap: "wrap", paddingTop: "32px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                {text.stats.map(({ value, label }) => (
+                  <div key={label} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <span style={{ fontSize: "2rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{value}</span>
+                    <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <a
-              href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "white", marginTop: 20, fontWeight: 700 }}
-            >
-              <Phone size={17} /> {text.phone}: {siteConfig.phone}
-            </a>
-
-            <div className="b2b-hero__stats" style={{ justifyContent: "flex-start", marginTop: 34 }}>
-              {text.highlights.map(({ icon: Icon, title, text: description }) => (
-                <div key={title} className="b2b-hero__stat" style={{ maxWidth: 230 }}>
-                  <span className="b2b-hero__stat-value" style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "1rem" }}>
-                    <Icon size={18} /> {title}
-                  </span>
-                  <span className="b2b-hero__stat-label" style={{ lineHeight: 1.5 }}>{description}</span>
-                </div>
-              ))}
+            <div className="b2b-hero__form-wrap">
+              <QuickQuoteForm variant="hero" sourceContext="homepage_hero" />
             </div>
           </div>
         </div>
