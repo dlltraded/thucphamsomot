@@ -55,7 +55,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
           fetchPriority="high"
           quality={60}
           className="object-cover object-center"
-          sizes="100vw"
+          sizes="(max-width: 640px) 1px, 100vw"
         />
       </div>
       <div className="b2b-hero__overlay" />

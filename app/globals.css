@@ -1295,6 +1295,29 @@ a {
 .b2b-hero__stat-value { font-size: 2rem; font-weight: 900; color: #fff; line-height: 1; }
 .b2b-hero__stat-label { font-size: 0.78rem; color: rgba(255,255,255,0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 
+/* Mobile Ads landing: the full-bleed warehouse photo is the dominant LCP
+   element. Keep the branded green treatment and defer the photo to larger
+   screens where bandwidth and viewport space are less constrained. */
+@media (max-width: 640px) {
+  .b2b-hero {
+    background:
+      radial-gradient(circle at 85% 18%, rgba(74, 222, 128, 0.2), transparent 32%),
+      linear-gradient(145deg, #123d30 0%, #082c22 58%, #071f19 100%);
+  }
+
+  .b2b-hero__bg {
+    display: none;
+  }
+
+  .b2b-hero__overlay {
+    background: linear-gradient(180deg, rgba(4, 28, 21, 0.08), rgba(4, 24, 18, 0.42));
+  }
+
+  .b2b-hero__stats {
+    display: none !important;
+  }
+}
+
 .b2b-trust-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; }
 .b2b-trust-badge {
   display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px;
