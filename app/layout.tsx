@@ -3,6 +3,7 @@ import "@fontsource/be-vietnam-pro/400.css";
 import "@fontsource/be-vietnam-pro/600.css";
 import "@fontsource/be-vietnam-pro/800.css";
 import "./globals.css";
+import "./quick-quote.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CompanyProfileWidget } from "@/components/company-profile-widget";
@@ -14,6 +15,7 @@ import { FloatingCart } from "@/components/floating-cart";
 import { MetaPixel } from "@/components/meta-pixel";
 import { CustomerSessionProvider } from "@/lib/customer-session-context";
 import { GoogleAdsTag } from "@/components/google-ads-tag";
+import { StickyMobileCta } from "@/components/b2b/sticky-mobile-cta";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -67,6 +69,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <SocialWidget />
             <SiteFooter />
             <FloatingCart />
+            <StickyMobileCta />
           </CartProvider>
         </CustomerSessionProvider>
       </body>

@@ -59,6 +59,40 @@ export function SiteHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  if (pathname === "/nhan-bao-gia") {
+    return (
+      <header className="site-header site-header--premium site-header--landing" style={{ borderBottom: "1px solid rgba(15,111,75,0.12)", background: "#ffffff" }}>
+        <div className="container-shell" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 68 }}>
+          <Link href="/" className="site-brand" aria-label={siteConfig.name}>
+            <span className="site-brand__mark">
+              <Image src={brandAssets.logoTransparent} alt="TPS1" width={150} height={48} priority />
+            </span>
+            <span className="site-brand__copy">
+              <span className="site-brand__name">{siteConfig.name}</span>
+              <span className="site-brand__tag">Báo giá B2B trong 24h</span>
+            </span>
+          </Link>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <a
+              href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: "0.92rem", color: "#133127", textDecoration: "none" }}
+            >
+              Hotline: <span style={{ color: "#0f6f4b" }}>{siteConfig.phone}</span>
+            </a>
+            <a
+              href="#quick-quote"
+              className="btn-primary"
+              style={{ padding: "8px 18px", fontSize: "0.86rem", borderRadius: 8, textDecoration: "none" }}
+            >
+              Nhận báo giá
+            </a>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <>
       <TopBar />
