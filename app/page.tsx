@@ -6,6 +6,7 @@ import { PartnerRibbon } from "@/components/b2b/partner-ribbon";
 import { TrustPillars } from "@/components/b2b/trust-pillars";
 import { B2BCatalog } from "@/components/b2b/catalog-section";
 import { LeadCaptureSection } from "@/components/b2b/lead-capture";
+import { QuickQuoteForm } from "@/components/b2b/quick-quote-form";
 
 export const metadata = makeMetadata({
   title: "Nhà Cung Cấp Thực Phẩm Bếp Ăn Công Nghiệp Tại Đồng Nai | TPS1",
@@ -71,6 +72,15 @@ export default function HomePage() {
 
       {/* 2. SOCIAL PROOF – Partner ribbon */}
       <PartnerRibbon />
+
+      {/* 2b. QUICK QUOTE SECTION - Rõ ràng, sạch sẽ, không che khuất Hero */}
+      <section id="quick-quote" className="b2b-quick-quote-section" style={{ background: "linear-gradient(180deg, #f7faf8 0%, #ffffff 100%)", padding: "64px 0 54px", borderBottom: "1px solid #e2ece6" }}>
+        <div className="container-shell">
+          <div style={{ maxWidth: 700, margin: "0 auto" }}>
+            <QuickQuoteForm variant="landing" sourceContext="homepage_section" />
+          </div>
+        </div>
+      </section>
 
       {/* 3. TRUST PILLARS */}
       <TrustPillars />
