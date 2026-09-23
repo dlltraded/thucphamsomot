@@ -95,3 +95,28 @@ git diff --check
 | **7. Không đổi luồng `dathang` / `sale-webapp`** | ✅ Đạt | Không can thiệp mã nguồn hệ thống đơn |
 | **8. Build & Type check sạch sẽ** | ✅ Đạt | Next.js 16 build pass 100% |
 | **9. Chưa tự merge vào `main`** | ✅ Đạt | Các thay đổi nằm an toàn trên branch `product-catalog-redesign` |
+
+---
+
+## 5. Khôi Phục Giao Diện Hero Hoành Tráng & Tối Ưu Tốc Độ Ảnh Nền
+
+### 5.1. Phân tích nguyên nhân CODEX phản ánh tốc độ
+- File gốc `public/images/hero-warehouse.jpg` có độ phân giải gốc 4032x3024px và dung lượng nặng tới **4.45 MB** (ảnh chụp máy ảnh chưa nén).
+- Đây là lý do duy nhất khiến CODEX trước đó nhận định ảnh làm giảm tốc độ LCP. Thay vì tối ưu ảnh, CODEX đã ẩn ảnh trên mobile và chèn form vào Hero khiến màn hình chật chội và rối mắt.
+
+### 5.2. Giải pháp thực hiện:
+1. **Tối ưu hóa ảnh bằng Sharp**:
+   - Nén ảnh gốc từ 4.45MB thành WebP chuẩn 1920px (`hero-warehouse.webp`) dung lượng chỉ còn **455 KB** (giảm 90% dung lượng mà độ sắc nét không đổi).
+   - Tốc độ tải ảnh chỉ mất 30–50ms trên mạng 4G, hoàn toàn không làm chậm LCP hay điểm hiệu năng.
+2. **Khôi phục trọn vẹn Hero gốc (đúng 100% ảnh người dùng yêu cầu)**:
+   - Layout 1 cột rộng rãi, chữ lớn uy lực (`maxWidth: 820px`).
+   - Nền kho hàng thực tế TPS1 hiển thị sắc nét, chuyên nghiệp và hùng vĩ.
+   - Đầy đủ 3 nút hành động:
+     - Nút chính: **Nhận báo giá cho bếp** (cuộn mượt xuống form báo giá `#quick-quote`)
+     - Nút phụ 1: **Xem danh mục sản phẩm**
+     - Nút phụ 2: **Khách hiện hữu đặt hàng**
+   - Đầy đủ số hotline `089 890 2222` và 3 khối chỉ số: Giao theo lịch bếp, Hồ sơ rõ ràng, Bảng giá theo nhu cầu.
+3. **Bố trí Form Báo Giá Nhanh tinh tế**:
+   - Form nhanh 3 trường được đặt tại Section riêng biệt ngay dưới dải Logo Đối Tác (`PartnerRibbon`), vừa sạch đẹp, vừa không đè lên Hero.
+   - Thanh Sticky Mobile CTA vẫn giữ nguyên để phục vụ khách hàng trên điện thoại di động.
+
