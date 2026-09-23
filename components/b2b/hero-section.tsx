@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, FileCheck2, Phone, Truck } from "lucide-react";
 import { siteConfig } from "@/lib/site";
+import { DeferredThreeBackground } from "./deferred-three-background";
 
 const orderAppUrl = "https://dathang.thucphamsomot.vn/";
 
@@ -59,6 +60,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
         />
       </div>
       <div className="b2b-hero__overlay" />
+      <DeferredThreeBackground />
 
       <div className="b2b-hero__content">
         <div className="container-shell">
