@@ -25,7 +25,7 @@ export function GoogleAdsTag() {
       interactionTimer = window.setTimeout(load, 1200);
     };
 
-    const idleTimer = window.setTimeout(load, 15000);
+    const idleTimer = window.setTimeout(load, 30000);
     window.addEventListener("pointerdown", onInteraction, { once: true, passive: true });
     window.addEventListener("keydown", onInteraction, { once: true, passive: true });
     return () => {
