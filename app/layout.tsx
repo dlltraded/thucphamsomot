@@ -54,6 +54,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi">
       <head>
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
         <Script
           strategy="lazyOnload"
           src="https://www.googletagmanager.com/gtag/js?id=AW-18295927026"

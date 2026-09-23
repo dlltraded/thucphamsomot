@@ -53,7 +53,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
           fill
           priority
           fetchPriority="high"
-          quality={65}
+          quality={60}
           className="object-cover object-center"
           sizes="100vw"
         />
