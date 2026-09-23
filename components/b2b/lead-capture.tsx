@@ -298,7 +298,7 @@ export function LeadCaptureSection({ locale = "vi" }: { locale?: "vi" | "en" }) 
                     </>
                   ) : (
                     <>
-                      <strong>Cam kết dịch vụ B2B:</strong> Chuyên viên tư vấn của Thực Phẩm Số Một sẽ chủ động liên hệ trực tiếp với anh/chị qua số điện thoại <strong>{summary.phone || siteConfig.phone}</strong> trong vòng <strong>30 phút</strong> (giờ hành chính) để xác nhận yêu cầu; báo giá hoàn chỉnh trong <strong>24 giờ</strong> và hỗ trợ quy trình lên đơn hàng.
+                      <strong>Cam kết dịch vụ B2B:</strong> Chuyên viên tư vấn của Thực Phẩm Số Một sẽ chủ động liên hệ trực tiếp với anh/chị qua số điện thoại <strong>{summary.phone || siteConfig.phone}</strong> trong vòng <strong>24 giờ</strong> để xác nhận yêu cầu và gửi báo giá phù hợp, đồng thời hỗ trợ quy trình lên đơn hàng.
                     </>
                   )}
                 </div>

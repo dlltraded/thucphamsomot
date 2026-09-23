@@ -179,8 +179,8 @@ export function QuickQuoteForm({
 
         <p className="quick-quote-desc text-center">
           Cảm ơn đại diện <strong>{submittedData.company}</strong>. Bộ phận kinh doanh TPS1 sẽ liên hệ tới số{" "}
-          <strong className="text-emerald-400">{submittedData.phone}</strong> trong vòng <strong>30 phút</strong> để xác
-          nhận và gửi bảng giá chi tiết trong <strong>24 giờ</strong>.
+          <strong className="text-emerald-400">{submittedData.phone}</strong> trong vòng <strong>24 giờ</strong> để xác
+          nhận nhu cầu và gửi bảng giá chi tiết phù hợp.
         </p>
 
         <div className="quick-quote-success-actions">
@@ -235,7 +235,7 @@ export function QuickQuoteForm({
           Nhận báo giá thực phẩm trong 24h
         </h3>
         <p className="quick-quote-desc">
-          Báo giá sỉ theo sản lượng cho bếp ăn, nhà máy, trường học, bệnh viện. Hóa đơn VAT & kiểm nghiệm đầy đủ.
+          Báo giá theo sản lượng và nhu cầu thực tế của từng bếp. Hóa đơn VAT & kiểm nghiệm đầy đủ.
         </p>
       </div>
 

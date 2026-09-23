@@ -48,7 +48,7 @@ const steps = [
   {
     step: "02",
     title: "Nhận báo giá trong 24h",
-    desc: "Chuyên viên TPS1 liên hệ trong 30 phút để xác nhận quy cách và gửi bảng giá chi tiết tối ưu theo sản lượng.",
+    desc: "Đội ngũ TPS1 sẽ liên hệ và gửi bảng giá chi tiết trong vòng 24 giờ, theo sản lượng và nhu cầu thực tế của từng bếp.",
   },
   {
     step: "03",
@@ -84,7 +84,7 @@ export default function NhanBaoGiaPage() {
 
                 <div style={{ display: "grid", gap: 12, margin: "24px 0", maxWidth: 560 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: "0.92rem" }}>
-                    <span style={{ color: "#4ade80", fontWeight: 800 }}>✓</span> Giá sỉ tối ưu theo quy mô suất ăn, ổn định theo kỳ
+                    <span style={{ color: "#4ade80", fontWeight: 800 }}>✓</span> Báo giá theo sản lượng và nhu cầu thực tế của từng bếp
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.9)", fontSize: "0.92rem" }}>
                     <span style={{ color: "#4ade80", fontWeight: 800 }}>✓</span> Đội xe lạnh giao trước giờ sơ chế, đổi trả ngay tại chỗ nếu chưa đạt
