@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, FileCheck2, Phone, Truck } from "lucide-react";
 import { siteConfig } from "@/lib/site";
+import { QuickQuoteForm } from "@/components/b2b/quick-quote-form";
 
 const orderAppUrl = "https://dathang.thucphamsomot.vn/";
 
@@ -62,40 +63,50 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
 
       <div className="b2b-hero__content">
         <div className="container-shell">
-          <div style={{ maxWidth: 820 }}>
-            <div className="b2b-hero__cert-badge" style={{ marginLeft: 0 }}>
-              <BadgeCheck size={15} /> {text.eyebrow}
+          <div className="b2b-hero__layout">
+            {/* 1. Intro area: Eyebrow + Headline + Subtitle */}
+            <div className="b2b-hero__intro">
+              <div className="b2b-hero__cert-badge" style={{ marginLeft: 0 }}>
+                <BadgeCheck size={15} /> {text.eyebrow}
+              </div>
+              <h1 id="home-hero-title" className="b2b-hero__title" style={{ marginLeft: 0, textAlign: "left" }}>
+                {text.title}
+              </h1>
+              <p className="b2b-hero__sub" style={{ marginLeft: 0, textAlign: "left" }}>
+                {text.description}
+              </p>
             </div>
-            <h1 id="home-hero-title" className="b2b-hero__title" style={{ marginLeft: 0, textAlign: "left", maxWidth: 820 }}>
-              {text.title}
-            </h1>
-            <p className="b2b-hero__sub" style={{ marginLeft: 0, textAlign: "left", maxWidth: 720 }}>
-              {text.description}
-            </p>
 
-            <div className="b2b-hero__actions" style={{ justifyContent: "flex-start", marginTop: 28 }}>
-              <Link href="#rfq-form" className="btn-hero-primary">
-                {text.primary} <ArrowRight size={18} />
-              </Link>
-              <Link href={catalogHref} className="btn-hero-secondary">
-                {text.secondary}
-              </Link>
-              <a href={orderAppUrl} className="btn-hero-secondary">
-                {text.order}
+            {/* 2. Form wrap: right column on desktop, right below intro on mobile */}
+            <div className="b2b-hero__form-wrap">
+              <QuickQuoteForm variant="hero" sourceContext="homepage_hero" />
+            </div>
+
+            {/* 3. Actions area: secondary button to catalog + hotline */}
+            <div className="b2b-hero__actions-wrap">
+              <div className="b2b-hero__actions" style={{ justifyContent: "flex-start", margin: 0 }}>
+                <Link href={catalogHref} className="btn-hero-secondary">
+                  {text.secondary} <ArrowRight size={18} />
+                </Link>
+                <a href={orderAppUrl} className="btn-hero-secondary" style={{ opacity: 0.85 }}>
+                  {text.order}
+                </a>
+              </div>
+
+              <a
+                href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`}
+                className="b2b-hero__hotline"
+                style={{ fontWeight: 700 }}
+              >
+                <Phone size={17} /> {text.phone}: {siteConfig.phone}
               </a>
             </div>
 
-            <a
-              href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "white", marginTop: 20, fontWeight: 700 }}
-            >
-              <Phone size={17} /> {text.phone}: {siteConfig.phone}
-            </a>
-
-            <div className="b2b-hero__stats" style={{ justifyContent: "flex-start", marginTop: 34 }}>
+            {/* 4. Stats area: 3 highlights */}
+            <div className="b2b-hero__stats" style={{ justifyContent: "flex-start", margin: 0 }}>
               {text.highlights.map(({ icon: Icon, title, text: description }) => (
-                <div key={title} className="b2b-hero__stat" style={{ maxWidth: 230 }}>
-                  <span className="b2b-hero__stat-value" style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "1rem" }}>
+                <div key={title} className="b2b-hero__stat" style={{ maxWidth: 220 }}>
+                  <span className="b2b-hero__stat-value" style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.95rem" }}>
                     <Icon size={18} /> {title}
                   </span>
                   <span className="b2b-hero__stat-label" style={{ lineHeight: 1.5 }}>{description}</span>

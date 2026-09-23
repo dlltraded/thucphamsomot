@@ -1,0 +1,447 @@
+/* ==========================================================================
+   B2B QUICK QUOTE FORM & HERO TWO-COLUMN LAYOUT
+   ========================================================================== */
+
+.b2b-hero__layout {
+  display: grid;
+  grid-template-columns: 1.12fr 0.88fr;
+  grid-template-areas:
+    "intro form"
+    "actions form"
+    "stats form";
+  gap: 20px 44px;
+  align-items: start;
+}
+
+.b2b-hero__intro {
+  grid-area: intro;
+}
+
+.b2b-hero__actions-wrap {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.b2b-hero__hotline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.95rem;
+  transition: opacity 0.2s ease;
+}
+.b2b-hero__hotline:hover {
+  opacity: 0.88;
+}
+
+.b2b-hero__form-wrap {
+  grid-area: form;
+}
+
+@media (max-width: 991px) {
+  .b2b-hero__layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "intro"
+      "form"
+      "actions"
+      "stats";
+    gap: 24px;
+  }
+}
+
+/* Quick Quote Card */
+.quick-quote-card {
+  position: relative;
+  border-radius: 20px;
+  padding: 26px 24px;
+  transition: all 0.3s ease;
+}
+
+.quick-quote-card--hero {
+  background: rgba(7, 26, 18, 0.92);
+  border: 1px solid rgba(74, 222, 128, 0.28);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(20, 184, 122, 0.15);
+  color: #ffffff;
+}
+
+.quick-quote-card--landing {
+  background: #ffffff;
+  border: 1px solid rgba(15, 111, 75, 0.16);
+  box-shadow: 0 24px 60px rgba(15, 111, 75, 0.12);
+  color: #133127;
+}
+
+.quick-quote-header {
+  margin-bottom: 18px;
+}
+
+.quick-quote-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.quick-quote-card--hero .quick-quote-badge {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+}
+
+.quick-quote-card--landing .quick-quote-badge {
+  background: rgba(15, 111, 75, 0.08);
+  border: 1px solid rgba(15, 111, 75, 0.2);
+  color: #0f6f4b;
+}
+
+.quick-quote-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.quick-quote-title {
+  font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+  font-weight: 850;
+  line-height: 1.25;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.quick-quote-card--hero .quick-quote-title {
+  color: #ffffff;
+}
+
+.quick-quote-card--landing .quick-quote-title {
+  color: #133127;
+}
+
+.quick-quote-desc {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.quick-quote-card--hero .quick-quote-desc {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.quick-quote-card--landing .quick-quote-desc {
+  color: #59665f;
+}
+
+.quick-quote-form {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.quick-quote-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.quick-quote-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.81rem;
+  font-weight: 700;
+}
+
+.quick-quote-card--hero .quick-quote-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.quick-quote-card--landing .quick-quote-label {
+  color: #1f3b31;
+}
+
+.quick-quote-input {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  padding: 0 13px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.quick-quote-card--hero .quick-quote-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.quick-quote-card--hero .quick-quote-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.quick-quote-card--hero .quick-quote-input:focus {
+  border-color: #4ade80;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25);
+}
+
+.quick-quote-card--landing .quick-quote-input {
+  background: #fbfdfc;
+  border: 1px solid #d9e5dd;
+  color: #173f30;
+}
+
+.quick-quote-card--landing .quick-quote-input::placeholder {
+  color: #8c9b93;
+}
+
+.quick-quote-card--landing .quick-quote-input:focus {
+  border-color: #14b87a;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(20, 184, 122, 0.18);
+}
+
+.btn-quick-submit {
+  width: 100%;
+  height: 46px;
+  margin-top: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #14b87a, #0f6f4b);
+  color: #ffffff;
+  font-size: 0.96rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(20, 184, 122, 0.35);
+  transition: all 0.25s ease;
+}
+
+.btn-quick-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(20, 184, 122, 0.5);
+  background: linear-gradient(135deg, #18ce89, #118157);
+}
+
+.btn-quick-submit:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.quick-quote-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.quick-quote-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  opacity: 0.72;
+}
+
+/* Success Card */
+.quick-quote-card--success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 30px 22px;
+}
+
+.quick-quote-success-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: rgba(74, 222, 128, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  color: #4ade80;
+  margin-bottom: 14px;
+}
+
+.quick-quote-success-icon-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(74, 222, 128, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.quick-quote-success-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin: 18px 0 14px;
+}
+
+@media (max-width: 440px) {
+  .quick-quote-success-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-quick-call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 42px;
+  border-radius: 10px;
+  background: #f5c84c;
+  color: #0b2216;
+  font-weight: 800;
+  font-size: 0.86rem;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-quick-call:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(245, 200, 76, 0.35);
+}
+
+.btn-quick-zalo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 42px;
+  border-radius: 10px;
+  background: #0068ff;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.86rem;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-quick-zalo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 104, 255, 0.35);
+}
+
+.quick-quote-extra-note {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.quick-quote-reset-link {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.quick-quote-reset-link:hover {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   STICKY MOBILE CTA
+   ========================================================================== */
+
+.sticky-mobile-cta {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sticky-mobile-cta {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1900;
+    background: rgba(4, 22, 16, 0.95);
+    border-top: 1px solid rgba(74, 222, 128, 0.25);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .sticky-mobile-cta__inner {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 10px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .sticky-mobile-cta__btn-quote {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #14b87a, #0f6f4b);
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(20, 184, 122, 0.4);
+  }
+
+  .sticky-mobile-cta__btn-phone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 44px;
+    border-radius: 10px;
+    background: #f5c84c;
+    color: #0b2216;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(245, 200, 76, 0.3);
+  }
+}

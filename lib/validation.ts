@@ -21,6 +21,7 @@ const leadCoreSchema = z.object({
   utmCampaign: z.string().optional().or(z.literal("")),
   utmContent: z.string().optional().or(z.literal("")),
   utmTerm: z.string().optional().or(z.literal("")),
+  gclid: z.string().optional().or(z.literal("")),
   fbclid: z.string().optional().or(z.literal("")),
 });
 
