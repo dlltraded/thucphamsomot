@@ -10,15 +10,15 @@ const copy = {
     eyebrow: "Nhà cung cấp thực phẩm B2B tại Đồng Nai",
     title: "Nguồn thực phẩm ổn định cho bếp ăn chuyên nghiệp.",
     description:
-      "TPS1 cung ứng rau củ, thịt cá, thực phẩm đông lạnh và hàng khô cho nhà máy, trường học, bệnh viện, nhà hàng và đơn vị suất ăn công nghiệp.",
+      "Rau củ, thịt cá, hàng đông lạnh và hàng khô cho nhà máy, trường học, bệnh viện, nhà hàng và bếp ăn công nghiệp.",
     primary: "Nhận báo giá cho bếp",
     secondary: "Xem danh mục sản phẩm",
     order: "Khách hiện hữu đặt hàng",
     phone: "Gọi tư vấn",
     highlights: [
-      { icon: Truck, title: "Giao theo lịch bếp", text: "Tổ chức tuyến giao định kỳ theo khu vực và khung giờ nhận hàng." },
-      { icon: FileCheck2, title: "Hồ sơ rõ ràng", text: "Hỗ trợ chứng từ, hóa đơn VAT và hồ sơ an toàn thực phẩm theo yêu cầu." },
-      { icon: BadgeCheck, title: "Bảng giá theo nhu cầu", text: "Tư vấn danh mục và bảng giá theo sản lượng, quy cách và tần suất giao." },
+      { icon: Truck, title: "Giao theo lịch bếp", text: "Theo tuyến và khung giờ nhận hàng." },
+      { icon: FileCheck2, title: "Hồ sơ rõ ràng", text: "VAT và hồ sơ an toàn thực phẩm." },
+      { icon: BadgeCheck, title: "Bảng giá theo nhu cầu", text: "Theo sản lượng, quy cách và tần suất giao." },
     ],
     imageAlt: "Kho thực phẩm và năng lực cung ứng B2B của TPS1",
   },
@@ -72,7 +72,6 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
             <p className="b2b-hero__sub" style={{ marginLeft: 0, textAlign: "left", maxWidth: 720 }}>
               {text.description}
             </p>
-
             <div className="b2b-hero__actions" style={{ justifyContent: "flex-start", marginTop: 28 }}>
               <a href="#quick-quote" className="btn-hero-primary">
                 {text.primary} <ArrowRight size={18} />
