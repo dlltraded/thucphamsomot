@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ArrowRight, ChevronLeft, ChevronRight, X, SlidersHorizontal, PackageSearch } from "lucide-react";
 import type { SkuProduct } from "@/app/api/sku-products/route";
 import type { Locale } from "@/lib/site";
 
@@ -11,15 +11,15 @@ import type { Locale } from "@/lib/site";
 const CATEGORIES: Record<Locale, { slug: string; label: string }[]> = {
   vi: [
     { slug: "", label: "Tất cả" },
-    { slug: "rau-cu", label: "🥦 Rau củ quả" },
-    { slug: "thit-heo", label: "🐷 Thịt heo" },
-    { slug: "thit-bo", label: "🐄 Thịt bò nhập" },
-    { slug: "ga-vit", label: "🐔 Gia cầm" },
-    { slug: "hai-san", label: "🦐 Hải sản" },
-    { slug: "dong-lanh", label: "❄️ Đông lạnh" },
-    { slug: "gia-vi", label: "🫙 Gia vị" },
-    { slug: "gao-mi", label: "🌾 Gạo, mì, khô" },
-    { slug: "thiet-bi-bep", label: "🍳 Thiết bị bếp" },
+    { slug: "rau-cu", label: "Rau củ quả" },
+    { slug: "thit-heo", label: "Thịt heo" },
+    { slug: "thit-bo", label: "Thịt bò nhập" },
+    { slug: "ga-vit", label: "Gia cầm" },
+    { slug: "hai-san", label: "Hải sản" },
+    { slug: "dong-lanh", label: "Đông lạnh" },
+    { slug: "gia-vi", label: "Gia vị" },
+    { slug: "gao-mi", label: "Gạo, mì, khô" },
+    { slug: "thiet-bi-bep", label: "Thiết bị bếp" },
   ],
   en: [
     { slug: "", label: "All" },
@@ -92,7 +92,7 @@ function SkuRow({
 
         <div className="sku-row__price-unit">
           <span className="sku-row__unit">{text.unit}{product.unit}</span>
-          <span className="sku-row__price">{text.contact}<small>Giá theo nhu cầu bếp</small></span>
+          <span className="sku-row__price">Giá theo bảng riêng</span>
         </div>
 
         <div className="sku-row__action">
@@ -102,7 +102,7 @@ function SkuRow({
             aria-label={`${text.addToCart}: ${product.name}`}
             title={text.addToCart}
           >
-            <ArrowRight size={16} />
+            <span>{text.addToCart}</span><ArrowRight size={16} />
           </Link>
         </div>
       </div>
@@ -119,7 +119,10 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const cacheRef = useRef(new Map<string, { products: SkuProduct[]; totalCount: number; totalPages: number }>());
   const text = UI[locale];
   const catList = CATEGORIES[locale];
 
@@ -134,13 +137,26 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
   };
 
   const fetchProducts = useCallback(async (cat: string, q: string, pg: number) => {
+    const cacheKey = `${cat}|${q.trim().toLocaleLowerCase()}|${pg}`;
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached) {
+      setProducts(cached.products);
+      setTotalCount(cached.totalCount);
+      setTotalPages(cached.totalPages);
+      setLoading(false);
+      return;
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(pg) });
       if (cat) params.set("category", cat);
       if (q.trim()) params.set("q", q.trim());
 
-      const res = await fetch(`/api/sku-products?${params.toString()}`);
+      const res = await fetch(`/api/sku-products?${params.toString()}`, { signal: controller.signal });
       if (!res.ok) throw new Error("fetch failed");
       
       const data = await res.json();
@@ -149,10 +165,18 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
       if (Array.isArray(data)) {
         // Fallback if API hasn't updated yet
         setProducts(data);
+        setTotalCount(data.length);
         setTotalPages(1);
       } else {
-        setProducts(data.products || []);
-        setTotalPages(data.totalPages || 1);
+        const next = {
+          products: data.products || [],
+          totalCount: data.totalCount || 0,
+          totalPages: data.totalPages || 1,
+        };
+        setProducts(next.products);
+        setTotalCount(next.totalCount);
+        setTotalPages(next.totalPages);
+        cacheRef.current.set(cacheKey, next);
       }
       
       // Auto scroll to top of list
@@ -161,10 +185,12 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
         // Smooth scroll might feel jumpy if image heights aren't pre-loaded, but should be fine.
         listTop.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       setProducts([]);
+      setTotalCount(0);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
 
@@ -236,62 +262,51 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
   };
 
   return (
-    <section className="sku-section">
-      {/* Public catalog: pricing is handled by the lead/order webapp. */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-          background: "#fffbeb",
-          border: "1px solid #fde68a",
-          color: "#92400e",
-          borderRadius: 10,
-          padding: "10px 14px",
-          fontSize: 13,
-          marginBottom: 16,
-        }}
-      >
-        <span>Giá được thiết lập theo sản lượng và bảng giá riêng của từng khách hàng.</span>
-        <a href="https://dathang.thucphamsomot.vn/" style={{ fontWeight: 700, color: "inherit", textDecoration: "underline" }}>
-          Đặt hàng trên Cổng Đối Tác →
-        </a>
-      </div>
+    <section className="sku-section" id="danh-muc">
+      <div className="sku-section__inner">
+        <div className="sku-section__intro">
+          <div><span>CATALOG TPS1</span><h2>Chọn nhóm hàng phù hợp với bếp</h2></div>
+          <p>Danh mục dùng để tham khảo nguồn hàng. Giá chính thức được thiết lập theo sản lượng và bảng giá riêng của từng khách hàng.</p>
+        </div>
 
-      {/* Search */}
-      <div className="sku-search-wrap">
-        <Search size={17} className="sku-search-icon" />
-        <input
-          type="search"
-          className="sku-search"
-          placeholder={text.searchPlaceholder}
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          aria-label={text.searchPlaceholder}
-          id="sku-search-input"
-        />
-      </div>
+        <div className="sku-controls">
+          <div className="sku-search-wrap">
+            <Search size={20} className="sku-search-icon" />
+            <input
+              type="search"
+              className="sku-search"
+              placeholder={text.searchPlaceholder}
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              aria-label={text.searchPlaceholder}
+              id="sku-search-input"
+            />
+            {search && <button type="button" className="sku-search-clear" onClick={() => handleSearch("")} aria-label="Xóa nội dung tìm kiếm"><X size={17} /></button>}
+          </div>
 
-      {/* Category tabs */}
-      <div className="sku-tabs" role="tablist" aria-label="Nhóm hàng">
-        {catList.map((cat) => (
-          <button
-            key={cat.slug}
-            role="tab"
-            aria-selected={category === cat.slug}
-            type="button"
-            className={`sku-tab${category === cat.slug ? " is-active" : ""}`}
-            onClick={() => {
-              setCategory(cat.slug);
-              setPage(1);
-            }}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
+          <div className="sku-tabs-wrap">
+            <SlidersHorizontal size={17} aria-hidden="true" />
+            <div className="sku-tabs" role="tablist" aria-label="Nhóm hàng">
+              {catList.map((cat) => (
+                <button
+                  key={cat.slug}
+                  role="tab"
+                  aria-selected={category === cat.slug}
+                  type="button"
+                  className={`sku-tab${category === cat.slug ? " is-active" : ""}`}
+                  onClick={() => { setCategory(cat.slug); setPage(1); }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="sku-results-head">
+          <div><PackageSearch size={18} /><span>{loading && products.length === 0 ? "Đang cập nhật danh mục" : `${totalCount.toLocaleString("vi-VN")} sản phẩm`}</span></div>
+          <a href="https://dathang.thucphamsomot.vn/">Đăng nhập để xem giá & đặt hàng <ArrowRight size={16} /></a>
+        </div>
 
       <div id="sku-list-top" className="sku-list-anchor" style={{ position: 'relative', top: '-100px' }}></div>
 
@@ -307,7 +322,7 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
         </div>
       ) : (
         <>
-          <div className="sku-list">
+          <div className={`sku-list${loading ? " is-loading" : ""}`} aria-busy={loading}>
             {products.map((p) => (
               <SkuRow key={p.id} product={p} locale={locale} />
             ))}
@@ -316,6 +331,7 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
           {renderPagination()}
         </>
       )}
+      </div>
     </section>
   );
 }

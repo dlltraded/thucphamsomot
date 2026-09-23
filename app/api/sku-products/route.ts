@@ -46,7 +46,9 @@ export async function GET(req: NextRequest) {
   const category = searchParams.get('category') || '';
   const q = searchParams.get('q') || '';
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-  const PAGE_SIZE = 60;
+  // Keep the public catalog light on mobile. More products are loaded through
+  // pagination instead of downloading dozens of large images at once.
+  const PAGE_SIZE = 24;
   const offset = (page - 1) * PAGE_SIZE;
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
