@@ -13,6 +13,7 @@ import { siteConfig } from "@/lib/site";
 import { FloatingCart } from "@/components/floating-cart";
 import { MetaPixel } from "@/components/meta-pixel";
 import { CustomerSessionProvider } from "@/lib/customer-session-context";
+import { GoogleAdsTag } from "@/components/google-ads-tag";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -48,27 +49,14 @@ export const metadata: Metadata = {
   },
 };
 
-import Script from "next/script";
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
       <head>
         <link rel="preconnect" href="https://www.googletagmanager.com" />
-        <Script
-          strategy="lazyOnload"
-          src="https://www.googletagmanager.com/gtag/js?id=AW-18295927026"
-        />
-        <Script id="google-ads-tag" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'AW-18295927026');
-          `}
-        </Script>
       </head>
       <body>
+        <GoogleAdsTag />
         <MetaPixel />
         <CustomerSessionProvider>
           <CartProvider>
