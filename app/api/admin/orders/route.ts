@@ -55,14 +55,17 @@ export async function DELETE(req: NextRequest) {
     if (!order) return json({ ok: false, error: "Không tìm thấy đơn hàng" }, 404);
 
     const allowedStatuses = new Set(["draft", "pending", "canceled"]);
+    // A merged test/draft order may carry a legacy invoice-document flag from
+    // the source order. That flag alone must not make an otherwise empty,
+    // unpaid draft undeletable.
     const hasFinancialRecord =
       Number(order.paid_amount || 0) > 0 ||
       ["paid", "refunded"].includes(String(order.payment_status || "")) ||
-      Boolean(order.invoice_document_status);
+      (order.status !== "draft" && Boolean(order.invoice_document_status));
     if (!allowedStatuses.has(order.status) || hasFinancialRecord) {
       return json({
         ok: false,
-        error: "Không thể xóa đơn đã xác nhận/giao hàng hoặc đã phát sinh thanh toán. Hãy chuyển trạng thái sang Đã hủy để giữ lịch sử đối soát.",
+        error: "Không thể xóa đơn đã giao/hoàn thành hoặc đã phát sinh thanh toán. Hãy chuyển trạng thái sang Đã hủy để giữ lịch sử đối soát.",
       }, 409);
     }
 
