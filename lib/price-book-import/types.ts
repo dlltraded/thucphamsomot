@@ -26,6 +26,8 @@ export interface PriceBookColumnMapping {
   discountColIndex?: number;// 0-indexed column in sheet (if discount column exists)
   targetCustomerId?: string;// Supabase vip_account id if known
   targetCustomerCode?: string;// e.g. 'TYT' or 'TOYOTA'
+  /** KiotViet customer-group names served by this column. */
+  targetGroupNames?: string[];
 }
 
 export interface MappingConfig {

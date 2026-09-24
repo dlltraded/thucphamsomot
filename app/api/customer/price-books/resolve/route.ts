@@ -93,12 +93,38 @@ export async function POST(req: NextRequest) {
     
     const custAssignment = validAssignments.length > 0 ? validAssignments[0] : null;
 
+    // Group price book is the middle fallback: customer override wins,
+    // otherwise resolve the customer's KiotViet group, then general.
+    let groupAssignment: any = null;
+    const { data: customerMeta } = await supabase
+      .from("vip_accounts")
+      .select("customer_group")
+      .eq("id", customerId)
+      .maybeSingle();
+    if (customerMeta?.customer_group) {
+      const { data: groupAssignments } = await supabase
+        .from("price_book_customer_group_assignments")
+        .select("price_book_id, priority, valid_from, valid_to, created_at, price_books!inner(status, valid_from, valid_to)")
+        .ilike("group_name", customerMeta.customer_group)
+        .eq("price_books.status", "active");
+      const validGroups = (groupAssignments || []).filter((a: any) => {
+        const pb = a.price_books;
+        return (!a.valid_from || new Date(a.valid_from) <= nowDt) &&
+          (!a.valid_to || new Date(a.valid_to) >= nowDt) &&
+          (!pb.valid_from || new Date(pb.valid_from) <= nowDt) &&
+          (!pb.valid_to || new Date(pb.valid_to) >= nowDt);
+      }).sort((a: any, b: any) => (b.priority - a.priority) ||
+        (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      groupAssignment = validGroups[0] || null;
+    }
+
     const result = [];
 
     // Optimize by fetching all needed items at once
     const pbIdsToFetch = [];
     if (generalPb) pbIdsToFetch.push(generalPb.id);
     if (custAssignment) pbIdsToFetch.push(custAssignment.price_book_id);
+    if (groupAssignment) pbIdsToFetch.push(groupAssignment.price_book_id);
 
     if (pbIdsToFetch.length > 0) {
       const { data: pbItems, error: pbItemsError } = await supabase
@@ -133,13 +159,25 @@ export async function POST(req: NextRequest) {
         }
 
         // Fallback to general price
+        if (finalPrice === null && groupAssignment) {
+          const groupPriceItem = validPbItems.find(
+            (item: any) => item.price_book_id === groupAssignment.price_book_id && item.product_id === productId
+          );
+          if (groupPriceItem) {
+            finalPrice = groupPriceItem.price;
+            priceSource = "group_price_book";
+            priceBookId = groupAssignment.price_book_id;
+          }
+        }
+
+        // Final fallback to general price
         if (finalPrice === null && generalPb) {
           const generalPriceItem = validPbItems.find(
             (item: any) => item.price_book_id === generalPb.id && item.product_id === productId
           );
           if (generalPriceItem) {
             finalPrice = generalPriceItem.price;
-            priceSource = custAssignment ? "general_fallback" : "general_price_book";
+            priceSource = (custAssignment || groupAssignment) ? "general_fallback" : "general_price_book";
             priceBookId = generalPb.id;
           }
         }

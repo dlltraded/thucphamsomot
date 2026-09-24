@@ -196,6 +196,24 @@ export async function commitImportJob(
         });
       }
 
+      // Group-level assignment is intentionally stored by group name rather
+      // than copying rows to every customer. This keeps later customer/group
+      // changes safe and lets customer-specific overrides win at resolve time.
+      if (pbMap.kind === 'group' && pbMap.targetGroupNames?.length) {
+        const groupRows = pbMap.targetGroupNames.map((groupName) => ({
+          price_book_id: targetPbId,
+          group_name: groupName,
+          priority: 5,
+          created_by: importedBy,
+        }));
+        const { error: groupErr } = await supabase
+          .from('price_book_customer_group_assignments')
+          .insert(groupRows);
+        if (groupErr) {
+          throw new Error(`Lỗi gán nhóm khách hàng cho ${pbMap.code}: ${groupErr.message}`);
+        }
+      }
+
       // Record audit log
       await supabase.from('price_book_audit_logs').insert({
         price_book_id: targetPbId,
@@ -207,6 +225,7 @@ export async function commitImportJob(
           fileChecksum,
           sheetName,
           itemCount: itemsToInsert.length,
+          targetGroupNames: pbMap.targetGroupNames || [],
           status: 'draft',
         },
       });

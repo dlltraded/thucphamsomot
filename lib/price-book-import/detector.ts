@@ -16,6 +16,17 @@ function normalizeHeaderKey(str: string): string {
     .replace(/^_|_$/g, '');
 }
 
+function extractGroupNames(header: string): string[] {
+  // Headers in the KiotViet workbook can contain several groups separated by
+  // commas/semicolons, followed by an annotation in parentheses.
+  return header
+    .replace(/\([^)]*\)/g, '')
+    .split(/[,;|]/)
+    .map((s) => s.trim().replace(/\s+/g, ' '))
+    .filter(Boolean)
+    .filter((s) => !/^(bbg|bảng giá|nhóm)\s*$/i.test(s));
+}
+
 export function detectSheetMapping(
   sheet: XLSX.WorkSheet,
   sheetName: string
@@ -128,19 +139,24 @@ export function detectSheetMapping(
         }
 
         const isGeneral = normTop.includes('chung') || normTop.includes('tong_hop');
-        const code = isGeneral ? 'PB_GEN_' + normTop.toUpperCase().slice(0, 15) : 'PB_CUST_' + normTop.toUpperCase().slice(0, 15);
+        const isCancelled = /hủy|huy/i.test(currentKitchen);
+        const groupNames = isGeneral || isCancelled ? [] : extractGroupNames(currentKitchen);
+        const isGroup = !isGeneral && !isCancelled && groupNames.length > 0;
+        const codePrefix = isGeneral ? 'PB_GEN_' : isGroup ? 'PB_GRP_' : 'PB_CUST_';
+        const code = codePrefix + normTop.toUpperCase().slice(0, 40);
         const key = 'pb_' + normTop;
 
         // Prevent duplicate keys
-        if (!priceBooks.some(pb => pb.key === key)) {
+        if (!priceBooks.some(pb => pb.key === key) && !isCancelled) {
           priceBooks.push({
             key,
             code,
             name: `Bảng giá ${currentKitchen}`,
-            kind: isGeneral ? 'general' : 'customer',
+            kind: isGeneral ? 'general' : isGroup ? 'group' : 'customer',
             priceColIndex: c,
             discountColIndex: discountColIdx,
-            targetCustomerCode: isGeneral ? undefined : currentKitchen.split(/[,;(]/)[0].trim(),
+            targetCustomerCode: isGeneral || isGroup ? undefined : currentKitchen.split(/[,;(]/)[0].trim(),
+            targetGroupNames: isGroup ? groupNames : undefined,
           });
         }
       }
