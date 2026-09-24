@@ -61,6 +61,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Tên đăng nhập hoặc mật khẩu không đúng" }, { status: 401, headers: corsHeaders });
   } catch (error) {
     console.error("Sale auth error:", error);
+    if (error instanceof Error && error.message === "AUTH_SERVICE_UNAVAILABLE") {
+      return NextResponse.json({ ok: false, error: "Không kết nối được hệ thống xác thực. Vui lòng thử lại sau." }, { status: 503, headers: corsHeaders });
+    }
     return NextResponse.json({ ok: false, error: "Lỗi hệ thống" }, { status: 500, headers: corsHeaders });
   }
 }
@@ -78,6 +81,9 @@ async function tryStaffLogin(identifier: string, password: string) {
     password,
   });
 
+  if (authError && /fetch failed|network|connect/i.test(authError.message || "")) {
+    throw new Error("AUTH_SERVICE_UNAVAILABLE");
+  }
   if (authError || !authData?.session || !authData.user) return null;
 
   // Tra hồ sơ nhân viên bằng service-role (không tin bất kỳ dữ liệu role/tên
@@ -191,6 +197,9 @@ async function tryCustomerLogin(identifier: string, password: string) {
 
   if (error && (!row || !row.order_session_token)) {
     console.error("verify_customer_login error (sale-auth):", error);
+    if (/fetch failed|network|connect/i.test(error.message || "")) {
+      throw new Error("AUTH_SERVICE_UNAVAILABLE");
+    }
     return null;
   }
 
