@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
       .from("orders")
       .select("*, order_items(*), order_documents(id, document_type, revision, status)")
       .eq("customer_id", customerSession.customer_id)
+      .neq("status", "merged")
       .order("created_at", { ascending: false });
     if (error) throw error;
 

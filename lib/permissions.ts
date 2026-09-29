@@ -49,6 +49,16 @@ const PERMISSIONS: Record<string, Role[]> = {
   'orders.credit_override': ['admin'],
   /** Xem/Cập nhật trạng thái soạn hàng (nhận/hoàn tất/trả đơn) */
   'orders.packing': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  /** Gộp đơn hàng đủ điều kiện trước xác nhận */
+  'orders.merge': ['admin', 'truong_phong', 'sale'],
+  /** Gộp/điều chỉnh đơn hàng đã xác nhận hoặc đã khóa */
+  'orders.merge_locked': ['admin', 'truong_phong'],
+  /** Xuất danh sách, phiếu tạm, chi tiết đơn */
+  'orders.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  /** Xuất phiếu giao hàng, danh sách giao theo xe/tuyến */
+  'orders.export_delivery': ['admin', 'truong_phong', 'sale', 'kho', 'tai_xe'],
+  /** Xuất hóa đơn bán hàng, báo cáo công nợ */
+  'orders.export_invoice': ['admin', 'truong_phong', 'ke_toan'],
 
   // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
   /** Xem màn đơn tổng, xuất Excel đơn tổng */
@@ -68,7 +78,8 @@ const PERMISSIONS: Record<string, Role[]> = {
 
   // ─── Bảng giá ───────────────────────────────────────────────────
   /** Áp giá hàng ngày / sửa bảng giá */
-  'pricing.edit': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
+  'pricing.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  'pricing.edit': ['admin', 'ke_toan'],
 
   // ─── Khách hàng ─────────────────────────────────────────────────
   /** Xem danh sách khách hàng */

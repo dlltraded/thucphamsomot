@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         .from("orders")
         .select("id, order_code, status, grand_total, paid_amount, debt_amount, created_at, confirmed_at")
         .eq("customer_id", customerId)
-        .neq("status", "canceled")
+        .not("status", "in", "(canceled,merged)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return json({ ok: true, orders: orders || [] });
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     const { data: orders, error: orderError } = await supabase
       .from("orders")
       .select("customer_id, debt_amount, grand_total, paid_amount")
-      .neq("status", "canceled")
+      .not("status", "in", "(canceled,merged)")
       .gt("debt_amount", 0);
     if (orderError) throw orderError;
 
