@@ -42,6 +42,7 @@ const BaoCaoPage = lazyPage(() => import('./pages/BaoCaoPage'));
 const DatHangPage = lazyPage(() => import('./pages/DatHangPage'));
 const DatHangExcelPage = lazyPage(() => import('./pages/DatHangExcelPage'));
 const DonTongPage = lazyPage(() => import('./pages/DonTongPage'));
+const UsersPage = lazyPage(() => import('./pages/UsersPage'));
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#0B130E] text-white">Đang tải...</div>
@@ -110,6 +111,7 @@ function App() {
             <Route path="don-tong" element={<StaffOnlyRoute perm="procurement.view"><DonTongPage /></StaffOnlyRoute>} />
             <Route path="cong-no" element={<StaffOnlyRoute perm="finance.view"><CongNoPage /></StaffOnlyRoute>} />
             <Route path="bao-cao" element={<StaffOnlyRoute perm="reports.view"><BaoCaoPage /></StaffOnlyRoute>} />
+            <Route path="nhan-vien" element={<StaffOnlyRoute perm="admin.manage_staff"><UsersPage /></StaffOnlyRoute>} />
             <Route path="don-hang-cua-toi" element={<CustomerOnlyRoute><MyOrdersPage /></CustomerOnlyRoute>} />
             <Route path="don-hang-cua-toi/:id" element={<CustomerOnlyRoute><MyOrderDetailPage /></CustomerOnlyRoute>} />
             <Route path="dat-hang/excel" element={<CustomerOnlyRoute><DatHangExcelPage /></CustomerOnlyRoute>} />

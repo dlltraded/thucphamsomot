@@ -35,6 +35,12 @@ const productCatalogCache = new Map<string, { expiresAt: number; body: unknown }
 let baseProductCatalogCache: { expiresAt: number; products: any[] } | null = null;
 let categoryListCache: { expiresAt: number; categories: string[] } | null = null;
 
+export function invalidateCustomerCatalogCache() {
+  productCatalogCache.clear();
+  baseProductCatalogCache = null;
+  categoryListCache = null;
+}
+
 function getRequestToken(req: NextRequest) {
   const websiteSession = parseSessionCookieValue(req.cookies.get(CUSTOMER_SESSION_COOKIE)?.value);
   return (
@@ -96,7 +102,7 @@ async function loadProductCatalog(
     ? baseProductCatalogCache.products
     : null;
   if (!products) {
-    const selectFields = "id, sku, name, category, unit, thumb_url, price_retail, price_wholesale";
+    const selectFields = "id, sku, name, category, unit, thumb_url, price_retail, price_wholesale, packaging_note, min_order_qty, order_step, enforce_order_step";
     const pageSize = 1000;
     const first = await supabase
       .from("products")
@@ -150,7 +156,7 @@ async function loadProductCatalog(
     : "";
 
   // Mảng tuple giảm kích thước JSON khoảng 4 lần so với lặp lại tên field 5.000 lần.
-  // [id, sku, name, category, unit, price, priceOnRequest, hasImage]
+  // [id, sku, name, category, unit, price, priceOnRequest, hasImage, packagingNote, minOrderQty, orderStep, enforceOrderStep]
   const items = products.map((product) => {
     const priceInfo = priceMap.get(product.id);
     const price = customerContext
@@ -165,6 +171,10 @@ async function loadProductCatalog(
       price,
       price <= 0,
       Boolean(product.thumb_url),
+      product.packaging_note || null,
+      product.min_order_qty == null ? 1 : Number(product.min_order_qty) || 1,
+      product.order_step == null ? 1 : Number(product.order_step) || 1,
+      Boolean(product.enforce_order_step),
     ];
   });
   const body = { ok: true, count: items.length, imageBaseUrl, items };
@@ -278,20 +288,49 @@ export async function GET(req: NextRequest) {
         if (!rpcErr && Array.isArray(rpcRows)) {
           usedRpc = true;
           totalCount = rpcRows.length > 0 ? Number(rpcRows[0].total) || rpcRows.length : 0;
-          products = rpcRows.map((r: any) => ({
-            id: r.id,
-            sku: r.sku,
-            name: r.name,
-            category: r.category,
-            unit: r.unit,
-            image_url: r.image_url,
-            thumb_url: r.thumb_url,
-            price_retail: r.price_retail,
-            price_wholesale: r.price_wholesale,
-            track_inventory: r.track_inventory,
-            stock_qty: r.stock_qty,
-            min_stock: r.min_stock,
-          }));
+
+          // Lấy bổ sung 4 trường quy cách từ bảng products theo danh sách ID (không cần migration)
+          const productIds = rpcRows.map((r: any) => r.id).filter(Boolean);
+          const specMap = new Map<string, any>();
+          if (productIds.length > 0) {
+            const { data: specRows, error: specErr } = await supabase
+              .from("products")
+              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step")
+              .in("id", productIds);
+            if (specErr) {
+              console.error("Lỗi truy vấn bổ sung quy cách sản phẩm khách hàng:", specErr);
+              // Nếu truy vấn quy cách lỗi, không được trả mặc định làm mất quy cách; fallback sang query bảng products trực tiếp
+              usedRpc = false;
+            } else {
+              for (const s of specRows || []) {
+                specMap.set(s.id, s);
+              }
+            }
+          }
+
+          if (usedRpc) {
+            products = rpcRows.map((r: any) => {
+              const spec = specMap.get(r.id);
+              return {
+                id: r.id,
+                sku: r.sku,
+                name: r.name,
+                category: r.category,
+                unit: r.unit,
+                image_url: r.image_url,
+                thumb_url: r.thumb_url,
+                price_retail: r.price_retail,
+                price_wholesale: r.price_wholesale,
+                track_inventory: r.track_inventory,
+                stock_qty: r.stock_qty,
+                min_stock: r.min_stock,
+                packaging_note: spec?.packaging_note || null,
+                min_order_qty: spec?.min_order_qty == null ? 1 : Number(spec.min_order_qty) || 1,
+                order_step: spec?.order_step == null ? 1 : Number(spec.order_step) || 1,
+                enforce_order_step: Boolean(spec?.enforce_order_step),
+              };
+            });
+          }
         }
       } catch {
         usedRpc = false;
@@ -301,7 +340,7 @@ export async function GET(req: NextRequest) {
     if (!usedRpc) {
       let query = supabase
         .from("products")
-        .select("id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock", { count: "exact" })
+        .select("id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, packaging_note, min_order_qty, order_step, enforce_order_step", { count: "exact" })
         .eq("active", true)
         .order("name")
         .range(page * pageSize, page * pageSize + pageSize - 1);
@@ -347,6 +386,10 @@ export async function GET(req: NextRequest) {
         // Hàng tươi sống tồn kho = 0 vẫn nhận đặt hàng, bộ phận thu mua sẽ sắp xếp nhập giao khách
         available: true,
         stockQty: Number(p.stock_qty) || 0,
+        packagingNote: p.packaging_note || null,
+        minOrderQty: p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
+        orderStep: p.order_step == null ? 1 : Number(p.order_step) || 1,
+        enforceOrderStep: Boolean(p.enforce_order_step),
       };
     });
 

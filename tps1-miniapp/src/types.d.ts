@@ -21,6 +21,10 @@ export interface Product {
   detail?: string;
   sizes?: Size[];
   colors?: Color[];
+  packagingNote?: string;
+  minOrderQty?: number;
+  orderStep?: number;
+  enforceOrderStep?: boolean;
 }
 
 export interface Category {

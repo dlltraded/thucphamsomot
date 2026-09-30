@@ -8,6 +8,7 @@ import { cartState } from "@/state";
 import { useEffect, useState } from "react";
 import { Icon } from "zmp-ui";
 import QuantityInput from "@/components/quantity-input";
+import { validateOrderQuantity, formatQuantityVN } from "@/utils/quantityRules";
 
 const SWIPE_TO_DELTE_OFFSET = 80;
 
@@ -85,16 +86,35 @@ export default function CartItem(props: CartItemProps) {
                 </div>
               )}
             </div>
+            {props.product.packagingNote && (
+              <div className="text-3xs text-primary font-medium">
+                📦 {props.product.packagingNote}
+              </div>
+            )}
+            {props.product.enforceOrderStep && (
+              <div className="text-4xs text-subtitle">
+                Bước đặt: {formatQuantityVN(props.product.orderStep || 1)} {props.product.unit || 'Kg'} (tối thiểu {formatQuantityVN(props.product.minOrderQty || 1)})
+              </div>
+            )}
           </div>
           <div className="w-28 flex-shrink-0">
             <QuantityInput
               value={quantity}
               onChange={(val) => setQuantity(val)}
               minValue={0}
-              step={0.5}
+              allowZero={true}
+              step={props.product.orderStep || 1}
             />
           </div>
         </div>
+        {props.product.enforceOrderStep && quantity > 0 && (() => {
+          const err = validateOrderQuantity(quantity, props.product.minOrderQty, props.product.orderStep, true);
+          return err ? (
+            <div className="text-3xs text-danger font-medium px-1">
+              ⚠️ {err}
+            </div>
+          ) : null;
+        })()}
         <div className="pt-0.5">
           <input
             type="text"

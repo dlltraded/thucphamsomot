@@ -7,6 +7,7 @@ export interface QuantityInputProps {
   onChange: (value: number) => void;
   minValue?: number;
   step?: number;
+  allowZero?: boolean;
 }
 
 export default function QuantityInput(props: QuantityInputProps) {
@@ -18,8 +19,17 @@ export default function QuantityInput(props: QuantityInputProps) {
   }, [props.value]);
 
   const handleStep = (delta: number) => {
-    const next = Math.round((props.value + delta) * 10) / 10;
-    props.onChange(Math.max(props.minValue ?? 0, next));
+    const next = Math.round((props.value + delta) * 1000) / 1000;
+    const min = props.minValue ?? 0;
+    if (delta < 0 && next < min) {
+      if (props.allowZero) {
+        props.onChange(0);
+      } else {
+        props.onChange(min);
+      }
+    } else {
+      props.onChange(Math.max(props.allowZero ? 0 : min, next));
+    }
   };
 
   return (
@@ -42,7 +52,12 @@ export default function QuantityInput(props: QuantityInputProps) {
         onChange={(e) => setLocalValue(e.currentTarget.value)}
         onBlur={() => {
           const parsed = parseFloat(localValue);
-          props.onChange(Math.max(props.minValue ?? 0, isNaN(parsed) ? (props.minValue ?? 0) : parsed));
+          const min = props.minValue ?? 0;
+          if (isNaN(parsed) || parsed < min) {
+            props.onChange(props.allowZero && parsed === 0 ? 0 : min);
+          } else {
+            props.onChange(Math.round(parsed * 1000) / 1000);
+          }
         }}
       />
       <Button

@@ -8,6 +8,8 @@ import QuantityInput from "./quantity-input";
 import { useAtom } from "jotai";
 import { favoriteProductIdsState } from "@/state";
 import { Icon } from "zmp-ui";
+import toast from "react-hot-toast";
+import { validateOrderQuantity, formatQuantityVN } from "@/utils/quantityRules";
 
 import logoUrl from "@/static/logo.png";
 
@@ -18,7 +20,9 @@ export interface ProductItemProps {
 
 export default function ProductItem(props: ProductItemProps) {
   const { addToCart, cartQuantity } = useAddToCart(props.product);
-  const [qty, setQty] = useState(1);
+  const step = props.product.orderStep || 1;
+  const initialQty = props.product.enforceOrderStep && props.product.minOrderQty ? props.product.minOrderQty : step;
+  const [qty, setQty] = useState(initialQty);
   const [favoriteIds, toggleFavorite] = useAtom(favoriteProductIdsState);
   const isFavorite = favoriteIds.includes(String(props.product.id));
 
@@ -71,19 +75,41 @@ export default function ProductItem(props: ProductItemProps) {
               {formatPrice(props.product.originalPrice)}
             </span>
           )}
+          {props.product.packagingNote && (
+            <div className="text-3xs text-primary font-medium mt-0.5">
+              📦 {props.product.packagingNote}
+            </div>
+          )}
+          {props.product.enforceOrderStep && (
+            <div className="text-4xs text-subtitle mt-0.5">
+              Bước đặt: {formatQuantityVN(props.product.orderStep || 1)} {props.product.unit || 'Kg'}
+            </div>
+          )}
         </div>
       </TransitionLink>
       
       <div className="flex items-center gap-2 mt-1">
         <div className="flex-1 max-w-[120px]">
-          <QuantityInput value={qty} onChange={setQty} minValue={1} />
+          <QuantityInput
+            value={qty}
+            onChange={setQty}
+            minValue={props.product.enforceOrderStep && props.product.minOrderQty ? props.product.minOrderQty : 0.001}
+            step={step}
+          />
         </div>
         <Button 
           size="small"
           className="flex-1"
           onClick={() => {
-            addToCart((old) => old + qty, { toast: true });
-            setQty(1);
+            if (props.product.enforceOrderStep) {
+              const err = validateOrderQuantity(qty, props.product.minOrderQty, props.product.orderStep, true);
+              if (err) {
+                toast.error(err);
+                return;
+              }
+            }
+            addToCart((old) => Math.round((old + qty) * 1000) / 1000, { toast: true });
+            setQty(initialQty);
           }}
         >
           Thêm

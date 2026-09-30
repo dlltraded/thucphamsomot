@@ -10,6 +10,8 @@ import { Button } from "zmp-ui";
 import Section from "@/components/section";
 import QuantityInput from "@/components/quantity-input";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { validateOrderQuantity, formatQuantityVN } from "@/utils/quantityRules";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -17,7 +19,27 @@ export default function ProductDetailPage() {
 
   const navigate = useNavigate();
   const { addToCart } = useAddToCart(product);
-  const [quantity, setQuantity] = useState(1);
+  const step = product?.orderStep || 1;
+  const initialQty = product?.enforceOrderStep && product?.minOrderQty ? product.minOrderQty : step;
+  const [quantity, setQuantity] = useState(initialQty);
+
+  const qtyError = product?.enforceOrderStep
+    ? validateOrderQuantity(quantity, product.minOrderQty, product.orderStep, true)
+    : null;
+
+  const handleAction = (buyNow: boolean) => {
+    if (product.enforceOrderStep) {
+      const err = validateOrderQuantity(quantity, product.minOrderQty, product.orderStep, true);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
+    addToCart(quantity, buyNow ? undefined : { toast: true });
+    if (buyNow) {
+      navigate("/cart", { viewTransition: true });
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -50,6 +72,16 @@ export default function ProductDetailPage() {
               </div>
             )}
             <div className="text-sm mt-1">{product.name}</div>
+            {product.packagingNote && (
+              <div className="text-xs text-primary font-medium mt-1">
+                📦 Quy cách: {product.packagingNote}
+              </div>
+            )}
+            {product.enforceOrderStep && (
+              <div className="text-xs text-subtitle mt-0.5">
+                Sản phẩm này đặt theo bước {formatQuantityVN(product.orderStep || 1)} {product.unit || 'Kg'} (tối thiểu {formatQuantityVN(product.minOrderQty || 1)} {product.unit || 'Kg'})
+              </div>
+            )}
           </div>
           <ShareButton product={product} />
         </div>
@@ -70,35 +102,34 @@ export default function ProductDetailPage() {
       </div>
 
       <HorizontalDivider />
-      <div className="flex-none p-4 bg-section space-y-4">
+      <div className="flex-none p-4 bg-section space-y-3">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-sm">Số lượng</span>
-          <div className="w-24">
-            <QuantityInput 
-              value={quantity} 
-              onChange={setQuantity} 
-              minValue={1} 
+          <div>
+            <span className="font-medium text-sm">Số lượng ({product.unit || 'Kg'})</span>
+            {qtyError && (
+              <div className="text-2xs text-danger font-medium mt-0.5">
+                ⚠️ {qtyError}
+              </div>
+            )}
+          </div>
+          <div className="w-28">
+            <QuantityInput
+              value={quantity}
+              onChange={setQuantity}
+              minValue={product.enforceOrderStep && product.minOrderQty ? product.minOrderQty : 0.001}
+              step={step}
             />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="tertiary"
-            onClick={() => {
-              addToCart(quantity, {
-                toast: true,
-              });
-            }}
+            onClick={() => handleAction(false)}
           >
             Thêm vào giỏ
           </Button>
           <Button
-            onClick={() => {
-              addToCart(quantity);
-              navigate("/cart", {
-                viewTransition: true,
-              });
-            }}
+            onClick={() => handleAction(true)}
           >
             Mua ngay
           </Button>

@@ -12,6 +12,10 @@ type ApiProduct = {
   thumbUrl?: string | null;
   price?: number;
   priceOnRequest?: boolean;
+  packagingNote?: string | null;
+  minOrderQty?: number;
+  orderStep?: number;
+  enforceOrderStep?: boolean;
 };
 
 type ProductPageResponse = {
@@ -88,6 +92,10 @@ function toProduct(item: ApiProduct): Product {
     category: { id: group.id, name: group.name, image: "" },
     categoryId: group.id,
     detail: "",
+    packagingNote: item.packagingNote || undefined,
+    minOrderQty: item.minOrderQty != null ? Number(item.minOrderQty) : 1,
+    orderStep: item.orderStep != null ? Number(item.orderStep) : 1,
+    enforceOrderStep: Boolean(item.enforceOrderStep),
   };
 }
 

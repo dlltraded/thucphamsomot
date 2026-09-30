@@ -4,6 +4,8 @@ import { can } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { resolvePricesForProducts } from "@/lib/customer-pricing";
 
+import { invalidateCustomerCatalogCache } from "@/app/api/customer/products/route";
+
 const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
 type CatalogProduct = {
   id: string;
@@ -19,13 +21,22 @@ type CatalogProduct = {
   stock_qty: number | null;
   min_stock: number | null;
   is_low_stock: boolean | null;
+  packaging_note?: string | null;
+  min_order_qty?: number | null;
+  order_step?: number | null;
+  enforce_order_step?: boolean | null;
 };
 let baseCatalogCache: { expiresAt: number; products: CatalogProduct[] } | null = null;
 const pricedCatalogCache = new Map<string, { expiresAt: number; products: unknown[] }>();
 
+export function invalidateAdminCatalogCache() {
+  baseCatalogCache = null;
+  pricedCatalogCache.clear();
+}
+
 async function loadBaseCatalog(supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
   if (baseCatalogCache && baseCatalogCache.expiresAt > Date.now()) return baseCatalogCache.products;
-  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock";
+  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock, packaging_note, min_order_qty, order_step, enforce_order_step";
   const pageSize = 1000;
   const first = await supabase.from("products").select(fields, { count: "exact" }).eq("active", true).order("name").range(0, pageSize - 1);
   if (first.error) throw first.error;
@@ -71,6 +82,10 @@ const EDITABLE_FIELDS = [
   "max_stock",
   "track_inventory",
   "active",
+  "packaging_note",
+  "min_order_qty",
+  "order_step",
+  "enforce_order_step",
 ] as const;
 
 function slugifySku(name: string) {
@@ -122,6 +137,10 @@ export async function GET(req: NextRequest) {
           p.thumb_url || p.image_url || "", Boolean(p.thumb_url),
           Boolean(p.track_inventory), p.stock_qty == null ? null : Number(p.stock_qty),
           Boolean(p.is_low_stock || (p.track_inventory && Number(p.stock_qty) <= Number(p.min_stock || 0))),
+          p.packaging_note || null,
+          p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
+          p.order_step == null ? 1 : Number(p.order_step) || 1,
+          Boolean(p.enforce_order_step),
         ];
       });
       pricedCatalogCache.set(cacheKey, { products: compact, expiresAt: Date.now() + CATALOG_CACHE_TTL_MS });
@@ -189,6 +208,7 @@ export async function GET(req: NextRequest) {
   const category = req.nextUrl.searchParams.get("category")?.trim() || "";
   const customerId = req.nextUrl.searchParams.get("customerId")?.trim() || "";
   const lowStockOnly = req.nextUrl.searchParams.get("lowStockOnly") === "1";
+  const specFilter = req.nextUrl.searchParams.get("specFilter")?.trim() || "";
   const page = Math.max(0, Number(req.nextUrl.searchParams.get("page") || 0));
   const pageSize = Math.min(60, Math.max(1, Number(req.nextUrl.searchParams.get("pageSize") || 40)));
 
@@ -197,8 +217,8 @@ export async function GET(req: NextRequest) {
     let totalCount = 0;
     let usedRpc = false;
 
-    // 2. WP4-3B: Tìm kiếm thông minh qua RPC search_products
-    if (search || category) {
+    // 2. WP4-3B: Tìm kiếm thông minh qua RPC search_products (khi không dùng specFilter)
+    if ((search || category) && !specFilter) {
       try {
         const { data: rpcRows, error: rpcErr } = await supabase.rpc("search_products", {
           p_query: search || null,
@@ -210,22 +230,51 @@ export async function GET(req: NextRequest) {
         if (!rpcErr && Array.isArray(rpcRows)) {
           usedRpc = true;
           totalCount = rpcRows.length > 0 ? Number(rpcRows[0].total) || rpcRows.length : 0;
-          products = rpcRows.map((r: any) => ({
-            id: r.id,
-            sku: r.sku,
-            name: r.name,
-            category: r.category,
-            unit: r.unit,
-            image_url: r.image_url,
-            thumb_url: r.thumb_url,
-            price_retail: Number(r.price_retail) || 0,
-            price_wholesale: Number(r.price_wholesale) || 0,
-            track_inventory: r.track_inventory,
-            stock_qty: r.stock_qty,
-            min_stock: r.min_stock,
-            is_low_stock: r.track_inventory && (Number(r.stock_qty) || 0) <= (Number(r.min_stock) || 0),
-            active: r.active,
-          }));
+
+          // Lấy bổ sung 4 trường quy cách từ bảng products theo danh sách ID (không cần migration)
+          const productIds = rpcRows.map((r: any) => r.id).filter(Boolean);
+          const specMap = new Map<string, any>();
+          if (productIds.length > 0) {
+            const { data: specRows, error: specErr } = await supabase
+              .from("products")
+              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step")
+              .in("id", productIds);
+            if (specErr) {
+              console.error("Lỗi truy vấn bổ sung quy cách sản phẩm:", specErr);
+              // Nếu truy vấn quy cách lỗi, không được trả mặc định làm mất quy cách; fallback sang query bảng products trực tiếp
+              usedRpc = false;
+            } else {
+              for (const s of specRows || []) {
+                specMap.set(s.id, s);
+              }
+            }
+          }
+
+          if (usedRpc) {
+            products = rpcRows.map((r: any) => {
+              const spec = specMap.get(r.id);
+              return {
+                id: r.id,
+                sku: r.sku,
+                name: r.name,
+                category: r.category,
+                unit: r.unit,
+                image_url: r.image_url,
+                thumb_url: r.thumb_url,
+                price_retail: Number(r.price_retail) || 0,
+                price_wholesale: Number(r.price_wholesale) || 0,
+                track_inventory: r.track_inventory,
+                stock_qty: r.stock_qty,
+                min_stock: r.min_stock,
+                is_low_stock: r.track_inventory && (Number(r.stock_qty) || 0) <= (Number(r.min_stock) || 0),
+                active: r.active,
+                packaging_note: spec?.packaging_note || null,
+                min_order_qty: spec?.min_order_qty == null ? 1 : Number(spec.min_order_qty) || 1,
+                order_step: spec?.order_step == null ? 1 : Number(spec.order_step) || 1,
+                enforce_order_step: Boolean(spec?.enforce_order_step),
+              };
+            });
+          }
         }
       } catch {
         usedRpc = false;
@@ -236,7 +285,7 @@ export async function GET(req: NextRequest) {
       let query = supabase
         .from("products")
         .select(
-          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active",
+          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active, packaging_note, min_order_qty, order_step, enforce_order_step",
           { count: "exact" }
         )
         .order("name")
@@ -248,6 +297,14 @@ export async function GET(req: NextRequest) {
       }
       if (category) query = query.eq("category", category);
       if (lowStockOnly) query = query.eq("is_low_stock", true);
+
+      if (specFilter === "configured") {
+        query = query.or("enforce_order_step.eq.true,packaging_note.not.is.null");
+      } else if (specFilter === "unconfigured") {
+        query = query.is("packaging_note", null).eq("enforce_order_step", false);
+      } else if (specFilter === "enforced") {
+        query = query.eq("enforce_order_step", true);
+      }
 
       const { data: qProducts, count, error } = await query;
       if (error) throw error;
@@ -278,11 +335,32 @@ export async function GET(req: NextRequest) {
       tierMap.set(row.product_id, entry);
     }
 
+    // Thống kê chỉ số quy cách phục vụ chỉ báo giao diện
+    let specStats = { total: 0, configured: 0, unconfigured: 0, enforced: 0 };
+    try {
+      const [{ count: tot }, { count: enf }, { count: conf }] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("active", true),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("active", true).eq("enforce_order_step", true),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("active", true).or("enforce_order_step.eq.true,packaging_note.not.is.null"),
+      ]);
+      const totalAct = tot || 0;
+      const confCount = conf || 0;
+      specStats = {
+        total: totalAct,
+        configured: confCount,
+        unconfigured: Math.max(0, totalAct - confCount),
+        enforced: enf || 0,
+      };
+    } catch (e) {
+      console.warn("Lỗi tính specStats:", e);
+    }
+
     return json({
       ok: true,
       total: totalCount,
       page,
       pageSize,
+      specStats,
       products: products.map((p) => {
         const resolved = customerPriceMap?.get(p.id);
         const price = resolved?.price ?? (Number(p.price_retail) || Number(p.price_wholesale) || 0);
@@ -296,6 +374,10 @@ export async function GET(req: NextRequest) {
           stockQty: p.stock_qty != null ? Number(p.stock_qty) : null,
           lowStock: !!p.is_low_stock,
           tierPrices: tierMap.get(p.id) || {},
+          packaging_note: p.packaging_note || null,
+          min_order_qty: p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
+          order_step: p.order_step == null ? 1 : Number(p.order_step) || 1,
+          enforce_order_step: Boolean(p.enforce_order_step),
         };
       }),
       canEdit: can(auth.profile?.role, "products.edit"),
@@ -304,6 +386,32 @@ export async function GET(req: NextRequest) {
     console.error("GET /api/admin/products lỗi:", error);
     return json({ ok: false, error: "Không tải được danh sách hàng hóa" }, 500);
   }
+}
+
+function validateSpecFields(fields: Record<string, unknown>): string | null {
+  if (fields.packaging_note !== undefined && fields.packaging_note !== null) {
+    if (typeof fields.packaging_note !== "string") return "Quy cách đóng gói phải là chuỗi ký tự";
+    if (fields.packaging_note.trim().length > 120) return "Quy cách đóng gói tối đa 120 ký tự";
+  }
+  if (fields.min_order_qty !== undefined && fields.min_order_qty !== null) {
+    const min = Number(fields.min_order_qty);
+    if (!Number.isFinite(min) || min < 0) return "Số lượng tối thiểu không được âm hoặc không hợp lệ";
+    if (Math.round(min * 1000) !== min * 1000) return "Số lượng tối thiểu tối đa 3 chữ số thập phân";
+  }
+  if (fields.order_step !== undefined && fields.order_step !== null) {
+    const step = Number(fields.order_step);
+    if (!Number.isFinite(step) || step < 0) return "Bước đặt hàng không được âm hoặc không hợp lệ";
+    if (Math.round(step * 1000) !== step * 1000) return "Bước đặt hàng tối đa 3 chữ số thập phân";
+  }
+  if (fields.enforce_order_step === true) {
+    if (fields.min_order_qty !== undefined && Number(fields.min_order_qty) <= 0) {
+      return "Khi bật kiểm tra quy cách, số lượng tối thiểu phải lớn hơn 0";
+    }
+    if (fields.order_step !== undefined && Number(fields.order_step) <= 0) {
+      return "Khi bật kiểm tra quy cách, bước đặt hàng phải lớn hơn 0";
+    }
+  }
+  return null;
 }
 
 export async function PATCH(req: NextRequest) {
@@ -315,14 +423,85 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const productId = String(body?.productId || "").trim();
-  if (!productId) return json({ ok: false, error: "Thiếu productId" }, 400);
+  const productIds = Array.isArray(body?.productIds) ? (body.productIds as string[]).map(String).filter(Boolean) : [];
+
+  if (!productId && productIds.length === 0) {
+    return json({ ok: false, error: "Thiếu productId hoặc productIds" }, 400);
+  }
 
   const supabase = getCustomerSupabaseAdmin();
 
   try {
-    // 0. Sửa thông tin chung của sản phẩm (tên, ảnh, mô tả, giá gốc...).
-    //    Chỉ nhận đúng các cột trong EDITABLE_FIELDS, bỏ qua field lạ.
+    // 0. Sửa hàng loạt nhiều sản phẩm cùng lúc
+    if (productIds.length > 0) {
+      if (body?.fields && typeof body.fields === "object") {
+        const specErr = validateSpecFields(body.fields);
+        if (specErr) return json({ ok: false, error: specErr }, 400);
+
+        // Khi bật enforce_order_step=true hàng loạt, bắt buộc xác minh TẤT CẢ sản phẩm được chọn
+        // đều có min_order_qty > 0 và order_step > 0 (kể cả khi payload không gửi 2 trường này)
+        if (body.fields.enforce_order_step === true) {
+          const { data: existingProducts, error: checkError } = await supabase
+            .from("products")
+            .select("id, name, sku, min_order_qty, order_step")
+            .in("id", productIds);
+          if (checkError) throw checkError;
+
+          const invalidProducts: string[] = [];
+          for (const p of existingProducts || []) {
+            const minVal = body.fields.min_order_qty !== undefined
+              ? Number(body.fields.min_order_qty)
+              : Number(p.min_order_qty || 0);
+            const stepVal = body.fields.order_step !== undefined
+              ? Number(body.fields.order_step)
+              : Number(p.order_step || 0);
+            if (minVal <= 0 || stepVal <= 0) {
+              invalidProducts.push(p.sku || p.name || p.id);
+            }
+          }
+
+          if (invalidProducts.length > 0) {
+            const sample = invalidProducts.slice(0, 3).join(", ");
+            const more = invalidProducts.length > 3 ? ` và ${invalidProducts.length - 3} sản phẩm khác` : "";
+            return json({
+              ok: false,
+              error: `Không thể bật kiểm tra quy cách: Có ${invalidProducts.length} sản phẩm chưa có số lượng tối thiểu hoặc bước đặt hàng lớn hơn 0 (${sample}${more}). Vui lòng thiết lập tối thiểu và bước nhảy lớn hơn 0 trước khi bật kiểm tra.`,
+            }, 400);
+          }
+        }
+
+        const patch: Record<string, unknown> = {};
+        for (const key of EDITABLE_FIELDS) {
+          if (key in body.fields) patch[key] = body.fields[key];
+        }
+        if (Object.keys(patch).length > 0) {
+          const { error: batchError } = await supabase
+            .from("products")
+            .update(patch)
+            .in("id", productIds);
+          if (batchError) throw batchError;
+        }
+      }
+      invalidateAdminCatalogCache();
+      invalidateCustomerCatalogCache();
+      return json({ ok: true, updatedCount: productIds.length });
+    }
+
+    // 1. Sửa thông tin chung của sản phẩm đơn lẻ (tên, ảnh, mô tả, quy cách...).
     if (body?.fields && typeof body.fields === "object") {
+      const specErr = validateSpecFields(body.fields);
+      if (specErr) return json({ ok: false, error: specErr }, 400);
+
+      // Nếu bật enforce_order_step nhưng không gửi min/step mới, kiểm tra giá trị hiện tại
+      if (body.fields.enforce_order_step === true) {
+        const { data: cur } = await supabase.from("products").select("min_order_qty, order_step").eq("id", productId).single();
+        const minVal = body.fields.min_order_qty !== undefined ? Number(body.fields.min_order_qty) : Number(cur?.min_order_qty || 0);
+        const stepVal = body.fields.order_step !== undefined ? Number(body.fields.order_step) : Number(cur?.order_step || 0);
+        if (minVal <= 0 || stepVal <= 0) {
+          return json({ ok: false, error: "Khi bật kiểm tra quy cách, số lượng tối thiểu và bước đặt hàng phải lớn hơn 0" }, 400);
+        }
+      }
+
       const patch: Record<string, unknown> = {};
       for (const key of EDITABLE_FIELDS) {
         if (key in body.fields) patch[key] = body.fields[key];
@@ -333,8 +512,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    // 1. Cập nhật giá theo hạng (nhận object { VIP0?: number|null, VIP1?: ... }).
-    //    Giá trị null/rỗng -> xóa override, quay lại dùng giá gốc cho hạng đó.
+    // 2. Cập nhật giá theo hạng
     if (body?.tierPrices && typeof body.tierPrices === "object") {
       for (const [tier, priceRaw] of Object.entries(body.tierPrices as Record<string, unknown>)) {
         if (priceRaw === null || priceRaw === "" || priceRaw === undefined) {
@@ -349,8 +527,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    // 2. Điều chỉnh tồn kho: insert 1 dòng inventory_transactions, trigger DB
-    //    tự cập nhật stock_qty — không sửa tay stock_qty ở đây.
+    // 3. Điều chỉnh tồn kho: insert 1 dòng inventory_transactions
     if (body?.inventoryAdjustment) {
       if (!can(auth.profile?.role, "products.stock_in")) {
         return json({ ok: false, error: "Chỉ Admin hoặc Thu mua được điều chỉnh tồn kho" }, 403);
@@ -376,6 +553,10 @@ export async function PATCH(req: NextRequest) {
       });
       if (invError) throw invError;
     }
+
+    // Xóa cache sau khi sửa đổi dữ liệu sản phẩm
+    invalidateAdminCatalogCache();
+    invalidateCustomerCatalogCache();
 
     const { data: updated, error: fetchError } = await supabase
       .from("products")

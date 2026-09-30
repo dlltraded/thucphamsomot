@@ -5,7 +5,7 @@ import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
         default_shipping_phone, discount_tier, contract_discount_percent,
         tier_expiry_date, credit_limit, notes, is_active, verification_status,
         verification_note, registration_source, registered_at, created_at, updated_at,
-        sales_rep_id
+        sales_rep_id, customer_group
       `)
       .eq("id", id)
       .maybeSingle();
@@ -64,6 +64,210 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   } catch (error) {
     console.error('GET /api/admin/customers/[id] error:', error);
     return json({ ok: false, error: error instanceof Error ? error.message : 'Không tải được khách hàng' }, 500);
+  }
+}
+
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
+  if (!can(auth.profile?.role, "customers.edit")) {
+    return json({ ok: false, error: "Bạn không có quyền chỉnh sửa khách hàng" }, 403);
+  }
+
+  try {
+    const { id } = await context.params;
+    const body = await req.json();
+    const supabase = getCustomerSupabaseAdmin();
+
+    const { data: customer, error: findError } = await supabase
+      .from("vip_accounts")
+      .select("id, partner_code, name, company, tax_code, sales_rep_id, discount_tier, credit_limit, is_active, customer_group")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (findError) throw findError;
+    if (!customer) return json({ ok: false, error: "Không tìm thấy khách hàng" }, 404);
+
+    const isSale = auth.profile?.role === "sale" && auth.profile?.id !== "legacy-admin";
+
+    // 1. Kiểm tra quyền sở hữu khách hàng đối với Sale
+    if (isSale) {
+      if (!customer.sales_rep_id || customer.sales_rep_id !== auth.profile?.id) {
+        return json({ ok: false, error: "Bạn chỉ được chỉnh sửa khách hàng được phân công cho chính mình" }, 403);
+      }
+      // Sale chỉ được cập nhật thông tin liên hệ, không được đổi tên pháp nhân, công ty, mã số thuế hoặc nhóm
+      if (body.name !== undefined && String(body.name).trim() !== String(customer.name || "").trim()) {
+        return json({ ok: false, error: "Nhân viên kinh doanh không có quyền thay đổi tên pháp nhân khách hàng" }, 403);
+      }
+      if (body.company !== undefined && String(body.company || "").trim() !== String(customer.company || "").trim()) {
+        return json({ ok: false, error: "Nhân viên kinh doanh không có quyền thay đổi tên công ty khách hàng" }, 403);
+      }
+      if (body.tax_code !== undefined && String(body.tax_code || "").trim() !== String(customer.tax_code || "").trim()) {
+        return json({ ok: false, error: "Nhân viên kinh doanh không có quyền thay đổi mã số thuế khách hàng" }, 403);
+      }
+      if (body.customer_group !== undefined && String(body.customer_group || "").trim() !== String(customer.customer_group || "").trim()) {
+        return json({ ok: false, error: "Nhân viên kinh doanh không có quyền thay đổi nhóm khách hàng" }, 403);
+      }
+    }
+
+    // 2. Field-level permission checks (khi có sự thay đổi giá trị thực tế)
+    // a. Hạng giá (discount_tier): chỉ admin hoặc role có pricing.edit
+    if (body.discount_tier !== undefined && String(body.discount_tier) !== String(customer.discount_tier || "VIP0")) {
+      if (!can(auth.profile?.role, "pricing.edit") && auth.profile?.role !== "admin") {
+        return json({ ok: false, error: "Bạn không có quyền thay đổi hạng giá khách hàng" }, 403);
+      }
+    }
+
+    // b. Hạn mức công nợ (credit_limit): chỉ admin hoặc role có finance.edit
+    if (body.credit_limit !== undefined && Number(body.credit_limit) !== Number(customer.credit_limit || 0)) {
+      if (!can(auth.profile?.role, "finance.edit") && auth.profile?.role !== "admin") {
+        return json({ ok: false, error: "Bạn không có quyền thay đổi hạn mức công nợ khách hàng" }, 403);
+      }
+    }
+
+    // c. Trạng thái tài khoản (is_active): chỉ admin hoặc trưởng phòng
+    if (body.is_active !== undefined && Boolean(body.is_active) !== Boolean(customer.is_active)) {
+      if (auth.profile?.role !== "admin" && auth.profile?.role !== "truong_phong") {
+        return json({ ok: false, error: "Bạn không có quyền khóa hoặc mở khóa tài khoản khách hàng" }, 403);
+      }
+    }
+
+    // d. Nhân viên phụ trách (sales_rep_id): chỉ admin hoặc trưởng phòng
+    if (body.sales_rep_id !== undefined && (body.sales_rep_id || null) !== (customer.sales_rep_id || null)) {
+      if (auth.profile?.role !== "admin" && auth.profile?.role !== "truong_phong") {
+        return json({ ok: false, error: "Bạn không có quyền phân công lại nhân viên phụ trách" }, 403);
+      }
+    }
+
+    const updates: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (body.name !== undefined) {
+      const name = String(body.name || "").trim();
+      if (!name) return json({ ok: false, error: "Tên khách hàng không được để trống" }, 400);
+      updates.name = name;
+    }
+
+    if (body.phone !== undefined) {
+      const phone = String(body.phone || "").trim();
+      if (phone) {
+        const cleanPhone = phone.replace(/[\s.-]/g, "");
+        if (!/^(0|\+84)(([35789][0-9]{8})|(2[0-9]{9}))$/.test(cleanPhone)) {
+          return json({
+            ok: false,
+            error: "Số điện thoại không đúng định dạng Việt Nam (di động 10 số hoặc cố định 11 số)",
+          }, 400);
+        }
+        updates.phone = cleanPhone;
+      } else {
+        updates.phone = null;
+      }
+    }
+
+    if (body.email !== undefined) {
+      const email = String(body.email || "").trim();
+      if (email) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return json({ ok: false, error: "Email không đúng định dạng" }, 400);
+        }
+        updates.email = email.toLowerCase();
+      } else {
+        updates.email = null;
+      }
+    }
+
+    if (body.address !== undefined) {
+      updates.address = String(body.address || "").trim() || null;
+    }
+
+    if (body.company !== undefined) {
+      updates.company = String(body.company || "").trim() || null;
+    }
+
+    if (body.tax_code !== undefined) {
+      updates.tax_code = String(body.tax_code || "").trim() || null;
+    }
+
+    if (body.customer_group !== undefined) {
+      updates.customer_group = String(body.customer_group || "").trim() || null;
+    }
+
+    if (body.default_shipping_name !== undefined) {
+      updates.default_shipping_name = String(body.default_shipping_name || "").trim() || null;
+    }
+
+    if (body.default_shipping_phone !== undefined) {
+      const shipPhone = String(body.default_shipping_phone || "").trim();
+      if (shipPhone) {
+        const cleanShipPhone = shipPhone.replace(/[\s.-]/g, "");
+        if (!/^(0|\+84)(([35789][0-9]{8})|(2[0-9]{9}))$/.test(cleanShipPhone)) {
+          return json({
+            ok: false,
+            error: "SĐT người nhận không đúng định dạng Việt Nam",
+          }, 400);
+        }
+        updates.default_shipping_phone = cleanShipPhone;
+      } else {
+        updates.default_shipping_phone = null;
+      }
+    }
+
+    if (body.default_shipping_address !== undefined) {
+      updates.default_shipping_address = String(body.default_shipping_address || "").trim() || null;
+    }
+
+    if (body.default_shipping_alias !== undefined) {
+      updates.default_shipping_alias = String(body.default_shipping_alias || "").trim() || "Địa chỉ mặc định";
+    }
+
+    if (body.discount_tier !== undefined) {
+      const allowedTiers = ["VIP0", "VIP1", "VIP2", "VIP3", "CUSTOM"];
+      if (!allowedTiers.includes(String(body.discount_tier))) {
+        return json({ ok: false, error: "Hạng giá không hợp lệ" }, 400);
+      }
+      updates.discount_tier = body.discount_tier;
+    }
+
+    if (body.credit_limit !== undefined) {
+      const credit = Number(body.credit_limit);
+      if (isNaN(credit) || credit < 0) {
+        return json({ ok: false, error: "Hạn mức công nợ không hợp lệ" }, 400);
+      }
+      updates.credit_limit = credit;
+    }
+
+    if (body.is_active !== undefined) {
+      updates.is_active = Boolean(body.is_active);
+    }
+
+    if (body.notes !== undefined) {
+      updates.notes = String(body.notes || "").trim() || null;
+    }
+
+    if (body.sales_rep_id !== undefined) {
+      updates.sales_rep_id = body.sales_rep_id || null;
+    }
+
+    const { data: updatedCustomer, error: updateError } = await supabase
+      .from("vip_accounts")
+      .update(updates)
+      .eq("id", id)
+      .select(`
+        id, partner_code, name, phone, company, email, tax_code, address,
+        default_shipping_alias, default_shipping_address, default_shipping_name,
+        default_shipping_phone, discount_tier, contract_discount_percent,
+        tier_expiry_date, credit_limit, notes, is_active, verification_status,
+        customer_group, sales_rep_id, updated_at
+      `)
+      .single();
+
+    if (updateError) throw updateError;
+
+    return json({ ok: true, customer: updatedCustomer });
+  } catch (error) {
+    console.error("PATCH /api/admin/customers/[id] error:", error);
+    return json({ ok: false, error: error instanceof Error ? error.message : "Không thể cập nhật khách hàng" }, 500);
   }
 }
 

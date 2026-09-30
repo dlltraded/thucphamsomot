@@ -22,6 +22,7 @@ import { getConfig } from "@/utils/template";
 import { authorize, createOrder, openChat } from "zmp-sdk/apis";
 import { useAtomCallback } from "jotai/utils";
 import CONFIG from "@/config";
+import { validateOrderQuantity } from "@/utils/quantityRules";
 
 export function useRealHeight(
   element: MutableRefObject<HTMLDivElement | null>,
@@ -152,6 +153,16 @@ export function useCheckout() {
       toast.error("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
       navigate("/shipping-address");
       return;
+    }
+
+    for (const item of cart) {
+      if (item.product.enforceOrderStep) {
+        const err = validateOrderQuantity(item.quantity, item.product.minOrderQty, item.product.orderStep, true);
+        if (err) {
+          toast.error(`"${item.product.name}": ${err}`);
+          return;
+        }
+      }
     }
 
     try {
