@@ -8,6 +8,7 @@ import {
   getOrderCutoffInfo,
   getVnDateParts,
 } from "@/lib/order-cutoff";
+import { applyOrderPricingSnapshot, resolveOrderPriceBook } from "@/lib/order-price-book";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
   // 2. Lấy thông tin khách hàng từ vip_accounts
   const { data: customer, error: custErr } = await supabase
     .from("vip_accounts")
-    .select("id, name, partner_code, phone, company, address, credit_limit, verification_status, is_active")
+    .select("id, name, partner_code, phone, company, address, credit_limit, verification_status, is_active, customer_group")
     .eq("id", customerId)
     .maybeSingle();
 
@@ -163,23 +164,17 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Chuẩn hóa danh sách sản phẩm và tính tổng tiền
-  let orderTotal = 0;
   const invalidQtyNames: string[] = [];
-  const sanitizedItems = items.map((i: any) => {
+  const rawItems = items.map((i: any) => {
     const qty = Number(i.quantity);
     // Không âm thầm "sửa" số lượng sai thành 1 — báo lỗi để nhân viên nhập lại (tránh sai đơn)
     if (!Number.isFinite(qty) || qty <= 0) invalidQtyNames.push(String(i.name || "Sản phẩm"));
     const validQty = Number.isFinite(qty) && qty > 0 ? qty : 1;
-    const price = Number(i.price != null ? i.price : i.baseUnitPrice != null ? i.baseUnitPrice : 0);
-    const validPrice = Number.isFinite(price) && price >= 0 ? price : 0;
-    orderTotal += validQty * validPrice;
-
     return {
       productId: i.productId ? String(i.productId).trim() : null,
       name: String(i.name || "Sản phẩm").trim(),
       unit: String(i.unit || "Kg").trim(),
       quantity: validQty,
-      price: validPrice,
       note: i.note ? String(i.note).trim() : null,
     };
   });
@@ -187,6 +182,32 @@ export async function POST(req: NextRequest) {
   if (invalidQtyNames.length) {
     return json({ ok: false, error: `Số lượng không hợp lệ (phải > 0): ${invalidQtyNames.join(", ")}` }, 400);
   }
+
+  if (rawItems.some((item: any) => !item.productId)) {
+    return json({ ok: false, error: "Mọi dòng hàng phải có mã sản phẩm hợp lệ trước khi tạo đơn" }, 400);
+  }
+
+  // Giá và quy cách luôn được resolve lại ở server. Không tin đơn giá client
+  // gửi lên vì có thể bị sửa qua DevTools hoặc client cũ chưa đồng bộ.
+  let pricing;
+  try {
+    pricing = await resolveOrderPriceBook(
+      supabase,
+      customerId,
+      rawItems.map((item: any) => ({ productId: item.productId, quantity: item.quantity })),
+    );
+  } catch (error) {
+    return json({ ok: false, error: error instanceof Error ? error.message : "Không áp được bảng giá" }, 400);
+  }
+  if (pricing.errors.length) {
+    return json({ ok: false, error: pricing.errors.join("; "), code: "INVALID_ORDER_QUANTITY" }, 400);
+  }
+  const priceByProduct = new Map(pricing.resolved.map((row) => [row.productId, row]));
+  const sanitizedItems = rawItems.map((item: any) => ({
+    ...item,
+    price: priceByProduct.get(item.productId)?.price || 0,
+  }));
+  const orderTotal = sanitizedItems.reduce((sum: number, item: any) => sum + item.quantity * item.price, 0);
 
   // 6. Kiểm tra hạn mức công nợ (credit_limit > 0)
   const creditLimit = Number(customer.credit_limit) || 0;
@@ -250,6 +271,24 @@ export async function POST(req: NextRequest) {
       ? `sale-${reqIdempotencyKey.trim().slice(0, 100)}`
       : `sale-${Date.now()}-${customerId}`;
 
+  const { data: existingOrder } = await supabase
+    .from("orders")
+    .select("id, order_code, delivery_date, is_late_order, external_ref")
+    .eq("customer_id", customerId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+  if (existingOrder) {
+    return json({
+      ok: true,
+      orderId: existingOrder.id,
+      orderCode: existingOrder.order_code,
+      deliveryDate: existingOrder.delivery_date,
+      isLate: Boolean(existingOrder.is_late_order),
+      externalRef: existingOrder.external_ref,
+      reused: true,
+    });
+  }
+
   const { data: rpcData, error: rpcErr } = await supabase.rpc("admin_create_order", {
     p_customer_id: customerId,
     p_items: sanitizedItems.map((i) => ({
@@ -271,6 +310,16 @@ export async function POST(req: NextRequest) {
   });
 
   if (rpcErr) {
+    // Chống race khi hai request cùng khóa đến gần như đồng thời.
+    const { data: racedOrder } = await supabase
+      .from("orders")
+      .select("id, order_code, delivery_date, is_late_order, external_ref")
+      .eq("customer_id", customerId)
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+    if (racedOrder) {
+      return json({ ok: true, orderId: racedOrder.id, orderCode: racedOrder.order_code, deliveryDate: racedOrder.delivery_date, isLate: Boolean(racedOrder.is_late_order), externalRef: racedOrder.external_ref, reused: true });
+    }
     console.error("RPC admin_create_order lỗi:", rpcErr);
     return json({ ok: false, error: rpcErr.message || "Không thể tạo đơn hàng" }, 400);
   }
@@ -335,6 +384,7 @@ export async function POST(req: NextRequest) {
       console.warn("[POS CREATE] Cập nhật thông tin đơn hàng thất bại:", upOrderErr.message);
       warnings.push("delivery_fields_update_warning");
     }
+    await applyOrderPricingSnapshot(supabase, orderId, pricing);
   } catch (ex) {
     console.warn("[POS CREATE] Ngoại lệ khi cập nhật orders:", ex);
     warnings.push("delivery_fields_exception");

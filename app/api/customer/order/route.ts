@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabase, getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, getOrderCutoffInfo, getVnDateParts } from "@/lib/order-cutoff";
+import { applyOrderPricingSnapshot, resolveOrderPriceBook } from "@/lib/order-price-book";
 
 interface OrderItemInput {
   id?: string;
@@ -224,6 +225,37 @@ export async function POST(req: NextRequest) {
     body.idempotencyKey || `${source}-${crypto.randomUUID()}`
   ).slice(0, 160);
 
+  const { data: existingOrder } = await supabaseAdmin
+    .from("orders")
+    .select("id, order_code, status, pricing_status")
+    .eq("customer_id", customerId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+  if (existingOrder) {
+    return json({
+      ok: true,
+      orderId: existingOrder.id,
+      orderCode: existingOrder.order_code,
+      status: existingOrder.status,
+      pricingStatus: existingOrder.pricing_status || "provisional",
+      reused: true,
+    });
+  }
+
+  let pricing;
+  try {
+    pricing = await resolveOrderPriceBook(
+      supabaseAdmin,
+      customerId,
+      items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+    );
+  } catch (error) {
+    return json({ ok: false, error: error instanceof Error ? error.message : "Không áp được bảng giá" }, 400);
+  }
+  if (pricing.errors.length) {
+    return json({ ok: false, error: pricing.errors.join("; "), code: "INVALID_ORDER_QUANTITY" }, 400);
+  }
+
   const supabase = getCustomerSupabase();
   const { data, error } = await supabase.rpc("customer_create_order", {
     p_session_token: orderSessionToken,
@@ -241,6 +273,15 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
+    const { data: racedOrder } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_code, status, pricing_status")
+      .eq("customer_id", customerId)
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+    if (racedOrder) {
+      return json({ ok: true, orderId: racedOrder.id, orderCode: racedOrder.order_code, status: racedOrder.status, pricingStatus: racedOrder.pricing_status || "provisional", reused: true });
+    }
     console.error("customer_create_order error:", error);
     const isSessionError =
       error.message?.includes("Phiên khách hàng không hợp lệ") ||
@@ -285,6 +326,13 @@ export async function POST(req: NextRequest) {
   if (updateOrderErr) {
     console.error("Lỗi UPDATE orders sau customer_create_order:", updateOrderErr);
     warnings.push("delivery_info_not_saved");
+  }
+
+  try {
+    await applyOrderPricingSnapshot(supabaseAdmin, order.id, pricing);
+  } catch (pricingSnapshotError) {
+    console.error("Lỗi lưu snapshot bảng giá sau customer_create_order:", pricingSnapshotError);
+    warnings.push("pricing_snapshot_not_saved");
   }
 
   // Cập nhật customer_note cho từng dòng order_items (≤200 ký tự)
