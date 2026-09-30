@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: 401, headers: corsHeaders });
     }
+    if (auth.profile?.role !== "admin") {
+      return NextResponse.json(
+        { error: "Chỉ Quản trị/Ban giám đốc mới được kích hoạt bảng giá" },
+        { status: 403, headers: corsHeaders }
+      );
+    }
 
     const body = await req.json();
     const { priceBookId } = body;

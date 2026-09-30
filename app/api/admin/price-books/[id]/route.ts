@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 
 export async function GET(
   req: NextRequest,
@@ -10,6 +11,9 @@ export async function GET(
     const auth = await verifyAdminAuth(req);
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+    if (!can(auth.profile?.role, "pricing.view")) {
+      return NextResponse.json({ error: "Bạn không có quyền xem bảng giá" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -46,22 +50,33 @@ export async function PATCH(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
     const session = auth.profile;
-    
+    if (!can(session.role, "pricing.edit")) {
+      return NextResponse.json({ error: "Bạn không có quyền sửa bảng giá" }, { status: 403 });
+    }
+
     const userRole = session.role;
     const { id } = await params;
-    const body = await req.json();
-    const { status, name, allow_unlisted_products, valid_from, valid_to } = body;
+    const input = await req.json();
+    const allowedFields = ["status", "name", "allow_unlisted_products", "valid_from", "valid_to"] as const;
+    const body: Record<string, unknown> = {};
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(input, field)) body[field] = input[field];
+    }
+    const status = typeof body.status === "string" ? body.status : undefined;
+    if (status && !["draft", "pending_approval", "active", "expired", "archived"].includes(status)) {
+      return NextResponse.json({ error: "Trạng thái bảng giá không hợp lệ" }, { status: 400 });
+    }
 
     const supabase = getCustomerSupabaseAdmin();
     
     // Authorization checks based on status changes
     if (status) {
-      if (status === "active" && userRole !== "admin" && userRole !== "ceo") {
-        return NextResponse.json({ error: "Chỉ CEO hoặc Admin mới được duyệt và kích hoạt bảng giá." }, { status: 403 });
+      if (status === "active" && userRole !== "admin") {
+        return NextResponse.json({ error: "Chỉ Quản trị/Ban giám đốc mới được kích hoạt bảng giá" }, { status: 403 });
       }
       
       if (status === "active") {
-        body.approved_by = session.email;
+        body.approved_by = session.email || session.id;
       }
     }
 

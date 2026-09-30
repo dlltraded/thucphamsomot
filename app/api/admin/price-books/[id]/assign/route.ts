@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 
 export async function POST(
   req: NextRequest,
@@ -13,10 +14,9 @@ export async function POST(
     }
     const session = auth.profile;
     
-    // Only admins or managers can assign price books
     const userRole = session.role;
-    if (!["admin", "truong_phong", "ceo"].includes(userRole || "")) {
-       return NextResponse.json({ error: "Permission denied" }, { status: 403 });
+    if (!can(userRole, "pricing.edit")) {
+       return NextResponse.json({ error: "Bạn không có quyền gán bảng giá" }, { status: 403 });
     }
 
     const { id } = await params;

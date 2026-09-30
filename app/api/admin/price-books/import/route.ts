@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +12,8 @@ export async function POST(req: NextRequest) {
     const session = auth.profile;
 
     const userRole = session.role;
-    if (!["admin", "truong_phong", "ke_toan"].includes(userRole || "")) {
-       return NextResponse.json({ error: "Permission denied" }, { status: 403 });
+    if (!can(userRole, "pricing.edit")) {
+       return NextResponse.json({ error: "Bạn không có quyền nhập bảng giá" }, { status: 403 });
     }
 
     const body = await req.json();

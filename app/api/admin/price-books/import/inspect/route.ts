@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { can } from "@/lib/permissions";
 import { inspectWorkbookBuffer } from "@/lib/price-book-import/inspector";
 import { detectSheetMapping } from "@/lib/price-book-import/detector";
 import * as XLSX from "xlsx";
@@ -20,12 +21,18 @@ export async function POST(req: NextRequest) {
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: 401, headers: corsHeaders });
     }
+    if (!can(auth.profile?.role, "pricing.edit")) {
+      return NextResponse.json({ error: "Bạn không có quyền nhập bảng giá" }, { status: 403, headers: corsHeaders });
+    }
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
     if (!file) {
       return NextResponse.json({ error: "Vui lòng chọn file Excel để tải lên" }, { status: 400, headers: corsHeaders });
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      return NextResponse.json({ error: "File Excel vượt quá giới hạn 15 MB" }, { status: 413, headers: corsHeaders });
     }
 
     const fileName = file.name;
