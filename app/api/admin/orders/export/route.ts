@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const BRAND = {
@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) return NextResponse.json({ ok: false, error: auth.error }, { status: 401 });
 
   // Phân quyền orders.export
-  if (!can(auth.profile?.role, "orders.export")) {
+  if (!canForProfile(auth.profile, "orders.export")) {
     return NextResponse.json({ ok: false, error: "Bạn không có quyền xuất dữ liệu đơn hàng" }, { status: 403 });
   }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { finalizeOrderCore } from "@/lib/order-finalize";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +25,7 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "orders.finalize_pricing")) {
+  if (!canForProfile(auth.profile, "orders.finalize_pricing")) {
     return json({ ok: false, error: "Chỉ Admin, Trưởng phòng phụ trách hoặc Sale/Văn phòng Vận hành được chốt giá đơn hàng" }, 403);
   }
 

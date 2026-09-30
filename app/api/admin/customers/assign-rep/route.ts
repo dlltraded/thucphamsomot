@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { canForProfile } from "@/lib/permissions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,8 +22,7 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
 
   // Chỉ admin hoặc truong_phong mới có quyền phân công người phụ trách
-  const role = auth.profile?.role || "";
-  if (!["admin", "ban_giam_doc", "truong_phong"].includes(role)) {
+  if (!canForProfile(auth.profile, "customers.assign_rep")) {
     return json({ ok: false, error: "Chỉ Trưởng phòng, Ban Giám đốc hoặc Quản trị hệ thống mới được phân công nhân viên phụ trách" }, 403);
   }
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   // Kiểm tra salesRepId là nhân viên đang hoạt động trong admin_profiles
   const { data: staff, error: staffErr } = await supabase
     .from("admin_profiles")
-    .select("id, name, role, is_active")
+    .select("id, name, role, position, is_active, departments(function_group)")
     .eq("id", salesRepId)
     .maybeSingle();
 
@@ -61,12 +61,12 @@ export async function POST(req: NextRequest) {
     return json({ ok: false, error: `Nhân viên "${staff.name}" đang bị khóa tài khoản` }, 400);
   }
 
-  // (yêu cầu 2026-09-20 mục 11) Chỉ gán cho nhân viên role sale hoặc truong_phong
-  if (!["sale", "truong_phong"].includes(staff.role)) {
+  // Chỉ gán cho nhân sự có quyền chăm sóc khách hàng theo đúng phòng ban.
+  if (!canForProfile(staff, "customers.edit")) {
     return json(
       {
         ok: false,
-        error: `Nhân viên "${staff.name}" có vai trò "${staff.role}", chỉ được phân công cho nhân viên Vận hành (sale) hoặc Trưởng phòng`,
+        error: `Nhân viên "${staff.name}" không thuộc nhóm được phân công chăm sóc khách hàng`,
       },
       400
     );
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     const affectedRows = updatedRows?.length || 0;
 
     console.log(
-      `[ASSIGN_REP] ${auth.profile?.name} (${role}) đã gán ${affectedRows} khách hàng cho ${staff.name} (${staff.id})`
+      `[ASSIGN_REP] ${auth.profile?.name} (${auth.profile?.role || "unknown"}) đã gán ${affectedRows} khách hàng cho ${staff.name} (${staff.id})`
     );
 
     return json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { canForProfile } from "@/lib/permissions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,8 +18,6 @@ export async function OPTIONS() {
 }
 
 const ACTIONS = ["claim", "complete", "release"] as const;
-const OVERRIDE_ROLES = new Set(["admin", "truong_phong"]);
-
 // Luồng "nhận soạn" đơn hàng (mục brief 2026-09-11) — claim: 1 nhân viên
 // nhận 1/nhiều đơn "chưa soạn" để soạn, gán packed_by = chính mình, khóa
 // không cho người khác cũng nhận đơn đó cùng lúc. complete: đánh dấu soạn
@@ -37,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const actorId = auth.profile?.id !== "legacy-admin" ? auth.profile?.id ?? null : null;
   const actorName = auth.profile?.name || "Nhân viên";
-  const canOverride = OVERRIDE_ROLES.has(auth.profile?.role || "");
+  const canOverride = canForProfile(auth.profile, "orders.packing_override");
 
   try {
     const supabase = getCustomerSupabaseAdmin();

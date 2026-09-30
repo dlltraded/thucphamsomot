@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +24,7 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "orders.credit_override")) {
+  if (!canForProfile(auth.profile, "orders.credit_override")) {
     return json({ ok: false, error: "Chỉ Admin/Ban Giám đốc được duyệt vượt hạn mức công nợ" }, 403);
   }
 

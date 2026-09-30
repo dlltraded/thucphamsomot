@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, calculateEarliestDate } from "@/lib/order-cutoff";
 import { fetchProductsByIds } from "@/lib/products-fetcher";
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Quyền procurement.export hoặc procurement.view
-  if (!can(auth.profile?.role, "procurement.export") && !can(auth.profile?.role, "procurement.view")) {
+  if (!canForProfile(auth.profile, "procurement.export") && !canForProfile(auth.profile, "procurement.view")) {
     return NextResponse.json({ ok: false, error: "Bạn không có quyền xuất file Đơn tổng" }, { status: 403 });
   }
 

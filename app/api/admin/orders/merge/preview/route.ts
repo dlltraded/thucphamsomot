@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { signMergePreviewToken } from "@/lib/order-merge-token";
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 1. Phân quyền: Cần quyền orders.merge
-  if (!can(auth.profile?.role, "orders.merge")) {
+  if (!canForProfile(auth.profile, "orders.merge")) {
     return json({ ok: false, error: "Bạn không có quyền thực hiện thao tác gộp đơn hàng" }, 403);
   }
 
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
       (o) => o.status === "confirmed" || o.pricing_status === "finalized" || o.confirmation_document_status === "confirmed"
     );
     if (hasConfirmedOrder) {
-      if (!can(auth.profile?.role, "orders.merge_locked")) {
+      if (!canForProfile(auth.profile, "orders.merge_locked")) {
         errors.push("Có đơn hàng đã chốt xác nhận giá. Cần quyền Trưởng phòng hoặc Admin để gộp đơn đã chốt.");
       } else {
         warnings.push("Các đơn hàng đã có xác nhận chốt giá sẽ tạo một phiên bản đơn gộp mới và cần xác nhận lại chứng từ.");

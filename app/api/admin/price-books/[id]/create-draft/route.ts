@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -20,8 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: auth.error || "Chưa đăng nhập" }, { status: 401, headers: corsHeaders });
     }
 
-    const role = auth.profile?.role;
-    if (!can(role, "pricing.edit")) {
+    if (!canForProfile(auth.profile, "pricing.edit")) {
       return NextResponse.json({ error: "Bạn không có quyền tạo bản nháp bảng giá" }, { status: 403, headers: corsHeaders });
     }
 

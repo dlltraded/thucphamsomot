@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -27,7 +27,7 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "products.edit") && !can(auth.profile?.role, "products.create")) {
+  if (!canForProfile(auth.profile, "products.edit") && !canForProfile(auth.profile, "products.create")) {
     return json({ ok: false, error: "Không có quyền sửa ảnh sản phẩm" }, 403);
   }
 

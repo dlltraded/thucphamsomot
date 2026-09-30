@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { can, canForProfile, ROLE_LABELS } from "../lib/permissions.ts";
 
 console.log("=====================================================================");
-console.log("KIỂM THỬ TOÀN DIỆN G5 — PHÂN QUYỀN RBAC, PHÒNG BAN VÀ NHÂN VIÊN TPS1");
+console.log("KIỂM THỬ TỰ ĐỘNG G5 — PHÂN QUYỀN RBAC, PHÒNG BAN VÀ NHÂN VIÊN TPS1");
 console.log("=====================================================================\n");
 
 // 1. Kiểm tra 6 phòng ban trên Production CSDL
@@ -69,6 +69,8 @@ const tpVhProfile = {
 };
 assert.strictEqual(canForProfile(tpVhProfile, "orders.create"), true, "TP Vận hành tạo được đơn");
 assert.strictEqual(canForProfile(tpVhProfile, "orders.approve_adjustment"), true, "TP Vận hành duyệt được điều chỉnh đơn");
+assert.strictEqual(canForProfile(tpVhProfile, "orders.packing_override"), true, "TP Vận hành được điều phối lại người soạn");
+assert.strictEqual(canForProfile(tpVhProfile, "customers.assign_rep"), true, "TP Vận hành được phân công khách hàng");
 assert.strictEqual(canForProfile(tpVhProfile, "orders.bulk_confirm"), true, "TP Vận hành chốt được đơn");
 assert.strictEqual(canForProfile(tpVhProfile, "finance.edit"), false, "TP Vận hành KHÔNG có quyền finance.edit");
 assert.strictEqual(canForProfile(tpVhProfile, "pricing.edit"), false, "TP Vận hành KHÔNG có quyền pricing.edit");
@@ -99,6 +101,8 @@ assert.strictEqual(canForProfile(tpKtProfile, "finance.edit"), true, "TP Kế to
 assert.strictEqual(canForProfile(tpKtProfile, "pricing.edit"), true, "TP Kế toán có quyền pricing.edit");
 assert.strictEqual(canForProfile(tpKtProfile, "orders.create"), false, "TP Kế toán KHÔNG tạo đơn POS");
 assert.strictEqual(canForProfile(tpKtProfile, "orders.approve_adjustment"), false, "TP Kế toán KHÔNG duyệt điều chỉnh hàng hóa vận hành");
+assert.strictEqual(canForProfile(tpKtProfile, "orders.packing_override"), false, "TP Kế toán KHÔNG giành đơn soạn hàng");
+assert.strictEqual(canForProfile(tpKtProfile, "customers.assign_rep"), false, "TP Kế toán KHÔNG phân công khách hàng");
 console.log("✅ Trưởng phòng Kế toán chuẩn quyền tài chính/bảng giá, không tạo đơn/duyệt hàng");
 
 // 2.6. Nhân viên Kinh doanh & Marketing (sale trong KDMKT)
@@ -114,6 +118,17 @@ assert.strictEqual(canForProfile(nvKdmktProfile, "pricing.edit"), false, "NV KDM
 assert.strictEqual(canForProfile(nvKdmktProfile, "admin.manage_staff"), false, "NV KDMKT KHÔNG có quyền quản trị nhân viên");
 console.log("✅ Nhân viên KDMKT chỉ có quyền bán hàng/vận hành, không tự động biến thành Admin");
 
+// Dữ liệu tổ chức bị gán nhầm tuyệt đối không được tự nâng thành BGĐ.
+const nhanVienGanNhamBgd = {
+  role: "sale",
+  position: "nhan_vien",
+  department: { function_group: "executive", code: "BGD", name: "Ban Giám đốc" },
+};
+assert.strictEqual(canForProfile(nhanVienGanNhamBgd, "pricing.edit"), false, "Phòng BGD không tự cấp quyền BGĐ");
+assert.strictEqual(canForProfile(nhanVienGanNhamBgd, "orders.credit_override"), false, "Không được leo thang quyền từ department");
+assert.strictEqual(canForProfile(nhanVienGanNhamBgd, "admin.manage_staff"), false, "Không được leo thang quyền quản trị");
+console.log("✅ Chặn leo thang quyền khi nhân viên thường bị gán nhầm vào Ban Giám đốc");
+
 console.log("✅ 2. Toàn bộ ma trận quyền canForProfile đã pass 100%!\n");
 
 // 3. Kiểm thử tổ hợp tạo nhân viên và validation API (G2 & G4)
@@ -127,7 +142,14 @@ function simulateValidateCreateUser(payload, departmentsList) {
   }
   const normalizedName = String(name || "").trim();
   if (!normalizedName) return "Họ và tên không được để trống";
-  if (!password || String(password).length < 6) return "Mật khẩu phải có tối thiểu 6 ký tự";
+  const normalizedPassword = String(password || "");
+  if (normalizedPassword.length < 10
+    || !/[A-Z]/.test(normalizedPassword)
+    || !/[a-z]/.test(normalizedPassword)
+    || !/\d/.test(normalizedPassword)
+    || !/[^A-Za-z0-9]/.test(normalizedPassword)) {
+    return "Mật khẩu chưa đáp ứng yêu cầu bảo mật";
+  }
 
   const allowedRoles = ["admin", "ban_giam_doc", "truong_phong", "sale", "thu_mua", "kho", "ke_toan", "tai_xe"];
   const allowedPositions = ["nhan_vien", "tro_ly", "truong_nhom", "truong_phong", "ban_giam_doc", "quan_tri_he_thong"];
@@ -147,6 +169,9 @@ function simulateValidateCreateUser(payload, departmentsList) {
 
   if (role === "ban_giam_doc" && (pos !== "ban_giam_doc" || selectedDepartment?.function_group !== "executive")) {
     return "Tài khoản Ban Giám đốc phải có chức vụ Ban Giám đốc và thuộc Ban Giám đốc";
+  }
+  if (pos === "ban_giam_doc" && role !== "ban_giam_doc") {
+    return "Chức vụ Ban Giám đốc chỉ áp dụng cho vai trò Ban Giám đốc";
   }
   if (role === "admin" && pos !== "quan_tri_he_thong") {
     return "Tài khoản Quản trị hệ thống phải chọn chức vụ Quản trị hệ thống";
@@ -187,6 +212,16 @@ assert.ok(simulateValidateCreateUser({
   position: "ban_giam_doc",
   departmentId: "dept-vh1",
 }, mockDepts)?.includes("thuộc Ban Giám đốc"));
+
+// Test không thể dùng chức vụ Ban Giám đốc với role thường để leo thang quyền
+assert.ok(simulateValidateCreateUser({
+  name: "Nhân viên gán sai chức vụ",
+  email: "nv-bgd@tps1.vn",
+  password: "SecurePassword123!",
+  role: "sale",
+  position: "ban_giam_doc",
+  departmentId: "dept-bgd",
+}, mockDepts)?.includes("chỉ áp dụng cho vai trò Ban Giám đốc"));
 
 // Test Admin hệ thống không cần phòng ban
 assert.strictEqual(simulateValidateCreateUser({
@@ -302,5 +337,5 @@ for (let i = 0; i < 5; i++) {
 console.log("✅ 5. Hàm sinh mật khẩu tạm đáp ứng đầy đủ tiêu chuẩn bảo mật phân biệt chữ hoa/thường!\n");
 
 console.log("=====================================================================");
-console.log("🎉 TOÀN BỘ CÁC BÀI KIỂM THỬ G5 ĐÃ VƯỢT QUA 100%!");
+console.log("✅ CÁC BÀI KIỂM THỬ TỰ ĐỘNG TRONG SCRIPT G5 ĐÃ VƯỢT QUA!");
 console.log("=====================================================================");

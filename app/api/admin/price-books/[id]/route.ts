@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 
 export async function GET(
   req: NextRequest,
@@ -12,7 +12,7 @@ export async function GET(
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
-    if (!can(auth.profile?.role, "pricing.view")) {
+    if (!canForProfile(auth.profile, "pricing.view")) {
       return NextResponse.json({ error: "Bạn không có quyền xem bảng giá" }, { status: 403 });
     }
 
@@ -50,7 +50,7 @@ export async function PATCH(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
     const session = auth.profile;
-    if (!can(session.role, "pricing.edit")) {
+    if (!canForProfile(session, "pricing.edit")) {
       return NextResponse.json({ error: "Bạn không có quyền sửa bảng giá" }, { status: 403 });
     }
 
@@ -71,7 +71,7 @@ export async function PATCH(
     
     // Authorization checks based on status changes
     if (status) {
-      if (status === "active" && userRole !== "admin") {
+      if (status === "active" && userRole !== "admin" && userRole !== "ban_giam_doc") {
         return NextResponse.json({ error: "Chỉ Quản trị/Ban giám đốc mới được kích hoạt bảng giá" }, { status: 403 });
       }
       

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { finalizeOrderCore } from "@/lib/order-finalize";
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
 
   // 1. Kiểm tra quyền orders.bulk_confirm
-  if (!can(auth.profile?.role, "orders.bulk_confirm")) {
+  if (!canForProfile(auth.profile, "orders.bulk_confirm")) {
     return json({ ok: false, error: "Bạn không có quyền xác nhận đơn hàng hàng loạt" }, 403);
   }
 

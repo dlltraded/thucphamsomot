@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { canForProfile } from "@/lib/permissions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,8 +31,7 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
 
   // Chỉ admin hoặc truong_phong mới có quyền đổi mã khách hàng
-  const role = auth.profile?.role || "";
-  if (!["admin", "ban_giam_doc", "truong_phong"].includes(role)) {
+  if (!canForProfile(auth.profile, "customers.assign_rep")) {
     return json({ ok: false, error: "Chỉ Trưởng phòng, Ban Giám đốc hoặc Quản trị hệ thống mới được đổi mã khách hàng" }, 403);
   }
 
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     if (updateErr) throw updateErr;
 
     console.log(
-      `[CHANGE_CODE] ${auth.profile?.name} (${role}) đã đổi mã khách hàng "${customer.name}" (${customerId}) từ "${oldCode}" thành "${normalizedCode}"`
+      `[CHANGE_CODE] ${auth.profile?.name} (${auth.profile?.role || "unknown"}) đã đổi mã khách hàng "${customer.name}" (${customerId}) từ "${oldCode}" thành "${normalizedCode}"`
     );
 
     return json({

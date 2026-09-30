@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { printOrderSlip } from '../lib/printOrder';
 import QuickAddProductModal from '../components/QuickAddProductModal';
-import { can } from '../lib/permissions';
+import { canForProfile } from '../lib/permissions';
 
 // Thực tế TPS1 chỉ có 2 hình thức thanh toán: COD (trả ngay khi giao) và
 // công nợ (trả sau) — không dùng tiền mặt/chuyển khoản như 2 mục riêng.
@@ -405,7 +405,7 @@ export default function OrderDetailPage() {
   const totals = calcTotals();
 
   const isLocked = order && (['shipping', 'completed', 'canceled'].includes(order.status) || ['paid', 'refunded'].includes(order.payment_status) || !!order.delivery_confirmed_at);
-  const canFinalizePricing = user?.userType === 'staff' && can(user.role, 'orders.finalize_pricing');
+  const canFinalizePricing = user?.userType === 'staff' && canForProfile(user, 'orders.finalize_pricing');
   const isTerminalStatus = !!order && ['completed', 'canceled'].includes(order.status);
   // Cột delivery_confirmed_at chỉ có sau migration 20260920g — chưa chạy thì giữ luồng cũ.
   const reconcileAvailable = !!order && 'delivery_confirmed_at' in order && ['confirmed', 'preparing', 'shipping'].includes(order.status) && order.pricing_status === 'finalized';

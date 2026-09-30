@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { inspectWorkbookBuffer } from "@/lib/price-book-import/inspector";
 import { detectSheetMapping } from "@/lib/price-book-import/detector";
 import * as XLSX from "xlsx";
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: 401, headers: corsHeaders });
     }
-    if (!can(auth.profile?.role, "pricing.edit")) {
+    if (!canForProfile(auth.profile, "pricing.edit")) {
       return NextResponse.json({ error: "Bạn không có quyền nhập bảng giá" }, { status: 403, headers: corsHeaders });
     }
 

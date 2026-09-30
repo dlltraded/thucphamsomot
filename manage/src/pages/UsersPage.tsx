@@ -49,16 +49,33 @@ function generateRandomPassword(): string {
   const digits = '23456789';
   const special = '!@#$%';
   const all = upper + lower + digits + special;
+  const randomIndex = (length: number) => {
+    const value = new Uint32Array(1);
+    crypto.getRandomValues(value);
+    return value[0] % length;
+  };
   const pass = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
+    upper[randomIndex(upper.length)],
+    lower[randomIndex(lower.length)],
+    digits[randomIndex(digits.length)],
+    special[randomIndex(special.length)],
   ];
   for (let i = 0; i < 6; i++) {
-    pass.push(all[Math.floor(Math.random() * all.length)]);
+    pass.push(all[randomIndex(all.length)]);
   }
-  return pass.sort(() => Math.random() - 0.5).join('');
+  for (let i = pass.length - 1; i > 0; i--) {
+    const j = randomIndex(i + 1);
+    [pass[i], pass[j]] = [pass[j], pass[i]];
+  }
+  return pass.join('');
+}
+
+function isStrongStaffPassword(password: string): boolean {
+  return password.length >= 10
+    && /[A-Z]/.test(password)
+    && /[a-z]/.test(password)
+    && /\d/.test(password)
+    && /[^A-Za-z0-9]/.test(password);
 }
 
 interface Department {
@@ -147,6 +164,15 @@ export default function UsersPage() {
   const departmentByGroup = (group: string) =>
     departments.find((department) => department.function_group === group)?.id || '';
 
+  const recommendedRoleForDepartment = (departmentId: string) => {
+    const group = departments.find((department) => department.id === departmentId)?.function_group;
+    if (group === 'executive') return 'Ban Giám đốc';
+    if (group === 'procurement') return 'Thu mua hoặc Trưởng phòng';
+    if (group === 'accounting') return 'Kế toán hoặc Trưởng phòng';
+    if (group === 'operations' || group === 'business_marketing') return 'NV Vận hành hoặc Trưởng phòng';
+    return '';
+  };
+
   const changeAddRole = (role: string) => {
     if (role === 'ban_giam_doc') {
       setAddForm((prev) => ({
@@ -169,27 +195,6 @@ export default function UsersPage() {
   };
 
   const changeAddDepartment = (deptId: string) => {
-    const dept = departments.find((d) => d.id === deptId);
-    if (!dept) {
-      setAddForm((prev) => ({ ...prev, departmentId: deptId }));
-      return;
-    }
-    if (dept.function_group === 'executive') {
-      setAddForm((prev) => ({ ...prev, departmentId: deptId, role: 'ban_giam_doc', position: 'ban_giam_doc' }));
-      return;
-    }
-    if (dept.function_group === 'procurement' && addForm.role !== 'truong_phong') {
-      setAddForm((prev) => ({ ...prev, departmentId: deptId, role: 'thu_mua' }));
-      return;
-    }
-    if (dept.function_group === 'accounting' && addForm.role !== 'truong_phong') {
-      setAddForm((prev) => ({ ...prev, departmentId: deptId, role: 'ke_toan' }));
-      return;
-    }
-    if ((dept.function_group === 'operations' || dept.function_group === 'business_marketing') && addForm.role !== 'truong_phong') {
-      setAddForm((prev) => ({ ...prev, departmentId: deptId, role: 'sale' }));
-      return;
-    }
     setAddForm((prev) => ({ ...prev, departmentId: deptId }));
   };
 
@@ -215,27 +220,6 @@ export default function UsersPage() {
   };
 
   const changeEditDepartment = (deptId: string) => {
-    const dept = departments.find((d) => d.id === deptId);
-    if (!dept) {
-      setEditForm((prev) => ({ ...prev, departmentId: deptId }));
-      return;
-    }
-    if (dept.function_group === 'executive') {
-      setEditForm((prev) => ({ ...prev, departmentId: deptId, role: 'ban_giam_doc', position: 'ban_giam_doc' }));
-      return;
-    }
-    if (dept.function_group === 'procurement' && editForm.role !== 'truong_phong') {
-      setEditForm((prev) => ({ ...prev, departmentId: deptId, role: 'thu_mua' }));
-      return;
-    }
-    if (dept.function_group === 'accounting' && editForm.role !== 'truong_phong') {
-      setEditForm((prev) => ({ ...prev, departmentId: deptId, role: 'ke_toan' }));
-      return;
-    }
-    if ((dept.function_group === 'operations' || dept.function_group === 'business_marketing') && editForm.role !== 'truong_phong') {
-      setEditForm((prev) => ({ ...prev, departmentId: deptId, role: 'sale' }));
-      return;
-    }
     setEditForm((prev) => ({ ...prev, departmentId: deptId }));
   };
 
@@ -259,6 +243,7 @@ export default function UsersPage() {
   }, [apiBase, authFetch]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- tải dữ liệu ban đầu khi màn hình được mở
     fetchUsers();
   }, [fetchUsers]);
 
@@ -335,8 +320,8 @@ export default function UsersPage() {
       setAddError('Vui lòng điền đầy đủ họ tên, email và mật khẩu');
       return;
     }
-    if (addForm.password.length < 6) {
-      setAddError('Mật khẩu phải có tối thiểu 6 ký tự');
+    if (!isStrongStaffPassword(addForm.password)) {
+      setAddError('Mật khẩu phải có ít nhất 10 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt');
       return;
     }
     if (addForm.role !== 'admin' && !addForm.departmentId) {
@@ -953,7 +938,7 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold text-slate-600">
                     Mật khẩu khởi tạo <span className="text-rose-500">*</span>
-                    <span className="text-slate-400 font-normal"> (tối thiểu 6 ký tự)</span>
+                    <span className="text-slate-400 font-normal"> (ít nhất 10 ký tự, đủ hoa/thường/số/ký tự đặc biệt)</span>
                   </label>
                   <button
                     type="button"
@@ -1045,6 +1030,11 @@ export default function UsersPage() {
                 ) : (
                   <p className="text-[11px] text-slate-400 mt-1">
                     Tài khoản Quản trị hệ thống (Admin) có thể để trống phòng ban
+                  </p>
+                )}
+                {recommendedRoleForDepartment(addForm.departmentId) && (
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Gợi ý vai trò phù hợp: {recommendedRoleForDepartment(addForm.departmentId)}. Hệ thống không tự đổi lựa chọn của anh/chị.
                   </p>
                 )}
               </div>
@@ -1175,6 +1165,11 @@ export default function UsersPage() {
                 {editForm.role !== 'admin' && !editForm.departmentId && (
                   <p className="text-[11px] text-amber-600 mt-1">
                     * Lưu ý: Cần gán phòng ban cho nhân viên nghiệp vụ
+                  </p>
+                )}
+                {recommendedRoleForDepartment(editForm.departmentId) && (
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Gợi ý vai trò phù hợp: {recommendedRoleForDepartment(editForm.departmentId)}. Hệ thống không tự đổi vai trò hiện tại.
                   </p>
                 )}
               </div>

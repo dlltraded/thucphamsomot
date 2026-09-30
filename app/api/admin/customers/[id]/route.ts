@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -28,7 +28,7 @@ async function requireAdmin(req: NextRequest) {
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "customers.view")) {
+  if (!canForProfile(auth.profile, "customers.view")) {
     return json({ ok: false, error: "Bạn không có quyền xem khách hàng" }, 403);
   }
 
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "customers.edit")) {
+  if (!canForProfile(auth.profile, "customers.edit")) {
     return json({ ok: false, error: "Bạn không có quyền chỉnh sửa khách hàng" }, 403);
   }
 
@@ -113,28 +113,28 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     // 2. Field-level permission checks (khi có sự thay đổi giá trị thực tế)
     // a. Hạng giá (discount_tier): chỉ admin hoặc role có pricing.edit
     if (body.discount_tier !== undefined && String(body.discount_tier) !== String(customer.discount_tier || "VIP0")) {
-      if (!can(auth.profile?.role, "pricing.edit") && auth.profile?.role !== "admin") {
+      if (!canForProfile(auth.profile, "pricing.edit") && auth.profile?.role !== "admin") {
         return json({ ok: false, error: "Bạn không có quyền thay đổi hạng giá khách hàng" }, 403);
       }
     }
 
     // b. Hạn mức công nợ (credit_limit): chỉ admin hoặc role có finance.edit
     if (body.credit_limit !== undefined && Number(body.credit_limit) !== Number(customer.credit_limit || 0)) {
-      if (!can(auth.profile?.role, "finance.edit") && auth.profile?.role !== "admin") {
+      if (!canForProfile(auth.profile, "finance.edit") && auth.profile?.role !== "admin") {
         return json({ ok: false, error: "Bạn không có quyền thay đổi hạn mức công nợ khách hàng" }, 403);
       }
     }
 
     // c. Trạng thái tài khoản (is_active): chỉ admin hoặc trưởng phòng
     if (body.is_active !== undefined && Boolean(body.is_active) !== Boolean(customer.is_active)) {
-      if (!["admin", "ban_giam_doc", "truong_phong"].includes(auth.profile?.role || "")) {
+      if (!canForProfile(auth.profile, "customers.assign_rep")) {
         return json({ ok: false, error: "Bạn không có quyền khóa hoặc mở khóa tài khoản khách hàng" }, 403);
       }
     }
 
     // d. Nhân viên phụ trách (sales_rep_id): chỉ admin hoặc trưởng phòng
     if (body.sales_rep_id !== undefined && (body.sales_rep_id || null) !== (customer.sales_rep_id || null)) {
-      if (!["admin", "ban_giam_doc", "truong_phong"].includes(auth.profile?.role || "")) {
+      if (!canForProfile(auth.profile, "customers.assign_rep")) {
         return json({ ok: false, error: "Bạn không có quyền phân công lại nhân viên phụ trách" }, 403);
       }
     }

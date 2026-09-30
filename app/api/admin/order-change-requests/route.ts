@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 const corsHeaders = {
@@ -22,7 +22,7 @@ export async function OPTIONS() {
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "orders.view")) {
+  if (!canForProfile(auth.profile, "orders.view")) {
     return json({ ok: false, error: "Bạn không có quyền xem yêu cầu của khách" }, 403);
   }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +11,7 @@ export async function POST(req: NextRequest) {
     }
     const session = auth.profile;
 
-    const userRole = session.role;
-    if (!can(userRole, "pricing.edit")) {
+    if (!canForProfile(session, "pricing.edit")) {
        return NextResponse.json({ error: "Bạn không có quyền nhập bảng giá" }, { status: 403 });
     }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyMergePreviewToken } from "@/lib/order-merge-token";
 
@@ -21,7 +21,7 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "orders.merge")) {
+  if (!canForProfile(auth.profile, "orders.merge")) {
     return json({ ok: false, error: "Bạn không có quyền gộp đơn hàng" }, 403);
   }
 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       p_reason: typeof body.reason === "string" ? body.reason.trim() || null : null,
       p_actor_id: actorId,
       p_actor_name: auth.profile?.name || auth.profile?.email || "admin",
-      p_allow_locked: can(auth.profile?.role, "orders.merge_locked"),
+      p_allow_locked: canForProfile(auth.profile, "orders.merge_locked"),
     });
     if (error) {
       const migrationMissing = /admin_merge_orders_atomic|schema cache|function/i.test(error.message || "");

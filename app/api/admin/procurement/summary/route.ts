@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, calculateEarliestDate } from "@/lib/order-cutoff";
 import { fetchProductsByIds } from "@/lib/products-fetcher";
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Kiểm tra quyền procurement.view
-  if (!can(auth.profile?.role, "procurement.view")) {
+  if (!canForProfile(auth.profile, "procurement.view")) {
     return json({ ok: false, error: "Bạn không có quyền xem Đơn tổng / Thu mua" }, 403);
   }
 

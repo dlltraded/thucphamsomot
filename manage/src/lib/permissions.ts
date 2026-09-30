@@ -46,6 +46,8 @@ const PERMISSIONS: Record<string, Role[]> = {
   'orders.credit_override': ['admin', 'ban_giam_doc'],
   /** Xem/Cập nhật trạng thái soạn hàng (nhận/hoàn tất/trả đơn) */
   'orders.packing': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  /** Giành lại/trả đơn đang do người khác nhận soạn */
+  'orders.packing_override': ['admin', 'ban_giam_doc', 'truong_phong'],
   /** Gộp đơn hàng đủ điều kiện trước xác nhận */
   'orders.merge': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
   /** Gộp/điều chỉnh đơn hàng đã xác nhận hoặc đã khóa */
@@ -83,6 +85,8 @@ const PERMISSIONS: Record<string, Role[]> = {
   'customers.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
   /** Tạo/sửa khách hàng, địa chỉ, xác thực tài khoản khách */
   'customers.edit': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
+  /** Phân công người phụ trách, đổi mã hoặc khóa/mở khách hàng */
+  'customers.assign_rep': ['admin', 'ban_giam_doc', 'truong_phong'],
 
   // ─── Công nợ / Thanh toán ───────────────────────────────────────
   /** Xem công nợ */
@@ -123,13 +127,21 @@ export function canForProfile(profile: StaffPermissionProfile | null | undefined
   const department = Array.isArray(rawDepartment) ? rawDepartment[0] : rawDepartment;
   const group = department?.function_group || null;
 
-  if (profile.role === 'ban_giam_doc' || profile.position === 'ban_giam_doc' || group === 'executive') {
+  // Chỉ role ban_giam_doc được hưởng quyền điều hành. Phòng/chức vụ là dữ
+  // liệu tổ chức, không phải nguồn cấp quyền độc lập.
+  if (profile.role === 'ban_giam_doc') {
     return can('ban_giam_doc', perm);
   }
 
   if ((profile.position === 'truong_phong' || profile.role === 'truong_phong') && group) {
     if (perm === 'orders.approve_adjustment') {
       return group === 'operations' || group === 'procurement';
+    }
+    if (perm === 'orders.packing_override') {
+      return group === 'operations' || group === 'procurement';
+    }
+    if (perm === 'customers.assign_rep') {
+      return group === 'operations' || group === 'business_marketing';
     }
     const inheritedRole = group === 'operations'
       ? 'sale'
@@ -140,10 +152,7 @@ export function canForProfile(profile: StaffPermissionProfile | null | undefined
           : group === 'business_marketing'
             ? 'sale'
             : null;
-    if (inheritedRole) {
-      return can(inheritedRole, perm) || can('truong_phong', perm);
-    }
-    return can('truong_phong', perm);
+    return inheritedRole ? can(inheritedRole, perm) : false;
   }
 
   return can(profile.role, perm);

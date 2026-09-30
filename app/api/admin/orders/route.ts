@@ -7,7 +7,7 @@ import { generateSalesInvoicePdf, type SalesInvoiceSnapshot } from "@/lib/sales-
 import { finalizeOrderCore } from "@/lib/order-finalize";
 import { sendPushToCustomer } from "@/lib/push";
 import { reconcileDelivery } from "@/lib/order-reconcile";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 
 const ORDER_STATUSES = [
   "pending",
@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) {
     return json({ ok: false, error: auth.error }, 401);
   }
-  if (!can(auth.profile?.role, "orders.finalize_pricing")) {
+  if (!canForProfile(auth.profile, "orders.finalize_pricing")) {
     return json({ ok: false, error: "Chỉ Admin, Trưởng phòng phụ trách hoặc Sale/Văn phòng Vận hành được chốt giá đơn hàng" }, 403);
   }
   const body = await req.json().catch(() => null);
@@ -414,10 +414,10 @@ export async function PATCH(req: NextRequest) {
 
     // Chuyển sang Đã xác nhận là điểm chốt nghiệp vụ của Phòng Vận hành.
     // Quyền thực tế được kiểm tra theo orders.finalize_pricing bên dưới.
-    if (hasStatusChange && nextStatus === "confirmed" && !can(auth.profile?.role, "orders.finalize_pricing")) {
+    if (hasStatusChange && nextStatus === "confirmed" && !canForProfile(auth.profile, "orders.finalize_pricing")) {
       return json({ ok: false, error: "Sale chưa được phép xác nhận/chốt giá. Vui lòng chuyển Admin hoặc Trưởng phòng duyệt đơn." }, 403);
     }
-    if (hasStatusChange && ["preparing", "shipping", "completed"].includes(nextStatus) && !can(auth.profile?.role, "orders.packing")) {
+    if (hasStatusChange && ["preparing", "shipping", "completed"].includes(nextStatus) && !canForProfile(auth.profile, "orders.packing")) {
       return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền xử lý đơn hàng." }, 403);
     }
 

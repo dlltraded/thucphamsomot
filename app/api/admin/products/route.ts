@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { resolvePricesForProducts } from "@/lib/customer-pricing";
 
@@ -200,7 +200,7 @@ export async function GET(req: NextRequest) {
         tierPrices: Object.fromEntries((tierRows || []).map((r) => [r.tier, Number(r.price)])),
       },
       inventoryHistory: history || [],
-      canEdit: can(auth.profile?.role, "products.edit"),
+      canEdit: canForProfile(auth.profile, "products.edit"),
     });
   }
 
@@ -380,7 +380,7 @@ export async function GET(req: NextRequest) {
           enforce_order_step: Boolean(p.enforce_order_step),
         };
       }),
-      canEdit: can(auth.profile?.role, "products.edit"),
+      canEdit: canForProfile(auth.profile, "products.edit"),
     });
   } catch (error) {
     console.error("GET /api/admin/products lỗi:", error);
@@ -417,7 +417,7 @@ function validateSpecFields(fields: Record<string, unknown>): string | null {
 export async function PATCH(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "products.edit")) {
+  if (!canForProfile(auth.profile, "products.edit")) {
     return json({ ok: false, error: "Chỉ Admin, Thu mua hoặc Kế toán được sửa thông tin và giá sản phẩm" }, 403);
   }
 
@@ -529,7 +529,7 @@ export async function PATCH(req: NextRequest) {
 
     // 3. Điều chỉnh tồn kho: insert 1 dòng inventory_transactions
     if (body?.inventoryAdjustment) {
-      if (!can(auth.profile?.role, "products.stock_in")) {
+      if (!canForProfile(auth.profile, "products.stock_in")) {
         return json({ ok: false, error: "Chỉ Admin hoặc Thu mua được điều chỉnh tồn kho" }, 403);
       }
       const { type, quantity, note } = body.inventoryAdjustment as {
@@ -589,7 +589,7 @@ export async function PATCH(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "products.create")) {
+  if (!canForProfile(auth.profile, "products.create")) {
     return json({ ok: false, error: "Không có quyền thêm sản phẩm" }, 403);
   }
 

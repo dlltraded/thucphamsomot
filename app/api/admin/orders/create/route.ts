@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import {
   fetchOrderCutoffConfig,
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 1. Kiểm tra quyền orders.create
-  if (!can(auth.profile?.role, "orders.create")) {
+  if (!canForProfile(auth.profile, "orders.create")) {
     return json({ ok: false, error: "Bạn không có quyền tạo đơn hàng" }, 403);
   }
 
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
     const projectedDebt = currentDebt + orderTotal;
     if (projectedDebt > creditLimit) {
       // Vượt hạn mức: kiểm tra xem người tạo có quyền credit_override không
-      const canOverride = can(auth.profile?.role, "orders.credit_override");
+      const canOverride = canForProfile(auth.profile, "orders.credit_override");
       if (!canOverride) {
         return json(
           {

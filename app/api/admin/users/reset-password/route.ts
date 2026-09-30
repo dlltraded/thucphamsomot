@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { randomInt } from "node:crypto";
 
 function generateSecureTempPassword(): string {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -9,15 +10,27 @@ function generateSecureTempPassword(): string {
   const special = "!@#$%";
   const all = upper + lower + digits + special;
   const pass = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
+    upper[randomInt(upper.length)],
+    lower[randomInt(lower.length)],
+    digits[randomInt(digits.length)],
+    special[randomInt(special.length)],
   ];
   for (let i = 0; i < 6; i++) {
-    pass.push(all[Math.floor(Math.random() * all.length)]);
+    pass.push(all[randomInt(all.length)]);
   }
-  return pass.sort(() => Math.random() - 0.5).join("");
+  for (let i = pass.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [pass[i], pass[j]] = [pass[j], pass[i]];
+  }
+  return pass.join("");
+}
+
+function isStrongStaffPassword(password: string): boolean {
+  return password.length >= 10
+    && /[A-Z]/.test(password)
+    && /[a-z]/.test(password)
+    && /\d/.test(password)
+    && /[^A-Za-z0-9]/.test(password);
 }
 
 export async function POST(req: NextRequest) {
@@ -36,8 +49,8 @@ export async function POST(req: NextRequest) {
 
     let targetPassword = typeof body?.newPassword === "string" ? body.newPassword.trim() : "";
     if (targetPassword) {
-      if (targetPassword.length < 6) {
-        return NextResponse.json({ ok: false, error: "Mật khẩu phải từ 6 ký tự trở lên" }, { status: 400 });
+      if (!isStrongStaffPassword(targetPassword)) {
+        return NextResponse.json({ ok: false, error: "Mật khẩu phải có ít nhất 10 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt" }, { status: 400 });
       }
     } else {
       targetPassword = generateSecureTempPassword();
@@ -63,7 +76,7 @@ export async function POST(req: NextRequest) {
     );
 
     if (authError) {
-      return NextResponse.json({ ok: false, error: `Lỗi cập nhật mật khẩu: ${authError.message}` }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Không thể đặt lại mật khẩu cho tài khoản này" }, { status: 400 });
     }
 
     // Trả về payload gồm email và mật khẩu tạm để UI cho phép copy một lần
@@ -75,7 +88,7 @@ export async function POST(req: NextRequest) {
       tempPassword: targetPassword,
       message: "Đặt lại mật khẩu tạm thành công"
     });
-  } catch (error: any) {
-    return NextResponse.json({ ok: false, error: error.message || "Lỗi hệ thống khi đặt lại mật khẩu" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Lỗi hệ thống khi đặt lại mật khẩu" }, { status: 500 });
   }
 }

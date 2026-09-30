@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 
+function isStrongStaffPassword(password: string): boolean {
+  return password.length >= 10
+    && /[A-Z]/.test(password)
+    && /[a-z]/.test(password)
+    && /\d/.test(password)
+    && /[^A-Za-z0-9]/.test(password);
+}
+
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok || auth.profile?.role !== 'admin') {
@@ -23,7 +31,7 @@ export async function GET(req: NextRequest) {
   ]);
 
   if (error || departmentError) {
-    return NextResponse.json({ ok: false, error: error?.message || departmentError?.message }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Không tải được danh sách nhân viên và phòng ban" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, users: data, departments: departments || [] });
@@ -49,8 +57,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Họ và tên không được để trống" }, { status: 400 });
     }
 
-    if (!password || String(password).length < 6) {
-      return NextResponse.json({ ok: false, error: "Mật khẩu phải có tối thiểu 6 ký tự" }, { status: 400 });
+    if (!password || !isStrongStaffPassword(String(password))) {
+      return NextResponse.json({ ok: false, error: "Mật khẩu phải có ít nhất 10 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt" }, { status: 400 });
     }
 
     const supabase = getCustomerSupabaseAdmin();
@@ -84,6 +92,9 @@ export async function POST(req: NextRequest) {
     if (role === "ban_giam_doc" && (normalizedPosition !== "ban_giam_doc" || selectedDepartment?.function_group !== "executive")) {
       return NextResponse.json({ ok: false, error: "Tài khoản Ban Giám đốc phải có chức vụ Ban Giám đốc và thuộc Ban Giám đốc" }, { status: 400 });
     }
+    if (normalizedPosition === "ban_giam_doc" && role !== "ban_giam_doc") {
+      return NextResponse.json({ ok: false, error: "Chức vụ Ban Giám đốc chỉ áp dụng cho vai trò Ban Giám đốc" }, { status: 400 });
+    }
     if (role === "admin" && normalizedPosition !== "quan_tri_he_thong") {
       return NextResponse.json({ ok: false, error: "Tài khoản Quản trị hệ thống phải chọn chức vụ Quản trị hệ thống" }, { status: 400 });
     }
@@ -104,9 +115,9 @@ export async function POST(req: NextRequest) {
     if (authError) {
       const msg = authError.message.toLowerCase();
       if (msg.includes("already registered") || msg.includes("already exists")) {
-        return NextResponse.json({ ok: false, error: "Email này đã được sử dụng cho một tài khoản khác" }, { status: 400 });
+        return NextResponse.json({ ok: false, error: "Email này đã được sử dụng cho một tài khoản khác" }, { status: 409 });
       }
-      return NextResponse.json({ ok: false, error: `Lỗi tạo tài khoản: ${authError.message}` }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Không thể tạo tài khoản nhân viên. Vui lòng kiểm tra thông tin và thử lại" }, { status: 400 });
     }
 
     const userId = authData.user.id;
@@ -131,8 +142,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, user: { id: userId, name: normalizedName, role, departmentId: departmentId || null, position: normalizedPosition, email: normalizedEmail } });
-  } catch (error: any) {
-    return NextResponse.json({ ok: false, error: error.message || "Lỗi hệ thống khi tạo nhân viên" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Lỗi hệ thống khi tạo nhân viên" }, { status: 500 });
   }
 }
 
@@ -191,7 +202,10 @@ export async function PATCH(req: NextRequest) {
         .eq("role", "admin")
         .eq("is_active", true);
 
-      if (!countErr && (activeAdminCount || 0) <= 1) {
+      if (countErr) {
+        return NextResponse.json({ ok: false, error: "Không kiểm tra được số tài khoản Quản trị đang hoạt động" }, { status: 503 });
+      }
+      if ((activeAdminCount || 0) <= 1) {
         return NextResponse.json({
           ok: false,
           error: "Không thể khóa hoặc hạ quyền Quản trị hệ thống đang hoạt động cuối cùng của hệ thống"
@@ -221,6 +235,9 @@ export async function PATCH(req: NextRequest) {
     if (nextRole === "ban_giam_doc" && (nextPosition !== "ban_giam_doc" || selectedDepartmentGroup !== "executive")) {
       return NextResponse.json({ ok: false, error: "Tài khoản Ban Giám đốc phải có chức vụ Ban Giám đốc và thuộc Ban Giám đốc" }, { status: 400 });
     }
+    if (nextPosition === "ban_giam_doc" && nextRole !== "ban_giam_doc") {
+      return NextResponse.json({ ok: false, error: "Chức vụ Ban Giám đốc chỉ áp dụng cho vai trò Ban Giám đốc" }, { status: 400 });
+    }
     if (nextRole === "admin" && nextPosition !== "quan_tri_he_thong") {
       return NextResponse.json({ ok: false, error: "Tài khoản Quản trị hệ thống phải chọn chức vụ Quản trị hệ thống" }, { status: 400 });
     }
@@ -239,7 +256,7 @@ export async function PATCH(req: NextRequest) {
       .single();
     if (error) throw error;
     return NextResponse.json({ ok: true, user: data });
-  } catch (error) {
-    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Không cập nhật được nhân viên" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Không cập nhật được nhân viên" }, { status: 500 });
   }
 }

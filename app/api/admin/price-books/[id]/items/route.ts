@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { can } from "@/lib/permissions";
+import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return NextResponse.json({ ok: false, error: "Chưa đăng nhập" }, { status: 401 });
-  if (!can(auth.profile?.role, "pricing.edit")) return NextResponse.json({ ok: false, error: "Bạn không có quyền sửa bảng giá" }, { status: 403 });
+  if (!canForProfile(auth.profile, "pricing.edit")) return NextResponse.json({ ok: false, error: "Bạn không có quyền sửa bảng giá" }, { status: 403 });
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
   const productId = String(body.productId || "");
