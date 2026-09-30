@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
-import { getCustomerSupabase, getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, getOrderCutoffInfo, getVnDateParts } from "@/lib/order-cutoff";
 import { applyOrderPricingSnapshot, resolveOrderPriceBook } from "@/lib/order-price-book";
 
@@ -256,8 +256,10 @@ export async function POST(req: NextRequest) {
     return json({ ok: false, error: pricing.errors.join("; "), code: "INVALID_ORDER_QUANTITY" }, 400);
   }
 
-  const supabase = getCustomerSupabase();
-  const { data, error } = await supabase.rpc("customer_create_order", {
+  // Security lockdown không cho anon/authenticated gọi trực tiếp RPC ghi dữ liệu.
+  // Route đã xác thực orderSessionToken ở trên, nên thao tác ghi phải dùng kết nối
+  // server service_role thay vì quay lại anon client như luồng legacy.
+  const { data, error } = await supabaseAdmin.rpc("customer_create_order", {
     p_session_token: orderSessionToken,
     p_source: source,
     p_items: items.map(({ note: _n, ...it }) => it),
@@ -353,7 +355,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { data: customerOrders } = await supabase.rpc("customer_list_orders", {
+  const { data: customerOrders } = await supabaseAdmin.rpc("customer_list_orders", {
     p_session_token: orderSessionToken,
   });
   const fullOrder = (customerOrders || []).find(
