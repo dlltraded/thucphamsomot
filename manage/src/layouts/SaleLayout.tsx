@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { can, ROLE_LABELS } from '../lib/permissions';
+import { canForProfile, ROLE_LABELS } from '../lib/permissions';
 import {
   LayoutDashboard, ShoppingCart, Users, PackageOpen, LogOut, PlusSquare, Package,
   Wallet, BarChart3, MoreHorizontal, X, ClipboardList, Tag, Truck, UserCheck,
@@ -18,6 +18,14 @@ export default function SaleLayout() {
   const isCustomer = user?.userType === 'customer';
   const role = user?.role ?? '';
 
+  const displayRoleLabel = isCustomer
+    ? `Khách hàng ${user?.tier || ''}`.trim()
+    : user?.role === 'ban_giam_doc' || user?.position === 'ban_giam_doc'
+      ? 'Ban Giám đốc'
+      : user?.role === 'admin' || user?.position === 'quan_tri_he_thong'
+        ? 'Quản trị hệ thống'
+        : (ROLE_LABELS[role] || role);
+
   const navItems = isCustomer
     ? [
         { path: '/', icon: <ShoppingCart size={20} />, label: 'Đặt hàng' },
@@ -27,25 +35,25 @@ export default function SaleLayout() {
         // Dashboard — mọi nhân viên
         { path: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard', perm: null },
         // Đơn hàng — mọi nhân viên có quyền xem
-        can(role, 'orders.view') && { path: '/don-hang', icon: <ShoppingCart size={20} />, label: 'Quản lý Đơn hàng', perm: 'orders.view' },
+        canForProfile(user, 'orders.view') && { path: '/don-hang', icon: <ShoppingCart size={20} />, label: 'Quản lý Đơn hàng', perm: 'orders.view' },
         // Tạo đơn POS — chỉ sale/admin/truong_phong
-        can(role, 'orders.create') && { path: '/tao-don-hang', icon: <PlusSquare size={20} />, label: 'Tạo đơn (POS)', perm: 'orders.create' },
+        canForProfile(user, 'orders.create') && { path: '/tao-don-hang', icon: <PlusSquare size={20} />, label: 'Tạo đơn (POS)', perm: 'orders.create' },
         // Áp giá — admin/truong_phong/sale/thu_mua (Thu mua báo giá lại, sale áp giá rồi soạn đơn ra phiếu tạm)
-        can(role, 'pricing.edit') && { path: '/ap-gia-hang-ngay', icon: <Tag size={20} />, label: 'Áp giá hàng ngày', perm: 'pricing.edit' },
+        canForProfile(user, 'pricing.edit') && { path: '/ap-gia-hang-ngay', icon: <Tag size={20} />, label: 'Áp giá hàng ngày', perm: 'pricing.edit' },
         // Đơn tổng (Thu mua) — admin/truong_phong/sale/thu_mua/kho (yêu cầu 2026-09-20)
-        can(role, 'procurement.view') && { path: '/don-tong', icon: <Truck size={20} />, label: 'Đơn tổng', perm: 'procurement.view' },
+        canForProfile(user, 'procurement.view') && { path: '/don-tong', icon: <Truck size={20} />, label: 'Đơn tổng', perm: 'procurement.view' },
         // Khách hàng
-        can(role, 'customers.view') && { path: '/khach-hang', icon: <Users size={20} />, label: 'Quản lý Khách hàng', perm: 'customers.view' },
+        canForProfile(user, 'customers.view') && { path: '/khach-hang', icon: <Users size={20} />, label: 'Quản lý Khách hàng', perm: 'customers.view' },
         // Hàng hóa
-        can(role, 'products.view') && { path: '/hang-hoa', icon: <Package size={20} />, label: 'Hàng hóa', perm: 'products.view' },
+        canForProfile(user, 'products.view') && { path: '/hang-hoa', icon: <Package size={20} />, label: 'Hàng hóa', perm: 'products.view' },
         // Soạn hàng — admin/truong_phong/sale/thu_mua/kho (sale soạn đơn ra phiếu tạm)
-        can(role, 'orders.packing') && { path: '/soan-hang', icon: <PackageOpen size={20} />, label: 'Xử lý đơn hàng', perm: 'orders.packing' },
+        canForProfile(user, 'orders.packing') && { path: '/soan-hang', icon: <PackageOpen size={20} />, label: 'Xử lý đơn hàng', perm: 'orders.packing' },
         // Công nợ — admin/truong_phong/ke_toan
-        can(role, 'finance.view') && { path: '/cong-no', icon: <Wallet size={20} />, label: 'Công nợ', perm: 'finance.view' },
+        canForProfile(user, 'finance.view') && { path: '/cong-no', icon: <Wallet size={20} />, label: 'Công nợ', perm: 'finance.view' },
         // Báo cáo — admin/truong_phong/ke_toan
-        can(role, 'reports.view') && { path: '/bao-cao', icon: <BarChart3 size={20} />, label: 'Báo cáo', perm: 'reports.view' },
+        canForProfile(user, 'reports.view') && { path: '/bao-cao', icon: <BarChart3 size={20} />, label: 'Báo cáo', perm: 'reports.view' },
         // Nhân viên & phòng ban — chỉ Admin
-        can(role, 'admin.manage_staff') && { path: '/nhan-vien', icon: <UserCheck size={20} />, label: 'Nhân viên & phân quyền', perm: 'admin.manage_staff' },
+        canForProfile(user, 'admin.manage_staff') && { path: '/nhan-vien', icon: <UserCheck size={20} />, label: 'Nhân viên & phân quyền', perm: 'admin.manage_staff' },
       ].filter(Boolean) as { path: string; icon: React.ReactNode; label: string; perm: string | null }[];
 
   // Mobile: chỉ hiện 4 mục dùng nhiều nhất, còn lại gom vào nút "Thêm".
@@ -66,7 +74,7 @@ export default function SaleLayout() {
           <div>
             <h1 className="font-bold text-green-900 leading-tight">TPS1 System</h1>
             <p className="text-xs text-slate-500">
-              {isCustomer ? `Khách hàng ${user?.tier || ''}`.trim() : (ROLE_LABELS[role] || role)}
+              {displayRoleLabel}
             </p>
           </div>
         </div>

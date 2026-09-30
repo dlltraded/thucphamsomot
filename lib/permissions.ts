@@ -129,7 +129,7 @@ export type StaffPermissionProfile = {
  */
 export function canForProfile(profile: StaffPermissionProfile | null | undefined, perm: string): boolean {
   if (!profile) return false;
-  if (profile.role === 'admin' || profile.role === 'ban_giam_doc') return can(profile.role, perm);
+  if (profile.role === 'admin') return true;
 
   const rawDepartment = profile.department ?? profile.departments;
   const department = Array.isArray(rawDepartment) ? rawDepartment[0] : rawDepartment;
@@ -137,7 +137,7 @@ export function canForProfile(profile: StaffPermissionProfile | null | undefined
 
   // Ban Giám đốc là cấp quản trị NGHIỆP VỤ toàn hệ thống, tách biệt với
   // tài khoản Quản trị hệ thống. Không cấp quyền quản lý tài khoản nhân viên.
-  if (profile.position === 'ban_giam_doc' || group === 'executive') {
+  if (profile.role === 'ban_giam_doc' || profile.position === 'ban_giam_doc' || group === 'executive') {
     return can('ban_giam_doc', perm);
   }
 

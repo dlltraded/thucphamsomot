@@ -39,8 +39,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password, name, role, departmentId, position } = body;
 
-    if (!email || !password || !name || !role) {
-      return NextResponse.json({ ok: false, error: "Missing required fields" }, { status: 400 });
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return NextResponse.json({ ok: false, error: "Định dạng email không hợp lệ" }, { status: 400 });
+    }
+
+    const normalizedName = String(name || "").trim();
+    if (!normalizedName) {
+      return NextResponse.json({ ok: false, error: "Họ và tên không được để trống" }, { status: 400 });
+    }
+
+    if (!password || String(password).length < 6) {
+      return NextResponse.json({ ok: false, error: "Mật khẩu phải có tối thiểu 6 ký tự" }, { status: 400 });
     }
 
     const supabase = getCustomerSupabaseAdmin();
@@ -56,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (role !== "admin" && !departmentId) {
-      return NextResponse.json({ ok: false, error: "Vui lòng chọn phòng ban cho nhân viên" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Vui lòng chọn phòng ban cho nhân viên nghiệp vụ" }, { status: 400 });
     }
     let selectedDepartment: { id: string; function_group: string } | null = null;
     if (departmentId) {
@@ -77,16 +87,26 @@ export async function POST(req: NextRequest) {
     if (role === "admin" && normalizedPosition !== "quan_tri_he_thong") {
       return NextResponse.json({ ok: false, error: "Tài khoản Quản trị hệ thống phải chọn chức vụ Quản trị hệ thống" }, { status: 400 });
     }
+    if (role === "truong_phong" && normalizedPosition !== "truong_phong") {
+      return NextResponse.json({ ok: false, error: "Vai trò Trưởng phòng bắt buộc phải chọn chức vụ Trưởng phòng" }, { status: 400 });
+    }
+    if (normalizedPosition === "truong_phong" && !departmentId) {
+      return NextResponse.json({ ok: false, error: "Chức vụ Trưởng phòng bắt buộc phải chọn phòng ban" }, { status: 400 });
+    }
 
     // 1. Create User in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
+      email: normalizedEmail,
       password,
       email_confirm: true,
     });
 
     if (authError) {
-      return NextResponse.json({ ok: false, error: authError.message }, { status: 400 });
+      const msg = authError.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists")) {
+        return NextResponse.json({ ok: false, error: "Email này đã được sử dụng cho một tài khoản khác" }, { status: 400 });
+      }
+      return NextResponse.json({ ok: false, error: `Lỗi tạo tài khoản: ${authError.message}` }, { status: 400 });
     }
 
     const userId = authData.user.id;
@@ -96,23 +116,23 @@ export async function POST(req: NextRequest) {
       .from("admin_profiles")
       .insert({
         id: userId,
-        name,
+        name: normalizedName,
         role,
         department_id: departmentId || null,
         position: normalizedPosition,
         is_active: true,
-        email: email
+        email: normalizedEmail,
       });
 
     if (profileError) {
-      // Rollback Auth user if profile fails (optional, but good practice)
+      // Rollback Auth user if profile fails
       await supabase.auth.admin.deleteUser(userId);
-      return NextResponse.json({ ok: false, error: profileError.message }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Không thể lưu hồ sơ nhân viên" }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, user: { id: userId, name, role, departmentId: departmentId || null, position: normalizedPosition, email } });
+    return NextResponse.json({ ok: true, user: { id: userId, name: normalizedName, role, departmentId: departmentId || null, position: normalizedPosition, email: normalizedEmail } });
   } catch (error: any) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: error.message || "Lỗi hệ thống khi tạo nhân viên" }, { status: 500 });
   }
 }
 
@@ -125,7 +145,16 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const userId = String(body?.userId || "").trim();
-    if (!userId) return NextResponse.json({ ok: false, error: "Thiếu userId" }, { status: 400 });
+    if (!userId) return NextResponse.json({ ok: false, error: "Thiếu mã định danh nhân viên (userId)" }, { status: 400 });
+
+    // Không cho Admin tự khóa chính tài khoản đang đăng nhập
+    if (auth.profile?.id === userId && body.isActive === false) {
+      return NextResponse.json({ ok: false, error: "Không thể tự khóa tài khoản của chính mình" }, { status: 400 });
+    }
+    // Không cho Admin tự hạ quyền chính mình
+    if (auth.profile?.id === userId && body.role !== undefined && body.role !== "admin") {
+      return NextResponse.json({ ok: false, error: "Không thể tự hạ quyền Quản trị hệ thống của chính mình" }, { status: 400 });
+    }
 
     const allowedRoles = ["admin", "ban_giam_doc", "truong_phong", "sale", "thu_mua", "kho", "ke_toan", "tai_xe"];
     const allowedPositions = ["nhan_vien", "tro_ly", "truong_nhom", "truong_phong", "ban_giam_doc", "quan_tri_he_thong"];
@@ -144,11 +173,30 @@ export async function PATCH(req: NextRequest) {
     const supabase = getCustomerSupabaseAdmin();
     const { data: currentUser, error: currentUserError } = await supabase
       .from("admin_profiles")
-      .select("role, position, department_id")
+      .select("id, role, position, department_id, is_active")
       .eq("id", userId)
       .single();
     if (currentUserError || !currentUser) {
       return NextResponse.json({ ok: false, error: "Không tìm thấy tài khoản nhân viên" }, { status: 404 });
+    }
+
+    // Không cho hạ quyền hoặc khóa Admin hoạt động cuối cùng
+    const isDeactivating = body.isActive === false && currentUser.is_active;
+    const isDemotingAdmin = currentUser.role === "admin" && body.role !== undefined && body.role !== "admin";
+
+    if (currentUser.role === "admin" && (isDeactivating || isDemotingAdmin)) {
+      const { count: activeAdminCount, error: countErr } = await supabase
+        .from("admin_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "admin")
+        .eq("is_active", true);
+
+      if (!countErr && (activeAdminCount || 0) <= 1) {
+        return NextResponse.json({
+          ok: false,
+          error: "Không thể khóa hoặc hạ quyền Quản trị hệ thống đang hoạt động cuối cùng của hệ thống"
+        }, { status: 400 });
+      }
     }
 
     let selectedDepartmentGroup: string | null = null;
@@ -175,6 +223,12 @@ export async function PATCH(req: NextRequest) {
     }
     if (nextRole === "admin" && nextPosition !== "quan_tri_he_thong") {
       return NextResponse.json({ ok: false, error: "Tài khoản Quản trị hệ thống phải chọn chức vụ Quản trị hệ thống" }, { status: 400 });
+    }
+    if (nextRole === "truong_phong" && nextPosition !== "truong_phong") {
+      return NextResponse.json({ ok: false, error: "Vai trò Trưởng phòng bắt buộc phải chọn chức vụ Trưởng phòng" }, { status: 400 });
+    }
+    if (nextPosition === "truong_phong" && !nextDepartmentId) {
+      return NextResponse.json({ ok: false, error: "Chức vụ Trưởng phòng bắt buộc phải chọn phòng ban" }, { status: 400 });
     }
 
     const { data, error } = await supabase

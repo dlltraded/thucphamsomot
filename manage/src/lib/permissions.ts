@@ -28,52 +28,83 @@ export const ROLE_LABELS: Record<string, string> = {
   tai_xe: 'Tài xế',
 };
 
-const BASE_PERMISSIONS: Record<string, string[]> = {
-  'orders.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
-  'orders.create': ['admin', 'truong_phong', 'sale'],
-  'orders.bulk_confirm': ['admin', 'truong_phong', 'sale'],
-  'orders.finalize_pricing': ['admin', 'truong_phong', 'sale'],
-  'orders.edit': ['admin', 'truong_phong', 'sale', 'thu_mua'],
-  'orders.approve_adjustment': ['admin', 'truong_phong'],
-  'orders.credit_override': ['admin'],
-  'orders.packing': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
-  'orders.merge': ['admin', 'truong_phong', 'sale'],
-  'orders.merge_locked': ['admin', 'truong_phong'],
-  'orders.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
-  'orders.export_delivery': ['admin', 'truong_phong', 'sale', 'kho', 'tai_xe'],
-  'orders.export_invoice': ['admin', 'truong_phong', 'ke_toan'],
-  'procurement.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
-  'procurement.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
-  'products.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
-  'products.create': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
-  'products.edit': ['admin', 'truong_phong', 'thu_mua', 'ke_toan'],
-  'products.stock_in': ['admin', 'thu_mua'],
-  'pricing.edit': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
-  'customers.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
-  'customers.edit': ['admin', 'truong_phong', 'sale'],
-  'finance.view': ['admin', 'truong_phong', 'sale', 'ke_toan'],
-  'finance.edit': ['admin', 'ke_toan'],
-  'reports.view': ['admin', 'truong_phong', 'sale', 'ke_toan'],
+const PERMISSIONS: Record<string, Role[]> = {
+  // ─── Đơn hàng ───────────────────────────────────────────────────
+  /** Xem danh sách đơn hàng (mọi đơn) */
+  'orders.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  /** Tạo đơn hàng mới (POS) */
+  'orders.create': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
+  /** Xác nhận/chốt đơn hàng hàng loạt của phòng Vận hành */
+  'orders.bulk_confirm': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
+  /** Sale/Văn phòng vận hành phân loại khách, chốt giá và chuyển Thu mua */
+  'orders.finalize_pricing': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
+  /** Sửa thông tin đơn trước khi chốt, bổ sung giá tham khảo/ghi chú */
+  'orders.edit': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua'],
+  /** Duyệt yêu cầu điều chỉnh sau khi đơn đã xác nhận */
+  'orders.approve_adjustment': ['admin', 'ban_giam_doc', 'truong_phong'],
+  /** Duyệt đơn vượt hạn mức công nợ */
+  'orders.credit_override': ['admin', 'ban_giam_doc'],
+  /** Xem/Cập nhật trạng thái soạn hàng (nhận/hoàn tất/trả đơn) */
+  'orders.packing': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  /** Gộp đơn hàng đủ điều kiện trước xác nhận */
+  'orders.merge': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
+  /** Gộp/điều chỉnh đơn hàng đã xác nhận hoặc đã khóa */
+  'orders.merge_locked': ['admin', 'ban_giam_doc', 'truong_phong'],
+  /** Xuất danh sách, phiếu tạm, chi tiết đơn */
+  'orders.export': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  /** Xuất phiếu giao hàng, danh sách giao theo xe/tuyến */
+  'orders.export_delivery': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'kho', 'tai_xe'],
+  /** Xuất hóa đơn bán hàng, báo cáo công nợ */
+  'orders.export_invoice': ['admin', 'ban_giam_doc', 'truong_phong', 'ke_toan'],
+
+  // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
+  /** Xem màn đơn tổng, xuất Excel đơn tổng */
+  'procurement.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  /** Xuất file Excel đơn tổng / tuyến */
+  'procurement.export': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+
+  // ─── Hàng hóa ───────────────────────────────────────────────────
+  /** Xem danh sách hàng hóa */
+  'products.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  /** Tạo sản phẩm mới */
+  'products.create': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
+  /** Sửa thông tin sản phẩm (giá, mô tả, danh mục…) */
+  'products.edit': ['admin', 'ban_giam_doc', 'truong_phong', 'thu_mua', 'ke_toan'],
+  /** Nhập kho (tăng tồn kho qua inventory_transactions) */
+  'products.stock_in': ['admin', 'ban_giam_doc', 'thu_mua'],
+
+  // ─── Bảng giá ───────────────────────────────────────────────────
+  /** Áp giá hàng ngày / sửa bảng giá */
+  'pricing.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  'pricing.edit': ['admin', 'ban_giam_doc', 'ke_toan'],
+
+  // ─── Khách hàng ─────────────────────────────────────────────────
+  /** Xem danh sách khách hàng */
+  'customers.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
+  /** Tạo/sửa khách hàng, địa chỉ, xác thực tài khoản khách */
+  'customers.edit': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
+
+  // ─── Công nợ / Thanh toán ───────────────────────────────────────
+  /** Xem công nợ */
+  'finance.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'ke_toan'],
+  /** Ghi nhận thanh toán, xuất hóa đơn, báo cáo */
+  'finance.edit': ['admin', 'ban_giam_doc', 'ke_toan'],
+
+  // ─── Báo cáo ────────────────────────────────────────────────────
+  /** Xem báo cáo doanh thu */
+  'reports.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'ke_toan'],
+
+  // ─── Quản trị hệ thống ──────────────────────────────────────────
+  /** Quản lý tài khoản nhân viên (tạo/sửa/vô hiệu hóa) */
   'admin.manage_staff': ['admin'],
 };
-
-const PERMISSIONS: Record<string, string[]> = Object.fromEntries(
-  Object.entries(BASE_PERMISSIONS).map(([permission, roles]) => [
-    permission,
-    permission === 'admin.manage_staff' || roles.includes('ban_giam_doc')
-      ? roles
-      : roles.includes('admin')
-        ? [...roles, 'ban_giam_doc']
-        : roles,
-  ]),
-);
 
 /** Kiểm tra xem `role` có quyền `perm` không. */
 export function can(role: string | undefined | null, perm: string): boolean {
   if (!role) return false;
   const allowed = PERMISSIONS[perm];
   if (!allowed) return false;
-  return allowed.includes(role);
+  return (allowed as string[]).includes(role);
 }
 
 export type StaffPermissionProfile = {
@@ -86,17 +117,17 @@ export type StaffPermissionProfile = {
 /** Quyền theo hồ sơ đầy đủ, tách Ban Giám đốc khỏi Quản trị hệ thống. */
 export function canForProfile(profile: StaffPermissionProfile | null | undefined, perm: string): boolean {
   if (!profile) return false;
-  if (profile.role === 'admin' || profile.role === 'ban_giam_doc') return can(profile.role, perm);
+  if (profile.role === 'admin') return true;
 
   const rawDepartment = profile.department ?? profile.departments;
   const department = Array.isArray(rawDepartment) ? rawDepartment[0] : rawDepartment;
   const group = department?.function_group || null;
 
-  if (profile.position === 'ban_giam_doc' || group === 'executive') {
+  if (profile.role === 'ban_giam_doc' || profile.position === 'ban_giam_doc' || group === 'executive') {
     return can('ban_giam_doc', perm);
   }
 
-  if (profile.position === 'truong_phong' && group) {
+  if ((profile.position === 'truong_phong' || profile.role === 'truong_phong') && group) {
     if (perm === 'orders.approve_adjustment') {
       return group === 'operations' || group === 'procurement';
     }
@@ -109,8 +140,10 @@ export function canForProfile(profile: StaffPermissionProfile | null | undefined
           : group === 'business_marketing'
             ? 'sale'
             : null;
-    if (!inheritedRole) return false;
-    return can(inheritedRole, perm);
+    if (inheritedRole) {
+      return can(inheritedRole, perm) || can('truong_phong', perm);
+    }
+    return can('truong_phong', perm);
   }
 
   return can(profile.role, perm);
