@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
 
   // Chỉ admin hoặc truong_phong mới có quyền đổi mã khách hàng
   const role = auth.profile?.role || "";
-  if (!["admin", "truong_phong"].includes(role)) {
-    return json({ ok: false, error: "Chỉ Trưởng phòng hoặc Admin mới được đổi mã khách hàng" }, 403);
+  if (!["admin", "ban_giam_doc", "truong_phong"].includes(role)) {
+    return json({ ok: false, error: "Chỉ Trưởng phòng, Ban Giám đốc hoặc Quản trị hệ thống mới được đổi mã khách hàng" }, 403);
   }
 
   const body = await req.json().catch(() => null);

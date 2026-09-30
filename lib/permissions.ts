@@ -9,6 +9,7 @@
 
 export type Role =
   | 'admin'
+  | 'ban_giam_doc'
   | 'truong_phong'
   | 'sale'
   | 'thu_mua'
@@ -18,7 +19,8 @@ export type Role =
 
 /** Nhãn hiển thị cho từng role — dùng trong UI và thông báo lỗi. */
 export const ROLE_LABELS: Record<Role, string> = {
-  admin: 'Quản trị / BGĐ',
+  admin: 'Quản trị hệ thống',
+  ban_giam_doc: 'Ban Giám đốc',
   truong_phong: 'Trưởng phòng',
   sale: 'NV Vận hành',
   thu_mua: 'Thu mua',
@@ -34,68 +36,68 @@ export const ROLE_LABELS: Record<Role, string> = {
 const PERMISSIONS: Record<string, Role[]> = {
   // ─── Đơn hàng ───────────────────────────────────────────────────
   /** Xem danh sách đơn hàng (mọi đơn) */
-  'orders.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  'orders.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   /** Tạo đơn hàng mới (POS) */
-  'orders.create': ['admin', 'truong_phong', 'sale'],
+  'orders.create': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
   /** Xác nhận/chốt đơn hàng hàng loạt của phòng Vận hành */
-  'orders.bulk_confirm': ['admin', 'truong_phong', 'sale'],
+  'orders.bulk_confirm': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
   /** Sale/Văn phòng vận hành phân loại khách, chốt giá và chuyển Thu mua */
-  'orders.finalize_pricing': ['admin', 'truong_phong', 'sale'],
+  'orders.finalize_pricing': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
   /** Sửa thông tin đơn trước khi chốt, bổ sung giá tham khảo/ghi chú */
-  'orders.edit': ['admin', 'truong_phong', 'sale', 'thu_mua'],
+  'orders.edit': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua'],
   /** Duyệt yêu cầu điều chỉnh sau khi đơn đã xác nhận */
-  'orders.approve_adjustment': ['admin', 'truong_phong'],
+  'orders.approve_adjustment': ['admin', 'ban_giam_doc', 'truong_phong'],
   /** Duyệt đơn vượt hạn mức công nợ */
-  'orders.credit_override': ['admin'],
+  'orders.credit_override': ['admin', 'ban_giam_doc'],
   /** Xem/Cập nhật trạng thái soạn hàng (nhận/hoàn tất/trả đơn) */
-  'orders.packing': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  'orders.packing': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho'],
   /** Gộp đơn hàng đủ điều kiện trước xác nhận */
-  'orders.merge': ['admin', 'truong_phong', 'sale'],
+  'orders.merge': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
   /** Gộp/điều chỉnh đơn hàng đã xác nhận hoặc đã khóa */
-  'orders.merge_locked': ['admin', 'truong_phong'],
+  'orders.merge_locked': ['admin', 'ban_giam_doc', 'truong_phong'],
   /** Xuất danh sách, phiếu tạm, chi tiết đơn */
-  'orders.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  'orders.export': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   /** Xuất phiếu giao hàng, danh sách giao theo xe/tuyến */
-  'orders.export_delivery': ['admin', 'truong_phong', 'sale', 'kho', 'tai_xe'],
+  'orders.export_delivery': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'kho', 'tai_xe'],
   /** Xuất hóa đơn bán hàng, báo cáo công nợ */
-  'orders.export_invoice': ['admin', 'truong_phong', 'ke_toan'],
+  'orders.export_invoice': ['admin', 'ban_giam_doc', 'truong_phong', 'ke_toan'],
 
   // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
   /** Xem màn đơn tổng, xuất Excel đơn tổng */
-  'procurement.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  'procurement.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho'],
   /** Xuất file Excel đơn tổng / tuyến */
-  'procurement.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  'procurement.export': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho'],
 
   // ─── Hàng hóa ───────────────────────────────────────────────────
   /** Xem danh sách hàng hóa */
-  'products.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  'products.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   /** Tạo sản phẩm mới */
-  'products.create': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
+  'products.create': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
   /** Sửa thông tin sản phẩm (giá, mô tả, danh mục…) */
-  'products.edit': ['admin', 'truong_phong', 'thu_mua', 'ke_toan'],
+  'products.edit': ['admin', 'ban_giam_doc', 'truong_phong', 'thu_mua', 'ke_toan'],
   /** Nhập kho (tăng tồn kho qua inventory_transactions) */
-  'products.stock_in': ['admin', 'thu_mua'],
+  'products.stock_in': ['admin', 'ban_giam_doc', 'thu_mua'],
 
   // ─── Bảng giá ───────────────────────────────────────────────────
   /** Áp giá hàng ngày / sửa bảng giá */
-  'pricing.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
-  'pricing.edit': ['admin', 'ke_toan'],
+  'pricing.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
+  'pricing.edit': ['admin', 'ban_giam_doc', 'ke_toan'],
 
   // ─── Khách hàng ─────────────────────────────────────────────────
   /** Xem danh sách khách hàng */
-  'customers.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
+  'customers.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'thu_mua', 'ke_toan'],
   /** Tạo/sửa khách hàng, địa chỉ, xác thực tài khoản khách */
-  'customers.edit': ['admin', 'truong_phong', 'sale'],
+  'customers.edit': ['admin', 'ban_giam_doc', 'truong_phong', 'sale'],
 
   // ─── Công nợ / Thanh toán ───────────────────────────────────────
   /** Xem công nợ */
-  'finance.view': ['admin', 'truong_phong', 'sale', 'ke_toan'],
+  'finance.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'ke_toan'],
   /** Ghi nhận thanh toán, xuất hóa đơn, báo cáo */
-  'finance.edit': ['admin', 'ke_toan'],
+  'finance.edit': ['admin', 'ban_giam_doc', 'ke_toan'],
 
   // ─── Báo cáo ────────────────────────────────────────────────────
   /** Xem báo cáo doanh thu */
-  'reports.view': ['admin', 'truong_phong', 'sale', 'ke_toan'],
+  'reports.view': ['admin', 'ban_giam_doc', 'truong_phong', 'sale', 'ke_toan'],
 
   // ─── Quản trị hệ thống ──────────────────────────────────────────
   /** Quản lý tài khoản nhân viên (tạo/sửa/vô hiệu hóa) */
@@ -127,16 +129,32 @@ export type StaffPermissionProfile = {
  */
 export function canForProfile(profile: StaffPermissionProfile | null | undefined, perm: string): boolean {
   if (!profile) return false;
-  if (profile.role === 'admin') return can('admin', perm);
+  if (profile.role === 'admin' || profile.role === 'ban_giam_doc') return can(profile.role, perm);
 
   const rawDepartment = profile.department ?? profile.departments;
   const department = Array.isArray(rawDepartment) ? rawDepartment[0] : rawDepartment;
   const group = department?.function_group || null;
+
+  // Ban Giám đốc là cấp quản trị NGHIỆP VỤ toàn hệ thống, tách biệt với
+  // tài khoản Quản trị hệ thống. Không cấp quyền quản lý tài khoản nhân viên.
+  if (profile.position === 'ban_giam_doc' || group === 'executive') {
+    return can('ban_giam_doc', perm);
+  }
+
   if (profile.position === 'truong_phong' && group) {
     if (perm === 'orders.approve_adjustment') {
       return group === 'operations' || group === 'procurement';
     }
-    const inheritedRole = group === 'operations' ? 'sale' : group === 'procurement' ? 'thu_mua' : 'ke_toan';
+    const inheritedRole = group === 'operations'
+      ? 'sale'
+      : group === 'procurement'
+        ? 'thu_mua'
+        : group === 'accounting'
+          ? 'ke_toan'
+          : group === 'business_marketing'
+            ? 'sale'
+            : null;
+    if (!inheritedRole) return false;
     return can(inheritedRole, perm);
   }
 

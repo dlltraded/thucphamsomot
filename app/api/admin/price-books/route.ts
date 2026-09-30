@@ -41,8 +41,8 @@ export async function POST(req: NextRequest) {
     }
 
     const role = auth.profile?.role;
-    if (!can(role, "pricing.edit") && role !== "admin" && role !== "ke_toan") {
-      return NextResponse.json({ error: "Chỉ Admin và Kế toán mới có quyền tạo bảng giá" }, { status: 403, headers: corsHeaders });
+    if (!can(role, "pricing.edit")) {
+      return NextResponse.json({ error: "Bạn không có quyền tạo bảng giá" }, { status: 403, headers: corsHeaders });
     }
 
     const body = await req.json().catch(() => ({}));

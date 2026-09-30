@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: 401, headers: corsHeaders });
     }
-    if (auth.profile?.role !== "admin") {
+    if (!["admin", "ban_giam_doc"].includes(auth.profile?.role || "")) {
       return NextResponse.json(
-        { error: "Chỉ Quản trị/Ban giám đốc mới được kích hoạt bảng giá" },
+        { error: "Chỉ Ban Giám đốc hoặc Quản trị hệ thống mới được kích hoạt bảng giá" },
         { status: 403, headers: corsHeaders }
       );
     }

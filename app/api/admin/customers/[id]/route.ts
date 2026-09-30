@@ -16,8 +16,8 @@ function json(body: unknown, status = 200) {
 async function requireAdmin(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return { response: json({ ok: false, error: auth.error }, 401) };
-  if (auth.profile?.role !== "admin") {
-    return { response: json({ ok: false, error: "Chỉ tài khoản Admin được thực hiện thao tác này" }, 403) };
+  if (!["admin", "ban_giam_doc"].includes(auth.profile?.role || "")) {
+    return { response: json({ ok: false, error: "Chỉ Ban Giám đốc hoặc Quản trị hệ thống được thực hiện thao tác này" }, 403) };
   }
   return { auth };
 }
@@ -127,14 +127,14 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
     // c. Trạng thái tài khoản (is_active): chỉ admin hoặc trưởng phòng
     if (body.is_active !== undefined && Boolean(body.is_active) !== Boolean(customer.is_active)) {
-      if (auth.profile?.role !== "admin" && auth.profile?.role !== "truong_phong") {
+      if (!["admin", "ban_giam_doc", "truong_phong"].includes(auth.profile?.role || "")) {
         return json({ ok: false, error: "Bạn không có quyền khóa hoặc mở khóa tài khoản khách hàng" }, 403);
       }
     }
 
     // d. Nhân viên phụ trách (sales_rep_id): chỉ admin hoặc trưởng phòng
     if (body.sales_rep_id !== undefined && (body.sales_rep_id || null) !== (customer.sales_rep_id || null)) {
-      if (auth.profile?.role !== "admin" && auth.profile?.role !== "truong_phong") {
+      if (!["admin", "ban_giam_doc", "truong_phong"].includes(auth.profile?.role || "")) {
         return json({ ok: false, error: "Bạn không có quyền phân công lại nhân viên phụ trách" }, 403);
       }
     }

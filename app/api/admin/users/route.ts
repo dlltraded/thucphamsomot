@@ -46,7 +46,11 @@ export async function POST(req: NextRequest) {
     const supabase = getCustomerSupabaseAdmin();
 
     const normalizedPosition = String(position || "nhan_vien");
+    const allowedRoles = ["admin", "ban_giam_doc", "truong_phong", "sale", "thu_mua", "kho", "ke_toan", "tai_xe"];
     const allowedPositions = ["nhan_vien", "tro_ly", "truong_nhom", "truong_phong", "ban_giam_doc", "quan_tri_he_thong"];
+    if (!allowedRoles.includes(String(role))) {
+      return NextResponse.json({ ok: false, error: "Vai trò nghiệp vụ không hợp lệ" }, { status: 400 });
+    }
     if (!allowedPositions.includes(normalizedPosition)) {
       return NextResponse.json({ ok: false, error: "Chức vụ không hợp lệ" }, { status: 400 });
     }
@@ -54,16 +58,24 @@ export async function POST(req: NextRequest) {
     if (role !== "admin" && !departmentId) {
       return NextResponse.json({ ok: false, error: "Vui lòng chọn phòng ban cho nhân viên" }, { status: 400 });
     }
+    let selectedDepartment: { id: string; function_group: string } | null = null;
     if (departmentId) {
       const { data: department } = await supabase
         .from("departments")
-        .select("id")
+        .select("id, function_group")
         .eq("id", departmentId)
         .eq("is_active", true)
         .maybeSingle();
       if (!department) {
         return NextResponse.json({ ok: false, error: "Phòng ban không tồn tại hoặc đã ngừng hoạt động" }, { status: 400 });
       }
+      selectedDepartment = department;
+    }
+    if (role === "ban_giam_doc" && (normalizedPosition !== "ban_giam_doc" || selectedDepartment?.function_group !== "executive")) {
+      return NextResponse.json({ ok: false, error: "Tài khoản Ban Giám đốc phải có chức vụ Ban Giám đốc và thuộc Ban Giám đốc" }, { status: 400 });
+    }
+    if (role === "admin" && normalizedPosition !== "quan_tri_he_thong") {
+      return NextResponse.json({ ok: false, error: "Tài khoản Quản trị hệ thống phải chọn chức vụ Quản trị hệ thống" }, { status: 400 });
     }
 
     // 1. Create User in Supabase Auth
@@ -115,7 +127,7 @@ export async function PATCH(req: NextRequest) {
     const userId = String(body?.userId || "").trim();
     if (!userId) return NextResponse.json({ ok: false, error: "Thiếu userId" }, { status: 400 });
 
-    const allowedRoles = ["admin", "truong_phong", "sale", "thu_mua", "kho", "ke_toan", "tai_xe"];
+    const allowedRoles = ["admin", "ban_giam_doc", "truong_phong", "sale", "thu_mua", "kho", "ke_toan", "tai_xe"];
     const allowedPositions = ["nhan_vien", "tro_ly", "truong_nhom", "truong_phong", "ban_giam_doc", "quan_tri_he_thong"];
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
@@ -130,12 +142,39 @@ export async function PATCH(req: NextRequest) {
     if (body.isActive !== undefined) patch.is_active = Boolean(body.isActive);
 
     const supabase = getCustomerSupabaseAdmin();
+    const { data: currentUser, error: currentUserError } = await supabase
+      .from("admin_profiles")
+      .select("role, position, department_id")
+      .eq("id", userId)
+      .single();
+    if (currentUserError || !currentUser) {
+      return NextResponse.json({ ok: false, error: "Không tìm thấy tài khoản nhân viên" }, { status: 404 });
+    }
+
+    let selectedDepartmentGroup: string | null = null;
+    const nextDepartmentId = body.departmentId !== undefined ? body.departmentId || null : currentUser.department_id;
     if (body.departmentId !== undefined) {
       if (body.departmentId) {
-        const { data: department } = await supabase.from("departments").select("id").eq("id", body.departmentId).eq("is_active", true).maybeSingle();
+        const { data: department } = await supabase.from("departments").select("id, function_group").eq("id", body.departmentId).eq("is_active", true).maybeSingle();
         if (!department) return NextResponse.json({ ok: false, error: "Phòng ban không tồn tại hoặc đã ngừng hoạt động" }, { status: 400 });
+        selectedDepartmentGroup = department.function_group;
       }
       patch.department_id = body.departmentId || null;
+    } else if (nextDepartmentId) {
+      const { data: department } = await supabase.from("departments").select("function_group").eq("id", nextDepartmentId).eq("is_active", true).maybeSingle();
+      selectedDepartmentGroup = department?.function_group || null;
+    }
+
+    const nextRole = String(body.role ?? currentUser.role);
+    const nextPosition = String(body.position ?? currentUser.position);
+    if (nextRole !== "admin" && !nextDepartmentId) {
+      return NextResponse.json({ ok: false, error: "Nhân viên nghiệp vụ bắt buộc phải có phòng ban" }, { status: 400 });
+    }
+    if (nextRole === "ban_giam_doc" && (nextPosition !== "ban_giam_doc" || selectedDepartmentGroup !== "executive")) {
+      return NextResponse.json({ ok: false, error: "Tài khoản Ban Giám đốc phải có chức vụ Ban Giám đốc và thuộc Ban Giám đốc" }, { status: 400 });
+    }
+    if (nextRole === "admin" && nextPosition !== "quan_tri_he_thong") {
+      return NextResponse.json({ ok: false, error: "Tài khoản Quản trị hệ thống phải chọn chức vụ Quản trị hệ thống" }, { status: 400 });
     }
 
     const { data, error } = await supabase

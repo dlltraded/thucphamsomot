@@ -36,8 +36,8 @@ function json(body: unknown, status = 200) {
 export async function DELETE(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (auth.profile?.role !== "admin") {
-    return json({ ok: false, error: "Chỉ tài khoản Admin được phép xóa đơn hàng" }, 403);
+  if (!["admin", "ban_giam_doc"].includes(auth.profile?.role || "")) {
+    return json({ ok: false, error: "Chỉ Ban Giám đốc hoặc Quản trị hệ thống được phép xóa đơn hàng" }, 403);
   }
 
   try {
