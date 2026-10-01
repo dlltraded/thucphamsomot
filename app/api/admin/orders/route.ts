@@ -10,14 +10,16 @@ import { reconcileDelivery } from "@/lib/order-reconcile";
 import { canForProfile } from "@/lib/permissions";
 
 const ORDER_STATUSES = [
+  "draft",
   "pending",
   "confirmed",
   "preparing",
   "shipping",
   "completed",
   "canceled",
+  "merged",
 ] as const;
-const PAYMENT_STATUSES = ["pending", "cod", "paid", "failed", "refunded"] as const;
+const PAYMENT_STATUSES = ["pending", "cod", "paid", "partially_paid", "failed", "refunded"] as const;
 const PAYMENT_METHODS = ["COD", "CREDIT", "TRANSFER", "CASH"] as const;
 
 const corsHeaders = {
@@ -83,6 +85,9 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) {
     return json({ ok: false, error: auth.error }, 401);
   }
+  if (!canForProfile(auth.profile, "orders.view")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền xem đơn hàng" }, 403);
+  }
   try {
     const supabase = getCustomerSupabaseAdmin();
     const productSearch = req.nextUrl.searchParams.get("productSearch")?.trim();
@@ -132,19 +137,36 @@ export async function GET(req: NextRequest) {
     }
     const orderId = req.nextUrl.searchParams.get("id")?.trim();
     const status = req.nextUrl.searchParams.get("status");
+    const paymentStatus = req.nextUrl.searchParams.get("paymentStatus");
     const deliveryDate = req.nextUrl.searchParams.get("deliveryDate")?.trim();
     const late = req.nextUrl.searchParams.get("late")?.trim();
-    let query = supabase
-      .from("orders")
-      .select("*, order_items(*), order_history(*)")
-      .order("created_at", { ascending: false });
+    const search = req.nextUrl.searchParams.get("search")?.replace(/[,()%_]/g, " ").trim();
+    const dateFrom = req.nextUrl.searchParams.get("from")?.trim();
+    const dateTo = req.nextUrl.searchParams.get("to")?.trim();
+    const page = Math.max(0, Number.parseInt(req.nextUrl.searchParams.get("page") || "0", 10) || 0);
+    const pageSize = Math.min(200, Math.max(1, Number.parseInt(req.nextUrl.searchParams.get("pageSize") || "100", 10) || 100));
+    // Keep the detail and list selects in separate branches. Supabase's type
+    // parser cannot safely infer a conditional select string that sometimes
+    // contains embedded relations.
+    let query: any = orderId
+      ? supabase
+          .from("orders")
+          .select("*, order_items(*), order_history(*)")
+          .order("created_at", { ascending: false })
+      : supabase
+          .from("orders")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: false });
 
     if (orderId) {
       query = query.eq("id", orderId);
     } else {
-      query = query.limit(500);
+      query = query.range(page * pageSize, page * pageSize + pageSize - 1);
       if (status && ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
         query = query.eq("status", status);
+      }
+      if (paymentStatus && PAYMENT_STATUSES.includes(paymentStatus as (typeof PAYMENT_STATUSES)[number])) {
+        query = query.eq("payment_status", paymentStatus);
       }
       if (deliveryDate) {
         query = query.eq("delivery_date", deliveryDate);
@@ -152,14 +174,19 @@ export async function GET(req: NextRequest) {
       if (late === "1") {
         query = query.eq("is_late_order", true);
       }
+      if (dateFrom) query = query.gte("created_at", dateFrom);
+      if (dateTo) query = query.lte("created_at", dateTo);
+      if (search) {
+        query = query.or(`order_code.ilike.%${search}%,customer_code.ilike.%${search}%,customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,customer_company.ilike.%${search}%`);
+      }
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) throw error;
 
     // Tên sale lên đơn (chưa hiện trên order trước đây — chỉ có sales_rep_id).
     // Khớp yêu cầu "tên của sale lên đơn như kiotviet" — join admin_profiles.
-    const salesRepIds = [...new Set((data || []).map((order) => order.sales_rep_id).filter(Boolean))];
+    const salesRepIds = [...new Set((data || []).map((order: any) => order.sales_rep_id).filter(Boolean))];
     const { data: salesReps } = salesRepIds.length
       ? await supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
       : { data: [] as { id: string; name: string }[] };
@@ -196,7 +223,7 @@ export async function GET(req: NextRequest) {
         order: singleOrder ? { ...singleOrder, sales_rep_name: salesRepMap.get(singleOrder.sales_rep_id) || null } : null,
       });
     }
-    const customerIds = [...new Set((data || []).map((order) => order.customer_id).filter(Boolean))];
+    const customerIds = [...new Set((data || []).map((order: any) => order.customer_id).filter(Boolean))];
     const { data: accounts } = customerIds.length
       ? await supabase
           .from("vip_accounts")
@@ -208,14 +235,34 @@ export async function GET(req: NextRequest) {
       .from("customer_tiers")
       .select("code, name, discount_percent")
       .order("code");
+    let statsQuery = supabase.from("orders").select("status, grand_total").limit(10000);
+    if (dateFrom) statsQuery = statsQuery.gte("created_at", dateFrom);
+    if (dateTo) statsQuery = statsQuery.lte("created_at", dateTo);
+    const { data: statsRows, error: statsError } = await statsQuery;
+    if (statsError) throw statsError;
+    const stats = (statsRows || []).reduce(
+      (acc, order) => {
+        if (order.status === "pending") acc.pending += 1;
+        if (order.status === "preparing") acc.preparing += 1;
+        if (order.status === "shipping") acc.shipping += 1;
+        if (order.status === "completed") acc.completed += 1;
+        if (!["canceled", "merged"].includes(order.status)) acc.revenue += Number(order.grand_total) || 0;
+        return acc;
+      },
+      { pending: 0, preparing: 0, shipping: 0, completed: 0, revenue: 0 }
+    );
     return json({
       ok: true,
-      orders: (data || []).map((order) => ({
+      orders: (data || []).map((order: any) => ({
         ...order,
         customer_account: accountMap.get(order.customer_id) || null,
         sales_rep_name: salesRepMap.get(order.sales_rep_id) || null,
       })),
       tiers: tiers || [],
+      count: count || 0,
+      page,
+      pageSize,
+      stats,
     });
   } catch (error) {
     console.error("Admin orders GET error:", error);
@@ -388,6 +435,21 @@ export async function PATCH(req: NextRequest) {
   }
   if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod as (typeof PAYMENT_METHODS)[number])) {
     return json({ ok: false, error: "Phương thức thanh toán không hợp lệ" }, 400);
+  }
+  if ((paymentStatus || paymentMethod) && !canForProfile(auth.profile, "finance.edit")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền cập nhật thanh toán" }, 403);
+  }
+  if (hasStatusChange && ["draft", "pending", "canceled"].includes(nextStatus) && !canForProfile(auth.profile, "orders.edit")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền cập nhật trạng thái đơn hàng" }, 403);
+  }
+  if (hasStatusChange && nextStatus === "merged" && !canForProfile(auth.profile, "orders.merge")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền gộp đơn hàng" }, 403);
+  }
+  if ((delivery || itemDeliveries.length) && !canForProfile(auth.profile, "orders.packing")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền cập nhật thông tin giao hàng" }, 403);
+  }
+  if (regenerateInvoice && !canForProfile(auth.profile, "orders.export_invoice")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền tạo lại hóa đơn" }, 403);
   }
 
   try {
