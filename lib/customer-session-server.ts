@@ -17,18 +17,12 @@ export async function loadCustomerSessionByToken(
   const { data: account, error: accountError } = await supabase
     .from("vip_accounts")
     .select(
-      "id, partner_code, name, phone, company, email, tax_code, address, default_shipping_alias, default_shipping_address, default_shipping_name, default_shipping_phone, discount_tier, verification_status, must_change_password, is_active"
+      "id, partner_code, name, phone, company, email, tax_code, address, default_shipping_alias, default_shipping_address, default_shipping_name, default_shipping_phone, verification_status, must_change_password, is_active"
     )
     .eq("id", session.customer_id)
     .eq("is_active", true)
     .maybeSingle();
   if (accountError || !account) return null;
-
-  const { data: tier } = await supabase
-    .from("customer_tiers")
-    .select("discount_percent")
-    .eq("code", account.discount_tier)
-    .maybeSingle();
 
   await supabase
     .from("customer_sessions")
@@ -50,8 +44,8 @@ export async function loadCustomerSessionByToken(
       name: account.default_shipping_name || account.name,
       phone: account.default_shipping_phone || account.phone,
     },
-    tier: account.discount_tier || "VIP0",
-    discountPercent: Number(tier?.discount_percent || 0),
+    tier: "",
+    discountPercent: 0,
     verificationStatus:
       account.verification_status === "verified" || account.verification_status === "rejected"
         ? account.verification_status

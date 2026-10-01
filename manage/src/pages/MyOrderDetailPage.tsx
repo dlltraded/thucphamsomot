@@ -309,7 +309,7 @@ export default function MyOrderDetailPage() {
             <dl className="space-y-3 text-sm">
               <div className="flex items-start gap-3">
                 <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                <div><p className="font-semibold text-slate-800">{user?.company || user?.name}</p><p className="text-slate-400">{user?.code} · {order.customer_tier || user?.tier || 'VIP0'}</p></div>
+                <div><p className="font-semibold text-slate-800">{user?.company || user?.name}</p><p className="text-slate-400">{user?.code} · Bảng giá theo tài khoản</p></div>
               </div>
               <div className="flex items-center gap-3 text-slate-600">
                 <Phone size={16} className="text-slate-400 shrink-0" />{order.customer_phone || user?.phone || '—'}

@@ -7,9 +7,9 @@ import { AccountCard } from "./account-card";
 import { loadCustomerSessionByToken } from "@/lib/customer-session-server";
 
 export const metadata = makeMetadata({
-  title: "Cổng đối tác VIP",
+  title: "Cổng khách hàng",
   description:
-    "Đăng nhập tài khoản khách hàng VIP để xem giá chiết khấu, đặt hàng và quản lý đơn hàng đã đặt.",
+    "Đăng nhập tài khoản khách hàng để xem bảng giá được áp dụng, đặt hàng và quản lý đơn hàng.",
   path: "/portal",
 });
 

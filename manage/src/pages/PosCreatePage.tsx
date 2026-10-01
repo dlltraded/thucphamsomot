@@ -329,7 +329,7 @@ export default function PosCreatePage() {
             // khách hàng nào cả (bug Giai đoạn C, 2026-09-10).
             const { data, error } = await supabase
               .from('vip_accounts')
-              .select('id, name, phone, partner_code, company, discount_tier, credit_limit, default_shipping_address, default_shipping_name, default_shipping_phone, verification_status')
+              .select('id, name, phone, partner_code, company, customer_group, credit_limit, default_shipping_address, default_shipping_name, default_shipping_phone, verification_status')
               .eq('sales_rep_id', user.id)
               .eq('is_active', true);
             if (error) throw error;
@@ -651,7 +651,6 @@ export default function PosCreatePage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           orderId: processingOrderId,
-          customerTier: customers.find(c => c.id === activeTab.selectedCustomerId)?.discount_tier || 'VIP0',
           pricingMode: 'manual_item_price',
           orderDiscountPercent: 0,
           shippingAmount,
@@ -894,9 +893,7 @@ export default function PosCreatePage() {
               const overLimit = creditLimit > 0 && projectedTotal > creditLimit;
               return (
                 <div className={`rounded-xl p-3 text-sm flex flex-wrap gap-x-6 gap-y-1 ${overLimit ? 'bg-red-50 border border-red-200' : 'bg-slate-50 border border-slate-100'}`}>
-                  {cust?.discount_tier && (
-                    <span className="text-slate-600">Hạng: <b className="text-slate-800">{cust.discount_tier}</b></span>
-                  )}
+                  <span className="text-slate-600">Bảng giá: <b className="text-slate-800">{cust?.customer_group || 'Bảng giá chung'}</b></span>
                   <span className="text-slate-600">
                     Hạn mức công nợ: <b className="text-slate-800">{creditLimit > 0 ? money(creditLimit) : 'Không giới hạn'}</b>
                   </span>

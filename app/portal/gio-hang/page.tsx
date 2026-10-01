@@ -8,7 +8,7 @@ import { loadCustomerSessionByToken } from "@/lib/customer-session-server";
 
 export const metadata = makeMetadata({
   title: "Giỏ hàng của tôi",
-  description: "Giỏ hàng có giá chiết khấu theo tài khoản khách hàng VIP TPS1.",
+  description: "Giỏ hàng sử dụng bảng giá được áp dụng cho tài khoản khách hàng TPS1.",
   path: "/portal/gio-hang",
 });
 
@@ -30,8 +30,6 @@ export default async function CustomerCartPage() {
   return (
     <PageShell eyebrow="Portal báo giá" title="Giỏ hàng của tôi" compact>
       <CartReview
-        discountPercent={session.discountPercent}
-        tier={session.tier}
         defaultShippingAddress={session.defaultShippingAddress}
       />
     </PageShell>

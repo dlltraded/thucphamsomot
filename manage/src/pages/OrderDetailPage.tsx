@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, User, Phone, MapPin, RefreshCw, CheckCircle2,
-  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet, Truck, Printer, FileSpreadsheet, ClipboardEdit, Receipt
+  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet, Truck, Printer, FileSpreadsheet, ClipboardEdit, Receipt, RotateCcw, X
 } from 'lucide-react';
 import { printOrderSlip } from '../lib/printOrder';
 import QuickAddProductModal from '../components/QuickAddProductModal';
@@ -29,9 +29,8 @@ const PAYMENT_LABELS: Record<string, string> = {
   pending: 'Chờ xử lý', cod: 'COD', paid: 'Đã thanh toán', failed: 'Thất bại', refunded: 'Đã hoàn tiền',
 };
 const PRICING_MODES = [
-  { value: 'tier', label: 'Theo hạng khách hàng' },
-  { value: 'order_discount', label: 'Chiết khấu riêng toàn đơn' },
-  { value: 'manual_item_price', label: 'Đơn giá thủ công từng sản phẩm' },
+  { value: 'price_book', label: 'Theo bảng giá áp dụng' },
+  { value: 'manual_item_price', label: 'Điều chỉnh thủ công từng sản phẩm' },
 ];
 
 function money(v: number | string) { return new Intl.NumberFormat('vi-VN').format(Math.round(Number(v) || 0)) + 'đ'; }
@@ -47,6 +46,11 @@ interface LineItem {
   base_unit_price: number;
   unit_price: number;
   pricing_note?: string;
+  official_price?: number | null;
+  official_price_source?: string;
+  official_price_book_name?: string | null;
+  price_difference?: number | null;
+  price_difference_percent?: number | null;
   isNew?: boolean;
 }
 
@@ -57,20 +61,8 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [tiers, setTiers] = useState<any[]>([]);
-
-  // Thông tin hạng khách & giá hợp đồng (auto-load từ vip_accounts khi mở đơn)
-  const [customerInfo, setCustomerInfo] = useState<{
-    discount_tier: string;
-    contract_discount_percent: number | null;
-    tier_expiry_date: string | null;
-  } | null>(null);
-  const [contractPrices, setContractPrices] = useState<Record<string, number>>({}); // productId -> price
-
   // Pricing editor state
-  const [selectedTier, setSelectedTier] = useState('VIP0');
-  const [pricingMode, setPricingMode] = useState('tier');
-  const [orderDiscountPercent, setOrderDiscountPercent] = useState(0);
+  const [pricingMode, setPricingMode] = useState('price_book');
   const [shippingAmount, setShippingAmount] = useState(0);
   const [lines, setLines] = useState<LineItem[]>([]);
   const [verificationNote, setVerificationNote] = useState('');
@@ -102,6 +94,54 @@ export default function OrderDetailPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [salesReturns, setSalesReturns] = useState<any[]>([]);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnQuantities, setReturnQuantities] = useState<Record<string, string>>({});
+  const [returnReason, setReturnReason] = useState('');
+  const [submittingReturn, setSubmittingReturn] = useState(false);
+
+  const fetchSalesReturns = useCallback(async () => {
+    if (!id || !token) return;
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/invoices/returns?orderId=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.ok) setSalesReturns(data.returns || []);
+    } catch { /* migration chưa chạy: không làm vỡ trang */ }
+  }, [id, token]);
+
+  const submitSalesReturn = async () => {
+    const items = lines.map((line) => ({
+      orderItemId: line.itemId,
+      quantity: Number(returnQuantities[String(line.itemId)] || 0),
+    })).filter((item) => item.orderItemId && item.quantity > 0);
+    if (!items.length || returnReason.trim().length < 3) {
+      alert('Chọn ít nhất một sản phẩm và nhập lý do đổi/trả.');
+      return;
+    }
+    setSubmittingReturn(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/invoices/returns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId: id, items, reason: returnReason.trim() }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Không tạo được phiếu đổi/trả');
+      setShowReturnModal(false);
+      setReturnQuantities({});
+      setReturnReason('');
+      await Promise.all([fetchSalesReturns(), fetchOrder()]);
+      alert(`Đã lập phiếu đổi/trả ${data.salesReturn?.return_number || ''}. Công nợ đã được điều chỉnh.`);
+    } catch (error: any) {
+      alert(error.message || 'Không tạo được phiếu đổi/trả');
+    } finally {
+      setSubmittingReturn(false);
+    }
+  };
 
   // Yêu cầu điều chỉnh/hủy của khách (WP6b) — khách gửi, nhân viên duyệt tại đây.
   const [changeRequests, setChangeRequests] = useState<any[]>([]);
@@ -228,8 +268,7 @@ export default function OrderDetailPage() {
             shipping_amount: Number(quoteData.shipping_fee || 0),
             grand_total: Number(quoteData.total_amount || quoteData.subtotal || 0),
             created_at: quoteData.created_at,
-            customer_tier: quoteData.customer_tier || 'VIP0',
-            pricing_mode: 'tier',
+            pricing_mode: 'price_book',
             pricing_status: quoteData.status === 'won' ? 'finalized' : 'pending',
             order_items: (quoteData.quote_items || []).map((it: any) => ({
               id: it.id,
@@ -246,20 +285,17 @@ export default function OrderDetailPage() {
         }
       }
 
-      if (!data) {
-        // Try fallback via backend API if available
-        try {
-          const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-          const res = await fetch(`${apiBase}/api/admin/orders?id=${id}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          const jsonRes = await res.json();
-          if (jsonRes.ok && jsonRes.order) {
-            data = jsonRes.order;
-          }
-        } catch (e) {
-          console.warn('API fallback error:', e);
-        }
+      // API server là nguồn chính vì có quyền đọc bảng giá riêng và audit;
+      // dữ liệu Supabase client phía trên chỉ là fallback tương thích.
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+        const res = await fetch(`${apiBase}/api/admin/orders?id=${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const jsonRes = await res.json();
+        if (jsonRes.ok && jsonRes.order) data = jsonRes.order;
+      } catch (e) {
+        console.warn('API order detail fallback error:', e);
       }
 
       if (!data) {
@@ -292,60 +328,16 @@ export default function OrderDetailPage() {
         base_unit_price: Number(item.base_unit_price),
         unit_price: Number(item.unit_price),
         pricing_note: item.pricing_note || '',
+        official_price: item.official_price == null ? null : Number(item.official_price),
+        official_price_source: item.official_price_source,
+        official_price_book_name: item.official_price_book_name,
+        price_difference: item.price_difference == null ? null : Number(item.price_difference),
+        price_difference_percent: item.price_difference_percent == null ? null : Number(item.price_difference_percent),
       })));
 
-      // Auto-load tier thật của khách từ vip_accounts khi đơn chưa finalize
-      // Đơn mới từ khách tự đặt thường có customer_tier='VIP0' (default) trong
-      // orders — không phải tier hiện tại của khách trong vip_accounts. Cần
-      // fetch lại để sale thấy đúng hạng và không phải nhớ/chọn tay.
-      const isFinalized = data.pricing_status === 'finalized';
-      if (data.customer_id && !isFinalized) {
-        const [{ data: custData }, { data: contractData }] = await Promise.all([
-          supabase
-            .from('vip_accounts')
-            .select('discount_tier, contract_discount_percent, tier_expiry_date')
-            .eq('id', data.customer_id)
-            .maybeSingle(),
-          supabase
-            .from('customer_contract_prices')
-            .select('product_id, price, valid_until')
-            .eq('customer_id', data.customer_id)
-            .or('valid_until.is.null,valid_until.gte.' + new Date().toISOString().slice(0, 10)),
-        ]);
-
-        if (custData) {
-          setCustomerInfo(custData);
-          const tier = custData.discount_tier || 'VIP0';
-          setSelectedTier(tier);
-
-          // Nếu CUSTOM → tự chuyển sang order_discount + pre-fill %
-          if (tier === 'CUSTOM' && custData.contract_discount_percent != null) {
-            setPricingMode('order_discount');
-            setOrderDiscountPercent(Number(custData.contract_discount_percent));
-          } else {
-            setPricingMode(data.pricing_mode || 'tier');
-            setOrderDiscountPercent(Number(data.manual_discount_percent || 0));
-          }
-        } else {
-          setSelectedTier(data.customer_tier || 'VIP0');
-          setPricingMode(data.pricing_mode || 'tier');
-          setOrderDiscountPercent(Number(data.manual_discount_percent || 0));
-        }
-
-        // Map giá hợp đồng: productId -> price
-        const cpMap: Record<string, number> = {};
-        for (const cp of contractData || []) {
-          cpMap[cp.product_id] = Number(cp.price);
-        }
-        setContractPrices(cpMap);
-      } else {
-        // Đơn đã finalized: giữ nguyên giá lưu trong đơn
-        setCustomerInfo(null);
-        setContractPrices({});
-        setSelectedTier(data.customer_tier || 'VIP0');
-        setPricingMode(data.pricing_mode || 'tier');
-        setOrderDiscountPercent(Number(data.manual_discount_percent || 0));
-      }
+      // Giá hiển thị là snapshot bảng giá do API server trả về; chỉ các dòng
+      // có lý do mới được điều chỉnh thủ công.
+      setPricingMode(data.pricing_mode === 'manual_item_price' ? 'manual_item_price' : 'price_book');
 
       setShippingAmount(Number(data.shipping_amount || 0));
       setPricingNote(data.pricing_note || '');
@@ -358,8 +350,6 @@ export default function OrderDetailPage() {
       // Chưa xác nhận thực giao: mặc định = số đã chốt (giao đủ); đã xác nhận: hiện số thực giao đã lưu.
       setItemDelivered(Object.fromEntries((data.order_items || []).map((it: any) => [it.id, String(data.delivery_confirmed_at ? (it.quantity_delivered ?? it.quantity) : it.quantity)])));
 
-      const { data: tiersData } = await supabase.from('customer_tiers').select('*').order('code');
-      setTiers(tiersData || []);
     } catch (err) {
       console.error('Error fetching order:', err);
       setOrder(null);
@@ -369,38 +359,19 @@ export default function OrderDetailPage() {
   }, [id]);
 
   useEffect(() => { fetchOrder(); }, [fetchOrder]);
+  useEffect(() => { if (order?.status === 'completed') fetchSalesReturns(); }, [order?.status, fetchSalesReturns]);
 
-  // Realtime price calculation — giá hợp đồng riêng (contractPrices) ưu tiên
-  // cao nhất: nếu mặt hàng có giá cố định HĐ còn hạn → dùng giá đó, không
-  // quan tâm mode/tier đang chọn.
+  // Giá trong dòng là snapshot do server resolve từ bảng giá; UI không tự suy giá.
   const calcTotals = useCallback(() => {
-    const tierDiscount = tiers.find(t => t.code === selectedTier)?.discount_percent || 0;
     let subtotal = 0, merchandise = 0;
     const priced = lines.map(line => {
-      // Ưu tiên 1: giá hợp đồng cố định từng mặt hàng
-      const contractPrice = line.productId ? contractPrices[line.productId] : undefined;
-      let up: number;
-      if (contractPrice !== undefined) {
-        up = contractPrice;
-      } else if (pricingMode === 'manual_item_price') {
-        up = line.unit_price;
-      } else if (pricingMode === 'tier') {
-        up = line.base_unit_price > 0
-          ? Math.round(line.base_unit_price * (1 - tierDiscount / 100))
-          : (line.unit_price || 0);
-      } else if (pricingMode === 'order_discount') {
-        up = line.base_unit_price > 0
-          ? Math.round(line.base_unit_price * (1 - orderDiscountPercent / 100))
-          : (line.unit_price || 0);
-      } else {
-        up = line.unit_price;
-      }
+      const up = Number(line.unit_price) || 0;
       subtotal += Math.round((line.base_unit_price || up) * line.quantity);
       merchandise += Math.round(up * line.quantity);
       return { ...line, unit_price: up };
     });
     return { subtotal, merchandise, total: merchandise + shippingAmount, priced };
-  }, [lines, pricingMode, selectedTier, orderDiscountPercent, shippingAmount, tiers, contractPrices]);
+  }, [lines, shippingAmount]);
 
   const totals = calcTotals();
 
@@ -459,7 +430,7 @@ export default function OrderDetailPage() {
       alert('Chỉ Admin, Trưởng phòng phụ trách hoặc Sale/Văn phòng Vận hành được chốt giá đơn hàng.');
       return;
     }
-    if (!confirm(`Xác nhận khách ở hạng ${selectedTier} và chốt tổng đơn ${money(totals.total)}?`)) return;
+    if (!confirm(`Chốt đơn theo bảng giá áp dụng với tổng tiền ${money(totals.total)}?`)) return;
     setSaving(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
@@ -468,9 +439,8 @@ export default function OrderDetailPage() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           orderId: order.id,
-          customerTier: selectedTier,
           pricingMode,
-          orderDiscountPercent,
+          orderDiscountPercent: 0,
           shippingAmount,
           items: totals.priced.map(l => ({
             itemId: l.isNew ? undefined : l.itemId,
@@ -688,6 +658,12 @@ export default function OrderDetailPage() {
               <Receipt size={16} /> {downloadingInvoice ? 'Đang tải...' : 'Tải hóa đơn'}
             </button>
           )}
+          {order.status === 'completed' && can(user?.role, 'orders.returns') && (
+            <button onClick={() => setShowReturnModal(true)}
+              className="px-3 py-2 bg-orange-50 border border-orange-200 text-orange-700 rounded-xl text-sm font-medium hover:bg-orange-100 flex items-center gap-1.5">
+              <RotateCcw size={16} /> Đổi/Trả hàng
+            </button>
+          )}
           <button onClick={exportExcelDetail} disabled={exportingExcel}
             className="p-2 border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 disabled:opacity-50" title="Xuất file Excel">
             <FileSpreadsheet size={18} />
@@ -745,6 +721,29 @@ export default function OrderDetailPage() {
         </div>
       ))}
 
+      {salesReturns.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+          <p className="font-bold text-orange-900 text-sm mb-2">Phiếu đổi/trả đã xác nhận</p>
+          <div className="space-y-2">
+            {salesReturns.map((item) => (
+              <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 bg-white rounded-xl border border-orange-100 px-3 py-2 text-sm">
+                <div><b>{item.return_number}</b><span className="text-slate-500"> · {item.reason}</span></div>
+                <div className="text-right">
+                  <b className="text-orange-700">-{money(item.total_amount)}</b>
+                  {Number(item.receivable_reduction_amount || 0) > 0 && (
+                    <p className="text-[11px] text-slate-500">Giảm công nợ: {money(item.receivable_reduction_amount)}</p>
+                  )}
+                  {Number(item.customer_credit_amount || 0) > 0 && (
+                    <p className="text-[11px] text-emerald-700">Số dư có của khách: {money(item.customer_credit_amount)}</p>
+                  )}
+                  <p className="text-[11px] text-slate-400">Kho: Chờ xử lý</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Products + Pricing Editor */}
         <div className="lg:col-span-2 space-y-6">
@@ -769,22 +768,37 @@ export default function OrderDetailPage() {
                 <tbody className="divide-y divide-slate-100">
                   {lines.map((line, idx) => {
                     const priced = totals.priced[idx];
-                    const contractPrice = line.productId ? contractPrices[line.productId] : undefined;
-                    const hasContract = contractPrice !== undefined;
-                    const displayPrice = hasContract ? contractPrice : (priced?.unit_price || line.unit_price);
+                    const displayPrice = priced?.unit_price || line.unit_price;
                     const lineTotal = Math.round(displayPrice * line.quantity);
                     return (
                       <tr key={idx} className={`hover:bg-slate-50/50 ${isLocked ? 'opacity-70' : ''}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-slate-800">{line.name}</p>
-                            {hasContract && (
-                              <span className="text-[10px] font-bold text-purple-700 bg-purple-100 border border-purple-200 px-1.5 py-0.5 rounded-full shrink-0">
-                                📋 Giá HĐ
-                              </span>
-                            )}
                           </div>
                           <p className="text-xs text-slate-400">{line.sku ? `SKU: ${line.sku} · ` : ''}Giá gốc {money(line.base_unit_price)}</p>
+                          {line.official_price != null && (
+                            <div className="mt-1 flex items-center gap-2 flex-wrap text-[11px]">
+                              <span className="text-emerald-700">
+                                Giá TPS1: <b>{money(line.official_price)}</b>
+                                {line.official_price_book_name ? ` · ${line.official_price_book_name}` : ''}
+                              </span>
+                              {line.price_difference != null && line.price_difference !== 0 && (
+                                <span className={line.price_difference > 0 ? 'text-red-600' : 'text-blue-600'}>
+                                  Chênh {line.price_difference > 0 ? '+' : ''}{money(line.price_difference)}
+                                  {line.price_difference_percent != null ? ` (${line.price_difference_percent > 0 ? '+' : ''}${line.price_difference_percent}%)` : ''}
+                                </span>
+                              )}
+                              {!isLocked && line.unit_price !== line.official_price && (
+                                <button type="button" onClick={() => {
+                                  setPricingMode('price_book');
+                                  updateLine(idx, 'unit_price', Number(line.official_price));
+                                }} className="font-semibold text-emerald-700 hover:underline">
+                                  Áp giá TPS1
+                                </button>
+                              )}
+                            </div>
+                          )}
                           {!isLocked && (
                             <input type="text" value={line.pricing_note || ''} onChange={e => updateLine(idx, 'pricing_note', e.target.value)}
                               placeholder="Quy cách / ghi chú riêng..." className="mt-1 text-xs w-full border-0 border-b border-slate-200 focus:outline-none focus:border-green-500 bg-transparent text-slate-500" />
@@ -808,13 +822,7 @@ export default function OrderDetailPage() {
                           ) : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {hasContract ? (
-                            /* Giá cố định HĐ — hiển thị tĩnh, không cho sửa */
-                            <div className="flex items-center justify-end gap-1.5">
-                              <span className="font-semibold text-purple-700">{money(contractPrice)}</span>
-                              <span className="text-[10px] text-purple-500 bg-purple-50 border border-purple-200 px-1 py-0.5 rounded">HĐ</span>
-                            </div>
-                          ) : !isLocked ? (
+                          {!isLocked ? (
                             <div className="flex items-center justify-end gap-1.5">
                               <input
                                 type="number"
@@ -930,7 +938,7 @@ export default function OrderDetailPage() {
           {/* Pricing Editor */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="font-bold text-slate-800 flex items-center gap-2"><CheckCircle2 size={18} className="text-blue-600" />Phân loại khách & Chốt giá</h2>
+              <h2 className="font-bold text-slate-800 flex items-center gap-2"><CheckCircle2 size={18} className="text-blue-600" />Kiểm tra bảng giá &amp; Chốt đơn</h2>
               {order.pricing_status === 'finalized' ? (
                 <span className="text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full">Đã chốt R{order.price_revision || 1}</span>
               ) : (
@@ -941,44 +949,18 @@ export default function OrderDetailPage() {
               {isLocked && <div className="p-3 bg-slate-50 text-slate-500 text-sm rounded-lg border border-slate-200">⚠️ Đơn đã thanh toán/đang giao/hoàn thành nên không thể chỉnh giá.</div>}
               {!canFinalizePricing && !isLocked && <div className="p-3 bg-amber-50 text-amber-800 text-sm rounded-lg border border-amber-200">🔒 Tài khoản này chỉ được theo dõi/bổ sung thông tin. Sale, Trưởng phòng phụ trách hoặc Admin sẽ chốt giá cuối.</div>}
 
-              {/* Banner thông tin hạng khách — auto-load từ vip_accounts */}
-              {customerInfo && order.pricing_status !== 'finalized' && (
-                <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-sm space-y-1">
-                  <p className="font-semibold text-indigo-800 flex items-center gap-1.5">
-                    🏷️ Thông tin hạng khách (tự động tải)
-                  </p>
-                  <div className="flex flex-wrap gap-3 text-indigo-700 text-xs">
-                    <span>Hạng: <b>{customerInfo.discount_tier || 'VIP0'}</b></span>
-                    {customerInfo.contract_discount_percent != null && (
-                      <span>Chiết khấu HĐ: <b>{customerInfo.contract_discount_percent}%</b></span>
-                    )}
-                    {customerInfo.tier_expiry_date && (
-                      <span>Hết hạn: <b>{new Date(customerInfo.tier_expiry_date).toLocaleDateString('vi-VN')}</b></span>
-                    )}
-                    {Object.keys(contractPrices).length > 0 && (
-                      <span className="text-purple-700 font-semibold">
-                        📋 {Object.keys(contractPrices).length} mặt hàng có giá cố định HĐ
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
+                <p className="font-semibold text-emerald-800">Bảng giá áp dụng</p>
+                <p className="text-emerald-700 mt-1">
+                  {order.price_book?.name || (order.price_resolution_status === 'manual' ? 'Có điều chỉnh thủ công' : 'Chưa xác định bảng giá')}
+                  {order.price_book?.version ? ` · Phiên bản ${order.price_book.version}` : ''}
+                </p>
+                {order.customer_price_source && <p className="text-xs text-emerald-600 mt-1">Nguồn giá: {order.customer_price_source}</p>}
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Hạng khách hàng</label>
-                  <select value={selectedTier} onChange={e => setSelectedTier(e.target.value)} disabled={isLocked || !canFinalizePricing}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 disabled:opacity-60">
-                    {(tiers.length ? tiers : [
-                      { code: 'VIP0', name: 'VIP0 - Không chiết khấu', discount_percent: 0 },
-                      { code: 'VIP1', name: 'VIP1', discount_percent: 5 },
-                      { code: 'VIP2', name: 'VIP2', discount_percent: 10 },
-                      { code: 'VIP3', name: 'VIP3', discount_percent: 15 },
-                    ]).map(t => <option key={t.code} value={t.code}>{t.name || t.code} ({t.discount_percent || 0}%)</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Chế độ tính giá</label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Cách chốt giá</label>
                   <select value={pricingMode} onChange={e => setPricingMode(e.target.value)} disabled={isLocked || !canFinalizePricing}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 disabled:opacity-60">
                     {PRICING_MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -991,29 +973,11 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-              {/* Ô nhập % chiết khấu — chỉ hiện khi chế độ "Chiết khấu riêng" */}
-              {pricingMode === 'order_discount' && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2">
-                  <label className="block text-xs font-semibold text-blue-700">Chiết khấu riêng toàn đơn (%)</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number" min="0" max="100" step="0.5"
-                      value={orderDiscountPercent}
-                      onChange={e => setOrderDiscountPercent(Number(e.target.value))}
-                      disabled={isLocked || !canFinalizePricing}
-                      placeholder="Nhập % chiết khấu (0–100)"
-                      className="flex-1 border border-blue-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60 bg-white"
-                    />
-                    <span className="text-sm font-bold text-blue-700 w-8 text-right">{orderDiscountPercent}%</span>
-                  </div>
-                  <p className="text-xs text-blue-600">Áp đồng đều {orderDiscountPercent}% giảm trên toàn bộ sản phẩm trong đơn — không phụ thuộc hạng khách.</p>
-                </div>
-              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Ghi chú phân loại khách</label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Ghi chú kiểm tra bảng giá</label>
                   <textarea value={verificationNote} onChange={e => setVerificationNote(e.target.value)} disabled={isLocked || !canFinalizePricing} rows={2}
-                    placeholder="Lý do giữ VIP0 hoặc nâng hạng..."
+                    placeholder="Nguồn bảng giá, nội dung đã trao đổi với Thu mua..."
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 resize-none disabled:opacity-60" />
                 </div>
                 <div>
@@ -1056,7 +1020,7 @@ export default function OrderDetailPage() {
             <dl className="space-y-3 text-sm">
               <div className="flex items-start gap-3">
                 <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                <div><p className="font-semibold text-slate-800">{order.customer_name}</p><p className="text-slate-400">{order.customer_code} · {order.customer_tier || 'VIP0'}</p></div>
+                <div><p className="font-semibold text-slate-800">{order.customer_name}</p><p className="text-slate-400">{order.customer_code} · {order.price_book?.name || 'Bảng giá chung'}</p></div>
               </div>
               <div className="flex items-center gap-3 text-slate-600">
                 <Phone size={16} className="text-slate-400 shrink-0" />{order.customer_phone || '—'}
@@ -1135,6 +1099,12 @@ export default function OrderDetailPage() {
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-100">
                 <span>Tổng thanh toán</span><span className="text-green-700">{money(order.grand_total)}</span>
               </div>
+              {order.status === 'completed' && Number(order.return_credit_amount || 0) > 0 && (
+                <>
+                  <div className="flex justify-between text-orange-700"><span>Đã đổi/trả</span><span>-{money(order.return_credit_amount)}</span></div>
+                  <div className="flex justify-between font-bold"><span>Còn phải thu</span><span>{money(Math.max(0, Number(order.grand_total) - Number(order.return_credit_amount || 0) - Number(order.paid_amount || 0)))}</span></div>
+                </>
+              )}
             </dl>
             <div>
               <p className="text-xs font-semibold text-slate-500 mb-1">Thanh toán</p>
@@ -1214,6 +1184,36 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {showReturnModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/45 flex items-center justify-center p-4" onMouseDown={() => setShowReturnModal(false)}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div><h3 className="font-bold text-lg">Đổi/Trả hàng</h3><p className="text-xs text-slate-500">Hóa đơn {order.invoice_number || order.order_code} · Hóa đơn gốc không bị sửa</p></div>
+              <button onClick={() => setShowReturnModal(false)} className="p-2 rounded-lg hover:bg-slate-100"><X size={18} /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="space-y-2">
+                {lines.map((line) => (
+                  <div key={line.itemId} className="grid grid-cols-[1fr_120px] gap-3 items-center border border-slate-200 rounded-xl p-3">
+                    <div><p className="font-semibold text-sm">{line.name}</p><p className="text-xs text-slate-500">Đã giao: {line.quantity} {line.unit} · {money(line.unit_price)}</p></div>
+                    <input type="number" min="0" max={line.quantity} step="0.001" value={returnQuantities[String(line.itemId)] || ''}
+                      onChange={(e) => setReturnQuantities((prev) => ({ ...prev, [String(line.itemId)]: e.target.value }))}
+                      placeholder="SL trả" className="border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                ))}
+              </div>
+              <textarea value={returnReason} onChange={(e) => setReturnReason(e.target.value)} rows={3}
+                placeholder="Lý do đổi/trả (bắt buộc)" className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl p-3">Phiếu sẽ điều chỉnh công nợ ngay. Hàng trả được ghi nhận “Chờ xử lý kho”, chưa tự cộng tồn.</div>
+              <button onClick={submitSalesReturn} disabled={submittingReturn}
+                className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold disabled:opacity-50">
+                {submittingReturn ? 'Đang xác nhận...' : 'Xác nhận đổi/trả'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showQuickAdd && (
         <QuickAddProductModal

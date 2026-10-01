@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabase, getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, getOrderCutoffInfo, getVnDateParts } from "@/lib/order-cutoff";
+import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
 
 interface OrderItemInput {
   id?: string;
@@ -261,6 +262,81 @@ export async function POST(req: NextRequest) {
     return json({ ok: false, error: "Không nhận được dữ liệu đơn hàng" }, 502);
   }
 
+  // Giá do RPC cũ tạo chỉ là dữ liệu tạm. Server bắt buộc giải quyết lại từ
+  // bảng giá mới và ghi snapshot trước khi trả đơn cho khách.
+  const { data: createdItems, error: createdItemsError } = await supabaseAdmin
+    .from("order_items")
+    .select("id, product_id, quantity")
+    .eq("order_id", order.id);
+  if (createdItemsError) {
+    await supabaseAdmin.from("orders").delete().eq("id", order.id);
+    return json({ ok: false, error: "Không kiểm tra được bảng giá của đơn hàng" }, 500);
+  }
+  const productIds = (createdItems || []).map((item) => item.product_id).filter(Boolean) as string[];
+  const resolvedPrices = await resolvePriceBookPrices(supabaseAdmin, customerId, productIds);
+  const missingItems = (createdItems || []).filter((item) => resolvedPrices.get(item.product_id)?.price == null);
+  if (missingItems.length) {
+    await supabaseAdmin.from("orders").delete().eq("id", order.id);
+    return json({
+      ok: false,
+      code: "PRICE_MISSING",
+      error: `Có ${missingItems.length} sản phẩm chưa có giá trong bảng giá áp dụng. Vui lòng liên hệ TPS1.`,
+      productIds: missingItems.map((item) => item.product_id),
+    }, 409);
+  }
+
+  let resolvedSubtotal = 0;
+  const usedBooks = new Map<string, { id: string; version: number; name: string; source: string }>();
+  for (const item of createdItems || []) {
+    const priceInfo = resolvedPrices.get(item.product_id)!;
+    const price = Number(priceInfo.price);
+    const lineTotal = Math.round(price * Number(item.quantity));
+    resolvedSubtotal += lineTotal;
+    if (priceInfo.priceBookId) {
+      usedBooks.set(priceInfo.priceBookId, {
+        id: priceInfo.priceBookId,
+        version: priceInfo.priceBookVersion || 1,
+        name: priceInfo.priceBookName || "Bảng giá",
+        source: priceInfo.priceSource,
+      });
+    }
+    const { error: itemPriceError } = await supabaseAdmin.from("order_items").update({
+      base_unit_price: price,
+      general_unit_price: priceInfo.priceSource === "general_price_book" || priceInfo.priceSource === "general_fallback" ? price : null,
+      assigned_unit_price: price,
+      unit_price: price,
+      final_unit_price: price,
+      line_total: lineTotal,
+      final_line_total: lineTotal,
+      discount_percent: 0,
+      discount_amount: 0,
+      price_source: priceInfo.priceSource,
+      price_book_id: priceInfo.priceBookId,
+      price_book_version: priceInfo.priceBookVersion,
+      price_resolved_at: new Date().toISOString(),
+    }).eq("id", item.id);
+    if (itemPriceError) {
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
+      return json({ ok: false, error: "Không lưu được giá sản phẩm vào đơn hàng" }, 500);
+    }
+  }
+  const primaryBook = [...usedBooks.values()][0] || null;
+  const { error: resolvedOrderError } = await supabaseAdmin.from("orders").update({
+    subtotal: resolvedSubtotal,
+    discount_percent: 0,
+    discount_amount: 0,
+    grand_total: resolvedSubtotal,
+    customer_tier: null,
+    price_book_id: primaryBook?.id || null,
+    price_book_version: primaryBook?.version || null,
+    price_resolution_status: "resolved",
+    customer_price_source: [...new Set([...usedBooks.values()].map((book) => book.source))].join(","),
+  }).eq("id", order.id);
+  if (resolvedOrderError) {
+    await supabaseAdmin.from("orders").delete().eq("id", order.id);
+    return json({ ok: false, error: "Không lưu được bảng giá áp dụng cho đơn hàng" }, 500);
+  }
+
   // Cập nhật ngay sau khi tạo đơn qua RPC (D1-D4):
   // UPDATE orders: delivery_date, delivery_address_id, is_late_order, delivery_address, delivery_name, delivery_phone
   const orderUpdates: Record<string, any> = {
@@ -328,8 +404,7 @@ export async function POST(req: NextRequest) {
           company: order.customer_company || "",
           source: source === "zalo_mini_app" ? "Zalo Mini App" : "Website",
           customerCode: order.customer_code,
-          customerTier: order.customer_tier,
-          discountPercent: order.discount_percent,
+          priceBook: primaryBook?.name || "Bảng giá chung",
           orderId: order.id,
           orderCode: order.order_code,
           deliveryDate,
@@ -359,7 +434,7 @@ export async function POST(req: NextRequest) {
     orderCode: order.order_code,
     status: order.status,
     pricingStatus: fullOrder?.pricing_status || "provisional",
-    total: Number(order.grand_total || 0),
+    total: resolvedSubtotal,
     deliveryDate,
     isLate,
     warnings: warnings.length ? warnings : undefined,

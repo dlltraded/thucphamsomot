@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, order_code, customer_id, status")
+    .select("id, order_code, invoice_number, customer_id, status")
     .eq("id", orderId)
     .eq("customer_id", session.customer_id)
     .maybeSingle();
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     headers: {
       ...corsHeaders,
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="HOA-DON_${order.order_code}.pdf"`,
+      "Content-Disposition": `attachment; filename="HOA-DON_${order.invoice_number || order.order_code}.pdf"`,
       "Cache-Control": "private, no-store",
     },
   });

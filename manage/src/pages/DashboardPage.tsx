@@ -134,7 +134,7 @@ export default function DashboardPage() {
             <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <Users size={20} />
             </div>
-            <span className="text-sm font-medium text-slate-500">Khách hàng VIP</span>
+            <span className="text-sm font-medium text-slate-500">Khách hàng</span>
           </div>
           <div className="text-3xl font-bold text-slate-800">{stats.customers}</div>
         </div>

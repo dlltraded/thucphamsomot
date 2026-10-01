@@ -18,14 +18,14 @@ function OrdersPage() {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
               <Icon icon="zi-user-circle" size={28} />
             </div>
-            <div className="text-xl font-bold">Theo dõi đơn hàng VIP</div>
+            <div className="text-xl font-bold">Theo dõi đơn hàng</div>
             <div className="mt-2 text-sm leading-6 text-white/85">
               Đăng nhập để xem trạng thái giao hàng, lịch sử mua và mức giá ưu đãi riêng của anh/chị.
             </div>
           </div>
           <div className="space-y-3 p-5">
             <Button fullWidth onClick={() => navigate("/login?redirect=/orders/pending")}>
-              Đăng nhập Cổng Đối Tác VIP
+              Đăng nhập tài khoản khách hàng
             </Button>
             <a
               className="flex items-center justify-center gap-2 rounded-xl bg-[#f3f8f5] px-4 py-3 text-sm font-semibold text-[#087348]"

@@ -61,7 +61,7 @@ export default function RegisterPage() {
         </div>
         <h1 className="text-xl font-bold">Đăng ký tài khoản mua hàng</h1>
         <p className="mt-2 text-sm leading-6 text-white/85">
-          TPS1 chỉ bán sỉ cho công ty/cửa hàng, không bán lẻ. Tài khoản mới được tạo ở hạng VIP0. Nhân viên TPS1 sẽ kiểm tra, phân loại và xác nhận đơn giá cuối cùng cho từng đơn hàng.
+          TPS1 chỉ bán sỉ cho công ty/cửa hàng, không bán lẻ. Nhân viên TPS1 sẽ xác thực tài khoản, gán bảng giá phù hợp và kiểm tra đơn trước khi xác nhận.
         </p>
       </section>
 

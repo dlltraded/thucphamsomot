@@ -8,6 +8,7 @@ import {
   getOrderCutoffInfo,
   getVnDateParts,
 } from "@/lib/order-cutoff";
+import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -162,30 +163,91 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 5. Chuẩn hóa danh sách sản phẩm và tính tổng tiền
+  // 5. Chuẩn hóa sản phẩm và giải quyết giá hoàn toàn ở server.
+  // Client chỉ gửi productId + số lượng; giá client không phải nguồn sự thật.
   let orderTotal = 0;
   const invalidQtyNames: string[] = [];
+  const productIds = [...new Set(items.map((i: any) => String(i.productId || "").trim()).filter(Boolean))] as string[];
+  const { data: databaseProducts, error: databaseProductsError } = productIds.length
+    ? await supabase.from("products").select("id, name, sku, unit, active").in("id", productIds)
+    : { data: [], error: null };
+  if (databaseProductsError) throw databaseProductsError;
+  const productById = new Map((databaseProducts || []).map((product: any) => [product.id, product]));
+  const resolvedPriceMap = await resolvePriceBookPrices(supabase, customerId, productIds);
+  const missingPriceNames: string[] = [];
+  const missingProductNames: string[] = [];
+  const usedBooks = new Map<string, { id: string; version: number; name: string; source: string }>();
+
   const sanitizedItems = items.map((i: any) => {
     const qty = Number(i.quantity);
     // Không âm thầm "sửa" số lượng sai thành 1 — báo lỗi để nhân viên nhập lại (tránh sai đơn)
     if (!Number.isFinite(qty) || qty <= 0) invalidQtyNames.push(String(i.name || "Sản phẩm"));
     const validQty = Number.isFinite(qty) && qty > 0 ? qty : 1;
-    const price = Number(i.price != null ? i.price : i.baseUnitPrice != null ? i.baseUnitPrice : 0);
-    const validPrice = Number.isFinite(price) && price >= 0 ? price : 0;
+    const productId = String(i.productId || "").trim() || null;
+    const product = productId ? productById.get(productId) : null;
+    let validPrice = 0;
+    let priceSource = "manual";
+    let priceBookId: string | null = null;
+    let priceBookVersion: number | null = null;
+    let priceBookName: string | null = null;
+
+    if (productId) {
+      if (!product || !product.active) {
+        missingProductNames.push(String(i.name || productId));
+      } else {
+        const resolved = resolvedPriceMap.get(productId);
+        if (resolved?.price == null) {
+          missingPriceNames.push(product.name || String(i.name || productId));
+        } else {
+          validPrice = Number(resolved.price);
+          priceSource = resolved.priceSource;
+          priceBookId = resolved.priceBookId;
+          priceBookVersion = resolved.priceBookVersion;
+          priceBookName = resolved.priceBookName;
+          if (priceBookId) usedBooks.set(priceBookId, {
+            id: priceBookId,
+            version: priceBookVersion || 1,
+            name: priceBookName || "Bảng giá",
+            source: priceSource,
+          });
+        }
+      }
+    } else {
+      const manualPrice = Number(i.price != null ? i.price : i.baseUnitPrice);
+      const manualReason = String(i.manualPriceReason || i.note || "").trim();
+      if (!can(auth.profile?.role, "orders.finalize_pricing") || !Number.isFinite(manualPrice) || manualPrice < 0 || !manualReason) {
+        missingPriceNames.push(`${String(i.name || "Sản phẩm ngoài danh mục")} (cần giá và lý do nhập tay)`);
+      } else {
+        validPrice = manualPrice;
+      }
+    }
     orderTotal += validQty * validPrice;
 
     return {
-      productId: i.productId ? String(i.productId).trim() : null,
-      name: String(i.name || "Sản phẩm").trim(),
-      unit: String(i.unit || "Kg").trim(),
+      productId,
+      name: String(product?.name || i.name || "Sản phẩm").trim(),
+      unit: String(product?.unit || i.unit || "Kg").trim(),
       quantity: validQty,
       price: validPrice,
       note: i.note ? String(i.note).trim() : null,
+      priceSource,
+      priceBookId,
+      priceBookVersion,
     };
   });
 
   if (invalidQtyNames.length) {
     return json({ ok: false, error: `Số lượng không hợp lệ (phải > 0): ${invalidQtyNames.join(", ")}` }, 400);
+  }
+  if (missingProductNames.length) {
+    return json({ ok: false, error: `Sản phẩm không tồn tại hoặc đã ngừng kinh doanh: ${missingProductNames.join(", ")}` }, 400);
+  }
+  if (missingPriceNames.length) {
+    return json({
+      ok: false,
+      code: "PRICE_MISSING",
+      error: `Chưa có giá hợp lệ: ${missingPriceNames.join(", ")}`,
+    }, 409);
   }
 
   // 6. Kiểm tra hạn mức công nợ (credit_limit > 0)
@@ -258,6 +320,9 @@ export async function POST(req: NextRequest) {
       unit: i.unit,
       quantity: i.quantity,
       base_unit_price: i.price,
+      price_source: i.priceSource,
+      price_book_id: i.priceBookId,
+      price_book_version: i.priceBookVersion,
     })),
     p_delivery_type: deliveryAddress ? "shipping" : "pickup",
     p_delivery_alias: deliveryAlias,
@@ -282,6 +347,33 @@ export async function POST(req: NextRequest) {
   if (!orderId) {
     return json({ ok: false, error: "Đơn hàng tạo không thành công (không có ID)" }, 500);
   }
+
+  // RPC cũ chỉ nhận giá đã được server resolve. Ghi snapshot nguồn giá vào
+  // từng dòng và đơn để mọi lần kiểm tra sau truy được đúng bảng giá.
+  const { data: createdLines } = await supabase.from("order_items")
+    .select("id, product_id")
+    .eq("order_id", orderId);
+  for (const line of createdLines || []) {
+    const source = sanitizedItems.find((item) => item.productId === line.product_id);
+    if (!source) continue;
+    await supabase.from("order_items").update({
+      assigned_unit_price: source.price,
+      final_unit_price: source.price,
+      price_source: source.priceSource,
+      price_book_id: source.priceBookId,
+      price_book_version: source.priceBookVersion,
+      price_resolved_at: new Date().toISOString(),
+    }).eq("id", line.id);
+  }
+  const primaryBook = [...usedBooks.values()][0] || null;
+  await supabase.from("orders").update({
+    customer_tier: null,
+    discount_percent: 0,
+    price_book_id: primaryBook?.id || null,
+    price_book_version: primaryBook?.version || null,
+    price_resolution_status: "resolved",
+    customer_price_source: [...new Set([...usedBooks.values()].map((book) => book.source))].join(",") || "manual",
+  }).eq("id", orderId);
 
   // 8. Cập nhật các trường Phase 1 (F1: không bao giờ trả lỗi sau khi đơn đã tạo)
   const warnings: string[] = [];

@@ -469,7 +469,7 @@ export default function DatHangPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#14231c]">Đặt hàng</h1>
           <p className="text-[#59665f] text-sm">
-            Xin chào {user?.name}{user?.tier ? ` · Hạng ${user.tier}` : ''} — có thể mở nhiều đơn cùng lúc như bên dưới
+            Xin chào {user?.name} — có thể mở nhiều đơn cùng lúc như bên dưới
           </p>
         </div>
         <button onClick={() => navigate('/dat-hang/excel')}

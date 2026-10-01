@@ -17,6 +17,10 @@ interface Product {
   stock_qty: number | null;
   track_inventory: boolean;
   is_low_stock: boolean;
+  min_order_qty?: number | null;
+  order_step?: number | null;
+  enforce_order_step?: boolean | null;
+  packaging_note?: string | null;
 }
 
 // Trang "Hàng hóa" (Giai đoạn B) — danh sách tìm/lọc; bấm vào 1 sản phẩm mở
@@ -39,8 +43,8 @@ export default function ProductsPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [showImport, setShowImport] = useState(false);
-  const [showPricebookImport, setShowPricebookImport] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -52,6 +56,7 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     if (!token) return;
     setLoading(true);
+    setLoadError('');
     try {
       const params = new URLSearchParams({ page: String(page) });
       if (search.trim()) params.set('search', search.trim());
@@ -61,11 +66,19 @@ export default function ProductsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.ok) {
+      if (res.status === 401 || res.status === 403) {
+        setProducts([]);
+        setTotal(0);
+        setLoadError('Phiên đăng nhập đã hết hạn hoặc không đủ quyền. Vui lòng đăng nhập lại.');
+      } else if (data.ok) {
         setProducts(data.products || []);
         setTotal(data.total || 0);
         setCanEdit(!!data.canEdit);
+      } else {
+        setLoadError(data.error || 'Không tải được danh sách hàng hóa.');
       }
+    } catch {
+      setLoadError('Không kết nối được máy chủ dữ liệu hàng hóa.');
     } finally {
       setLoading(false);
     }
@@ -89,10 +102,6 @@ export default function ProductsPage() {
                 className="px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-1.5">
                 <Upload size={16} /> Nhập kho từ Excel
               </button>
-              <button onClick={() => setShowPricebookImport(true)}
-                className="px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-1.5">
-                <Upload size={16} /> Nhập bảng giá từ Excel
-              </button>
               <button onClick={() => navigate('/hang-hoa/moi')}
                 className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-1.5">
                 <Plus size={16} /> Thêm sản phẩm
@@ -114,14 +123,6 @@ export default function ProductsPage() {
         />
       )}
 
-      {showPricebookImport && (
-        <ImportPricebookModal
-          apiBase={apiBase}
-          token={token}
-          onClose={() => setShowPricebookImport(false)}
-          onDone={() => { setShowPricebookImport(false); fetchProducts(); }}
-        />
-      )}
 
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[220px]">
@@ -151,6 +152,8 @@ export default function ProductsPage() {
         <div className="flex items-center justify-center py-16 text-slate-500">
           <RefreshCw className="animate-spin mr-2" size={20} /> Đang tải...
         </div>
+      ) : loadError ? (
+        <div className="bg-amber-50 rounded-2xl border border-amber-200 py-16 text-center text-amber-700">{loadError}</div>
       ) : products.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-100 py-16 text-center text-slate-400">Không tìm thấy mã hàng nào</div>
       ) : (
@@ -167,7 +170,20 @@ export default function ProductsPage() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-800 text-sm truncate">{p.name}</p>
-                  <p className="text-xs text-slate-400">{p.sku || '—'} · {p.category || 'Chưa phân loại'} · {p.unit || 'Kg'}</p>
+                  <div className="flex items-center gap-2 flex-wrap text-xs text-slate-400 mt-0.5">
+                    <span className="font-mono text-slate-500 font-semibold">{p.sku || '—'}</span>
+                    <span>·</span>
+                    <span>{p.category || 'Chưa phân loại'}</span>
+                    <span>·</span>
+                    <span>ĐVT: {p.unit || 'Kg'}</span>
+                    {(p.packaging_note || (p.min_order_qty && p.min_order_qty > 1) || (p.order_step && p.order_step > 1)) && (
+                      <span className="text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-md">
+                        {p.packaging_note ? `Quy cách: ${p.packaging_note}` : ''}
+                        {p.min_order_qty && p.min_order_qty > 1 ? ` · Tối thiểu: ${p.min_order_qty}` : ''}
+                        {p.order_step && p.order_step > 1 ? ` · Bước: ${p.order_step}` : ''}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {p.track_inventory ? (
                   <div className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${p.is_low_stock ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-500'}`}>
@@ -465,3 +481,7 @@ function ImportPricebookModal({ apiBase, token, onClose, onDone }: { apiBase: st
     </div>
   );
 }
+
+// Giữ component nhập hạng giá cũ trong mã nguồn để đối chiếu dữ liệu lịch sử,
+// nhưng không còn gắn vào giao diện vận hành mới.
+void ImportPricebookModal;

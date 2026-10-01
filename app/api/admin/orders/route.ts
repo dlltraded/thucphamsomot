@@ -8,16 +8,19 @@ import { finalizeOrderCore } from "@/lib/order-finalize";
 import { sendPushToCustomer } from "@/lib/push";
 import { reconcileDelivery } from "@/lib/order-reconcile";
 import { can } from "@/lib/permissions";
+import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
 
 const ORDER_STATUSES = [
+  "draft",
   "pending",
   "confirmed",
   "preparing",
   "shipping",
   "completed",
   "canceled",
+  "merged",
 ] as const;
-const PAYMENT_STATUSES = ["pending", "cod", "paid", "failed", "refunded"] as const;
+const PAYMENT_STATUSES = ["pending", "cod", "paid", "partially_paid", "failed", "refunded"] as const;
 const PAYMENT_METHODS = ["COD", "CREDIT", "TRANSFER", "CASH"] as const;
 
 const corsHeaders = {
@@ -100,32 +103,28 @@ export async function GET(req: NextRequest) {
         .limit(20);
       if (productError) throw productError;
 
-      // Giá theo hạng/hợp đồng riêng — chỉ tính khi đã chọn khách (Giai đoạn
-      // B, xem migration resolve_product_price). Không chọn khách -> giữ giá
-      // gốc như trước đây, sale vẫn sửa tay được từng dòng trong giỏ như cũ.
+      // Khi đã chọn khách, chỉ dùng bảng giá mới. Không dùng VIP/tier hay giá
+      // client làm fallback.
       const basePrice = (p: { price_retail: number | null; price_wholesale: number | null }) =>
         Number(p.price_retail) || Number(p.price_wholesale) || 0;
       const resolvedPrices = customerId
-        ? await Promise.all(
-            (products || []).map((p) =>
-              supabase
-                .rpc("resolve_product_price", { p_product_id: p.id, p_customer_id: customerId })
-                .then(({ data, error }) => (error ? basePrice(p) : Number(data) || basePrice(p)))
-            )
-          )
+        ? await resolvePriceBookPrices(supabase, customerId, (products || []).map((p) => p.id))
         : null;
 
       return json({
         ok: true,
-        products: (products || []).map((product, idx) => ({
+        products: (products || []).map((product) => ({
           id: product.id,
           localProductId: product.local_product_id,
           sku: product.sku,
           name: product.name,
           categoryLabel: product.category,
           unit: product.unit || "Kg",
-          price: resolvedPrices ? resolvedPrices[idx] : basePrice(product),
+          price: resolvedPrices ? (resolvedPrices.get(product.id)?.price ?? 0) : basePrice(product),
           basePrice: basePrice(product),
+          priceSource: resolvedPrices?.get(product.id)?.priceSource || null,
+          priceBookId: resolvedPrices?.get(product.id)?.priceBookId || null,
+          priceBookName: resolvedPrices?.get(product.id)?.priceBookName || null,
           image_url: product.image_url,
           trackInventory: product.track_inventory,
           stockQty: product.track_inventory ? Number(product.stock_qty) || 0 : null,
@@ -135,19 +134,47 @@ export async function GET(req: NextRequest) {
     }
     const orderId = req.nextUrl.searchParams.get("id")?.trim();
     const status = req.nextUrl.searchParams.get("status");
+    const mode = req.nextUrl.searchParams.get("mode") === "invoices" ? "invoices" : "orders";
     const deliveryDate = req.nextUrl.searchParams.get("deliveryDate")?.trim();
     const late = req.nextUrl.searchParams.get("late")?.trim();
+    const paymentStatus = req.nextUrl.searchParams.get("paymentStatus")?.trim();
+    const search = req.nextUrl.searchParams.get("search")?.trim().replace(/[,%()]/g, " ").slice(0, 100);
+    const dateFrom = req.nextUrl.searchParams.get("dateFrom")?.trim();
+    const dateTo = req.nextUrl.searchParams.get("dateTo")?.trim();
+    const page = Math.max(0, Number(req.nextUrl.searchParams.get("page")) || 0);
+    const pageSize = Math.min(100, Math.max(10, Number(req.nextUrl.searchParams.get("pageSize")) || 50));
+    const listFields = `
+      id, order_code, status, payment_status, payment_method, source,
+      subtotal, discount_amount, shipping_amount, grand_total, paid_amount,
+      debt_amount, return_credit_amount, invoice_number, invoice_issued_at,
+      note, pricing_note, created_at, updated_at, confirmed_at, completed_at,
+      customer_id, customer_code, customer_name, customer_phone, customer_company,
+      pricing_status, price_revision, confirmation_document_status,
+      delivery_type, delivery_date, delivery_shift, delivery_address, delivery_name,
+      delivery_phone, delivery_alias, sales_rep_id, item_count, merged_into_order_id
+    `;
     let query = supabase
       .from("orders")
-      .select("*, order_items(*), order_history(*)")
+      .select(orderId ? "*, order_items(*), order_history(*)" : listFields, { count: "exact" })
       .order("created_at", { ascending: false });
 
     if (orderId) {
       query = query.eq("id", orderId);
     } else {
-      query = query.limit(500);
+      query = query.range(page * pageSize, page * pageSize + pageSize - 1);
+      query = mode === "invoices"
+        ? query.eq("status", "completed")
+        : query.neq("status", "completed").neq("status", "merged");
       if (status && ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
         query = query.eq("status", status);
+      }
+      if (paymentStatus && PAYMENT_STATUSES.includes(paymentStatus as (typeof PAYMENT_STATUSES)[number])) {
+        query = query.eq("payment_status", paymentStatus);
+      }
+      if (dateFrom) query = query.gte("created_at", dateFrom);
+      if (dateTo) query = query.lte("created_at", `${dateTo}T23:59:59.999`);
+      if (search) {
+        query = query.or(`order_code.ilike.%${search}%,customer_code.ilike.%${search}%,customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,customer_company.ilike.%${search}%`);
       }
       if (deliveryDate) {
         query = query.eq("delivery_date", deliveryDate);
@@ -155,21 +182,30 @@ export async function GET(req: NextRequest) {
       if (late === "1") {
         query = query.eq("is_late_order", true);
       }
+      if (auth.profile?.role === "sale" && auth.profile.id && auth.profile.id !== "legacy-admin") {
+        const { data: assignedCustomers } = await supabase.from("vip_accounts")
+          .select("id")
+          .eq("sales_rep_id", auth.profile.id);
+        const assignedIds = (assignedCustomers || []).map((customer) => customer.id);
+        if (!assignedIds.length) return json({ ok: true, orders: [], tiers: [], totalCount: 0, page, pageSize });
+        query = query.in("customer_id", assignedIds);
+      }
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) throw error;
+    const orderRows = (data || []) as any[];
 
     // Tên sale lên đơn (chưa hiện trên order trước đây — chỉ có sales_rep_id).
     // Khớp yêu cầu "tên của sale lên đơn như kiotviet" — join admin_profiles.
-    const salesRepIds = [...new Set((data || []).map((order) => order.sales_rep_id).filter(Boolean))];
+    const salesRepIds = [...new Set(orderRows.map((order) => order.sales_rep_id).filter(Boolean))] as string[];
     const { data: salesReps } = salesRepIds.length
       ? await supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
       : { data: [] as { id: string; name: string }[] };
     const salesRepMap = new Map((salesReps || []).map((r) => [r.id, r.name]));
 
     if (orderId) {
-      const singleOrder = data && data.length > 0 ? data[0] : null;
+      const singleOrder = orderRows.length > 0 ? orderRows[0] : null;
       // Gắn tồn kho hiện tại vào từng dòng hàng để màn "Xử lý đơn hàng" (POS)
       // biết ngay dòng nào thiếu hàng và cảnh báo + cho nhập hàng tại chỗ —
       // không còn chặn khách đặt hàng hết tồn nữa (yêu cầu 2026-09-11), việc
@@ -184,41 +220,63 @@ export async function GET(req: NextRequest) {
         stockMap = new Map((stockRows || []).map((r) => [r.id, r]));
       }
       if (singleOrder) {
+        const officialPrices = singleOrder.customer_id && productIds.length
+          ? await resolvePriceBookPrices(supabase, singleOrder.customer_id, productIds as string[])
+          : new Map();
         singleOrder.order_items = (singleOrder.order_items || []).map((it: any) => {
           const stock = it.product_id ? stockMap.get(it.product_id) : null;
+          const official = it.product_id ? officialPrices.get(it.product_id) : null;
+          const currentPrice = Number(it.unit_price) || 0;
+          const officialPrice = official?.price == null ? null : Number(official.price);
           return {
             ...it,
             track_inventory: stock?.track_inventory || false,
             stock_qty: stock ? Number(stock.stock_qty) || 0 : null,
             low_stock: stock?.track_inventory ? Number(stock.stock_qty) <= Number(stock.min_stock || 0) : false,
+            official_price: officialPrice,
+            official_price_source: official?.priceSource || "missing",
+            official_price_book_id: official?.priceBookId || null,
+            official_price_book_name: official?.priceBookName || null,
+            price_difference: officialPrice == null ? null : currentPrice - officialPrice,
+            price_difference_percent: officialPrice && officialPrice > 0
+              ? Math.round(((currentPrice - officialPrice) / officialPrice) * 10000) / 100
+              : null,
           };
         });
+        if (singleOrder.price_book_id) {
+          const { data: priceBook } = await supabase.from("price_books")
+            .select("id, code, name, version, kind, status")
+            .eq("id", singleOrder.price_book_id)
+            .maybeSingle();
+          singleOrder.price_book = priceBook || null;
+        } else {
+          singleOrder.price_book = null;
+        }
       }
       return json({
         ok: true,
         order: singleOrder ? { ...singleOrder, sales_rep_name: salesRepMap.get(singleOrder.sales_rep_id) || null } : null,
       });
     }
-    const customerIds = [...new Set((data || []).map((order) => order.customer_id).filter(Boolean))];
+    const customerIds = [...new Set(orderRows.map((order) => order.customer_id).filter(Boolean))] as string[];
     const { data: accounts } = customerIds.length
       ? await supabase
           .from("vip_accounts")
-          .select("id, discount_tier, verification_status, verified_at")
+          .select("id, verification_status, verified_at")
           .in("id", customerIds)
       : { data: [] };
     const accountMap = new Map((accounts || []).map((account) => [account.id, account]));
-    const { data: tiers } = await supabase
-      .from("customer_tiers")
-      .select("code, name, discount_percent")
-      .order("code");
     return json({
       ok: true,
-      orders: (data || []).map((order) => ({
+      orders: orderRows.map((order) => ({
         ...order,
         customer_account: accountMap.get(order.customer_id) || null,
         sales_rep_name: salesRepMap.get(order.sales_rep_id) || null,
       })),
-      tiers: tiers || [],
+      tiers: [],
+      totalCount: count || 0,
+      page,
+      pageSize,
     });
   } catch (error) {
     console.error("Admin orders GET error:", error);
@@ -242,7 +300,7 @@ async function createInvoiceDocument(
 ) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, order_code, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_name, delivery_phone, delivery_address, note, subtotal, discount_amount, shipping_amount, grand_total, paid_amount, debt_amount, completed_at, sales_rep_id, order_items(id, sku, name, unit, quantity, unit_price, line_total)")
+    .select("id, order_code, invoice_number, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_name, delivery_phone, delivery_address, note, subtotal, discount_amount, shipping_amount, grand_total, paid_amount, debt_amount, completed_at, sales_rep_id, order_items(id, sku, name, unit, quantity, unit_price, line_total)")
     .eq("id", orderId)
     .single();
   if (orderError || !order) throw orderError || new Error("Không tìm thấy đơn hàng để tạo hóa đơn");
@@ -257,6 +315,7 @@ async function createInvoiceDocument(
   const snapshot: SalesInvoiceSnapshot = {
     id: order.id,
     order_code: order.order_code,
+    invoice_number: order.invoice_number,
     customer_code: order.customer_code,
     customer_name: order.customer_name,
     customer_phone: order.customer_phone,
@@ -278,7 +337,7 @@ async function createInvoiceDocument(
     order_items: (order.order_items || []).filter((item: { quantity?: number }) => Number(item.quantity) > 0) as ConfirmationOrderItem[],
   };
 
-  const fileName = `HOA-DON_${order.order_code}.pdf`;
+  const fileName = `HOA-DON_${order.invoice_number || order.order_code}.pdf`;
   const storagePath = `${order.id}/${fileName}`;
   const pdf = await generateSalesInvoicePdf(snapshot);
   const fileHash = createHash("sha256").update(pdf).digest("hex");
@@ -318,8 +377,8 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json().catch(() => null);
   const orderId = String(body?.orderId || "").trim();
-  const customerTier = String(body?.customerTier || "VIP0").trim();
-  const pricingMode = String(body?.pricingMode || "tier").trim();
+  const customerTier = ""; // giữ chữ ký tương thích; hệ thống VIP đã ngừng sử dụng
+  const pricingMode = String(body?.pricingMode || "price_book").trim();
   const actor = String(auth.profile?.name || auth.profile?.email || "admin").trim().slice(0, 120) || "admin";
   if (!orderId) return json({ ok: false, error: "Thiếu mã đơn hàng" }, 400);
 
@@ -536,24 +595,48 @@ export async function PATCH(req: NextRequest) {
       if (delivery.note !== undefined) updates.note = String(delivery.note || "").trim() || null;
     }
 
-    const { data: updated, error: updateError } = await supabase
-      .from("orders")
-      .update(updates)
-      .eq("id", orderId)
-      .select("*")
-      .single();
-    if (updateError) throw updateError;
+    let updated: any;
+    if (nextStatus === "completed" && current.status !== "completed") {
+      // RPC khóa dòng và phát hành số hóa đơn trong cùng transaction, tránh
+      // bấm hai lần tạo hai hóa đơn/công nợ khác nhau.
+      const { data: completed, error: completeError } = await supabase.rpc("complete_order_for_invoice", {
+        p_order_id: orderId,
+        p_actor: auth.profile?.name || auth.profile?.email || "admin",
+      });
+      if (completeError) throw completeError;
+      updated = completed;
+      // Các thay đổi thanh toán/giao hàng đi kèm được cập nhật sau khi RPC
+      // hoàn tất; không can thiệp số hóa đơn đã khóa.
+      const extraUpdates = { ...updates };
+      delete extraUpdates.status;
+      delete extraUpdates.completed_at;
+      if (Object.keys(extraUpdates).length) {
+        const { data: withExtras, error: extraError } = await supabase.from("orders")
+          .update(extraUpdates).eq("id", orderId).select("*").single();
+        if (extraError) throw extraError;
+        updated = withExtras;
+      }
+    } else {
+      const { data: statusUpdated, error: updateError } = await supabase
+        .from("orders")
+        .update(updates)
+        .eq("id", orderId)
+        .select("*")
+        .single();
+      if (updateError) throw updateError;
+      updated = statusUpdated;
 
-    const { error: historyError } = await supabase.from("order_history").insert({
-      order_id: orderId,
-      action: "status_changed",
-      from_status: current.status,
-      to_status: nextStatus,
-      note: note || null,
-      actor: auth.profile?.name || auth.profile?.email || "admin",
-      payload: paymentStatus ? { paymentStatus } : {},
-    });
-    if (historyError) throw historyError;
+      const { error: historyError } = await supabase.from("order_history").insert({
+        order_id: orderId,
+        action: "status_changed",
+        from_status: current.status,
+        to_status: nextStatus,
+        note: note || null,
+        actor: auth.profile?.name || auth.profile?.email || "admin",
+        payload: paymentStatus ? { paymentStatus } : {},
+      });
+      if (historyError) throw historyError;
+    }
 
     // Trừ kho đúng lúc đơn được XÁC NHẬN (không phải lúc tạo nháp) — chỉ áp
     // dụng cho sản phẩm track_inventory = true, tự bỏ qua nếu đã trừ rồi

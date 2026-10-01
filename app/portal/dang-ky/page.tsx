@@ -8,7 +8,7 @@ import { RegisterForm } from "./register-form";
 
 export const metadata = makeMetadata({
   title: "Đăng ký tài khoản khách hàng",
-  description: "Tạo tài khoản khách hàng VIP TPS1 để xem giá chiết khấu và đặt hàng trực tuyến.",
+  description: "Tạo tài khoản khách hàng TPS1 để xem bảng giá và đặt hàng trực tuyến.",
   path: "/portal/dang-ky",
 });
 
@@ -22,7 +22,7 @@ export default async function PortalRegisterPage() {
   }
 
   return (
-    <PageShell eyebrow="Portal đối tác VIP" title="Đăng ký tài khoản" compact>
+    <PageShell eyebrow="Cổng khách hàng" title="Đăng ký tài khoản" compact>
       <Suspense>
         <RegisterForm />
       </Suspense>

@@ -3,12 +3,6 @@ import { useAtomValue } from "jotai";
 import { PropsWithChildren } from "react";
 import { DefaultUserAvatar } from "@/components/vectors";
 
-const TIER_LABEL: Record<string, string> = {
-  VIP1: "VIP1",
-  VIP2: "VIP2",
-  VIP3: "VIP3",
-};
-
 function UserInfo({ children }: PropsWithChildren) {
   const customerAuth = useAtomValue(customerAuthState);
 
@@ -21,9 +15,7 @@ function UserInfo({ children }: PropsWithChildren) {
             <div className="text-lg truncate">{customerAuth.name}</div>
             <div className="text-sm text-subtitle truncate">
               {customerAuth.code}
-              {customerAuth.tier
-                ? ` · ${TIER_LABEL[customerAuth.tier] || customerAuth.tier}`
-                : ""}
+              {" · Đối tác TPS1"}
             </div>
           </div>
         </div>

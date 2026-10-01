@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -110,30 +111,16 @@ export async function POST(req: NextRequest) {
       .eq("active", true);
     if (error) throw error;
 
-    // Tính giá cho TẤT CẢ sản phẩm 1 lần trong bộ nhớ (thay vì gọi RPC
-    // resolve_product_price cho từng dòng/gợi ý — với file tới 300 dòng x 3
-    // gợi ý sẽ ra hàng trăm round-trip DB tuần tự, dễ timeout). Lấy đúng thứ
-    // tự ưu tiên như hàm SQL: giá hợp đồng riêng > giá theo hạng > giá gốc.
-    const [{ data: customer }, { data: contractRows }] = await Promise.all([
-      supabase.from("vip_accounts").select("discount_tier").eq("id", customerId).maybeSingle(),
-      supabase.from("customer_contract_prices").select("product_id, price, valid_until").eq("customer_id", customerId),
-    ]);
-    const tier = customer?.discount_tier || null;
-    const now = new Date();
-    const contractByProduct = new Map(
-      (contractRows || [])
-        .filter((c) => !c.valid_until || new Date(c.valid_until) > now)
-        .map((c) => [c.product_id, Number(c.price)])
+    // Dùng đúng một bộ giải quyết giá cho website, Mini App, POS và Excel:
+    // khách hàng -> nhóm bếp -> bảng giá chung. Không dùng giá VIP/giá bán lẻ.
+    const resolvedPrices = await resolvePriceBookPrices(
+      supabase,
+      customerId,
+      (products || []).map((product) => product.id),
     );
-    const { data: tierPriceRows } = tier
-      ? await supabase.from("product_tier_prices").select("product_id, price").eq("tier", tier)
-      : { data: [] as { product_id: string; price: number }[] };
-    const tierPriceByProduct = new Map((tierPriceRows || []).map((t) => [t.product_id, Number(t.price)]));
 
     function priceFor(p: { id: string; price_retail: number | null; price_wholesale: number | null }) {
-      if (contractByProduct.has(p.id)) return contractByProduct.get(p.id)!;
-      if (tierPriceByProduct.has(p.id)) return tierPriceByProduct.get(p.id)!;
-      return Number(p.price_retail) || Number(p.price_wholesale) || 0;
+      return resolvedPrices.get(p.id)?.price || 0;
     }
 
     const bySkuLower = new Map((products || []).map((p) => [String(p.sku || "").toLowerCase(), p]));

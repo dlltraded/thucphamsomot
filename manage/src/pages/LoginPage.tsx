@@ -80,7 +80,7 @@ export default function LoginPage() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/20 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all"
-                placeholder="vd: sale@tps1.vn hoặc VIP001"
+                placeholder="vd: sale@tps1.vn hoặc TPS1-CG2"
                 autoCapitalize="none"
                 required
               />

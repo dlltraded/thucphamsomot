@@ -81,6 +81,11 @@ export interface ResolvedItemPrice {
   finalPrice: number | null;
   status: ItemPriceStatus;
   errorNote?: string;
+  /** Giá của phiên bản đang áp dụng tại thời điểm xem trước. */
+  previousPrice?: number | null;
+  differenceAmount?: number | null;
+  differencePercent?: number | null;
+  comparisonStatus?: 'new' | 'increase' | 'decrease' | 'unchanged' | 'missing';
 }
 
 export interface RowValidationResult {
@@ -114,5 +119,12 @@ export interface ImportPreviewResponse {
     pageSize: number;
     totalPages: number;
     totalCount: number;
+  };
+  comparison?: {
+    increased: number;
+    decreased: number;
+    unchanged: number;
+    newPrices: number;
+    missingPrices: number;
   };
 }

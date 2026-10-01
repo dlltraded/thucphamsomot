@@ -32,17 +32,23 @@ export async function GET(req: NextRequest) {
     if (customerId) {
       const { data: orders, error } = await supabase
         .from("orders")
-        .select("id, order_code, status, grand_total, paid_amount, debt_amount, created_at, confirmed_at")
+        .select("id, order_code, status, grand_total, paid_amount, debt_amount, return_credit_amount, created_at, confirmed_at")
         .eq("customer_id", customerId)
         .not("status", "in", "(canceled,merged)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return json({ ok: true, orders: orders || [] });
+      return json({
+        ok: true,
+        orders: (orders || []).map((order) => ({
+          ...order,
+          effective_debt_amount: Math.max(0, Number(order.debt_amount) - Number(order.return_credit_amount || 0)),
+        })),
+      });
     }
 
     let customerQuery = supabase
       .from("vip_accounts")
-      .select("id, partner_code, name, company, phone, discount_tier, credit_limit, sales_rep_id, is_active")
+      .select("id, partner_code, name, company, phone, credit_limit, sales_rep_id, is_active")
       .eq("is_active", true);
     if (isSale) customerQuery = customerQuery.eq("sales_rep_id", auth.profile!.id);
     const { data: customers, error: customerError } = await customerQuery;
@@ -50,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     const { data: orders, error: orderError } = await supabase
       .from("orders")
-      .select("customer_id, debt_amount, grand_total, paid_amount")
+      .select("customer_id, debt_amount, return_credit_amount, grand_total, paid_amount")
       .not("status", "in", "(canceled,merged)")
       .gt("debt_amount", 0);
     if (orderError) throw orderError;
@@ -59,8 +65,9 @@ export async function GET(req: NextRequest) {
     for (const o of orders || []) {
       if (!o.customer_id) continue;
       const entry = debtByCustomer.get(o.customer_id) || { debt: 0, orderCount: 0 };
-      entry.debt += Number(o.debt_amount) || 0;
-      entry.orderCount += 1;
+      const effectiveDebt = Math.max(0, Number(o.debt_amount) - Number(o.return_credit_amount || 0));
+      entry.debt += effectiveDebt;
+      if (effectiveDebt > 0) entry.orderCount += 1;
       debtByCustomer.set(o.customer_id, entry);
     }
 

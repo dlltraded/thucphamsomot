@@ -95,7 +95,7 @@ export default function MyOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Đơn hàng của tôi</h1>
           <p className="text-slate-500 text-sm">
-            {user?.name} · {user?.code} {user?.tier ? `· Hạng ${user.tier}` : ''} · {orders.length} đơn hàng
+            {user?.name} · {user?.code} · {orders.length} đơn hàng
           </p>
         </div>
         <button onClick={fetchOrders} className="p-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors self-start" title="Tải lại">

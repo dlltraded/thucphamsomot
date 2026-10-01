@@ -1,14 +1,12 @@
 import { useAtomValue } from "jotai";
-import { cartTotalState, customerAuthState } from "@/state";
+import { cartTotalState } from "@/state";
 import { formatPrice } from "@/utils/format";
 import Section from "@/components/section";
 import HorizontalDivider from "@/components/horizontal-divider";
 
 export default function CartSummary() {
-  const { totalAmount, discountPercent, discountedTotal } =
+  const { totalAmount, discountedTotal } =
     useAtomValue(cartTotalState);
-  const customerAuth = useAtomValue(customerAuthState);
-  const hasDiscount = !!customerAuth && discountPercent > 0;
 
   return (
     <Section title="Tạm tính đơn hàng" className="rounded-lg">
@@ -19,16 +17,6 @@ export default function CartSummary() {
               <th>Tạm tính</th>
               <td>{formatPrice(totalAmount)}</td>
             </tr>
-            {hasDiscount && (
-              <tr>
-                <th>
-                  Giá đề xuất {customerAuth!.tier} (-{discountPercent}%)
-                </th>
-                <td className="text-primary">
-                  -{formatPrice(totalAmount - discountedTotal)}
-                </td>
-              </tr>
-            )}
             <tr>
               <th>Phí vận chuyển</th>
               <td>0 VND</td>
@@ -38,7 +26,7 @@ export default function CartSummary() {
         <HorizontalDivider />
         <div className="flex justify-between font-medium text-sm">
           <div>Tổng tạm tính</div>
-          <div>{formatPrice(hasDiscount ? discountedTotal : totalAmount)}</div>
+          <div>{formatPrice(discountedTotal)}</div>
         </div>
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-2xs leading-4 text-amber-800">
           Đơn giá cuối cùng sẽ được nhân viên TPS1 kiểm tra và xác nhận trước khi thanh toán/giao hàng.

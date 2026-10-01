@@ -13,8 +13,8 @@ const TRUST_BADGES = [
 const VALUE_POINTS = [
   {
     emoji: "🏷️",
-    title: "Giá sỉ theo nhóm khách hàng",
-    desc: "Đăng nhập tài khoản để nhận chiết khấu riêng theo nhóm VIP1/VIP2/VIP3",
+    title: "Bảng giá riêng theo hợp đồng",
+    desc: "Đăng nhập tài khoản để xem đúng bảng giá TPS1 đã áp dụng cho bếp của bạn",
   },
   {
     emoji: "🚚",

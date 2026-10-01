@@ -36,15 +36,11 @@ export default function CustomerLayout() {
             </NavLink>
             <div className="min-w-0 hidden sm:block">
               <p className="font-semibold text-white text-sm leading-tight truncate">
-                {session?.name || session?.company || 'Khách hàng VIP'}
+                {session?.name || session?.company || 'Khách hàng'}
               </p>
               <div className="flex items-center gap-1.5 text-[11px] text-emerald-100/80 font-mono mt-0.5">
                 <span className="font-bold">{session?.code}</span>
-                {session?.tier && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-900/60 text-emerald-200 border border-emerald-400/30 text-[10px]">
-                    Hạng {session.tier}
-                  </span>
-                )}
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-900/60 text-emerald-200 border border-emerald-400/30 text-[10px]">Đối tác TPS1</span>
               </div>
             </div>
           </div>

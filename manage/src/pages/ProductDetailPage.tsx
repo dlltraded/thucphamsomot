@@ -19,7 +19,7 @@ const TEXT_FIELDS: { key: string; label: string }[] = [
 
 // Trang chi tiết sản phẩm (Giai đoạn B, tiếp theo trang Hàng hóa) — bấm vào
 // 1 sản phẩm ở trang Hàng hóa sẽ mở trang này để sửa TOÀN BỘ thông tin (ảnh,
-// mô tả, giá gốc, giá theo hạng, tồn kho...), chỉ admin/thu_mua sửa được.
+// mô tả, giá tham chiếu, tồn kho...), chỉ admin/thu_mua sửa được.
 // Cũng dùng chung trang này cho "Thêm sản phẩm mới" (id === 'moi').
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -28,9 +28,7 @@ export default function ProductDetailPage() {
   const { token } = useAuth();
   const apiBase = import.meta.env.VITE_API_BASE_URL || '';
 
-  const [tiers, setTiers] = useState<{ code: string; name: string }[]>([]);
   const [product, setProduct] = useState<Record<string, any>>({ name: '', unit: 'Kg' });
-  const [tierDrafts, setTierDrafts] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<any[]>([]);
   const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(!isNew);
@@ -39,12 +37,6 @@ export default function ProductDetailPage() {
   const [invType, setInvType] = useState<'in' | 'out' | 'adjust'>('in');
   const [invQty, setInvQty] = useState('');
   const [invNote, setInvNote] = useState('');
-
-  const fetchMeta = useCallback(async () => {
-    const res = await fetch(`${apiBase}/api/admin/products?meta=1`, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
-    if (data.ok) setTiers(data.tiers || []);
-  }, [apiBase, token]);
 
   const fetchProduct = useCallback(async () => {
     if (isNew || !id) return;
@@ -56,17 +48,11 @@ export default function ProductDetailPage() {
       setProduct(data.product);
       setCanEdit(!!data.canEdit);
       setHistory(data.inventoryHistory || []);
-      const drafts: Record<string, string> = {};
-      for (const t of tiers.length ? tiers : [{ code: 'VIP0' }, { code: 'VIP1' }, { code: 'VIP2' }, { code: 'VIP3' }]) {
-        drafts[t.code] = data.product.tierPrices?.[t.code] != null ? String(data.product.tierPrices[t.code]) : '';
-      }
-      setTierDrafts(drafts);
     } finally {
       setLoading(false);
     }
-  }, [apiBase, token, id, isNew, navigate, tiers]);
+  }, [apiBase, token, id, isNew, navigate]);
 
-  useEffect(() => { fetchMeta(); }, [fetchMeta]);
   useEffect(() => { fetchProduct(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isNew) setCanEdit(true);
@@ -115,16 +101,10 @@ export default function ProductDetailPage() {
       fields.track_inventory = !!product.track_inventory;
       fields.active = !!product.active;
 
-      const tierPrices: Record<string, number | null> = {};
-      for (const t of tiers) {
-        const raw = tierDrafts[t.code];
-        tierPrices[t.code] = raw === '' || raw === undefined ? null : Number(raw);
-      }
-
       const res = await fetch(`${apiBase}/api/admin/products`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ productId: id, fields, tierPrices }),
+        body: JSON.stringify({ productId: id, fields }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);
@@ -294,22 +274,6 @@ export default function ProductDetailPage() {
             )}
           </>
         )}
-
-        {/* Giá theo hạng */}
-        <div className="pt-2 border-t border-slate-50">
-          <label className="text-xs font-semibold text-slate-500 uppercase block mb-2">Giá theo hạng khách</label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {tiers.map((t) => (
-              <div key={t.code}>
-                <label className="text-[10px] text-slate-400">{t.name}</label>
-                <input type="number" min="0" step="1000" disabled={!canEdit} value={tierDrafts[t.code] ?? ''}
-                  onChange={(e) => setTierDrafts((d) => ({ ...d, [t.code]: e.target.value }))}
-                  placeholder={money(Number(product.price_retail) || 0)}
-                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm disabled:bg-slate-50" />
-              </div>
-            ))}
-          </div>
-        </div>
 
         {canEdit && (
           <div className="flex justify-end pt-2 border-t border-slate-50">

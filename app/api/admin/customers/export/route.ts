@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     const supabase = getCustomerSupabaseAdmin();
     let customerQuery = supabase
       .from("vip_accounts")
-      .select("id, partner_code, name, phone, company, email, tax_code, discount_tier, credit_limit, sales_rep_id, is_active, created_at")
+      .select("id, partner_code, name, phone, company, email, tax_code, customer_group, credit_limit, sales_rep_id, is_active, created_at")
       .order("name");
     const isSale = auth.profile?.role === "sale" && auth.profile?.id !== "legacy-admin";
     if (isSale) customerQuery = customerQuery.eq("sales_rep_id", auth.profile!.id);
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
     titleBlock(sheet, "DANH SÁCH KHÁCH HÀNG", `${(customers || []).length} khách hàng`, 12);
     styleHeaderRow(sheet.addRow([
       "Mã KH", "Tên khách hàng", "SĐT", "Công ty", "Mã số thuế",
-      "Hạng", "Hạn mức nợ", "Sale phụ trách", "Trạng thái", "Số đơn", "Doanh thu", "Công nợ",
+      "Nhóm khách hàng", "Hạn mức nợ", "Sale phụ trách", "Trạng thái", "Số đơn", "Doanh thu", "Công nợ",
     ]));
 
     (customers || [])
@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
         const s = statsByCustomer.get(c.id) || { orderCount: 0, revenue: 0, debt: 0 };
         const row = sheet.addRow([
           c.partner_code, c.name, c.phone, c.company || "", c.tax_code || "",
-          c.discount_tier || "VIP0", Number(c.credit_limit) || 0, repMap.get(c.sales_rep_id) || "—",
+          c.customer_group || "Chưa phân nhóm", Number(c.credit_limit) || 0, repMap.get(c.sales_rep_id) || "—",
           c.is_active ? "Hoạt động" : "Đã khóa", s.orderCount, s.revenue, s.debt,
         ]);
         [7, 11, 12].forEach((n) => { row.getCell(n).numFmt = '#,##0"đ"'; });

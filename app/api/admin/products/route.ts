@@ -19,13 +19,18 @@ type CatalogProduct = {
   stock_qty: number | null;
   min_stock: number | null;
   is_low_stock: boolean | null;
+  min_order_qty: number | null;
+  order_step: number | null;
+  enforce_order_step: boolean | null;
+  packaging_note: string | null;
+  quantity_precision: number | null;
 };
 let baseCatalogCache: { expiresAt: number; products: CatalogProduct[] } | null = null;
 const pricedCatalogCache = new Map<string, { expiresAt: number; products: unknown[] }>();
 
 async function loadBaseCatalog(supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
   if (baseCatalogCache && baseCatalogCache.expiresAt > Date.now()) return baseCatalogCache.products;
-  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock";
+  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision";
   const pageSize = 1000;
   const first = await supabase.from("products").select(fields, { count: "exact" }).eq("active", true).order("name").range(0, pageSize - 1);
   if (first.error) throw first.error;
@@ -71,6 +76,11 @@ const EDITABLE_FIELDS = [
   "max_stock",
   "track_inventory",
   "active",
+  "min_order_qty",
+  "order_step",
+  "enforce_order_step",
+  "packaging_note",
+  "quantity_precision",
 ] as const;
 
 function slugifySku(name: string) {
@@ -236,7 +246,7 @@ export async function GET(req: NextRequest) {
       let query = supabase
         .from("products")
         .select(
-          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active",
+          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision",
           { count: "exact" }
         )
         .order("name")

@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
       // Lấy thông tin khách hàng để kiểm tra quyền, xác thực và hạn mức
       let customer: {
         id: string;
-        discount_tier?: string;
         sales_rep_id?: string | null;
         verification_status?: string | null;
         credit_limit?: number | null;
@@ -79,7 +78,7 @@ export async function POST(req: NextRequest) {
       if (order.customer_id) {
         const { data: cust } = await supabase
           .from("vip_accounts")
-          .select("id, discount_tier, sales_rep_id, verification_status, credit_limit")
+          .select("id, sales_rep_id, verification_status, credit_limit")
           .eq("id", order.customer_id)
           .maybeSingle();
         customer = cust;
@@ -210,7 +209,7 @@ export async function POST(req: NextRequest) {
         // Chưa finalized nhưng giá đã hợp lệ (> 0đ) -> chốt đơn giá và xác nhận qua finalizeOrderCore
         await finalizeOrderCore(supabase, {
           orderId: order.id,
-          customerTier: customer?.discount_tier || "VIP0",
+          customerTier: "",
           pricingMode: "manual_item_price",
           orderDiscountPercent: 0,
           shippingAmount: Number(order.shipping_amount) || 0,

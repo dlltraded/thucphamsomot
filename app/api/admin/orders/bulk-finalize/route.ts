@@ -59,11 +59,9 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const { data: customer } = await supabase.from("vip_accounts").select("discount_tier").eq("id", order.customer_id).maybeSingle();
-
       await finalizeOrderCore(supabase, {
         orderId: order.id,
-        customerTier: customer?.discount_tier || "VIP0",
+        customerTier: "",
         pricingMode: "manual_item_price",
         orderDiscountPercent: 0,
         shippingAmount: Number(order.shipping_amount) || 0,

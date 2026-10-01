@@ -87,10 +87,11 @@ export async function commitImportJob(
     // 3. For each mapped price book, create or retrieve a DRAFT price book
     for (const pbMap of mapping.priceBooks) {
       // Find if an active or draft version exists to bump version
+      const baseCode = pbMap.code.replace(/_v\d+$/, '');
       const { data: existingPbs } = await supabase
         .from('price_books')
         .select('id, code, version, status')
-        .eq('code', pbMap.code)
+        .like('code', `${baseCode}%`)
         .order('version', { ascending: false })
         .limit(1);
 
@@ -101,7 +102,7 @@ export async function commitImportJob(
       if (latestPb) {
         newVersion = latestPb.version + 1;
         // CREATE A NEW VERSION in 'draft' status — NEVER overwrite active!
-        const newCode = `${pbMap.code}_v${newVersion}`;
+        const newCode = `${baseCode}_v${newVersion}`;
         const { data: createdPb, error: pbErr } = await supabase
           .from('price_books')
           .insert({

@@ -6,7 +6,7 @@ import { Button } from "zmp-ui";
 import { useState } from "react";
 
 export default function Pay() {
-  const { totalAmount, discountPercent, discountedTotal, voucherDiscount } =
+  const { totalAmount, discountedTotal, voucherDiscount } =
     useAtomValue(cartTotalState);
   const customerAuth = useAtomValue(customerAuthState);
   const checkout = useCheckout();
@@ -21,11 +21,6 @@ export default function Pay() {
         <div className="text-sm font-medium text-primary">
           {formatPrice(displayTotal)}
         </div>
-        {customerAuth && discountPercent > 0 && (
-          <div className="text-2xs text-subtitle">
-            Giá đề xuất theo {customerAuth.tier} -{discountPercent}%
-          </div>
-        )}
         {voucherDiscount > 0 && (
           <div className="text-2xs text-green-600 font-medium">
             Voucher: -{formatPrice(voucherDiscount)}

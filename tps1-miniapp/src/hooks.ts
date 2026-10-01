@@ -121,7 +121,6 @@ export function useToBeImplemented() {
 }
 
 export function useCheckout() {
-  const { discountPercent } = useAtomValue(cartTotalState);
   const [cart, setCart] = useAtom(cartState);
   const navigate = useNavigate();
   const refreshNewOrders = useSetAtom(ordersState("pending"));
@@ -137,9 +136,7 @@ export function useCheckout() {
   const selectedAddressId = useAtomValue(selectedAddressIdState);
 
   return async () => {
-    // Chặn đặt hàng nếu khách chưa đăng nhập bằng mã khách hàng —
-    // giá bán lẻ trong app chỉ để tham khảo, phải đăng nhập mới đặt được
-    // và mới áp dụng chiết khấu theo nhóm VIP1/VIP2/VIP3.
+    // Khách phải đăng nhập để API nhận diện đúng bảng giá đang áp dụng.
     if (!customerAuth) {
       navigate("/register?redirect=/cart");
       return;
@@ -155,12 +152,12 @@ export function useCheckout() {
     }
 
     try {
-      // Áp % chiết khấu theo nhóm khách hàng ngay ở từng dòng sản phẩm để
-      // tổng các item.amount luôn khớp chính xác paymentAmount (bắt buộc với Zalo Pay).
+      // Giá đã được server resolve theo khách hàng -> nhóm bếp -> bảng giá chung.
+      // API tạo đơn sẽ tính lại lần cuối nên client không tự chiết khấu hay sửa giá.
       const orderItems = cart.map((item) => ({
         id: item.product.id,
         name: item.product.name,
-        price: Math.round(item.product.price * (1 - discountPercent / 100)),
+        price: item.product.price,
         quantity: item.quantity,
       }));
 
@@ -223,7 +220,7 @@ export function useCheckout() {
       const orderCode = String(centralOrder.orderCode);
       const discountedOrderTotal = Number(centralOrder.total || 0);
       const centralItems = Array.isArray(centralOrder.items) ? centralOrder.items : [];
-      const orderMessage = `Mã đơn: ${orderCode}\nKhách hàng: ${customerAuth.code} (${customerAuth.tier} - chiết khấu ${discountPercent}%)\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${Math.round(discountedOrderTotal)}đ`;
+      const orderMessage = `Mã đơn: ${orderCode}\nKhách hàng: ${customerAuth.code}\nĐịa chỉ: ${addressText}\nThanh toán: Trực tiếp\nTổng tiền: ${Math.round(discountedOrderTotal)}đ`;
 
       // Save local order to show immediately
       const newLocalOrder = {

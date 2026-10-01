@@ -40,6 +40,7 @@ const PERMISSIONS: Record<string, string[]> = {
   'orders.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],
   'orders.export_delivery': ['admin', 'truong_phong', 'sale', 'kho', 'tai_xe'],
   'orders.export_invoice': ['admin', 'truong_phong', 'ke_toan'],
+  'orders.returns': ['admin', 'truong_phong', 'ke_toan'],
   'procurement.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
   'procurement.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
   'products.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],

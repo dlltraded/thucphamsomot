@@ -8,7 +8,7 @@ import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { ReorderButton } from "./reorder-button";
 
-export const metadata = makeMetadata({ title: "Đơn hàng đã đặt", description: "Danh sách đơn hàng đã đặt của tài khoản khách hàng VIP TPS1.", path: "/portal/don-hang" });
+export const metadata = makeMetadata({ title: "Đơn hàng đã đặt", description: "Danh sách đơn hàng của tài khoản khách hàng TPS1.", path: "/portal/don-hang" });
 export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, string> = { pending: "Chờ xác nhận", confirmed: "Đã xác nhận", preparing: "Đang chuẩn bị", shipping: "Đang giao", completed: "Hoàn thành", canceled: "Đã hủy" };
@@ -65,7 +65,7 @@ export default async function CustomerOrdersPage() {
   const activeCount = orders.filter((order) => !["completed", "canceled"].includes(order.status || "")).length;
 
   return (
-    <PageShell eyebrow="Cổng đối tác VIP" title="Đơn hàng của tôi" compact>
+    <PageShell eyebrow="Cổng khách hàng" title="Đơn hàng của tôi" compact>
       <div className="customer-orders-page">
         <div className="customer-orders-toolbar">
           <div><Link href="/portal" className="customer-back-link"><ArrowLeft size={16} /> Tài khoản của tôi</Link><p>Theo dõi tiến độ, thông tin giao nhận và giá trị từng đơn hàng.</p></div>

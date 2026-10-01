@@ -75,10 +75,8 @@ export const userInfoState = atom<Promise<UserInfo>>(async (get) => {
 
 export const loadableUserInfoState = loadable(userInfoState);
 
-// Không còn cố lấy/hiện SĐT từ tài khoản Zalo gốc — danh tính hiển thị trong
-// app giờ dựa hoàn toàn vào tài khoản khách hàng VIP (customerAuthState), do
-// sale tạo và cập nhật thông tin. Trước khi đăng nhập VIP, người dùng chỉ
-// hiện là "Khách" (xem src/pages/profile/user-info.tsx).
+// Không còn cố lấy/hiện SĐT từ tài khoản Zalo gốc. Danh tính trong app dựa
+// trên tài khoản khách hàng TPS1 do bộ phận phụ trách tạo và cập nhật.
 export const phoneState = atom(async () => {
   try {
     await getPhoneNumber({});
@@ -180,7 +178,6 @@ export const activeVoucherState = atom<Voucher | null>(null);
 
 export const cartTotalState = atom((get) => {
   const items = get(cartState);
-  const customer = get(customerAuthState);
   const voucher = get(activeVoucherState);
   
   const totalAmount = items.reduce(
@@ -188,8 +185,10 @@ export const cartTotalState = atom((get) => {
     0
   );
   
-  const discountPercent = customer?.discountPercent || 0;
-  let discountedTotal = Math.round(totalAmount * (1 - discountPercent / 100));
+  // Giá sản phẩm đã được API resolve theo bảng giá của tài khoản. Client
+  // không áp thêm chiết khấu vì sẽ làm sai giá đã được server xác định.
+  const discountPercent = 0;
+  let discountedTotal = totalAmount;
   
   let voucherDiscount = 0;
   if (voucher && discountedTotal >= voucher.min_order_value) {

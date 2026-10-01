@@ -12,7 +12,7 @@ export const metadata = makeMetadata({
 const PROCESS_STEPS = [
   {
     title: "Tiếp Nhận & Lên Kế Hoạch",
-    desc: "Nhận PO (đơn đặt hàng) từ đối tác qua hệ thống Cổng Đối Tác VIP. Bộ phận điều phối lên kế hoạch thu mua và phân bổ nhân sự sản xuất, đảm bảo khớp với lịch giao nhận của từng nhà máy.",
+    desc: "Nhận PO (đơn đặt hàng) từ khách qua hệ thống đặt hàng TPS1. Bộ phận điều phối lên kế hoạch thu mua và phân bổ nhân sự sản xuất, đảm bảo khớp với lịch giao nhận của từng nhà máy.",
     icon: FileText,
     image: "/images/process/step1.jpg",
   },

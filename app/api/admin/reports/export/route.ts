@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_code, status, grand_total, paid_amount, debt_amount, customer_id, customer_name, customer_company, sales_rep_id, confirmed_at, order_items(name, sku, quantity, unit, line_total, final_line_total)"
+        "id, order_code, status, grand_total, paid_amount, debt_amount, return_credit_amount, customer_id, customer_name, customer_company, sales_rep_id, confirmed_at, order_items(name, sku, quantity, unit, line_total, final_line_total)"
       )
       .in("status", REVENUE_STATUSES)
       .gte("confirmed_at", fromStr)
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     const totalRevenue = (orders || []).reduce((s, o) => s + money(o.grand_total), 0);
     const codCollected = (codPayments || []).reduce((s, p) => s + money(p.amount), 0);
-    const debtOutstanding = (orders || []).reduce((s, o) => s + money(o.debt_amount), 0);
+    const debtOutstanding = (orders || []).reduce((s, o) => s + Math.max(0, money(o.debt_amount) - money(o.return_credit_amount)), 0);
 
     const wb = new ExcelJS.Workbook();
     wb.creator = "TPS1 Sale System";

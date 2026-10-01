@@ -13,6 +13,7 @@ import type { ConfirmationOrderItem } from "./order-confirmation-pdf";
 export interface SalesInvoiceSnapshot {
   id: string;
   order_code: string;
+  invoice_number?: string | null;
   customer_code: string;
   customer_name: string;
   customer_phone: string;
@@ -95,7 +96,8 @@ export async function generateSalesInvoicePdf(order: SalesInvoiceSnapshot): Prom
             width: 235,
             stack: [
               { text: "HÓA ĐƠN BÁN HÀNG", alignment: "right", bold: true, fontSize: 15 },
-              { text: order.order_code, alignment: "right", color: "#087348", bold: true, margin: [0, 4, 0, 0] },
+              { text: order.invoice_number || order.order_code, alignment: "right", color: "#087348", bold: true, margin: [0, 4, 0, 0] },
+              { text: `Đơn hàng: ${order.order_code}`, alignment: "right", color: "#64748b", fontSize: 8 },
               { text: `Hoàn thành giao hàng: ${completedAt}`, alignment: "right", color: "#64748b", fontSize: 8 },
             ],
           },

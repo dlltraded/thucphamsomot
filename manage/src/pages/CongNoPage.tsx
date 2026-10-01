@@ -12,7 +12,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 interface DebtCustomer {
   id: string; partner_code: string; name: string; company: string | null;
-  discount_tier: string; credit_limit: number; currentDebt: number; openOrders: number;
+  credit_limit: number; currentDebt: number; openOrders: number;
   overLimit: boolean; usagePercent: number | null;
 }
 
@@ -91,7 +91,7 @@ export default function CongNoPage() {
                 <button onClick={() => toggleExpand(c.id)} className="w-full flex items-center gap-3 p-4 text-left hover:bg-slate-50">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-800">{c.name} {c.company ? `· ${c.company}` : ''}</p>
-                    <p className="text-xs text-slate-400">{c.partner_code} · {c.discount_tier} · {c.openOrders} đơn còn nợ</p>
+                    <p className="text-xs text-slate-400">{c.partner_code} · {c.openOrders} hóa đơn còn nợ</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className={`font-bold ${c.overLimit ? 'text-red-600' : 'text-slate-800'}`}>{money(c.currentDebt)}</p>
@@ -129,7 +129,7 @@ export default function CongNoPage() {
                               <td className="py-2 text-slate-500">{dt(o.created_at)}</td>
                               <td className="py-2 text-right text-slate-600">{money(o.grand_total)}</td>
                               <td className="py-2 text-right text-green-600">{money(o.paid_amount)}</td>
-                              <td className="py-2 text-right font-semibold text-red-600">{money(o.debt_amount)}</td>
+                              <td className="py-2 text-right font-semibold text-red-600">{money(o.effective_debt_amount ?? o.debt_amount)}</td>
                             </tr>
                           ))}
                         </tbody>

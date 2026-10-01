@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
     const result = topItems.map((it) => {
       const prod = productDetails.get(it.productId);
       const priceInfo = priceMap.get(it.productId);
-      const price = priceInfo?.price ?? (Number(prod?.price_retail) || Number(prod?.price_wholesale) || 0);
+      const price = priceInfo?.price ?? 0;
 
       return {
         productId: it.productId,
@@ -122,6 +122,8 @@ export async function GET(req: NextRequest) {
         unit: prod?.unit || it.unit,
         price,
         priceOnRequest: price <= 0,
+        priceSource: priceInfo?.priceSource || "missing",
+        priceBookName: priceInfo?.priceBookName || null,
         imageUrl: prod?.thumb_url || prod?.image_url || null,
         active: prod ? Boolean(prod.active) : true,
         totalQuantity: Math.round(it.totalQuantity * 1000) / 1000,

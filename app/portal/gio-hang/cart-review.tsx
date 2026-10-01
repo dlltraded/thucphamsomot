@@ -9,12 +9,8 @@ import { useCart } from "@/lib/cart-context";
 const fmt = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ";
 
 export function CartReview({
-  discountPercent,
-  tier,
   defaultShippingAddress,
 }: {
-  discountPercent: number;
-  tier: string;
   defaultShippingAddress?: {
     alias: string;
     address: string;
@@ -38,7 +34,7 @@ export function CartReview({
   const idempotencyKey = useRef<string>(crypto.randomUUID());
 
   const subtotal = items.reduce((sum, i) => sum + (i.price || 0) * i.quantity, 0);
-  const discountedTotal = Math.round(subtotal * (1 - discountPercent / 100));
+  const discountedTotal = subtotal;
 
   const handleSubmit = async () => {
     setError("");
@@ -125,7 +121,7 @@ export function CartReview({
             Mã đơn: <strong>{successCode}</strong>
           </p>
           <p style={{ color: "#666", fontSize: 14, margin: 0 }}>
-            Sale TPS1 sẽ kiểm tra phân loại khách, chốt đơn giá cuối và gửi PDF xác nhận trước khi thanh toán/giao hàng.
+            TPS1 sẽ kiểm tra hàng hóa, chốt đơn giá cuối và gửi PDF xác nhận trước khi thanh toán/giao hàng.
           </p>
           <button
             type="button"
@@ -198,7 +194,7 @@ export function CartReview({
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: 14 }}>{item.title}</div>
               <div style={{ fontSize: 12, color: "#666" }}>
-                {item.summary} · {fmt((item.price || 0) * (1 - discountPercent / 100))}/đơn vị
+                {item.summary} · {fmt(item.price || 0)}/đơn vị
               </div>
             </div>
             <input
@@ -230,9 +226,6 @@ export function CartReview({
         }}
       >
         <Row label="Tạm tính" value={fmt(subtotal)} />
-        {discountPercent > 0 && (
-          <Row label={`Giá đề xuất ${tier} (-${discountPercent}%)`} value={`-${fmt(subtotal - discountedTotal)}`} accent />
-        )}
         <div style={{ borderTop: "1px solid #eee", marginTop: 8, paddingTop: 8 }}>
           <Row label="Tổng tạm tính" value={fmt(discountedTotal)} bold />
         </div>

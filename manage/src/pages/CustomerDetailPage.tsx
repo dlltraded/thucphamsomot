@@ -21,14 +21,6 @@ const VERIFICATION_COLORS: Record<string, string> = {
 };
 const SOURCE_LABELS: Record<string, string> = { admin: 'Nhân viên tạo', website: 'Tự đăng ký (Website)', zalo_mini_app: 'Tự đăng ký (Mini App)' };
 
-const TIERS = [
-  { code: 'VIP0', label: 'VIP0 — Không chiết khấu' },
-  { code: 'VIP1', label: 'VIP1' },
-  { code: 'VIP2', label: 'VIP2' },
-  { code: 'VIP3', label: 'VIP3' },
-  { code: 'CUSTOM', label: 'CUSTOM — Chiết khấu riêng theo hợp đồng' },
-];
-
 // Trang chi tiết/sửa khách hàng — thay cho CustomersPage trước đây chỉ xem
 // danh sách, không sửa/không thống kê được gì (mục brief 2026-09-10: "phần
 // quản lý khách hàng như đồ chơi chả làm gì"). Dùng lại đúng các RPC
@@ -831,28 +823,7 @@ export default function CustomerDetailPage() {
           )}
 
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
-            <h2 className="font-bold text-slate-800">Hạng & công nợ</h2>
-            <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase block mb-1">Hạng khách hàng</label>
-              <select disabled={!canEdit} value={form.discount_tier || 'VIP0'} onChange={(e) => setField('discount_tier', e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50">
-                {TIERS.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
-              </select>
-            </div>
-            {form.discount_tier === 'CUSTOM' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase block mb-1">Chiết khấu riêng (%)</label>
-                  <input disabled={!canEdit} type="number" min="0" max="100" value={form.contract_discount_percent ?? ''} onChange={(e) => setField('contract_discount_percent', e.target.value)}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase block mb-1">Hết hạn</label>
-                  <input disabled={!canEdit} type="date" value={form.tier_expiry_date || ''} onChange={(e) => setField('tier_expiry_date', e.target.value)}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50" />
-                </div>
-              </div>
-            )}
+            <h2 className="font-bold text-slate-800">Phụ trách &amp; công nợ</h2>
             <div>
               <label className="text-xs font-semibold text-slate-500 uppercase block mb-1">Hạn mức công nợ (0 = không giới hạn)</label>
               <input disabled={!canEdit} type="number" min="0" step="1000" value={form.credit_limit ?? 0} onChange={(e) => setField('credit_limit', e.target.value)}

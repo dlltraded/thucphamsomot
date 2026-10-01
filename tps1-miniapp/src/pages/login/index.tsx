@@ -76,8 +76,10 @@ export default function LoginPage() {
           customerId: row.id,
           isDefault: true,
         },
-        tier: row.tier,
-        discountPercent: Number(row.discount_percent) || 0,
+        // Hai trường cũ được giữ rỗng trong bộ nhớ để tương thích bản app đã
+        // phát hành; giá mới chỉ đến từ bảng giá do server resolve.
+        tier: "",
+        discountPercent: 0,
         verificationStatus: row.verification_status || "verified",
         orderSessionToken: row.order_session_token || "",
       };
@@ -99,9 +101,7 @@ export default function LoginPage() {
       ) {
         setShippingAddress(customer.defaultShippingAddress);
       }
-      toast.success(
-        `Đăng nhập thành công — Nhóm ${customer.tier}, chiết khấu ${customer.discountPercent}%`
-      );
+      toast.success("Đăng nhập thành công");
       navigate(redirect, { replace: true });
     } catch (err) {
       console.error("Lỗi đăng nhập khách hàng:", err);
@@ -118,8 +118,8 @@ export default function LoginPage() {
     >
       <div className="bg-section p-4 grid gap-4">
         <p className="text-sm text-subtitle">
-          Nhập Mã khách hàng và Mật khẩu do sale TPS1 cung cấp để xem giá
-          chiết khấu riêng và đặt hàng.
+          Nhập Mã khách hàng và Mật khẩu do TPS1 cung cấp để xem bảng giá
+          đang áp dụng và đặt hàng.
         </p>
         <Input
           name="code"

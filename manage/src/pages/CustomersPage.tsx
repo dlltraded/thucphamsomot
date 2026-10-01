@@ -4,13 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Search, RefreshCw, Users, Plus, FileSpreadsheet, ShieldAlert, Pencil, KeyRound, Trash2, Copy, Check, X } from 'lucide-react';
 
-const TIER_COLORS: Record<string, string> = {
-  VIP0: 'bg-slate-100 text-slate-600',
-  VIP1: 'bg-sky-100 text-sky-700',
-  VIP2: 'bg-blue-100 text-blue-700',
-  VIP3: 'bg-purple-100 text-purple-700',
-  CUSTOM: 'bg-amber-100 text-amber-700',
-};
 const VERIFICATION_LABELS: Record<string, string> = { pending: 'Chờ xác thực', verified: 'Đã xác thực', rejected: 'Đã từ chối' };
 const VERIFICATION_COLORS: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-700',
@@ -244,7 +237,7 @@ export default function CustomersPage() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Quản lý Khách hàng</h1>
-          <p className="text-slate-500">{customers.length} khách hàng VIP · đang hiển thị {filteredCustomers.length}</p>
+          <p className="text-slate-500">{customers.length} khách hàng · đang hiển thị {filteredCustomers.length}</p>
         </div>
         <div className="flex gap-2 flex-wrap items-center w-full md:w-auto">
           <div className="relative w-full sm:w-auto">
@@ -374,8 +367,8 @@ export default function CustomersPage() {
                   <p className="font-mono text-xs text-slate-500 mt-0.5">{customer.partner_code}</p>
                   {customer.company && <p className="text-xs text-slate-400 truncate mt-0.5">{customer.company}</p>}
                 </div>
-                <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold ${TIER_COLORS[customer.discount_tier] || 'bg-slate-100 text-slate-600'}`}>
-                  {customer.discount_tier || 'VIP0'}
+                <span className="shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+                  {customer.customer_group || 'Bảng giá chung'}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -417,7 +410,7 @@ export default function CustomersPage() {
                 <th className="px-4 py-4">Khách hàng</th>
                 <th className="px-4 py-4">SĐT</th>
                 <th className="px-4 py-4">Người phụ trách</th>
-                <th className="px-4 py-4">Hạng</th>
+                <th className="px-4 py-4">Nhóm bếp / bảng giá</th>
                 <th className="px-4 py-4 text-right">Hạn mức công nợ</th>
                 <th className="px-4 py-4 text-center">Xác thực</th>
                 <th className="px-4 py-4 text-center">Trạng thái</th>
@@ -487,8 +480,8 @@ export default function CustomersPage() {
                     )}
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${TIER_COLORS[customer.discount_tier] || 'bg-slate-100 text-slate-600'}`}>
-                      {customer.discount_tier || 'VIP0'}
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+                      {customer.customer_group || 'Bảng giá chung'}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-right text-slate-600">{money(customer.credit_limit)}</td>

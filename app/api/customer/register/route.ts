@@ -57,7 +57,6 @@ export async function POST(req: NextRequest) {
         code: account.code,
         name: account.name,
         phone: account.phone,
-        tier: account.tier || "VIP0",
         verificationStatus: account.verification_status || "pending",
       },
     }, 201);

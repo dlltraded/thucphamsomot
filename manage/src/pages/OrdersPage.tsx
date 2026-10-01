@@ -82,7 +82,7 @@ function dt(val: string | null | undefined) {
   });
 }
 
-export default function OrdersPage() {
+export default function OrdersPage({ view = 'orders' }: { view?: 'orders' | 'invoices' }) {
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -151,66 +151,22 @@ export default function OrdersPage() {
           .catch((e) => console.warn('Lỗi tải order-change-requests:', e));
       }
 
-      let query = supabase
-        .from('orders')
-        .select(`
-          id, order_code, status, payment_status, payment_method, source,
-          subtotal, discount_amount, discount_percent, shipping_amount, grand_total,
-          paid_amount, debt_amount,
-          voucher_code, voucher_discount, manual_discount_percent,
-          note, pricing_note, created_at, updated_at, confirmed_at,
-          customer_id, customer_code, customer_name, customer_phone, customer_company,
-          customer_tier, pricing_status, price_revision, confirmation_document_status,
-          delivery_type, delivery_date, delivery_shift, delivery_address, delivery_name,
-          delivery_phone, delivery_alias, sales_rep_id, item_count, merged_into_order_id
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      const params = new URLSearchParams({ mode: view, page: String(page), pageSize: String(PAGE_SIZE) });
+      if (view === 'orders' && filterStatus) params.set('status', filterStatus);
+      if (filterPayment) params.set('paymentStatus', filterPayment);
+      if (dateFrom) params.set('dateFrom', dateFrom);
+      if (dateTo) params.set('dateTo', dateTo);
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      const response = await fetch(`${apiBase}/api/admin/orders?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Không tải được dữ liệu');
+      const data = Array.isArray(result.orders) ? result.orders : [];
+      setTotalCount(Number(result.totalCount) || 0);
+      setOrders(data);
 
-      let statsQuery = supabase
-        .from('orders')
-        .select('status, grand_total')
-        .limit(10000);
-
-      if (dateFrom) { query = query.gte('created_at', dateFrom); statsQuery = statsQuery.gte('created_at', dateFrom); }
-      if (dateTo) { query = query.lt('created_at', `${dateTo}T23:59:59.999`); statsQuery = statsQuery.lt('created_at', `${dateTo}T23:59:59.999`); }
-      if (filterStatus) query = query.eq('status', filterStatus);
-      if (filterPayment) query = query.eq('payment_status', filterPayment);
-      if (debouncedSearch) {
-        const safe = debouncedSearch.replace(/[,%()]/g, ' ').trim();
-        if (safe) query = query.or(`order_code.ilike.%${safe}%,customer_code.ilike.%${safe}%,customer_name.ilike.%${safe}%,customer_phone.ilike.%${safe}%,customer_company.ilike.%${safe}%`);
-      }
-
-      if (user?.role === 'sale' && user.id && user.id !== 'legacy-admin') {
-        const { data: myCustomers } = await supabase
-          .from('vip_accounts')
-          .select('id, partner_code')
-          .eq('sales_rep_id', user.id);
-        const myCodes = (myCustomers || []).map((c: any) => c.partner_code).filter(Boolean);
-        if (myCodes.length > 0) {
-          query = query.in('customer_code', myCodes);
-          statsQuery = statsQuery.in('customer_code', myCodes);
-        } else {
-          setOrders([]); setLoading(false); return;
-        }
-      }
-
-      const statsPromise = Promise.resolve(statsQuery);
-      const { data, error, count } = await query;
-      if (error) throw error;
-      setTotalCount(count || 0);
-      setOrders(data || []);
-      setLoading(false);
-
-      const salesRepIds = [...new Set((data || []).map((o: any) => o.sales_rep_id).filter(Boolean))];
-      const [{ data: statsRows, error: statsError }, { data: reps }] = await Promise.all([
-        statsPromise,
-        salesRepIds.length
-          ? supabase.from('admin_profiles').select('id, name').in('id', salesRepIds)
-          : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-      ]);
-      if (statsError) console.warn('Lỗi tải thống kê đơn hàng:', statsError);
-      const summary = (statsRows || []).reduce((acc: any, order: any) => {
+      const summary = data.reduce((acc: any, order: any) => {
         if (order.status === 'pending') acc.pending += 1;
         if (order.status === 'preparing') acc.preparing += 1;
         if (order.status === 'shipping') acc.shipping += 1;
@@ -219,15 +175,12 @@ export default function OrdersPage() {
         return acc;
       }, { pending: 0, preparing: 0, shipping: 0, completed: 0, revenue: 0 });
       setStats(summary);
-      const repMap = new Map((reps || []).map((r: any) => [r.id, r.name]));
-
-      setOrders((data || []).map((o: any) => ({ ...o, sales_rep_name: repMap.get(o.sales_rep_id) || null })));
     } catch (err) {
       console.error('Lỗi tải đơn hàng:', err);
     } finally {
       setLoading(false);
     }
-  }, [user, dateFrom, dateTo, filterStatus, filterPayment, debouncedSearch, page, token, apiBase]);
+  }, [dateFrom, dateTo, filterStatus, filterPayment, debouncedSearch, page, token, apiBase, view]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -276,13 +229,19 @@ export default function OrdersPage() {
   const changeStatus = async (order: any, newStatus: string) => {
     setUpdatingId(order.id);
     try {
-      const updateData: any = { status: newStatus };
-      if (newStatus === 'confirmed' && !order.confirmed_at) {
-        updateData.confirmed_at = new Date().toISOString();
-      }
-      const { error } = await supabase.from('orders').update(updateData).eq('id', order.id);
-      if (error) throw error;
-      setOrders(orders.map(o => o.id === order.id ? { ...o, ...updateData } : o));
+      const res = await fetch(`${apiBase}/api/admin/orders`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          orderId: order.id,
+          status: newStatus,
+          confirmFullDelivery: newStatus === 'completed',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Không cập nhật được trạng thái');
+      await fetchOrders();
+      if (data.warning) alert(data.warning);
     } catch (err: any) {
       alert('Không cập nhật được trạng thái: ' + (err.message || 'Lỗi không xác định'));
     } finally {
@@ -293,8 +252,13 @@ export default function OrdersPage() {
   const changePayment = async (order: any, newPayment: string) => {
     setUpdatingId(order.id);
     try {
-      const { error } = await supabase.from('orders').update({ payment_status: newPayment }).eq('id', order.id);
-      if (error) throw error;
+      const res = await fetch(`${apiBase}/api/admin/orders`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId: order.id, paymentStatus: newPayment }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Không cập nhật được thanh toán');
       setOrders(orders.map(o => o.id === order.id ? { ...o, payment_status: newPayment } : o));
     } catch (err: any) {
       alert('Không cập nhật được thanh toán: ' + (err.message || 'Lỗi không xác định'));
@@ -438,12 +402,13 @@ export default function OrdersPage() {
   };
 
   // Status Chip list for quick mobile/desktop tabs
-  const statusChips = [
+  const statusChips = view === 'invoices' ? [
+    { key: '', label: 'Tất cả hóa đơn', count: totalCount, dot: STATUS_DOT_COLORS.completed },
+  ] : [
     { key: '', label: 'Tất cả', count: totalCount },
     { key: 'pending', label: 'Chờ xác nhận', count: stats.pending, dot: STATUS_DOT_COLORS.pending },
     { key: 'preparing', label: 'Đang chuẩn bị', count: stats.preparing, dot: STATUS_DOT_COLORS.preparing },
     { key: 'shipping', label: 'Đang giao', count: stats.shipping, dot: STATUS_DOT_COLORS.shipping },
-    { key: 'completed', label: 'Hoàn thành', count: stats.completed, dot: STATUS_DOT_COLORS.completed },
   ];
 
   return (
@@ -456,7 +421,7 @@ export default function OrdersPage() {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Quản lý Đơn hàng
+              {view === 'invoices' ? 'Hóa đơn bán hàng' : 'Đặt hàng'}
             </h1>
             <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
               {totalCount} đơn
@@ -476,7 +441,7 @@ export default function OrdersPage() {
         <div className="flex items-center gap-1.5 sm:gap-2">
 
           {/* NÚT 1: TẠO ĐƠN HÀNG (+) */}
-          <div className="relative group">
+          {view === 'orders' && <div className="relative group">
             <button
               onClick={() => navigate('/tao-don-hang')}
               className="h-10 sm:h-auto sm:px-3.5 sm:py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all"
@@ -490,10 +455,10 @@ export default function OrdersPage() {
             <div className="absolute -bottom-9 right-0 sm:left-1/2 sm:-translate-x-1/2 px-2.5 py-1 bg-slate-900/90 text-white text-[11px] font-medium rounded-lg shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
               Tạo đơn hàng mới (POS)
             </div>
-          </div>
+          </div>}
 
           {/* NÚT 2: GỘP ĐƠN (Theo khách hàng chuẩn KiotViet) */}
-          <div className="relative group">
+          {view === 'orders' && <div className="relative group">
             <button
               onClick={() => setIsMergeModalOpen(true)}
               className="h-10 sm:h-auto sm:px-3.5 sm:py-2.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all relative"
@@ -516,7 +481,7 @@ export default function OrdersPage() {
             <div className="absolute -bottom-9 right-0 sm:left-1/2 sm:-translate-x-1/2 px-2.5 py-1 bg-slate-900/90 text-white text-[11px] font-medium rounded-lg shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
               Gộp đơn theo khách hàng
             </div>
-          </div>
+          </div>}
 
           {/* NÚT 3: XUẤT FILE & IN PHIẾU (Dropdown) */}
           <div className="relative group" ref={exportDropdownRef}>
@@ -1171,13 +1136,13 @@ export default function OrdersPage() {
           <div className="h-4 w-px bg-slate-700 hidden sm:block" />
 
           {/* Nút Gộp đơn */}
-          <button
+          {view === 'orders' && <button
             onClick={() => setIsMergeModalOpen(true)}
             disabled={selectedOrderIds.size < 2}
             className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 disabled:opacity-40 transition-all shadow-sm"
           >
             <Package size={14} /> Gộp đơn
-          </button>
+          </button>}
 
           {/* Menu Xuất file */}
           <button
@@ -1206,14 +1171,14 @@ export default function OrdersPage() {
       {/* ═════════════════════════════════════════════════════════════════════ */}
       {/* MODAL GỘP ĐƠN (2 BƯỚC: NHÓM KHÁCH HÀNG & BẢN XEM TRƯỚC)              */}
       {/* ═════════════════════════════════════════════════════════════════════ */}
-      <MergeOrdersModal
+      {view === 'orders' && <MergeOrdersModal
         isOpen={isMergeModalOpen}
         preSelectedOrderIds={Array.from(selectedOrderIds)}
         onClose={() => setIsMergeModalOpen(false)}
         onSuccess={handleMergeSuccess}
         token={token}
         apiBase={apiBase}
-      />
+      />}
     </div>
   );
 }

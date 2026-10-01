@@ -59,6 +59,7 @@ const PERMISSIONS: Record<string, Role[]> = {
   'orders.export_delivery': ['admin', 'truong_phong', 'sale', 'kho', 'tai_xe'],
   /** Xuất hóa đơn bán hàng, báo cáo công nợ */
   'orders.export_invoice': ['admin', 'truong_phong', 'ke_toan'],
+  'orders.returns': ['admin', 'truong_phong', 'ke_toan'],
 
   // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
   /** Xem màn đơn tổng, xuất Excel đơn tổng */

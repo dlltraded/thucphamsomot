@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_code, status, grand_total, paid_amount, debt_amount, customer_id, customer_name, customer_company, sales_rep_id, confirmed_at, order_items(name, sku, quantity, unit, line_total, final_line_total)"
+        "id, order_code, status, grand_total, paid_amount, debt_amount, return_credit_amount, customer_id, customer_name, customer_company, sales_rep_id, confirmed_at, order_items(name, sku, quantity, unit, line_total, final_line_total)"
       )
       .in("status", REVENUE_STATUSES)
       .gte("confirmed_at", fromStr)
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     if (codError) throw codError;
 
     const totalRevenue = (orders || []).reduce((s, o) => s + (Number(o.grand_total) || 0), 0);
-    const totalDebtOutstanding = (orders || []).reduce((s, o) => s + (Number(o.debt_amount) || 0), 0);
+    const totalDebtOutstanding = (orders || []).reduce((s, o) => s + Math.max(0, (Number(o.debt_amount) || 0) - (Number(o.return_credit_amount) || 0)), 0);
     const codCollected = (codPayments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
 
     const summary = {

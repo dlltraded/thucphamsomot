@@ -26,7 +26,8 @@ export interface ConfirmationOrderSnapshot {
   customer_name: string;
   customer_phone: string;
   customer_company?: string | null;
-  customer_tier?: string | null;
+  price_book_name?: string | null;
+  price_book_version?: number | null;
   delivery_name?: string | null;
   delivery_phone?: string | null;
   delivery_address?: string | null;
@@ -55,7 +56,7 @@ const sourceLabel: Record<string, string> = {
 };
 
 const pricingLabel: Record<string, string> = {
-  tier: "Chính sách theo hạng khách hàng",
+  price_book: "Bảng giá được phân công",
   order_discount: "Chiết khấu riêng toàn đơn",
   manual_item_price: "Đơn giá chốt riêng từng sản phẩm",
 };
@@ -144,7 +145,7 @@ export async function generateOrderConfirmationPdf(
               infoRow("Khách hàng", order.customer_name),
               infoRow("Điện thoại", order.customer_phone),
               infoRow("Công ty/đơn vị", order.customer_company || "Khách hàng cá nhân"),
-              infoRow("Phân loại", order.customer_tier || "VIP0"),
+              infoRow("Bảng giá", order.price_book_name || "Bảng giá chung"),
             ],
           },
           {
@@ -155,7 +156,7 @@ export async function generateOrderConfirmationPdf(
               infoRow("Người nhận", order.delivery_name || order.customer_name),
               infoRow("Điện thoại", order.delivery_phone || order.customer_phone),
               infoRow("Địa chỉ", order.delivery_address || "Nhận tại điểm"),
-              infoRow("Chính sách giá", pricingLabel[order.pricing_mode || "tier"] || order.pricing_mode || "Theo thỏa thuận"),
+              infoRow("Chính sách giá", pricingLabel[order.pricing_mode || "price_book"] || order.pricing_mode || "Theo bảng giá"),
             ],
           },
         ],

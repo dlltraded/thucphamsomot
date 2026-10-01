@@ -74,9 +74,7 @@ export default function ChangePasswordPage() {
         setShippingAddress(customer.defaultShippingAddress);
       }
       toast.success(
-        isForced
-          ? `Đổi mật khẩu thành công — Nhóm ${customer.tier}, chiết khấu ${customer.discountPercent}%`
-          : "Đổi mật khẩu thành công"
+        "Đổi mật khẩu thành công"
       );
       navigate(redirect, { replace: true });
     } catch (err: any) {

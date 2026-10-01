@@ -7,7 +7,7 @@ import { ChangePasswordForm } from "./change-password-form";
 
 export const metadata = makeMetadata({
   title: "Đổi mật khẩu",
-  description: "Đổi mật khẩu tài khoản khách hàng VIP TPS1.",
+  description: "Đổi mật khẩu tài khoản khách hàng TPS1.",
   path: "/portal/doi-mat-khau",
 });
 

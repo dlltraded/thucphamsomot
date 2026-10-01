@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
-import { resolvePricesForProducts } from "@/lib/customer-pricing";
+import { resolvePricesForProducts, type ResolvedProductPrice } from "@/lib/customer-pricing";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,9 +23,6 @@ function json(body: unknown, status = 200, extraHeaders: Record<string, string> 
 
 type CustomerContext = {
   customerId: string;
-  tier: string | null;
-  contractDiscountPercent: number | null;
-  tierExpiryDate: string | null;
   expiresAt: number;
 };
 const customerContextCache = new Map<string, CustomerContext>();
@@ -64,18 +61,8 @@ async function resolveCustomerContext(req: NextRequest, supabase: ReturnType<typ
     .maybeSingle();
   if (!data?.customer_id) return null;
 
-  const { data: customer } = await supabase
-    .from("vip_accounts")
-    .select("discount_tier, contract_discount_percent, tier_expiry_date")
-    .eq("id", data.customer_id)
-    .maybeSingle();
   const context: CustomerContext = {
     customerId: data.customer_id,
-    tier: customer?.discount_tier || null,
-    contractDiscountPercent: customer?.contract_discount_percent == null
-      ? null
-      : Number(customer.contract_discount_percent),
-    tierExpiryDate: customer?.tier_expiry_date || null,
     expiresAt: Date.now() + CUSTOMER_CONTEXT_TTL_MS,
   };
   customerContextCache.set(token, context);
@@ -133,17 +120,8 @@ async function loadProductCatalog(
     };
   }
   const priceMap = customerContext
-    ? await resolvePricesForProducts(
-        supabase,
-        customerContext.customerId,
-        products,
-        {
-          tier: customerContext.tier,
-          contractDiscountPercent: customerContext.contractDiscountPercent,
-          tierExpiryDate: customerContext.tierExpiryDate,
-        }
-      )
-    : new Map<string, { price?: number }>();
+    ? await resolvePricesForProducts(supabase, customerContext.customerId, products)
+    : new Map<string, ResolvedProductPrice>();
   const supabaseUrl = (process.env.SUPABASE_PRODUCTS_URL || "").replace(/\/$/, "");
   const imageBaseUrl = supabaseUrl
     ? `${supabaseUrl}/storage/v1/object/public/product-images/thumbs`
@@ -154,7 +132,7 @@ async function loadProductCatalog(
   const items = products.map((product) => {
     const priceInfo = priceMap.get(product.id);
     const price = customerContext
-      ? priceInfo?.price ?? (Number(product.price_retail) || Number(product.price_wholesale) || 0)
+      ? priceInfo?.price ?? 0
       : Number(product.price_retail) || 0;
     return [
       product.id,
@@ -322,17 +300,13 @@ export async function GET(req: NextRequest) {
 
     // Giá theo hạng/hợp đồng riêng dùng chung hàm resolvePricesForProducts (F5)
     const priceMap = customerContext
-      ? await resolvePricesForProducts(supabase, customerContext.customerId, products || [], {
-          tier: customerContext.tier,
-          contractDiscountPercent: customerContext.contractDiscountPercent,
-          tierExpiryDate: customerContext.tierExpiryDate,
-        })
-      : new Map<string, { price?: number }>();
+      ? await resolvePricesForProducts(supabase, customerContext.customerId, products || [])
+      : new Map<string, ResolvedProductPrice>();
 
     const resolved = (products || []).map((p) => {
       const priceInfo = priceMap.get(p.id);
       const price = customerContext
-        ? priceInfo?.price ?? (Number(p.price_retail) || Number(p.price_wholesale) || 0)
+        ? priceInfo?.price ?? 0
         : Number(p.price_retail) || 0;
       return {
         id: p.id,
@@ -344,6 +318,10 @@ export async function GET(req: NextRequest) {
         thumbUrl: p.thumb_url || p.image_url,
         price,
         priceOnRequest: price <= 0,
+        priceSource: priceInfo?.priceSource || (customerContext ? 'missing' : 'public_catalog'),
+        priceBookId: priceInfo?.priceBookId || null,
+        priceBookCode: priceInfo?.priceBookCode || null,
+        priceBookName: priceInfo?.priceBookName || null,
         // Hàng tươi sống tồn kho = 0 vẫn nhận đặt hàng, bộ phận thu mua sẽ sắp xếp nhập giao khách
         available: true,
         stockQty: Number(p.stock_qty) || 0,
