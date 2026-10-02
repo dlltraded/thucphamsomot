@@ -136,6 +136,7 @@ export async function GET(req: NextRequest) {
       });
     }
     const orderId = req.nextUrl.searchParams.get("id")?.trim();
+    const mode = req.nextUrl.searchParams.get("mode") === "invoices" ? "invoices" : "orders";
     const status = req.nextUrl.searchParams.get("status");
     const paymentStatus = req.nextUrl.searchParams.get("paymentStatus");
     const deliveryDate = req.nextUrl.searchParams.get("deliveryDate")?.trim();
@@ -162,6 +163,9 @@ export async function GET(req: NextRequest) {
       query = query.eq("id", orderId);
     } else {
       query = query.range(page * pageSize, page * pageSize + pageSize - 1);
+      query = mode === "invoices"
+        ? query.eq("status", "completed")
+        : query.neq("status", "completed").neq("status", "merged");
       if (status && ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
         query = query.eq("status", status);
       }
@@ -184,16 +188,44 @@ export async function GET(req: NextRequest) {
     const { data, error, count } = await query;
     if (error) throw error;
 
+    const orderRows = (data || []) as any[];
+    const rowIds = orderRows.map((order) => order.id).filter(Boolean) as string[];
+    const salesRepIds = [...new Set(orderRows.map((order) => order.sales_rep_id).filter(Boolean))] as string[];
+
+    // Các truy vấn bổ sung không phụ thuộc nhau, chạy song song để tránh
+    // cộng dồn độ trễ giữa Vercel và database.
+    const [processingResult, salesRepResult] = await Promise.all([
+      rowIds.length
+        ? supabase
+            .from("order_history")
+            .select("order_id, actor, payload, created_at")
+            .in("order_id", rowIds)
+            .eq("action", "processing_claimed")
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as Array<{ order_id: string; actor: string; payload: Record<string, unknown>; created_at: string }> }),
+      salesRepIds.length
+        ? supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+    ]);
+
+    const processingMap = new Map<string, { name: string; staffId: string | null; startedAt: string }>();
+    for (const event of processingResult.data || []) {
+      if (processingMap.has(event.order_id)) continue;
+      const payload = (event.payload || {}) as Record<string, unknown>;
+      processingMap.set(event.order_id, {
+        name: event.actor,
+        staffId: payload.staffId ? String(payload.staffId) : null,
+        startedAt: event.created_at,
+      });
+    }
+
     // Tên sale lên đơn (chưa hiện trên order trước đây — chỉ có sales_rep_id).
     // Khớp yêu cầu "tên của sale lên đơn như kiotviet" — join admin_profiles.
-    const salesRepIds = [...new Set((data || []).map((order: any) => order.sales_rep_id).filter(Boolean))];
-    const { data: salesReps } = salesRepIds.length
-      ? await supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
-      : { data: [] as { id: string; name: string }[] };
+    const salesReps = salesRepResult.data || [];
     const salesRepMap = new Map((salesReps || []).map((r) => [r.id, r.name]));
 
     if (orderId) {
-      const singleOrder = data && data.length > 0 ? data[0] : null;
+      const singleOrder = orderRows.length > 0 ? orderRows[0] : null;
       // Gắn tồn kho hiện tại vào từng dòng hàng để màn "Xử lý đơn hàng" (POS)
       // biết ngay dòng nào thiếu hàng và cảnh báo + cho nhập hàng tại chỗ —
       // không còn chặn khách đặt hàng hết tồn nữa (yêu cầu 2026-09-11), việc
@@ -220,46 +252,55 @@ export async function GET(req: NextRequest) {
       }
       return json({
         ok: true,
-        order: singleOrder ? { ...singleOrder, sales_rep_name: salesRepMap.get(singleOrder.sales_rep_id) || null } : null,
+        order: singleOrder ? {
+          ...singleOrder,
+          sales_rep_name: salesRepMap.get(singleOrder.sales_rep_id) || null,
+          processing_by_name: processingMap.get(singleOrder.id)?.name || null,
+          processing_by_staff_id: processingMap.get(singleOrder.id)?.staffId || null,
+          processing_started_at: processingMap.get(singleOrder.id)?.startedAt || null,
+        } : null,
       });
     }
-    const customerIds = [...new Set((data || []).map((order: any) => order.customer_id).filter(Boolean))];
-    const { data: accounts } = customerIds.length
-      ? await supabase
-          .from("vip_accounts")
-          .select("id, discount_tier, verification_status, verified_at")
-          .in("id", customerIds)
-      : { data: [] };
+    const customerIds = [...new Set(orderRows.map((order) => order.customer_id).filter(Boolean))] as string[];
+    const statusCount = (statusValue: string) => {
+      let statusQuery = supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", statusValue);
+      if (dateFrom) statusQuery = statusQuery.gte("created_at", dateFrom);
+      if (dateTo) statusQuery = statusQuery.lte("created_at", dateTo);
+      return statusQuery;
+    };
+    const [accountResult, tierResult, pendingResult, preparingResult, shippingResult, completedResult] = await Promise.all([
+      customerIds.length
+        ? supabase.from("vip_accounts").select("id, discount_tier, verification_status, verified_at").in("id", customerIds)
+        : Promise.resolve({ data: [] as any[] }),
+      supabase.from("customer_tiers").select("code, name, discount_percent").order("code"),
+      statusCount("pending"),
+      statusCount("preparing"),
+      statusCount("shipping"),
+      statusCount("completed"),
+    ]);
+    const accounts = accountResult.data || [];
     const accountMap = new Map((accounts || []).map((account) => [account.id, account]));
-    const { data: tiers } = await supabase
-      .from("customer_tiers")
-      .select("code, name, discount_percent")
-      .order("code");
-    let statsQuery = supabase.from("orders").select("status, grand_total").limit(10000);
-    if (dateFrom) statsQuery = statsQuery.gte("created_at", dateFrom);
-    if (dateTo) statsQuery = statsQuery.lte("created_at", dateTo);
-    const { data: statsRows, error: statsError } = await statsQuery;
-    if (statsError) throw statsError;
-    const stats = (statsRows || []).reduce(
-      (acc, order) => {
-        if (order.status === "pending") acc.pending += 1;
-        if (order.status === "preparing") acc.preparing += 1;
-        if (order.status === "shipping") acc.shipping += 1;
-        if (order.status === "completed") acc.completed += 1;
-        if (!["canceled", "merged"].includes(order.status)) acc.revenue += Number(order.grand_total) || 0;
-        return acc;
-      },
-      { pending: 0, preparing: 0, shipping: 0, completed: 0, revenue: 0 }
-    );
+    const tiers = tierResult.data || [];
+    const stats = {
+      pending: pendingResult.count || 0,
+      preparing: preparingResult.count || 0,
+      shipping: shippingResult.count || 0,
+      completed: completedResult.count || 0,
+      revenue: 0,
+    };
     return json({
       ok: true,
-      orders: (data || []).map((order: any) => ({
+      orders: orderRows.map((order: any) => ({
         ...order,
         customer_account: accountMap.get(order.customer_id) || null,
         sales_rep_name: salesRepMap.get(order.sales_rep_id) || null,
+        processing_by_name: processingMap.get(order.id)?.name || null,
+        processing_by_staff_id: processingMap.get(order.id)?.staffId || null,
+        processing_started_at: processingMap.get(order.id)?.startedAt || null,
       })),
       tiers: tiers || [],
       count: count || 0,
+      totalCount: count || 0,
       page,
       pageSize,
       stats,
@@ -417,6 +458,7 @@ export async function PATCH(req: NextRequest) {
         .filter((row: { itemId: string; quantityDelivered: number }) => row.itemId && Number.isFinite(row.quantityDelivered) && row.quantityDelivered >= 0)
     : [];
   const regenerateInvoice = body?.regenerateInvoice === true;
+  const claimOrder = body?.claimOrder === true;
 
   if (!orderId) {
     return json({ ok: false, error: "Thiếu mã đơn hàng" }, 400);
@@ -424,7 +466,7 @@ export async function PATCH(req: NextRequest) {
   if (hasStatusChange && !ORDER_STATUSES.includes(nextStatus as (typeof ORDER_STATUSES)[number])) {
     return json({ ok: false, error: "Trạng thái đơn hàng không hợp lệ" }, 400);
   }
-  if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice && !paymentMethod && !paymentStatus) {
+  if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice && !paymentMethod && !paymentStatus && !claimOrder) {
     return json({ ok: false, error: "Không có nội dung cần cập nhật" }, 400);
   }
   if (
@@ -451,6 +493,9 @@ export async function PATCH(req: NextRequest) {
   if (regenerateInvoice && !canForProfile(auth.profile, "orders.export_invoice")) {
     return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền tạo lại hóa đơn" }, 403);
   }
+  if (claimOrder && !canForProfile(auth.profile, "orders.edit")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền tiếp nhận đơn hàng" }, 403);
+  }
 
   try {
     const supabase = getCustomerSupabaseAdmin();
@@ -461,6 +506,47 @@ export async function PATCH(req: NextRequest) {
       .single();
     if (currentError || !current) {
       return json({ ok: false, error: "Không tìm thấy đơn hàng" }, 404);
+    }
+
+    if (claimOrder) {
+      if (["completed", "canceled", "merged"].includes(String(current.status))) {
+        return json({ ok: false, error: "Đơn đã kết thúc, không thể tiếp nhận xử lý" }, 409);
+      }
+      const { data: latestClaim } = await supabase
+        .from("order_history")
+        .select("actor, payload, created_at")
+        .eq("order_id", orderId)
+        .eq("action", "processing_claimed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const currentStaffId = latestClaim?.payload && typeof latestClaim.payload === "object"
+        ? String((latestClaim.payload as Record<string, unknown>).staffId || "")
+        : "";
+      const requestingStaffId = String(auth.profile?.id || "");
+      if (!latestClaim || currentStaffId !== requestingStaffId) {
+        const { error: claimError } = await supabase.from("order_history").insert({
+          order_id: orderId,
+          action: "processing_claimed",
+          actor: auth.profile?.name || auth.profile?.email || "Nhân viên",
+          note: latestClaim ? `Tiếp nhận lại từ ${latestClaim.actor}` : "Tiếp nhận xử lý đơn hàng",
+          payload: {
+            staffId: auth.profile?.id || null,
+            staffEmail: auth.profile?.email || null,
+            previousStaffId: currentStaffId || null,
+            previousStaffName: latestClaim?.actor || null,
+          },
+        });
+        if (claimError) throw claimError;
+      }
+      if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice && !paymentMethod && !paymentStatus) {
+        return json({
+          ok: true,
+          order: current,
+          processingByName: auth.profile?.name || auth.profile?.email || "Nhân viên",
+          processingStartedAt: latestClaim?.created_at || new Date().toISOString(),
+        });
+      }
     }
 
     // Hoàn thành và Đã hủy là hai trạng thái kết thúc. Không cho phép đưa
