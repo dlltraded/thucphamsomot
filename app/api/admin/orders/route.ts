@@ -142,8 +142,8 @@ export async function GET(req: NextRequest) {
     const deliveryDate = req.nextUrl.searchParams.get("deliveryDate")?.trim();
     const late = req.nextUrl.searchParams.get("late")?.trim();
     const search = req.nextUrl.searchParams.get("search")?.replace(/[,()%_]/g, " ").trim();
-    const dateFrom = req.nextUrl.searchParams.get("from")?.trim();
-    const dateTo = req.nextUrl.searchParams.get("to")?.trim();
+    const dateFrom = (req.nextUrl.searchParams.get("dateFrom") || req.nextUrl.searchParams.get("from"))?.trim();
+    const dateTo = (req.nextUrl.searchParams.get("dateTo") || req.nextUrl.searchParams.get("to"))?.trim();
     const page = Math.max(0, Number.parseInt(req.nextUrl.searchParams.get("page") || "0", 10) || 0);
     const pageSize = Math.min(200, Math.max(1, Number.parseInt(req.nextUrl.searchParams.get("pageSize") || "100", 10) || 100));
     // Keep the detail and list selects in separate branches. Supabase's type
