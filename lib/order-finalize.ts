@@ -92,6 +92,16 @@ export async function finalizeOrderWithLegacyLineEditor(
 
   const originalItems = current.order_items || [];
   const originalMap = new Map(originalItems.map((item: Record<string, unknown>) => [String(item.id), item]));
+  const originalByProduct = new Map<string, Array<Record<string, unknown>>>();
+  for (const item of originalItems as Array<Record<string, unknown>>) {
+    for (const key of [item.product_id, item.product_local_id]) {
+      const identifier = String(key || "").trim();
+      if (!identifier) continue;
+      const rows = originalByProduct.get(identifier) || [];
+      if (!rows.some((row) => String(row.id) === String(item.id))) rows.push(item);
+      originalByProduct.set(identifier, rows);
+    }
+  }
   const keptIds: string[] = [];
   const finalItems: Array<{ itemId: string; finalUnitPrice: number; note: string }> = [];
 
@@ -107,7 +117,17 @@ export async function finalizeOrderWithLegacyLineEditor(
       const note = String(input.note || "").trim();
       if (!(quantity > 0) || finalUnitPrice < 0) throw new Error("Số lượng hoặc đơn giá sản phẩm không hợp lệ");
 
-      let itemId = String(input.itemId || "");
+      let itemId = String(input.itemId || "").trim();
+      const identifier = String(input.productId || input.productLocalId || "").trim();
+
+      // Tương thích các màn hình/phiên đăng nhập cũ chỉ gửi productId. Nếu
+      // sản phẩm đã nằm trong đơn thì phải cập nhật đúng dòng order_items,
+      // không được hiểu nhầm là thêm sản phẩm mới rồi tra lại danh mục.
+      if (!itemId && identifier) {
+        const existing = (originalByProduct.get(identifier) || [])
+          .find((row) => !keptIds.includes(String(row.id)));
+        if (existing) itemId = String(existing.id);
+      }
       if (itemId) {
         if (!originalMap.has(itemId)) throw new Error("Một sản phẩm trong đơn không còn tồn tại");
         const { error } = await supabase
@@ -117,7 +137,6 @@ export async function finalizeOrderWithLegacyLineEditor(
           .eq("order_id", params.orderId);
         if (error) throw error;
       } else {
-        const identifier = String(input.productId || input.productLocalId || "").trim();
         if (!identifier) throw new Error("Thiếu mã sản phẩm cần thêm");
         const { data: product, error: productError } = await supabase
           .from("products")

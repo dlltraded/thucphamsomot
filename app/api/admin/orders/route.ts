@@ -196,6 +196,28 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
     const orderRows = (data || []) as any[];
 
+    // Người đang trực tiếp tiếp nhận/xử lý khác với Sale phụ trách khách.
+    // Lưu dưới dạng sự kiện để có lịch sử bàn giao mà không ghi đè dữ liệu.
+    const rowIds = orderRows.map((order) => order.id).filter(Boolean) as string[];
+    const { data: processingEvents } = rowIds.length
+      ? await supabase
+          .from("order_history")
+          .select("order_id, actor, payload, created_at")
+          .in("order_id", rowIds)
+          .eq("action", "processing_claimed")
+          .order("created_at", { ascending: false })
+      : { data: [] as Array<{ order_id: string; actor: string; payload: Record<string, unknown>; created_at: string }> };
+    const processingMap = new Map<string, { name: string; staffId: string | null; startedAt: string }>();
+    for (const event of processingEvents || []) {
+      if (processingMap.has(event.order_id)) continue;
+      const payload = (event.payload || {}) as Record<string, unknown>;
+      processingMap.set(event.order_id, {
+        name: event.actor,
+        staffId: payload.staffId ? String(payload.staffId) : null,
+        startedAt: event.created_at,
+      });
+    }
+
     // Tên sale lên đơn (chưa hiện trên order trước đây — chỉ có sales_rep_id).
     // Khớp yêu cầu "tên của sale lên đơn như kiotviet" — join admin_profiles.
     const salesRepIds = [...new Set(orderRows.map((order) => order.sales_rep_id).filter(Boolean))] as string[];
@@ -255,7 +277,13 @@ export async function GET(req: NextRequest) {
       }
       return json({
         ok: true,
-        order: singleOrder ? { ...singleOrder, sales_rep_name: salesRepMap.get(singleOrder.sales_rep_id) || null } : null,
+        order: singleOrder ? {
+          ...singleOrder,
+          sales_rep_name: salesRepMap.get(singleOrder.sales_rep_id) || null,
+          processing_by_name: processingMap.get(singleOrder.id)?.name || null,
+          processing_by_id: processingMap.get(singleOrder.id)?.staffId || null,
+          processing_started_at: processingMap.get(singleOrder.id)?.startedAt || null,
+        } : null,
       });
     }
     const customerIds = [...new Set(orderRows.map((order) => order.customer_id).filter(Boolean))] as string[];
@@ -272,6 +300,9 @@ export async function GET(req: NextRequest) {
         ...order,
         customer_account: accountMap.get(order.customer_id) || null,
         sales_rep_name: salesRepMap.get(order.sales_rep_id) || null,
+        processing_by_name: processingMap.get(order.id)?.name || null,
+        processing_by_id: processingMap.get(order.id)?.staffId || null,
+        processing_started_at: processingMap.get(order.id)?.startedAt || null,
       })),
       tiers: [],
       totalCount: count || 0,
@@ -432,6 +463,7 @@ export async function PATCH(req: NextRequest) {
         .filter((row: { itemId: string; quantityDelivered: number }) => row.itemId && Number.isFinite(row.quantityDelivered) && row.quantityDelivered >= 0)
     : [];
   const regenerateInvoice = body?.regenerateInvoice === true;
+  const claimOrder = body?.claimOrder === true;
 
   if (!orderId) {
     return json({ ok: false, error: "Thiếu mã đơn hàng" }, 400);
@@ -439,7 +471,7 @@ export async function PATCH(req: NextRequest) {
   if (hasStatusChange && !ORDER_STATUSES.includes(nextStatus as (typeof ORDER_STATUSES)[number])) {
     return json({ ok: false, error: "Trạng thái đơn hàng không hợp lệ" }, 400);
   }
-  if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice && !paymentMethod && !paymentStatus) {
+  if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice && !paymentMethod && !paymentStatus && !claimOrder) {
     return json({ ok: false, error: "Không có nội dung cần cập nhật" }, 400);
   }
   if (
@@ -461,6 +493,56 @@ export async function PATCH(req: NextRequest) {
       .single();
     if (currentError || !current) {
       return json({ ok: false, error: "Không tìm thấy đơn hàng" }, 404);
+    }
+
+    if (claimOrder) {
+      if (["completed", "canceled", "merged"].includes(String(current.status))) {
+        return json({ ok: false, error: "Đơn đã kết thúc nên không thể tiếp nhận xử lý" }, 409);
+      }
+      const { data: latestClaim } = await supabase
+        .from("order_history")
+        .select("actor, payload, created_at")
+        .eq("order_id", orderId)
+        .eq("action", "processing_claimed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const latestPayload = (latestClaim?.payload || {}) as Record<string, unknown>;
+      const currentStaffId = latestPayload.staffId ? String(latestPayload.staffId) : null;
+      const requestingStaffId = String(auth.profile?.id || "");
+      const mayReassign = auth.profile?.role === "admin";
+
+      if (latestClaim && currentStaffId && currentStaffId !== requestingStaffId && !mayReassign) {
+        return json({
+          ok: false,
+          error: `Đơn đang được ${latestClaim.actor} tiếp nhận xử lý`,
+          processingByName: latestClaim.actor,
+          processingStartedAt: latestClaim.created_at,
+        }, 409);
+      }
+      if (!latestClaim || currentStaffId !== requestingStaffId) {
+        const { error: claimError } = await supabase.from("order_history").insert({
+          order_id: orderId,
+          action: "processing_claimed",
+          actor: auth.profile?.name || auth.profile?.email || "Nhân viên",
+          note: latestClaim ? `Tiếp nhận lại từ ${latestClaim.actor}` : "Tiếp nhận xử lý đơn hàng",
+          payload: {
+            staffId: auth.profile?.id || null,
+            staffEmail: auth.profile?.email || null,
+            previousStaffId: currentStaffId,
+            previousStaffName: latestClaim?.actor || null,
+          },
+        });
+        if (claimError) throw claimError;
+      }
+      if (!hasStatusChange && !delivery && !itemDeliveries.length && !regenerateInvoice && !paymentMethod && !paymentStatus) {
+        return json({
+          ok: true,
+          order: current,
+          processingByName: auth.profile?.name || auth.profile?.email || "Nhân viên",
+          processingStartedAt: latestClaim?.created_at || new Date().toISOString(),
+        });
+      }
     }
 
     // Hoàn thành và Đã hủy là hai trạng thái kết thúc. Không cho phép đưa

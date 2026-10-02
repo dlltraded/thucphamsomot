@@ -15,6 +15,7 @@ import {
 function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Math.round(Number(v) || 0)) + 'đ'; }
 
 interface CartItem {
+  itemId?: string;
   productId: string | null;
   name: string;
   unit: string;
@@ -31,6 +32,7 @@ interface CartItem {
 }
 
 export interface DeletedOriginalItem {
+  itemId?: string;
   productId: string | null;
   name: string;
   unit: string;
@@ -265,6 +267,7 @@ export default function PosCreatePage() {
           mode: o.delivery_address ? 'delivery' : 'normal',
           deletedOriginalItems: [],
           cart: (o.order_items || []).map((it: any) => ({
+            itemId: it.id,
             productId: it.product_id,
             name: it.name,
             unit: it.unit || 'Kg',
@@ -496,6 +499,7 @@ export default function PosCreatePage() {
         deletedOriginalItems: [
           ...(t.deletedOriginalItems || []),
           {
+            itemId: item.itemId,
             productId: item.productId,
             name: item.name,
             unit: item.unit,
@@ -518,6 +522,7 @@ export default function PosCreatePage() {
       cart: [
         ...t.cart,
         {
+          itemId: del.itemId,
           productId: del.productId,
           name: del.name,
           unit: del.unit,
@@ -654,7 +659,7 @@ export default function PosCreatePage() {
           pricingMode: 'manual_item_price',
           orderDiscountPercent: 0,
           shippingAmount,
-          items: cart.map(i => ({ productId: i.productId, quantity: i.quantity, finalUnitPrice: i.price, note: i.note || '' })),
+          items: cart.map(i => ({ itemId: i.itemId, productId: i.productId, quantity: i.quantity, finalUnitPrice: i.price, note: i.note || '' })),
           verificationNote: '',
           pricingNote: `Xử lý qua màn Bán hàng${discountAmount ? ` — chiết khấu thêm ${money(discountAmount)}` : ''}`,
           actor: user?.name || 'TPS1 Sale App',

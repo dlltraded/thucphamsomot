@@ -291,9 +291,24 @@ export default function OrdersPage({ view = 'orders' }: { view?: 'orders' | 'inv
     }
   };
 
-  const handleProcess = (order: any, e: React.MouseEvent) => {
+  const handleProcess = async (order: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/tao-don-hang?processOrderId=${order.id}`);
+    setUpdatingId(order.id);
+    try {
+      const res = await fetch(`${apiBase}/api/admin/orders`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId: order.id, claimOrder: true }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Không tiếp nhận được đơn hàng');
+      navigate(`/tao-don-hang?processOrderId=${order.id}`);
+    } catch (err: any) {
+      alert(err.message || 'Không tiếp nhận được đơn hàng');
+      await fetchOrders();
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const deleteOrder = async (order: any, e: React.MouseEvent) => {
@@ -835,6 +850,11 @@ export default function OrdersPage({ view = 'orders' }: { view?: 'orders' | 'inv
                       {order.customer_code}{order.customer_company ? ` · ${order.customer_company}` : ''}
                       {order.customer_phone ? ` · ${order.customer_phone}` : ''}
                     </p>
+                    {view === 'orders' && (
+                      <p className={`text-[11px] mt-1 font-semibold ${order.processing_by_name ? 'text-blue-700' : 'text-amber-700'}`}>
+                        {order.processing_by_name ? `Đang xử lý: ${order.processing_by_name}` : 'Chưa có nhân viên tiếp nhận'}
+                      </p>
+                    )}
                   </div>
 
                   {/* Hàng 3: Ngày giao & Địa chỉ giao hàng */}
@@ -1023,6 +1043,11 @@ export default function OrdersPage({ view = 'orders' }: { view?: 'orders' | 'inv
                         <p className="font-bold text-slate-900">{order.customer_name || 'Khách lẻ'}</p>
                         <p className="text-xs text-slate-500">{order.customer_code}{order.customer_company ? ` · ${order.customer_company}` : ''}</p>
                         {order.sales_rep_name && <p className="text-[11px] text-slate-400 mt-0.5">Sale: {order.sales_rep_name}</p>}
+                        {view === 'orders' && (
+                          <p className={`text-[11px] mt-0.5 font-semibold ${order.processing_by_name ? 'text-blue-700' : 'text-amber-700'}`}>
+                            {order.processing_by_name ? `Đang xử lý: ${order.processing_by_name}` : 'Chưa tiếp nhận'}
+                          </p>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center text-slate-600 font-medium">{order.item_count || 0}</td>
                       <td className="px-4 py-3 text-right">
