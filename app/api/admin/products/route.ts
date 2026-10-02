@@ -265,21 +265,41 @@ export async function GET(req: NextRequest) {
       totalCount = count || 0;
     }
 
-    // 3. Tải giá theo hạng và giá riêng của khách hàng nếu có customerId
+    // 3. Tải song song dữ liệu bổ sung cho đúng các sản phẩm của trang hiện tại.
+    // RPC tìm kiếm ưu tiên tốc độ nên không trả các trường quy cách; bổ sung lại
+    // theo ID để POS vẫn kiểm tra đúng số lượng tối thiểu và bước đặt hàng.
     const productIds = products.map((p) => p.id);
-    let customerPriceMap: Map<string, any> | null = null;
+    const customerPricePromise = customerId && products.length > 0
+      ? resolvePricesForProducts(supabase, customerId, products).catch((err) => {
+          console.warn("Lỗi resolvePricesForProducts trong admin products:", err);
+          return null;
+        })
+      : Promise.resolve(null);
+    const tierPricesPromise = productIds.length
+      ? supabase.from("product_tier_prices").select("product_id, tier, price").in("product_id", productIds)
+      : Promise.resolve({ data: [] as { product_id: string; tier: string; price: number }[] });
+    const constraintsPromise = usedRpc && productIds.length
+      ? supabase
+          .from("products")
+          .select("id, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision")
+          .in("id", productIds)
+      : Promise.resolve({ data: [] as Array<Record<string, unknown>> });
 
-    if (customerId && products.length > 0) {
-      try {
-        customerPriceMap = await resolvePricesForProducts(supabase, customerId, products);
-      } catch (err) {
-        console.warn("Lỗi resolvePricesForProducts trong admin products:", err);
-      }
+    const [customerPriceMap, tierResult, constraintsResult] = await Promise.all([
+      customerPricePromise,
+      tierPricesPromise,
+      constraintsPromise,
+    ]);
+    const tierPrices = tierResult.data || [];
+    const constraintsById = new Map(
+      (constraintsResult.data || []).map((row: any) => [row.id, row])
+    );
+    if (usedRpc && constraintsById.size > 0) {
+      products = products.map((product) => ({
+        ...product,
+        ...(constraintsById.get(product.id) || {}),
+      }));
     }
-
-    const { data: tierPrices } = productIds.length
-      ? await supabase.from("product_tier_prices").select("product_id, tier, price").in("product_id", productIds)
-      : { data: [] as { product_id: string; tier: string; price: number }[] };
 
     const tierMap = new Map<string, Record<string, number>>();
     for (const row of tierPrices || []) {

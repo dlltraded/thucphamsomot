@@ -199,14 +199,25 @@ export async function GET(req: NextRequest) {
     // Người đang trực tiếp tiếp nhận/xử lý khác với Sale phụ trách khách.
     // Lưu dưới dạng sự kiện để có lịch sử bàn giao mà không ghi đè dữ liệu.
     const rowIds = orderRows.map((order) => order.id).filter(Boolean) as string[];
-    const { data: processingEvents } = rowIds.length
-      ? await supabase
-          .from("order_history")
-          .select("order_id, actor, payload, created_at")
-          .in("order_id", rowIds)
-          .eq("action", "processing_claimed")
-          .order("created_at", { ascending: false })
-      : { data: [] as Array<{ order_id: string; actor: string; payload: Record<string, unknown>; created_at: string }> };
+    const salesRepIds = [...new Set(orderRows.map((order) => order.sales_rep_id).filter(Boolean))] as string[];
+    const customerIds = [...new Set(orderRows.map((order) => order.customer_id).filter(Boolean))] as string[];
+    const [processingResult, salesRepResult, accountResult] = await Promise.all([
+      rowIds.length
+        ? supabase
+            .from("order_history")
+            .select("order_id, actor, payload, created_at")
+            .in("order_id", rowIds)
+            .eq("action", "processing_claimed")
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as Array<{ order_id: string; actor: string; payload: Record<string, unknown>; created_at: string }> }),
+      salesRepIds.length
+        ? supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+      customerIds.length
+        ? supabase.from("vip_accounts").select("id, verification_status, verified_at").in("id", customerIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; verification_status: string | null; verified_at: string | null }> }),
+    ]);
+    const processingEvents = processingResult.data || [];
     const processingMap = new Map<string, { name: string; staffId: string | null; startedAt: string }>();
     for (const event of processingEvents || []) {
       if (processingMap.has(event.order_id)) continue;
@@ -220,10 +231,7 @@ export async function GET(req: NextRequest) {
 
     // Tên sale lên đơn (chưa hiện trên order trước đây — chỉ có sales_rep_id).
     // Khớp yêu cầu "tên của sale lên đơn như kiotviet" — join admin_profiles.
-    const salesRepIds = [...new Set(orderRows.map((order) => order.sales_rep_id).filter(Boolean))] as string[];
-    const { data: salesReps } = salesRepIds.length
-      ? await supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
-      : { data: [] as { id: string; name: string }[] };
+    const salesReps = salesRepResult.data || [];
     const salesRepMap = new Map((salesReps || []).map((r) => [r.id, r.name]));
 
     if (orderId) {
@@ -286,13 +294,7 @@ export async function GET(req: NextRequest) {
         } : null,
       });
     }
-    const customerIds = [...new Set(orderRows.map((order) => order.customer_id).filter(Boolean))] as string[];
-    const { data: accounts } = customerIds.length
-      ? await supabase
-          .from("vip_accounts")
-          .select("id, verification_status, verified_at")
-          .in("id", customerIds)
-      : { data: [] };
+    const accounts = accountResult.data || [];
     const accountMap = new Map((accounts || []).map((account) => [account.id, account]));
     return json({
       ok: true,
