@@ -83,25 +83,28 @@ export async function GET(req: NextRequest) {
       ? ["confirmed", "preparing", "pending"]
       : ["confirmed", "preparing"];
 
-    // 1. Query danh sách đơn và dòng hàng theo ngày giao
+    // 1. Kèm các đơn đã xác nhận/đang soạn còn tồn đến ngày được chọn.
+    // Pending chỉ lấy đúng ngày để không lẫn hàng đợi cũ vào file soạn hàng.
     const { data: orders, error: ordersErr } = await supabase
       .from("orders")
       .select(`
         id, order_code, external_ref, customer_id, customer_name, customer_code,
         delivery_name, delivery_phone, delivery_address, delivery_alias,
-        status, is_late_order, note, updated_at, created_at,
+        delivery_date, status, is_late_order, note, updated_at, created_at,
         order_items (
           id, product_id, sku, name, unit, quantity,
           ordered_quantity, ordered_product_name, customer_note
         )
       `)
-      .eq("delivery_date", deliveryDate)
+      .lte("delivery_date", deliveryDate)
       .in("status", statuses)
       .order("order_code", { ascending: true });
 
     if (ordersErr) throw ordersErr;
 
-    const orderList = orders || [];
+    const orderList = (orders || []).filter((order: any) =>
+      order.status !== "pending" || order.delivery_date === deliveryDate
+    );
     if (orderList.length === 0) {
       return NextResponse.json(
         { ok: false, error: `Không có đơn hàng nào cho ngày giao ${deliveryDate}` },
@@ -220,7 +223,7 @@ export async function GET(req: NextRequest) {
         }
 
         detailLines.push({
-          deliveryDate,
+          deliveryDate: (order as any).delivery_date || deliveryDate,
           orderCode: order.order_code,
           externalRef: order.external_ref || "",
           customerName: customerDisplayName,
@@ -278,7 +281,7 @@ export async function GET(req: NextRequest) {
 
     const exporterName = auth.profile?.name || auth.profile?.email || "Vận hành";
     const exportTimeStr = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-    const subTitleCommon = `Giao ngày: ${deliveryDate} · Phạm vi: ${includePending ? "Đã xác nhận + Đang soạn + Chờ xác nhận" : "Đã xác nhận + Đang soạn"} · Xuất lúc: ${exportTimeStr} bởi ${exporterName}`;
+    const subTitleCommon = `Đơn cần soạn đến ngày: ${deliveryDate} · Phạm vi: ${includePending ? "Đã xác nhận + Đang soạn + Chờ xác nhận đúng ngày" : "Đã xác nhận + Đang soạn"} · Xuất lúc: ${exportTimeStr} bởi ${exporterName}`;
 
     // ─── SHEET 1: Tổng hợp ──────────────────────────────────────────
     const s1 = wb.addWorksheet("Tổng hợp", {
@@ -300,7 +303,7 @@ export async function GET(req: NextRequest) {
       { width: 40 }, // Ghi chú của khách
     ];
 
-    titleBlock(s1, `TỔNG HỢP SOẠN HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 11);
+    titleBlock(s1, `TỔNG HỢP SOẠN HÀNG — ĐẾN NGÀY ${deliveryDate}`, subTitleCommon, 11);
 
     const s1Header = s1.addRow([
       "STT", "Mã hàng", "Tên hàng", "ĐVT", "Tổng SL cuối cùng", "SL ban đầu", "Số đơn", "Số khách", "Tồn kho", "Cần bù", "Ghi chú của khách"
@@ -411,7 +414,7 @@ export async function GET(req: NextRequest) {
       { width: 14 }, // Trễ giờ chốt
     ];
 
-    titleBlock(s2, `CHI TIẾT THEO KHÁCH HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 13);
+    titleBlock(s2, `CHI TIẾT THEO KHÁCH HÀNG — ĐẾN NGÀY ${deliveryDate}`, subTitleCommon, 13);
 
     const s2Header = s2.addRow([
       "Ngày giao", "Mã đơn", "Tên khách hàng", "Điểm giao / Địa chỉ", "Nhóm hàng",
@@ -481,7 +484,7 @@ export async function GET(req: NextRequest) {
       { width: 30 }, // Ghi chú đơn
     ];
 
-    titleBlock(s3, `DANH SÁCH ĐƠN HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 10);
+    titleBlock(s3, `DANH SÁCH ĐƠN HÀNG — ĐẾN NGÀY ${deliveryDate}`, subTitleCommon, 10);
 
     const s3Header = s3.addRow([
       "Mã đơn", "Khách hàng", "Mã KH", "Điểm giao", "Người nhận", "SĐT", "Số dòng hàng", "Trạng thái", "Trễ giờ chốt", "Ghi chú đơn"

@@ -45,25 +45,28 @@ export async function GET(req: NextRequest) {
       ? ["confirmed", "preparing", "pending"]
       : ["confirmed", "preparing"];
 
-    // 1. Query danh sách đơn và dòng hàng theo ngày giao (không .limit(500) ngầm)
+    // 1. Luôn lấy cả đơn đã xác nhận/đang soạn còn tồn đến ngày được chọn.
+    // Đơn chờ xác nhận chỉ thuộc đúng ngày được chọn để tránh kéo toàn bộ hàng đợi cũ.
     const { data: orders, error: ordersErr } = await supabase
       .from("orders")
       .select(`
         id, order_code, external_ref, customer_id, customer_name, customer_code,
         delivery_name, delivery_phone, delivery_address, delivery_alias,
-        status, is_late_order, note, updated_at, created_at,
+        delivery_date, status, is_late_order, note, updated_at, created_at,
         order_items (
           id, product_id, sku, name, unit, quantity,
           ordered_quantity, ordered_product_name, customer_note
         )
       `)
-      .eq("delivery_date", deliveryDate)
+      .lte("delivery_date", deliveryDate)
       .in("status", statuses)
       .order("order_code", { ascending: true });
 
     if (ordersErr) throw ordersErr;
 
-    const orderList = orders || [];
+    const orderList = (orders || []).filter((order: any) =>
+      order.status !== "pending" || order.delivery_date === deliveryDate
+    );
 
     // Thu thập tất cả product_id để query 1 lần lấy thông tin danh mục, tồn kho (tránh N+1)
     const allProductIds = new Set<string>();
@@ -225,6 +228,7 @@ export async function GET(req: NextRequest) {
       deliveryName: o.delivery_name || "",
       deliveryPhone: o.delivery_phone || "",
       deliveryAddress: o.delivery_address || "",
+      deliveryDate: o.delivery_date || "",
       status: o.status,
       isLate: Boolean(o.is_late_order),
       lineCount: (o.order_items || []).length,
