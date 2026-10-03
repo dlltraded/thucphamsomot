@@ -213,13 +213,14 @@ export async function POST(req: NextRequest) {
   const creditLimit = Number(customer.credit_limit) || 0;
   let hasOverriddenCredit = false;
 
-  if (creditLimit > 0) {
+  if (creditLimit > 0 && paymentMethod === "CREDIT") {
     // Tính tổng nợ hiện tại từ các đơn chưa paid và không bị hủy
     const { data: unpaidOrders } = await supabase
       .from("orders")
       .select("grand_total, paid_amount, debt_amount")
       .eq("customer_id", customerId)
-      .neq("status", "canceled")
+      .eq("status", "completed")
+      .eq("payment_method", "CREDIT")
       .neq("payment_status", "paid");
 
     const currentDebt = (unpaidOrders || []).reduce((sum, o) => {
@@ -229,7 +230,7 @@ export async function POST(req: NextRequest) {
       return sum + debt;
     }, 0);
 
-    const projectedDebt = currentDebt + orderTotal;
+    const projectedDebt = currentDebt + (paymentMethod === "CREDIT" ? orderTotal : 0);
     if (projectedDebt > creditLimit) {
       // Vượt hạn mức: kiểm tra xem người tạo có quyền credit_override không
       const canOverride = canForProfile(auth.profile, "orders.credit_override");

@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
 
     const customerIds = (customers || []).map((c) => c.id);
     const { data: orders } = customerIds.length
-      ? await supabase.from("orders").select("customer_id, grand_total, paid_amount, debt_amount, status").in("customer_id", customerIds)
+      ? await supabase.from("orders").select("customer_id, grand_total, paid_amount, debt_amount, payment_method, status").in("customer_id", customerIds)
       : { data: [] as any[] };
 
     const salesRepIds = [...new Set((customers || []).map((c) => c.sales_rep_id).filter(Boolean))];
@@ -91,7 +91,9 @@ export async function GET(req: NextRequest) {
       const e = statsByCustomer.get(o.customer_id) || { orderCount: 0, revenue: 0, debt: 0 };
       e.orderCount += 1;
       e.revenue += Number(o.grand_total) || 0;
-      e.debt += o.debt_amount != null ? Number(o.debt_amount) : Math.max(0, Number(o.grand_total) - Number(o.paid_amount || 0));
+      if (o.status === "completed" && String(o.payment_method || "").toUpperCase() === "CREDIT") {
+        e.debt += o.debt_amount != null ? Number(o.debt_amount) : Math.max(0, Number(o.grand_total) - Number(o.paid_amount || 0));
+      }
       statsByCustomer.set(o.customer_id, e);
     }
 

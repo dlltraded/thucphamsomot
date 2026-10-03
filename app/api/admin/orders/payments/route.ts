@@ -92,10 +92,13 @@ export async function POST(req: NextRequest) {
     // nhỏ 1đ vì làm tròn.
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("grand_total, paid_amount, debt_amount")
+      .select("status, grand_total, paid_amount, debt_amount")
       .eq("id", orderId)
       .single();
     if (orderError) throw orderError;
+    if (order.status !== "completed") {
+      return json({ ok: false, error: "Chỉ ghi nhận thanh toán sau khi đơn đã giao xong và phát hành hóa đơn" }, 409);
+    }
     if (amount > Number(order.debt_amount) + 1) {
       return json(
         { ok: false, error: `Số tiền vượt quá công nợ còn lại (${Number(order.debt_amount).toLocaleString("vi-VN")}đ)` },

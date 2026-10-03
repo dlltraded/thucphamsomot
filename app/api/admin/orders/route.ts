@@ -407,11 +407,20 @@ export async function POST(req: NextRequest) {
   const orderId = String(body?.orderId || "").trim();
   const customerTier = String(body?.customerTier || "VIP0").trim();
   const pricingMode = String(body?.pricingMode || "tier").trim();
+  const paymentMethod = String(body?.paymentMethod || "COD").trim().toUpperCase();
   const actor = String(auth.profile?.name || auth.profile?.email || "admin").trim().slice(0, 120) || "admin";
   if (!orderId) return json({ ok: false, error: "Thiếu mã đơn hàng" }, 400);
+  if (!PAYMENT_METHODS.includes(paymentMethod as (typeof PAYMENT_METHODS)[number])) {
+    return json({ ok: false, error: "Hình thức thanh toán không hợp lệ" }, 400);
+  }
 
   try {
     const supabase = getCustomerSupabaseAdmin();
+    const { error: paymentMethodError } = await supabase
+      .from("orders")
+      .update({ payment_method: paymentMethod })
+      .eq("id", orderId);
+    if (paymentMethodError) throw paymentMethodError;
     const result = await finalizeOrderCore(supabase, {
       orderId,
       customerTier,
@@ -481,8 +490,11 @@ export async function PATCH(req: NextRequest) {
   if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod as (typeof PAYMENT_METHODS)[number])) {
     return json({ ok: false, error: "Phương thức thanh toán không hợp lệ" }, 400);
   }
-  if ((paymentStatus || paymentMethod) && !canForProfile(auth.profile, "finance.edit")) {
-    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền cập nhật thanh toán" }, 403);
+  if (paymentStatus && !canForProfile(auth.profile, "finance.edit")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền cập nhật trạng thái thanh toán" }, 403);
+  }
+  if (paymentMethod && !canForProfile(auth.profile, "orders.edit") && !canForProfile(auth.profile, "finance.edit")) {
+    return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền chọn hình thức thanh toán" }, 403);
   }
   if (hasStatusChange && ["draft", "pending", "canceled"].includes(nextStatus) && !canForProfile(auth.profile, "orders.edit")) {
     return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền cập nhật trạng thái đơn hàng" }, 403);
@@ -738,6 +750,23 @@ export async function PATCH(req: NextRequest) {
         console.error("Tạo hóa đơn bán hàng lỗi:", invoiceError);
         await supabase.from("orders").update({ invoice_document_status: "failed" }).eq("id", orderId);
         invoiceWarning = "Đơn đã hoàn thành nhưng chưa tạo được hóa đơn. Có thể bấm tạo lại.";
+      }
+      if (String(updated?.payment_method || current.payment_method || "COD").toUpperCase() === "CREDIT") {
+        const { error: receivableLogError } = await supabase.from("order_history").insert({
+          order_id: orderId,
+          action: "receivable_opened",
+          from_status: current.status,
+          to_status: "completed",
+          note: "Phát sinh công nợ khi hoàn thành và phát hành hóa đơn",
+          actor: auth.profile?.name || auth.profile?.email || "admin",
+          payload: {
+            invoiceAmount: Number(updated?.grand_total || 0),
+            paidAmount: Number(updated?.paid_amount || 0),
+            debtAmount: Number(updated?.debt_amount || 0),
+            paymentMethod: "CREDIT",
+          },
+        });
+        if (receivableLogError) console.error("Ghi lịch sử phát sinh công nợ lỗi:", receivableLogError.message);
       }
     }
 

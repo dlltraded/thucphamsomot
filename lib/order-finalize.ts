@@ -385,7 +385,7 @@ export async function finalizeOrderCore(
   // Bulk finalize không truyền vatEnabled thì giữ nguyên cấu hình VAT hiện tại.
   const { data: vatOrder, error: vatOrderError } = await supabase
     .from("orders")
-    .select("vat_enabled, shipping_amount, paid_amount, order_items(id, product_id, line_total, final_line_total, vat_rate)")
+    .select("status, confirmed_at, vat_enabled, shipping_amount, paid_amount, order_items(id, product_id, line_total, final_line_total, vat_rate)")
     .eq("id", params.orderId)
     .single();
   if (vatOrderError || !vatOrder) throw vatOrderError || new Error("Không đọc được dữ liệu VAT của đơn hàng");
@@ -416,14 +416,19 @@ export async function finalizeOrderCore(
   }
 
   const grandTotal = merchandiseTotal + vatAmount + Math.max(0, Number(vatOrder.shipping_amount) || 0);
+  const orderUpdate: Record<string, unknown> = {
+    vat_enabled: vatEnabled,
+    vat_amount: vatAmount,
+    grand_total: grandTotal,
+    debt_amount: Math.max(0, grandTotal - (Number(vatOrder.paid_amount) || 0)),
+  };
+  if (["draft", "pending"].includes(String(vatOrder.status))) {
+    orderUpdate.status = "confirmed";
+    orderUpdate.confirmed_at = vatOrder.confirmed_at || new Date().toISOString();
+  }
   const { error: vatUpdateError } = await supabase
     .from("orders")
-    .update({
-      vat_enabled: vatEnabled,
-      vat_amount: vatAmount,
-      grand_total: grandTotal,
-      debt_amount: Math.max(0, grandTotal - (Number(vatOrder.paid_amount) || 0)),
-    })
+    .update(orderUpdate)
     .eq("id", params.orderId);
   if (vatUpdateError) throw vatUpdateError;
 
