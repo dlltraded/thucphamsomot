@@ -41,13 +41,26 @@ export async function GET(req: NextRequest) {
       : calculateEarliestDate(new Date(), config);
 
     const includePending = req.nextUrl.searchParams.get("includePending") === "1";
+    const rawOrderIds = req.nextUrl.searchParams.get("orderIds");
+    const selectedOrderIds = Array.from(new Set(
+      (rawOrderIds || "")
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    )).slice(0, 200);
+    if (rawOrderIds !== null && (
+      selectedOrderIds.length === 0
+      || selectedOrderIds.some((id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
+    )) {
+      return json({ ok: false, error: "Danh sách đơn được chọn không hợp lệ" }, 400);
+    }
     const statuses = includePending
       ? ["confirmed", "preparing", "pending"]
       : ["confirmed", "preparing"];
 
     // 1. Luôn lấy cả đơn đã xác nhận/đang soạn còn tồn đến ngày được chọn.
     // Đơn chờ xác nhận chỉ thuộc đúng ngày được chọn để tránh kéo toàn bộ hàng đợi cũ.
-    const { data: orders, error: ordersErr } = await supabase
+    let ordersQuery = supabase
       .from("orders")
       .select(`
         id, order_code, external_ref, customer_id, customer_name, customer_code,
@@ -59,7 +72,15 @@ export async function GET(req: NextRequest) {
         )
       `)
       .lte("delivery_date", deliveryDate)
-      .in("status", statuses)
+      .in("status", statuses);
+
+    // Khi người dùng bấm "Xem danh sách soạn", chỉ tổng hợp đúng các đơn đã chọn.
+    // Giới hạn 200 ID để URL/truy vấn luôn ở mức an toàn cho một đợt soạn hàng.
+    if (selectedOrderIds.length > 0) {
+      ordersQuery = ordersQuery.in("id", selectedOrderIds);
+    }
+
+    const { data: orders, error: ordersErr } = await ordersQuery
       .order("order_code", { ascending: true });
 
     if (ordersErr) throw ordersErr;
