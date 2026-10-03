@@ -327,7 +327,7 @@ async function createInvoiceDocument(
 ) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, order_code, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_name, delivery_phone, delivery_address, note, subtotal, discount_amount, shipping_amount, grand_total, paid_amount, debt_amount, completed_at, sales_rep_id, order_items(id, sku, name, unit, quantity, unit_price, line_total)")
+    .select("id, order_code, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_name, delivery_phone, delivery_address, note, subtotal, discount_amount, shipping_amount, vat_enabled, vat_amount, grand_total, paid_amount, debt_amount, completed_at, sales_rep_id, order_items(id, sku, name, unit, quantity, unit_price, line_total, vat_rate, vat_amount)")
     .eq("id", orderId)
     .single();
   if (orderError || !order) throw orderError || new Error("Không tìm thấy đơn hàng để tạo hóa đơn");
@@ -354,6 +354,8 @@ async function createInvoiceDocument(
     subtotal: Number(order.subtotal),
     discount_amount: Number(order.discount_amount),
     shipping_amount: Number(order.shipping_amount),
+    vat_enabled: Boolean(order.vat_enabled),
+    vat_amount: Number(order.vat_amount) || 0,
     grand_total: Number(order.grand_total),
     paid_amount: Number(order.paid_amount) || 0,
     debt_amount: order.debt_amount != null ? Number(order.debt_amount) : null,
@@ -420,6 +422,7 @@ export async function POST(req: NextRequest) {
       verificationNote: String(body?.verificationNote || "").trim(),
       pricingNote: String(body?.pricingNote || "").trim(),
       actor,
+      vatEnabled: body?.vatEnabled === true,
     });
     return json({ ok: true, order: result.order, document: result.document, warning: result.warning });
   } catch (error) {

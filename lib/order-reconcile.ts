@@ -62,6 +62,7 @@ export async function reconcileDelivery(supabase: Supabase, params: ReconcilePar
     quantity_delivered: it.quantity_delivered,
     line_total: it.line_total,
     final_line_total: it.final_line_total,
+    vat_amount: it.vat_amount,
     confirmed_quantity: it.confirmed_quantity ?? null,
   }));
   const beforeOrder = {
@@ -70,6 +71,7 @@ export async function reconcileDelivery(supabase: Supabase, params: ReconcilePar
     discount_percent: order.discount_percent,
     pricing_adjustment_amount: order.pricing_adjustment_amount,
     grand_total: order.grand_total,
+    vat_amount: order.vat_amount ?? 0,
     pre_delivery_grand_total: order.pre_delivery_grand_total ?? null,
     delivery_confirmed_at: order.delivery_confirmed_at ?? null,
     delivery_confirmed_by: order.delivery_confirmed_by ?? null,
@@ -78,6 +80,7 @@ export async function reconcileDelivery(supabase: Supabase, params: ReconcilePar
 
   let subtotal = 0;
   let merchandise = 0;
+  let vatAmount = 0;
   const changes: ReconcileResult["changes"] = [];
   const plans = items.map((it) => {
     // Số đã chốt trước khi giao: nếu đã từng đối chiếu thì lấy confirmed_quantity, chưa thì quantity hiện tại.
@@ -87,18 +90,20 @@ export async function reconcileDelivery(supabase: Supabase, params: ReconcilePar
     const unitPrice = Number(it.unit_price) || 0;
     const basePrice = Number(it.base_unit_price) || 0;
     const lineTotal = Math.round(unitPrice * delivered);
+    const lineVat = order.vat_enabled ? Math.round(lineTotal * (Number(it.vat_rate) === 8 ? 8 : 5) / 100) : 0;
     subtotal += Math.round(basePrice * delivered);
     merchandise += lineTotal;
     if (delivered !== confirmedQty) {
       changes.push({ itemId: it.id, name: it.name, confirmedQty, deliveredQty: delivered });
     }
-    return { id: it.id, confirmedQty, delivered, lineTotal };
+    vatAmount += lineVat;
+    return { id: it.id, confirmedQty, delivered, lineTotal, lineVat };
   });
 
   const shipping = Math.max(0, Number(order.shipping_amount) || 0);
   const discountAmount = Math.max(0, subtotal - merchandise);
   const effectiveDiscount = subtotal > 0 ? Math.round((discountAmount / subtotal) * 10000) / 100 : 0;
-  const newTotal = merchandise + shipping;
+  const newTotal = merchandise + vatAmount + shipping;
   const preTotal = Number(order.pre_delivery_grand_total ?? order.grand_total) || 0;
   const now = new Date().toISOString();
   const warnings: string[] = [];
@@ -113,6 +118,7 @@ export async function reconcileDelivery(supabase: Supabase, params: ReconcilePar
           quantity_delivered: p.delivered,
           line_total: p.lineTotal,
           final_line_total: p.lineTotal,
+          vat_amount: p.lineVat,
         })
         .eq("id", p.id)
         .eq("order_id", params.orderId);
@@ -126,7 +132,9 @@ export async function reconcileDelivery(supabase: Supabase, params: ReconcilePar
         discount_amount: discountAmount,
         discount_percent: effectiveDiscount,
         pricing_adjustment_amount: discountAmount,
+        vat_amount: vatAmount,
         grand_total: newTotal,
+        debt_amount: Math.max(0, newTotal - (Number(order.paid_amount) || 0)),
         pre_delivery_grand_total: order.pre_delivery_grand_total ?? order.grand_total,
         delivery_confirmed_at: now,
         delivery_confirmed_by: params.actor,
@@ -171,6 +179,7 @@ export async function reconcileDelivery(supabase: Supabase, params: ReconcilePar
           quantity_delivered: b.quantity_delivered,
           line_total: b.line_total,
           final_line_total: b.final_line_total,
+          vat_amount: b.vat_amount,
           confirmed_quantity: b.confirmed_quantity,
         })
         .eq("id", b.id);

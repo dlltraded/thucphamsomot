@@ -94,6 +94,8 @@ export async function GET(req: NextRequest) {
           pricingMode: item.pricing_mode,
           finalUnitPrice: item.final_unit_price,
           finalLineTotal: item.final_line_total,
+          vatRate: item.vat_rate,
+          vatAmount: item.vat_amount,
           itemNote: item.pricing_note,
         })),
         order_items: undefined,

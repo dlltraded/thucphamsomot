@@ -347,6 +347,7 @@ export interface FinalizeOrderParams {
   verificationNote: string;
   pricingNote: string;
   actor: string;
+  vatEnabled?: boolean;
 }
 
 export async function finalizeOrderCore(
@@ -379,6 +380,60 @@ export async function finalizeOrderCore(
     error = null;
   }
   if (error) throw new Error(error.message);
+
+  // VAT được tính phía server trên thành tiền đã chốt của từng dòng.
+  // Bulk finalize không truyền vatEnabled thì giữ nguyên cấu hình VAT hiện tại.
+  const { data: vatOrder, error: vatOrderError } = await supabase
+    .from("orders")
+    .select("vat_enabled, shipping_amount, paid_amount, order_items(id, product_id, line_total, final_line_total, vat_rate)")
+    .eq("id", params.orderId)
+    .single();
+  if (vatOrderError || !vatOrder) throw vatOrderError || new Error("Không đọc được dữ liệu VAT của đơn hàng");
+
+  const vatEnabled = params.vatEnabled === undefined
+    ? Boolean(vatOrder.vat_enabled)
+    : params.vatEnabled === true;
+  const inputItems = params.items || [];
+  let merchandiseTotal = 0;
+  let vatAmount = 0;
+  for (const item of (vatOrder as any).order_items || []) {
+    const input = inputItems.find((row) =>
+      (row.itemId && String(row.itemId) === String(item.id)) ||
+      (!row.itemId && row.productId && String(row.productId) === String(item.product_id))
+    );
+    const requestedRate = Number(input?.vatRate ?? item.vat_rate ?? 5);
+    const vatRate = requestedRate === 8 ? 8 : 5;
+    const lineTotal = Number(item.final_line_total ?? item.line_total) || 0;
+    const lineVat = vatEnabled ? Math.round(lineTotal * vatRate / 100) : 0;
+    merchandiseTotal += lineTotal;
+    vatAmount += lineVat;
+    const { error: vatItemError } = await supabase
+      .from("order_items")
+      .update({ vat_rate: vatRate, vat_amount: lineVat })
+      .eq("id", item.id)
+      .eq("order_id", params.orderId);
+    if (vatItemError) throw vatItemError;
+  }
+
+  const grandTotal = merchandiseTotal + vatAmount + Math.max(0, Number(vatOrder.shipping_amount) || 0);
+  const { error: vatUpdateError } = await supabase
+    .from("orders")
+    .update({
+      vat_enabled: vatEnabled,
+      vat_amount: vatAmount,
+      grand_total: grandTotal,
+      debt_amount: Math.max(0, grandTotal - (Number(vatOrder.paid_amount) || 0)),
+    })
+    .eq("id", params.orderId);
+  if (vatUpdateError) throw vatUpdateError;
+
+  const { data: finalizedWithVat, error: finalizedWithVatError } = await supabase
+    .from("orders")
+    .select("*, order_items(*)")
+    .eq("id", params.orderId)
+    .single();
+  if (finalizedWithVatError || !finalizedWithVat) throw finalizedWithVatError || new Error("Không tải được đơn sau khi tính VAT");
+  data = finalizedWithVat;
 
   const finalized = data as ConfirmationOrderSnapshot;
   let document = null;

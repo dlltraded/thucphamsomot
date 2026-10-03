@@ -25,6 +25,8 @@ export interface SalesInvoiceSnapshot {
   subtotal: number;
   discount_amount: number;
   shipping_amount: number;
+  vat_enabled?: boolean;
+  vat_amount?: number;
   grand_total: number;
   paid_amount?: number | null;
   debt_amount?: number | null;
@@ -42,18 +44,23 @@ export async function generateSalesInvoicePdf(order: SalesInvoiceSnapshot): Prom
     path.join(process.cwd(), "public", "images", "tps1-logo-vertical.png")
   ).toString("base64")}`;
 
-  const itemRows = (order.order_items || []).map((item, index) => [
-    { text: String(index + 1), alignment: "center" },
-    {
-      stack: [
-        { text: item.name, bold: true },
-        item.sku ? { text: `SKU: ${item.sku}`, color: "#64748b", fontSize: 8 } : { text: "" },
-      ],
-    },
-    { text: `${Number(item.quantity)} ${item.unit || ""}`.trim(), alignment: "right" },
-    { text: money(item.unit_price), alignment: "right" },
-    { text: money(item.line_total), alignment: "right", bold: true },
-  ]) as unknown as Content[][];
+  const vatEnabled = Boolean(order.vat_enabled);
+  const itemRows = (order.order_items || []).map((item, index) => {
+    const cells: Content[] = [
+      { text: String(index + 1), alignment: "center" },
+      {
+        stack: [
+          { text: item.name, bold: true },
+          item.sku ? { text: `SKU: ${item.sku}`, color: "#64748b", fontSize: 8 } : { text: "" },
+        ],
+      },
+      { text: `${Number(item.quantity)} ${item.unit || ""}`.trim(), alignment: "right" },
+      { text: money(item.unit_price), alignment: "right" },
+    ];
+    if (vatEnabled) cells.push({ text: `${Number(item.vat_rate) === 8 ? 8 : 5}%`, alignment: "center" });
+    cells.push({ text: money(item.line_total), alignment: "right", bold: true });
+    return cells;
+  });
 
   const infoRow = (label: string, value: string): Content => ({
     columns: [
@@ -137,13 +144,14 @@ export async function generateSalesInvoicePdf(order: SalesInvoiceSnapshot): Prom
       {
         table: {
           headerRows: 1,
-          widths: [20, "*", 60, 75, 85],
+          widths: vatEnabled ? [20, "*", 55, 70, 35, 75] : [20, "*", 60, 75, 85],
           body: [
             [
               { text: "STT", style: "tableHeader", alignment: "center" },
               { text: "Sản phẩm", style: "tableHeader" },
               { text: "SL", style: "tableHeader", alignment: "right" },
               { text: "Đơn giá", style: "tableHeader", alignment: "right" },
+              ...(vatEnabled ? [{ text: "VAT", style: "tableHeader", alignment: "center" } as Content] : []),
               { text: "Thành tiền", style: "tableHeader", alignment: "right" },
             ],
             ...itemRows,
@@ -173,14 +181,15 @@ export async function generateSalesInvoicePdf(order: SalesInvoiceSnapshot): Prom
             width: 225,
             table: {
               widths: ["*", 85],
-              body: [
+              body: ([
                 [{ text: "Tạm tính", color: "#64748b" }, { text: money(order.subtotal), alignment: "right", bold: true }],
                 [{ text: "Giảm giá", color: "#64748b" }, { text: `-${money(order.discount_amount)}`, alignment: "right", color: "#087348", bold: true }],
                 [{ text: "Phí giao hàng", color: "#64748b" }, { text: money(order.shipping_amount), alignment: "right", bold: true }],
+                ...(vatEnabled ? [[{ text: "VAT", color: "#64748b" }, { text: money(order.vat_amount), alignment: "right", bold: true }]] : []),
                 [{ text: "TỔNG CỘNG", bold: true, color: "#087348", fontSize: 10 }, { text: money(order.grand_total), alignment: "right", bold: true, color: "#087348", fontSize: 12 }],
                 [{ text: "Đã thanh toán", color: "#64748b" }, { text: money(paid), alignment: "right", bold: true }],
                 [{ text: "Còn lại", color: debt > 0 ? "#b91c1c" : "#64748b" }, { text: money(debt), alignment: "right", bold: true, color: debt > 0 ? "#b91c1c" : "#087348" }],
-              ],
+              ]) as any,
             },
             layout: {
               hLineColor: "#dce7e1",

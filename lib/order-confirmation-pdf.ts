@@ -14,6 +14,8 @@ export interface ConfirmationOrderItem {
   discount_percent?: number;
   unit_price: number;
   line_total: number;
+  vat_rate?: number;
+  vat_amount?: number;
   item_note?: string | null;
   pricing_note?: string | null;
 }
@@ -38,6 +40,8 @@ export interface ConfirmationOrderSnapshot {
   discount_amount: number;
   pricing_adjustment_amount?: number;
   shipping_amount: number;
+  vat_enabled?: boolean;
+  vat_amount?: number;
   grand_total: number;
   price_revision: number;
   priced_at?: string | null;
@@ -68,21 +72,26 @@ export async function generateOrderConfirmationPdf(
     path.join(process.cwd(), "public", "images", "tps1-logo-vertical.png")
   ).toString("base64")}`;
 
-  const itemRows = (order.order_items || []).map((item, index) => [
-    { text: String(index + 1), alignment: "center" },
-    {
-      stack: [
-        { text: item.name, bold: true },
-        item.sku ? { text: `SKU: ${item.sku}`, color: "#64748b", fontSize: 8 } : { text: "" },
-        item.item_note || item.pricing_note ? { text: `Quy cách: ${item.item_note || item.pricing_note}`, color: "#475569", italics: true, fontSize: 8, margin: [0, 2, 0, 0] } : { text: "" },
-      ],
-    },
-    { text: `${Number(item.quantity)} ${item.unit || ""}`.trim(), alignment: "right" },
-    { text: money(item.base_unit_price), alignment: "right" },
-    { text: `${Number(item.discount_percent || 0).toLocaleString("vi-VN")}%`, alignment: "right" },
-    { text: money(item.unit_price), alignment: "right" },
-    { text: money(item.line_total), alignment: "right", bold: true },
-  ]) as unknown as Content[][];
+  const vatEnabled = Boolean(order.vat_enabled);
+  const itemRows = (order.order_items || []).map((item, index) => {
+    const cells: Content[] = [
+      { text: String(index + 1), alignment: "center" },
+      {
+        stack: [
+          { text: item.name, bold: true },
+          item.sku ? { text: `SKU: ${item.sku}`, color: "#64748b", fontSize: 8 } : { text: "" },
+          item.item_note || item.pricing_note ? { text: `Quy cách: ${item.item_note || item.pricing_note}`, color: "#475569", italics: true, fontSize: 8, margin: [0, 2, 0, 0] } : { text: "" },
+        ],
+      },
+      { text: `${Number(item.quantity)} ${item.unit || ""}`.trim(), alignment: "right" },
+      { text: money(item.base_unit_price), alignment: "right" },
+      { text: `${Number(item.discount_percent || 0).toLocaleString("vi-VN")}%`, alignment: "right" },
+      { text: money(item.unit_price), alignment: "right" },
+    ];
+    if (vatEnabled) cells.push({ text: `${Number(item.vat_rate) === 8 ? 8 : 5}%`, alignment: "center" });
+    cells.push({ text: money(item.line_total), alignment: "right", bold: true });
+    return cells;
+  });
 
   const infoRow = (label: string, value: string): Content => ({
     columns: [
@@ -166,7 +175,7 @@ export async function generateOrderConfirmationPdf(
       {
         table: {
           headerRows: 1,
-          widths: [20, "*", 48, 62, 35, 62, 67],
+          widths: vatEnabled ? [18, "*", 42, 55, 32, 55, 30, 60] : [20, "*", 48, 62, 35, 62, 67],
           body: [
             [
               { text: "STT", style: "tableHeader", alignment: "center" },
@@ -175,6 +184,7 @@ export async function generateOrderConfirmationPdf(
               { text: "Giá gốc", style: "tableHeader", alignment: "right" },
               { text: "Điều chỉnh", style: "tableHeader", alignment: "right" },
               { text: "Đơn giá chốt", style: "tableHeader", alignment: "right" },
+              ...(vatEnabled ? [{ text: "VAT", style: "tableHeader", alignment: "center" } as Content] : []),
               { text: "Thành tiền", style: "tableHeader", alignment: "right" },
             ],
             ...itemRows,
@@ -207,12 +217,13 @@ export async function generateOrderConfirmationPdf(
             width: 225,
             table: {
               widths: ["*", 85],
-              body: [
+              body: ([
                 [{ text: "Tạm tính", color: "#64748b" }, { text: money(order.subtotal), alignment: "right", bold: true }],
                 [{ text: adjustment >= 0 ? (order.discount_percent ? `Chiết khấu (${order.discount_percent}%)` : "Giảm/điều chỉnh") : "Điều chỉnh tăng", color: "#64748b" }, { text: adjustment >= 0 ? `-${money(adjustment)}` : money(Math.abs(adjustment)), alignment: "right", color: adjustment >= 0 ? "#087348" : "#b45309", bold: true }],
                 [{ text: "Phí giao hàng", color: "#64748b" }, { text: money(order.shipping_amount), alignment: "right", bold: true }],
+                ...(vatEnabled ? [[{ text: "VAT", color: "#64748b" }, { text: money(order.vat_amount), alignment: "right", bold: true }]] : []),
                 [{ text: "TỔNG THANH TOÁN", bold: true, color: "#087348", fontSize: 10 }, { text: money(order.grand_total), alignment: "right", bold: true, color: "#087348", fontSize: 12 }],
-              ],
+              ]) as any,
             },
             layout: {
               hLineColor: "#dce7e1",
