@@ -60,3 +60,25 @@ export async function fetchProductsByIds(
 
   return results;
 }
+
+/** Tải sản phẩm theo SKU để ưu tiên bản ghi danh mục đang hoạt động khi dữ liệu cũ trùng UUID. */
+export async function fetchProductsBySkus(
+  supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
+  productSkus: string[],
+  selectFields = "id, sku, name, category, unit, price_retail, price_wholesale, image_url, track_inventory, stock_qty, active, data_source, kiotviet_group"
+): Promise<any[]> {
+  const uniqueSkus = Array.from(new Set(productSkus.map((sku) => sku.trim()).filter(Boolean)));
+  if (uniqueSkus.length === 0) return [];
+
+  const results: any[] = [];
+  for (const chunk of chunkArray(uniqueSkus, 100)) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(selectFields)
+      .in("sku", chunk)
+      .eq("active", true);
+    if (error) throw error;
+    if (data) results.push(...data);
+  }
+  return results;
+}

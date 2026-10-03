@@ -3,7 +3,8 @@ import { verifyAdminAuth } from "@/lib/admin-auth";
 import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, calculateEarliestDate } from "@/lib/order-cutoff";
-import { fetchProductsByIds } from "@/lib/products-fetcher";
+import { fetchProductsByIds, fetchProductsBySkus } from "@/lib/products-fetcher";
+import { normalizeProductCategory, productAggregationKey } from "@/lib/product-catalog-normalization";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,6 +113,29 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const allProductSkus = new Set<string>();
+    for (const order of orderList) {
+      for (const item of (order as any).order_items || []) {
+        const sku = productDetailsMap.get(item.product_id)?.sku || item.sku;
+        if (sku) allProductSkus.add(String(sku).trim());
+      }
+    }
+    const canonicalProductBySku = new Map<string, any>();
+    if (allProductSkus.size > 0) {
+      const canonicalProducts = await fetchProductsBySkus(
+        supabase,
+        Array.from(allProductSkus),
+        "id, sku, name, category, unit, track_inventory, stock_qty, active, data_source, kiotviet_group"
+      );
+      for (const product of canonicalProducts) {
+        const key = String(product.sku || "").trim().toLocaleLowerCase("vi-VN");
+        const current = canonicalProductBySku.get(key);
+        if (!current || (product.data_source === "kiotviet" && current.data_source !== "kiotviet")) {
+          canonicalProductBySku.set(key, product);
+        }
+      }
+    }
+
     // 2. Tổng hợp theo sản phẩm & nhóm hàng (category)
     interface ProductAggLine {
       productId: string;
@@ -149,9 +173,11 @@ export async function GET(req: NextRequest) {
         const ordQty = item.ordered_quantity != null ? Number(item.ordered_quantity) : qty;
         sumQtyByLines += qty;
 
-        const pid = item.product_id || item.sku || item.name;
-        const pInfo = item.product_id ? productDetailsMap.get(item.product_id) : null;
-        const category = pInfo?.category || "Khác";
+        const linkedProduct = item.product_id ? productDetailsMap.get(item.product_id) : null;
+        const sku = linkedProduct?.sku || item.sku || "";
+        const pInfo = canonicalProductBySku.get(String(sku).trim().toLocaleLowerCase("vi-VN")) || linkedProduct;
+        const pid = productAggregationKey({ sku, productId: item.product_id, name: item.name });
+        const category = normalizeProductCategory(pInfo?.category || linkedProduct?.category);
 
         let agg = productAggMap.get(pid);
         if (!agg) {
@@ -162,7 +188,7 @@ export async function GET(req: NextRequest) {
             customerSet: new Set<string>(),
             line: {
               productId: item.product_id || "",
-              sku: pInfo?.sku || item.sku || "",
+              sku,
               name: pInfo?.name || item.name || "",
               unit: pInfo?.unit || item.unit || "Kg",
               totalQty: 0,
