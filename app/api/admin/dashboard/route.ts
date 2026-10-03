@@ -103,6 +103,7 @@ export async function GET(req: NextRequest) {
     const monthStart = vnStartIso(year, month, 1);
     const nextMonthStart = vnStartIso(year, month + 1, 1);
     const previousMonthStart = vnStartIso(year, month - 1, 1);
+    const previousMonthToDateEnd = vnStartIso(year, month - 1, day + 1);
     const trendStart = vnStartIso(year, month, day - 13);
     const analyticsStart = new Date(previousMonthStart) < new Date(trendStart) ? previousMonthStart : trendStart;
 
@@ -147,7 +148,7 @@ export async function GET(req: NextRequest) {
       order.confirmed_at >= monthStart && order.confirmed_at < nextMonthStart && REVENUE_STATUSES.has(order.status)
     ));
     const previousMonthRows = analyticsOrders.filter((order) => (
-      order.confirmed_at >= previousMonthStart && order.confirmed_at < monthStart && REVENUE_STATUSES.has(order.status)
+      order.confirmed_at >= previousMonthStart && order.confirmed_at < previousMonthToDateEnd && REVENUE_STATUSES.has(order.status)
     ));
     const monthRevenue = monthRows.reduce((sum, order) => sum + (Number(order.grand_total) || 0), 0);
     const previousMonthRevenue = previousMonthRows.reduce((sum, order) => sum + (Number(order.grand_total) || 0), 0);
