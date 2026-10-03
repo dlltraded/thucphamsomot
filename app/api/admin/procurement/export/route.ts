@@ -19,6 +19,20 @@ const BRAND = {
   warningText: "FF996600",
 };
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+function json(body: unknown, status = 200) {
+  return NextResponse.json(body, { status, headers: corsHeaders });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 function styleHeaderRow(row: ExcelJS.Row) {
   row.eachCell((cell) => {
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND.primary } };
@@ -61,12 +75,12 @@ function titleBlock(sheet: ExcelJS.Worksheet, title: string, subtitle: string, c
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) {
-    return NextResponse.json({ ok: false, error: auth.error }, { status: 401 });
+    return json({ ok: false, error: auth.error }, 401);
   }
 
   // Quyền procurement.export hoặc procurement.view
   if (!canForProfile(auth.profile, "procurement.export") && !canForProfile(auth.profile, "procurement.view")) {
-    return NextResponse.json({ ok: false, error: "Bạn không có quyền xuất file Đơn tổng" }, { status: 403 });
+    return json({ ok: false, error: "Bạn không có quyền xuất file Đơn tổng" }, 403);
   }
 
   try {
@@ -79,6 +93,11 @@ export async function GET(req: NextRequest) {
       : calculateEarliestDate(new Date(), config);
 
     const includePending = req.nextUrl.searchParams.get("includePending") === "1";
+    const requestedOrderIds = (req.nextUrl.searchParams.get("orderIds") || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .slice(0, 300);
     const statuses = includePending
       ? ["confirmed", "preparing", "pending"]
       : ["confirmed", "preparing"];
@@ -102,14 +121,13 @@ export async function GET(req: NextRequest) {
 
     if (ordersErr) throw ordersErr;
 
+    const requestedOrderIdSet = new Set(requestedOrderIds);
     const orderList = (orders || []).filter((order: any) =>
-      order.status !== "pending" || order.delivery_date === deliveryDate
+      (order.status !== "pending" || order.delivery_date === deliveryDate) &&
+      (requestedOrderIdSet.size === 0 || requestedOrderIdSet.has(order.id))
     );
     if (orderList.length === 0) {
-      return NextResponse.json(
-        { ok: false, error: `Không có đơn hàng nào cho ngày giao ${deliveryDate}` },
-        { status: 404 }
-      );
+      return json({ ok: false, error: `Không có đơn hàng phù hợp trong danh sách đã chọn đến ngày giao ${deliveryDate}` }, 404);
     }
 
     // Tra cứu danh mục, tồn kho từ bảng products
@@ -547,15 +565,13 @@ export async function GET(req: NextRequest) {
     return new NextResponse(buffer, {
       status: 200,
       headers: {
+        ...corsHeaders,
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {
     console.error("GET /api/admin/procurement/export lỗi:", error);
-    return NextResponse.json(
-      { ok: false, error: "Không xuất được file Excel đơn tổng hợp" },
-      { status: 500 }
-    );
+    return json({ ok: false, error: "Không xuất được file Excel đơn tổng hợp" }, 500);
   }
 }

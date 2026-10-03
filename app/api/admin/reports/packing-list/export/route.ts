@@ -14,6 +14,20 @@ const BRAND = {
   white: "FFFFFFFF",
 };
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+function json(body: unknown, status = 200) {
+  return NextResponse.json(body, { status, headers: corsHeaders });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 function styleHeaderRow(row: ExcelJS.Row) {
   row.eachCell((cell) => {
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND.primary } };
@@ -127,7 +141,7 @@ interface DetailRow { orderCode: string; customer: string; sku: string; product:
 // 2) ?from=&to= (không có orderIds) — chế độ cũ, xuất theo khoảng ngày.
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
-  if (!auth.ok) return NextResponse.json({ ok: false, error: auth.error }, { status: 401 });
+  if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
 
   const orderIdsParam = req.nextUrl.searchParams.get("orderIds");
   const orderIds = orderIdsParam ? orderIdsParam.split(",").map((s) => s.trim()).filter(Boolean) : [];
@@ -149,7 +163,7 @@ export async function GET(req: NextRequest) {
     const { data: orders, error } = await query;
     if (error) throw error;
     if (orderIds.length && (orders || []).length === 0) {
-      return NextResponse.json({ ok: false, error: "Không tìm thấy đơn hàng đã chọn" }, { status: 404 });
+      return json({ ok: false, error: "Không tìm thấy đơn hàng đã chọn" }, 404);
     }
 
     const detailRows: DetailRow[] = [];
@@ -229,12 +243,13 @@ export async function GET(req: NextRequest) {
     return new NextResponse(buffer, {
       status: 200,
       headers: {
+        ...corsHeaders,
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {
     console.error("GET /api/admin/reports/packing-list/export lỗi:", error);
-    return NextResponse.json({ ok: false, error: "Không xuất được bảng soạn hàng" }, { status: 500 });
+    return json({ ok: false, error: "Không xuất được bảng soạn hàng" }, 500);
   }
 }

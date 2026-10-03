@@ -5,7 +5,7 @@ import { canForProfile } from "@/lib/permissions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
@@ -18,6 +18,57 @@ export async function OPTIONS() {
 }
 
 const ACTIONS = ["claim", "complete", "release"] as const;
+
+export async function GET(req: NextRequest) {
+  const auth = await verifyAdminAuth(req);
+  if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
+  if (!canForProfile(auth.profile, "orders.packing")) {
+    return json({ ok: false, error: "Bạn không có quyền xem danh sách soạn hàng" }, 403);
+  }
+
+  const deliveryDate = req.nextUrl.searchParams.get("date")?.trim() || "";
+  const packingStatus = req.nextUrl.searchParams.get("packingStatus")?.trim() || "active";
+  if (deliveryDate && !/^\d{4}-\d{2}-\d{2}$/.test(deliveryDate)) {
+    return json({ ok: false, error: "Ngày giao không hợp lệ" }, 400);
+  }
+
+  try {
+    const supabase = getCustomerSupabaseAdmin();
+    let query = supabase
+      .from("orders")
+      .select("id, order_code, customer_name, customer_company, status, confirmed_at, item_count, packing_status, packed_by, delivery_date")
+      .in("status", ["confirmed", "preparing", "shipping"])
+      .order("delivery_date", { ascending: true })
+      .order("confirmed_at", { ascending: true });
+
+    // Một ngày soạn luôn gồm đơn đúng ngày và đơn cũ chưa xử lý để không bỏ sót.
+    if (deliveryDate) query = query.lte("delivery_date", deliveryDate);
+    if (packingStatus === "active") query = query.in("packing_status", ["not_started", "in_progress"]);
+    else if (["not_started", "in_progress", "done"].includes(packingStatus)) query = query.eq("packing_status", packingStatus);
+
+    const { data: orders, error } = await query;
+    if (error) throw error;
+
+    const packerIds = [...new Set((orders || []).map((order) => order.packed_by).filter(Boolean))] as string[];
+    const { data: packers, error: packersError } = packerIds.length
+      ? await supabase.from("admin_profiles").select("id, name").in("id", packerIds)
+      : { data: [] as { id: string; name: string }[], error: null };
+    if (packersError) throw packersError;
+    const packerMap = new Map((packers || []).map((packer) => [packer.id, packer.name]));
+
+    return json({
+      ok: true,
+      orders: (orders || []).map((order) => ({
+        ...order,
+        packed_by_name: order.packed_by ? packerMap.get(order.packed_by) || null : null,
+        is_overdue: Boolean(deliveryDate && order.delivery_date && order.delivery_date < deliveryDate),
+      })),
+    });
+  } catch (error) {
+    console.error("GET /api/admin/orders/packing lỗi:", error);
+    return json({ ok: false, error: "Không tải được danh sách soạn hàng" }, 500);
+  }
+}
 // Luồng "nhận soạn" đơn hàng (mục brief 2026-09-11) — claim: 1 nhân viên
 // nhận 1/nhiều đơn "chưa soạn" để soạn, gán packed_by = chính mình, khóa
 // không cho người khác cũng nhận đơn đó cùng lúc. complete: đánh dấu soạn
