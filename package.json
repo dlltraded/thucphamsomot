@@ -9,7 +9,10 @@
     "start": "next start",
     "lint": "eslint .",
     "migrate:supabase": "node scripts/migrate-json-to-supabase.mjs",
-    "postbuild": "next-sitemap"
+    "postbuild": "next-sitemap",
+    "test:g83": "tsx scratch/test_g8_3_integration_suite.mjs",
+    "test:g84": "tsx scratch/test_g8_3_integration_suite.mjs",
+    "test:g85": "tsx scratch/test_g8_5_full_negative_suite.mjs"
   },
   "keywords": [],
   "author": "",
@@ -57,6 +60,7 @@
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4.3.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "xlsx": "^0.18.5"
   }

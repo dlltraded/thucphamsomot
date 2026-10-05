@@ -65,19 +65,25 @@ export async function createConfirmationDocument(
   return { ...document, fileName };
 }
 
+export interface FinalizeOrderParams {
+  orderId: string;
+  customerTier: string;
+  pricingMode: string;
+  orderDiscountPercent: number;
+  shippingAmount: number;
+  items: Array<Record<string, unknown>>;
+  verificationNote: string;
+  pricingNote?: string;
+  actor: string;
+  actorId?: string | null;
+  bypassProcurementReview?: boolean;
+  bypassReason?: string;
+  hasBypassPermission?: boolean;
+}
+
 export async function finalizeOrderWithLegacyLineEditor(
   supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
-  params: {
-    orderId: string;
-    customerTier: string;
-    pricingMode: string;
-    orderDiscountPercent: number;
-    shippingAmount: number;
-    items: Array<Record<string, unknown>>;
-    verificationNote: string;
-    pricingNote: string;
-    actor: string;
-  }
+  params: FinalizeOrderParams
 ) {
   const { data: current, error: currentError } = await supabase
     .from("orders")
@@ -109,6 +115,57 @@ export async function finalizeOrderWithLegacyLineEditor(
     await supabase.from("order_items").delete().eq("order_id", params.orderId);
     if (originalItems.length) await supabase.from("order_items").insert(originalItems);
   };
+
+  // ─── GATE G4: KIỂM TRA ĐIỀU KIỆN THU MUA TRƯỚC KHI XÁC NHẬN ĐƠN ───
+  // Đơn pending/processing muốn xác nhận bắt buộc phải có phiên kiểm tra Thu mua đạt 'accepted_by_operations'
+  // trừ khi có quyền bỏ qua (credit_override/admin) và có lý do cụ thể.
+  if (current.status === "pending" || current.status === "processing") {
+    const { data: latestReview, error: revError } = await supabase
+      .from("procurement_review_requests")
+      .select("id, version, status, note")
+      .eq("order_id", params.orderId)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (revError && !/relation.*does not exist/i.test(revError.message)) {
+      console.warn("Lỗi đọc procurement_review_requests:", revError.message);
+    }
+
+    const isBypass = params.bypassProcurementReview && params.hasBypassPermission && params.bypassReason?.trim();
+
+    if (!isBypass) {
+      if (!latestReview) {
+        throw new Error("Không thể xác nhận đơn: Đơn hàng chưa được gửi cho Thu mua kiểm tra. Vui lòng bấm 'Gửi Thu mua kiểm tra' trước khi xác nhận.");
+      }
+      if (latestReview.status !== "accepted_by_operations") {
+        const statusLabels: Record<string, string> = {
+          pending_acceptance: "Chờ Thu mua tiếp nhận",
+          in_review: "Thu mua đang kiểm tra",
+          responded: "Thu mua đã phản hồi (Chờ Vận hành chấp nhận)",
+          needs_revision: "Cần Thu mua kiểm tra lại",
+          canceled: "Đã hủy",
+        };
+        const label = statusLabels[latestReview.status] || latestReview.status;
+        throw new Error(`Không thể xác nhận đơn: Kết quả kiểm tra từ Thu mua chưa được hoàn tất hoặc chưa được Vận hành chấp nhận (Trạng thái hiện tại: ${label}). Vui lòng xử lý kết quả Thu mua trước khi xác nhận đơn.`);
+      }
+    } else {
+      // Ghi audit bỏ qua kiểm tra Thu mua
+      try {
+        if (latestReview?.id) {
+          await supabase.from("procurement_review_audit_logs").insert({
+            review_id: latestReview.id,
+            order_id: params.orderId,
+            action: "bypass_review",
+            actor_id: params.actorId || null,
+            reason: params.bypassReason?.trim(),
+          });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
 
   try {
     for (const input of params.items) {
@@ -325,18 +382,6 @@ export async function finalizeOrderWithLegacyLineEditor(
   }
 }
 
-export interface FinalizeOrderParams {
-  orderId: string;
-  customerTier: string;
-  pricingMode: string;
-  orderDiscountPercent: number;
-  shippingAmount: number;
-  items: Array<Record<string, unknown>>;
-  verificationNote: string;
-  pricingNote: string;
-  actor: string;
-}
-
 export async function finalizeOrderCore(
   supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
   params: FinalizeOrderParams
@@ -355,6 +400,71 @@ export async function finalizeOrderCore(
       .from("orders")
       .update({ confirmation_document_status: "failed" })
       .eq("id", params.orderId);
+  }
+
+  // Tự động phát hành Tác vụ Soạn hàng (Picking Task) cho đơn đã xác nhận.
+  // QUAN TRỌNG: Lỗi RPC phải được bắt và báo cáo rõ ràng — KHÔNG được im lặng bỏ qua.
+  // Đơn đã được chốt giá thành công, nhưng nếu không tạo được picking task thì
+  // nhân viên kho sẽ không biết có đơn cần soạn → nguy cơ giao hàng trễ.
+  if ((finalized as any).status === "confirmed") {
+    let pickingTaskWarning = "";
+    let pickSuccess = false;
+    let lastErrorMsg = "";
+
+    // Retry loop tối đa 3 lần nếu gặp sự cố mạng hoặc khóa tạm thời
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const pickResult = await supabase.rpc("create_picking_task_on_confirm", {
+          p_order_id: params.orderId,
+          p_actor_id: params.actorId || null,
+          p_version: Number(finalized.price_revision || 1),
+        });
+
+        if (pickResult.error) {
+          lastErrorMsg = pickResult.error.message || "Lỗi kết nối khi tạo lệnh soạn hàng";
+        } else if (pickResult.data && pickResult.data.success === false) {
+          lastErrorMsg = pickResult.data.message || `Lỗi nghiệp vụ (${pickResult.data.error_code || 'UNKNOWN'})`;
+        } else if (pickResult.data && pickResult.data.success === true) {
+          pickSuccess = true;
+          break;
+        }
+      } catch (pickErr: any) {
+        lastErrorMsg = pickErr?.message || "Lỗi không xác định khi gọi create_picking_task_on_confirm";
+      }
+
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 150));
+      }
+    }
+
+    if (!pickSuccess) {
+      console.error(`Lỗi phát hành picking task sau 3 lần thử cho đơn ${params.orderId}:`, lastErrorMsg);
+      // Ghi nhận vào hàng đợi retry để không mất đơn
+      try {
+        await supabase.from("picking_task_retry_queue").upsert(
+          {
+            order_id: params.orderId,
+            actor_id: params.actorId || null,
+            version: Number(finalized.price_revision || 1),
+            status: "pending",
+            last_error: lastErrorMsg,
+            next_retry_at: new Date(Date.now() + 60000).toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "order_id,version" }
+        );
+      } catch (queueErr: any) {
+        console.error("Lỗi khi đưa đơn vào picking_task_retry_queue:", queueErr?.message);
+      }
+
+      pickingTaskWarning = `Đơn đã được xác nhận nhưng Lệnh Soạn Hàng chưa được phát hành ngay: ${lastErrorMsg}. Hệ thống đã đưa vào hàng đợi tự động retry để đảm bảo không mất đơn.`;
+    }
+
+    if (pickingTaskWarning) {
+      documentWarning = documentWarning
+        ? `${documentWarning}\n${pickingTaskWarning}`
+        : pickingTaskWarning;
+    }
   }
 
   const { data: fullOrder } = await supabase

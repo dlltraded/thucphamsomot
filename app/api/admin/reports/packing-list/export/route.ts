@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 
-const PACKING_STATUSES = ["confirmed", "preparing", "shipping"];
+const PACKING_STATUSES = ["confirmed", "preparing"];
 
 const BRAND = {
   primary: "FF0F6F4B",
@@ -89,7 +89,7 @@ function buildAggregateSheet(wb: ExcelJS.Workbook, detailRows: DetailRow[], rang
 
   const s1 = wb.addWorksheet("Tổng hợp cần soạn", { views: [{ showGridLines: false }] });
   s1.columns = [{ width: 36 }, { width: 10 }, { width: 16 }, { width: 12 }];
-  titleBlock(s1, "BẢNG TỔNG HỢP SOẠN HÀNG", rangeLabel, 4);
+  titleBlock(s1, "DANH SÁCH SOẠN HÀNG — CHỈ DÀNH CHO ĐƠN ĐÃ XÁC NHẬN", rangeLabel, 4);
   styleHeaderRow(s1.addRow(["Tên sản phẩm", "ĐVT", "Tổng SL cần soạn", "Số đơn"]));
   productRows.forEach((p) => {
     const row = s1.addRow([p.product, p.unit, p.quantity, p.orderCount]);
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
       .select("id, order_code, customer_name, customer_company, customer_phone, delivery_address, confirmed_at, order_items(sku, name, unit, quantity)")
       .order("order_code");
     if (orderIds.length) {
-      query = query.in("id", orderIds);
+      query = query.in("id", orderIds).in("status", PACKING_STATUSES);
     } else {
       query = query.in("status", PACKING_STATUSES).gte("confirmed_at", fromStr);
       if (toStr) query = query.lt("confirmed_at", toStr);
@@ -149,7 +149,10 @@ export async function GET(req: NextRequest) {
     const { data: orders, error } = await query;
     if (error) throw error;
     if (orderIds.length && (orders || []).length === 0) {
-      return NextResponse.json({ ok: false, error: "Không tìm thấy đơn hàng đã chọn" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "Không tìm thấy đơn hàng đã xác nhận nào hợp lệ để tạo danh sách soạn hàng. Đơn pending/chưa xác nhận không được phép soạn hàng." },
+        { status: 400 }
+      );
     }
 
     const detailRows: DetailRow[] = [];
@@ -224,8 +227,8 @@ export async function GET(req: NextRequest) {
 
     const buffer = await wb.xlsx.writeBuffer();
     const filename = orderIds.length
-      ? `soan-hang_${(orders || []).length}-don_${todayStr()}.xlsx`
-      : `soan-hang_${fromStr.slice(0, 10)}.xlsx`;
+      ? `DANH_SACH_SOAN_HANG_${(orders || []).length}-don_${todayStr()}.xlsx`
+      : `DANH_SACH_SOAN_HANG_${fromStr.slice(0, 10)}.xlsx`;
     return new NextResponse(buffer, {
       status: 200,
       headers: {

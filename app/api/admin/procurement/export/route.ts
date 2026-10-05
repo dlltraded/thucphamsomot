@@ -278,10 +278,10 @@ export async function GET(req: NextRequest) {
 
     const exporterName = auth.profile?.name || auth.profile?.email || "Vận hành";
     const exportTimeStr = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-    const subTitleCommon = `Giao ngày: ${deliveryDate} · Phạm vi: ${includePending ? "Đã xác nhận + Đang soạn + Chờ xác nhận" : "Đã xác nhận + Đang soạn"} · Xuất lúc: ${exportTimeStr} bởi ${exporterName}`;
+    const subTitleCommon = `Giao ngày: ${deliveryDate} · [CHỨNG TỪ NỘI BỘ KIỂM TRA NHU CẦU — CHƯA PHẢI LỆNH SOẠN HÀNG — KHÔNG DÙNG ĐỂ GIAO HÀNG] · Xuất lúc: ${exportTimeStr} bởi ${exporterName}`;
 
-    // ─── SHEET 1: Tổng hợp ──────────────────────────────────────────
-    const s1 = wb.addWorksheet("Tổng hợp", {
+    // ─── SHEET 1: Tổng hợp nhu cầu ──────────────────────────────────
+    const s1 = wb.addWorksheet("Tổng hợp nhu cầu", {
       views: [{ showGridLines: true, state: "frozen", ySplit: 5 }],
       pageSetup: { orientation: "landscape", paperSize: 9, fitToPage: true, fitToWidth: 1 },
     });
@@ -300,7 +300,7 @@ export async function GET(req: NextRequest) {
       { width: 40 }, // Ghi chú của khách
     ];
 
-    titleBlock(s1, `TỔNG HỢP SOẠN HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 11);
+    titleBlock(s1, `BẢNG KIỂM TRA NHU CẦU — CHƯA PHẢI LỆNH SOẠN HÀNG`, subTitleCommon, 11);
 
     const s1Header = s1.addRow([
       "STT", "Mã hàng", "Tên hàng", "ĐVT", "Tổng SL cuối cùng", "SL ban đầu", "Số đơn", "Số khách", "Tồn kho", "Cần bù", "Ghi chú của khách"
@@ -411,7 +411,7 @@ export async function GET(req: NextRequest) {
       { width: 14 }, // Trễ giờ chốt
     ];
 
-    titleBlock(s2, `CHI TIẾT THEO KHÁCH HÀNG — GIAO NGÀY ${deliveryDate}`, subTitleCommon, 13);
+    titleBlock(s2, `CHI TIẾT NHU CẦU THEO KHÁCH HÀNG — CHƯA PHẢI LỆNH SOẠN HÀNG`, subTitleCommon, 13);
 
     const s2Header = s2.addRow([
       "Ngày giao", "Mã đơn", "Tên khách hàng", "Điểm giao / Địa chỉ", "Nhóm hàng",
@@ -523,7 +523,7 @@ export async function GET(req: NextRequest) {
     });
 
     // 4. Tạo file buffer & ghi log vào procurement_exports
-    const filename = `TONG_HOP_SOAN_HANG_${deliveryDate}.xlsx`;
+    const filename = `BANG_KIEM_TRA_NHU_CAU_${deliveryDate}.xlsx`;
     const buffer = await wb.xlsx.writeBuffer();
 
     try {

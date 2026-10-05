@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, User, Phone, MapPin, RefreshCw, CheckCircle2,
-  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet, Truck, Printer, FileSpreadsheet, ClipboardEdit, Receipt, RotateCcw, X
+  Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet, Truck, Printer, FileSpreadsheet, ClipboardEdit, Receipt, RotateCcw, X,
+  ClipboardCheck, Send, AlertCircle
 } from 'lucide-react';
 import { printOrderSlip } from '../lib/printOrder';
 import QuickAddProductModal from '../components/QuickAddProductModal';
@@ -233,6 +234,111 @@ export default function OrderDetailPage() {
     } finally { setSubmittingPayment(false); }
   };
 
+  // Phân hệ Thu mua kiểm tra hàng (G3/G4)
+  const [procurementReview, setProcurementReview] = useState<any>(null);
+  const [requestingReview, setRequestingReview] = useState(false);
+  const [respondingReview, setRespondingReview] = useState(false);
+  const [bypassProcurement, setBypassProcurement] = useState(false);
+  const [bypassReason, setBypassReason] = useState('');
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+  const [revisionReasonText, setRevisionReasonText] = useState('');
+
+  const fetchProcurementReview = useCallback(async () => {
+    if (!id) return;
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/procurement/reviews?search=${encodeURIComponent(id)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
+        const found = data.data.find((r: any) => r.order_id === id) || data.data[0];
+        const detailRes = await fetch(`${apiBase}/api/admin/procurement/reviews/${found.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const detailData = await detailRes.json();
+        if (detailData.ok) {
+          setProcurementReview(detailData.data);
+          return;
+        }
+      }
+      setProcurementReview(null);
+    } catch {
+      setProcurementReview(null);
+    }
+  }, [id, token]);
+
+  useEffect(() => { fetchProcurementReview(); }, [fetchProcurementReview]);
+
+  const handleSendToProcurement = async () => {
+    if (!order) return;
+    setRequestingReview(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/procurement/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Gửi yêu cầu thất bại');
+      alert('✅ Đã gửi yêu cầu kiểm tra hàng cho phòng Thu mua');
+      await Promise.all([fetchProcurementReview(), fetchOrder()]);
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setRequestingReview(false);
+    }
+  };
+
+  const handleAcceptProcurementReview = async () => {
+    if (!procurementReview) return;
+    setRespondingReview(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/procurement/reviews/${procurementReview.id}/operations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'accept' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Thao tác thất bại');
+      alert('✅ Đã chấp nhận kết quả kiểm tra. Đơn sẵn sàng để xác nhận!');
+      await Promise.all([fetchProcurementReview(), fetchOrder()]);
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setRespondingReview(false);
+    }
+  };
+
+  const handleRequestProcurementRevision = async () => {
+    if (!procurementReview) return;
+    if (!revisionReasonText.trim()) {
+      alert('Vui lòng nhập lý do yêu cầu kiểm tra lại');
+      return;
+    }
+    setRespondingReview(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/procurement/reviews/${procurementReview.id}/operations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'request_revision', reason: revisionReasonText.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Thao tác thất bại');
+      alert('✅ Đã gửi yêu cầu kiểm tra lại cho Thu mua');
+      setRevisionModalOpen(false);
+      setRevisionReasonText('');
+      await Promise.all([fetchProcurementReview(), fetchOrder()]);
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setRespondingReview(false);
+    }
+  };
+
   const fetchOrder = useCallback(async () => {
     setLoading(true);
     try {
@@ -377,6 +483,7 @@ export default function OrderDetailPage() {
 
   const isLocked = order && (['shipping', 'completed', 'canceled'].includes(order.status) || ['paid', 'refunded'].includes(order.payment_status) || !!order.delivery_confirmed_at);
   const canFinalizePricing = user?.userType === 'staff' && can(user.role, 'orders.finalize_pricing');
+  const canBypassReview = user?.userType === 'staff' && (user.role === 'admin' || can(user.role, 'orders.credit_override'));
   const isTerminalStatus = !!order && ['completed', 'canceled'].includes(order.status);
   // Cột delivery_confirmed_at chỉ có sau migration 20260920g — chưa chạy thì giữ luồng cũ.
   const reconcileAvailable = !!order && 'delivery_confirmed_at' in order && ['confirmed', 'preparing', 'shipping'].includes(order.status) && order.pricing_status === 'finalized';
@@ -430,6 +537,18 @@ export default function OrderDetailPage() {
       alert('Chỉ Admin, Trưởng phòng phụ trách hoặc Sale/Văn phòng Vận hành được chốt giá đơn hàng.');
       return;
     }
+
+    if (['pending', 'processing'].includes(order?.status)) {
+      if (!bypassProcurement && (!procurementReview || procurementReview.status !== 'accepted_by_operations')) {
+        alert('⚠️ Đơn hàng cần được Thu mua kiểm tra và Vận hành chấp nhận kết quả trước khi xác nhận!\nNếu là trường hợp khẩn cấp, Quản trị viên có thể chọn "Bỏ qua kiểm tra Thu mua" ở mục bên dưới.');
+        return;
+      }
+      if (bypassProcurement && !bypassReason.trim()) {
+        alert('Bắt buộc phải nhập lý do khi chọn bỏ qua kiểm tra Thu mua!');
+        return;
+      }
+    }
+
     if (!confirm(`Chốt đơn theo bảng giá áp dụng với tổng tiền ${money(totals.total)}?`)) return;
     setSaving(true);
     try {
@@ -452,12 +571,14 @@ export default function OrderDetailPage() {
           verificationNote,
           pricingNote,
           actor: 'TPS1 Sale App',
+          bypassProcurementReview: bypassProcurement,
+          bypassReason: bypassReason.trim() || undefined,
         }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || data.warning || 'Không chốt được đơn');
       alert(data.warning || `✅ Đã chốt giá ${order.order_code} thành công!`);
-      await fetchOrder();
+      await Promise.all([fetchProcurementReview(), fetchOrder()]);
     } catch (err: any) {
       alert('Lỗi: ' + err.message);
     } finally { setSaving(false); }
@@ -935,6 +1056,169 @@ export default function OrderDetailPage() {
             )}
           </div>
 
+          {/* Section: Kiểm tra từ Thu mua */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="font-bold text-slate-800 flex items-center gap-2">
+                <ClipboardCheck size={18} className="text-teal-600" />
+                Kiểm tra từ Thu mua
+              </h2>
+              {procurementReview ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-slate-100 text-slate-600 font-mono px-2 py-0.5 rounded">
+                    v{procurementReview.version}
+                  </span>
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                    procurementReview.status === 'accepted_by_operations'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : procurementReview.status === 'responded'
+                      ? 'bg-purple-100 text-purple-700'
+                      : procurementReview.status === 'needs_revision'
+                      ? 'bg-rose-100 text-rose-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {procurementReview.status === 'pending_acceptance' && 'Chờ Thu mua tiếp nhận'}
+                    {procurementReview.status === 'in_review' && 'Thu mua đang kiểm tra'}
+                    {procurementReview.status === 'responded' && 'Thu mua đã phản hồi'}
+                    {procurementReview.status === 'needs_revision' && 'Cần kiểm tra lại'}
+                    {procurementReview.status === 'accepted_by_operations' && 'Vận hành đã duyệt kết quả'}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400">Chưa gửi yêu cầu</span>
+              )}
+            </div>
+
+            <div className="p-5 space-y-4">
+              {!procurementReview ? (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Đơn hàng chưa được gửi cho Thu mua kiểm tra</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Thu mua sẽ kiểm tra khả năng đáp ứng kho, bổ sung giá và đề xuất sản phẩm thay thế.</p>
+                  </div>
+                  {['pending', 'processing'].includes(order.status) && (
+                    <button
+                      onClick={handleSendToProcurement}
+                      disabled={requestingReview}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm whitespace-nowrap disabled:opacity-50"
+                    >
+                      <Send size={14} />
+                      <span>{requestingReview ? 'Đang gửi...' : 'Gửi Thu mua kiểm tra'}</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Staff & Timestamp summary */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                    <div>
+                      Thu mua phụ trách:{' '}
+                      <span className="font-semibold text-slate-800">
+                        {procurementReview.assigned_to_profile?.full_name || 'Chưa có nhân viên nhận'}
+                      </span>
+                    </div>
+                    <div>
+                      Tiếp nhận lúc:{' '}
+                      <span className="font-medium text-slate-700">
+                        {procurementReview.accepted_at ? dt(procurementReview.accepted_at) : '---'}
+                      </span>
+                    </div>
+                    <div>
+                      Phản hồi lúc:{' '}
+                      <span className="font-medium text-slate-700">
+                        {procurementReview.responded_at ? dt(procurementReview.responded_at) : '---'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Items comparison table */}
+                  {Array.isArray(procurementReview.items) && procurementReview.items.length > 0 && (
+                    <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                          <tr>
+                            <th className="py-2.5 px-3">Sản phẩm</th>
+                            <th className="py-2.5 px-2 text-center">Khách đặt</th>
+                            <th className="py-2.5 px-2 text-center">Đáp ứng</th>
+                            <th className="py-2.5 px-2 text-center">Thiếu</th>
+                            <th className="py-2.5 px-3">Kết quả</th>
+                            <th className="py-2.5 px-3">Đề xuất / Ghi chú</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {procurementReview.items.map((item: any) => {
+                            const isShortage = Number(item.shortage_qty) > 0;
+                            return (
+                              <tr key={item.id} className={isShortage ? 'bg-amber-50/40' : ''}>
+                                <td className="py-2.5 px-3">
+                                  <div className="font-medium text-slate-800">{item.order_item?.product_name || '---'}</div>
+                                  <div className="text-[11px] text-slate-400 font-mono">SKU: {item.order_item?.sku || '---'}</div>
+                                </td>
+                                <td className="py-2.5 px-2 text-center font-bold">{item.requested_qty}</td>
+                                <td className="py-2.5 px-2 text-center font-semibold text-teal-700">{item.available_qty}</td>
+                                <td className="py-2.5 px-2 text-center">
+                                  <span className={isShortage ? 'text-rose-600 font-bold' : 'text-slate-400'}>
+                                    {item.shortage_qty}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <span className="px-2 py-0.5 rounded font-medium text-[11px] bg-slate-100 text-slate-700">
+                                    {item.result_status}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-[11px] text-slate-600 space-y-0.5">
+                                  {item.proposed_product && (
+                                    <div className="font-medium text-teal-800">Đổi SP: {item.proposed_product.name}</div>
+                                  )}
+                                  {item.proposed_price != null && (
+                                    <div className="font-semibold text-blue-700">Giá đề xuất: {money(item.proposed_price)}</div>
+                                  )}
+                                  {item.note && <div className="italic text-slate-500">Ghi chú: {item.note}</div>}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Operations actions on review */}
+                  {procurementReview.status === 'responded' && (
+                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between gap-3 flex-wrap">
+                      <div className="text-xs text-purple-900 font-medium">
+                        Thu mua đã phản hồi kết quả kiểm tra. Vui lòng rà soát và chấp nhận kết quả để tiếp tục chốt đơn.
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setRevisionModalOpen(true)}
+                          disabled={respondingReview}
+                          className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 shadow-sm"
+                        >
+                          Yêu cầu kiểm tra lại
+                        </button>
+                        <button
+                          onClick={handleAcceptProcurementReview}
+                          disabled={respondingReview}
+                          className="px-3.5 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm"
+                        >
+                          {respondingReview ? 'Đang duyệt...' : 'Chấp nhận kết quả'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {procurementReview.status === 'accepted_by_operations' && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                      <span>Kết quả kiểm tra đã được Vận hành chấp nhận. Bạn có thể chốt đơn và phát hành Phiếu xác nhận.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Pricing Editor */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -1000,6 +1284,45 @@ export default function OrderDetailPage() {
                   <span>Tổng sau xác nhận</span><span className="text-green-700">{money(totals.total)}</span>
                 </div>
               </div>
+
+              {!isLocked && canFinalizePricing && ['pending', 'processing'].includes(order?.status) && procurementReview?.status !== 'accepted_by_operations' && (
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      id="bypassProcurement"
+                      checked={bypassProcurement}
+                      onChange={(e) => setBypassProcurement(e.target.checked)}
+                      disabled={!canBypassReview}
+                      className="w-4 h-4 mt-0.5 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
+                    />
+                    <div>
+                      <label htmlFor="bypassProcurement" className="text-xs font-bold text-amber-900 cursor-pointer block">
+                        Duyệt khẩn cấp / Bỏ qua kiểm tra Thu mua
+                      </label>
+                      <p className="text-[11px] text-amber-700">
+                        {canBypassReview
+                          ? 'Dành riêng cho Quản lý / Đơn hỏa tốc không cần chờ phòng Thu mua phản hồi kho.'
+                          : 'Yêu cầu quyền Quản trị hoặc Phê duyệt vượt hạn mức để sử dụng tính năng này.'}
+                      </p>
+                    </div>
+                  </div>
+                  {bypassProcurement && (
+                    <div className="pt-1">
+                      <label className="block text-[11px] font-semibold text-amber-800 mb-1">
+                        Lý do bỏ qua bước kiểm tra <span className="text-rose-600">*</span>:
+                      </label>
+                      <textarea
+                        value={bypassReason}
+                        onChange={(e) => setBypassReason(e.target.value)}
+                        rows={2}
+                        placeholder="Bắt buộc nhập lý do (VD: Hàng có sẵn tại cửa hàng, Giám đốc duyệt xuất nóng)..."
+                        className="w-full text-xs border border-amber-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {!isLocked && canFinalizePricing && (
                 <button onClick={handleFinalize} disabled={saving}
@@ -1232,6 +1555,49 @@ export default function OrderDetailPage() {
             setShowQuickAdd(false);
           }}
         />
+      )}
+
+      {revisionModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/45 flex items-center justify-center p-4" onMouseDown={() => setRevisionModalOpen(false)}>
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-5 space-y-4" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-base text-slate-800 flex items-center gap-2">
+                <AlertCircle size={18} className="text-rose-500" />
+                Yêu cầu Thu mua kiểm tra lại
+              </h3>
+              <button onClick={() => setRevisionModalOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">
+                <X size={16} />
+              </button>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                Lý do yêu cầu kiểm tra lại <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                value={revisionReasonText}
+                onChange={(e) => setRevisionReasonText(e.target.value)}
+                rows={3}
+                placeholder="VD: Khách không đồng ý đổi sản phẩm, đề xuất kiểm tra nhà cung cấp khác..."
+                className="w-full text-xs border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setRevisionModalOpen(false)}
+                className="px-3.5 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleRequestProcurementRevision}
+                disabled={respondingReview || !revisionReasonText.trim()}
+                className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50"
+              >
+                {respondingReview ? 'Đang gửi...' : 'Gửi yêu cầu'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

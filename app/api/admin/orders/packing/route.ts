@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const supabase = getCustomerSupabaseAdmin();
     const { data: orders, error: fetchError } = await supabase
       .from("orders")
-      .select("id, order_code, packing_status, packed_by")
+      .select("id, order_code, status, packing_status, packed_by")
       .in("id", orderIds);
     if (fetchError) throw fetchError;
 
@@ -52,6 +52,14 @@ export async function POST(req: NextRequest) {
     const now = new Date().toISOString();
 
     for (const order of orders || []) {
+      if (!["confirmed", "preparing"].includes(order.status)) {
+        skipped.push({
+          orderCode: order.order_code,
+          reason: `Đơn ở trạng thái "${order.status}", chưa được xác nhận nên không thể đưa vào soạn hàng.`,
+        });
+        continue;
+      }
+
       if (action === "claim") {
         if (order.packing_status === "not_started" || (order.packing_status === "in_progress" && order.packed_by === actorId)) {
           ok.push(order.id);

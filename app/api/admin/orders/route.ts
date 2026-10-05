@@ -427,6 +427,10 @@ export async function POST(req: NextRequest) {
       verificationNote: String(body?.verificationNote || "").trim(),
       pricingNote: String(body?.pricingNote || "").trim(),
       actor,
+      actorId: auth.profile?.id,
+      bypassProcurementReview: Boolean(body?.bypassProcurementReview),
+      bypassReason: String(body?.bypassReason || "").trim(),
+      hasBypassPermission: can(auth.profile?.role, "orders.credit_override") || auth.profile?.role === "admin",
     });
     return json({ ok: true, order: result.order, document: result.document, warning: result.warning });
   } catch (error) {
@@ -634,6 +638,46 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    // GATE G4: Chặn chuyển sang confirmed nếu chưa có kết quả kiểm tra Thu mua hợp lệ
+    if (hasStatusChange && nextStatus === "confirmed" && current.status !== "confirmed") {
+      const { data: latestRev } = await supabase
+        .from("procurement_review_requests")
+        .select("id, status")
+        .eq("order_id", orderId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const isBypass = body?.bypassProcurementReview && (can(auth.profile?.role, "orders.credit_override") || auth.profile?.role === "admin") && String(body?.bypassReason || "").trim();
+
+      if (!isBypass) {
+        if (!latestRev || latestRev.status !== "accepted_by_operations") {
+          return json(
+            { ok: false, error: "Không thể xác nhận đơn: Kết quả kiểm tra từ Thu mua chưa được hoàn tất và chấp nhận." },
+            409
+          );
+        }
+      }
+    }
+
+    // GATE G6: Chưa hoàn tất soạn hàng thì không chuyển sang shipping
+    if (hasStatusChange && nextStatus === "shipping" && current.status !== "shipping") {
+      const { data: completedPick } = await supabase
+        .from("picking_tasks")
+        .select("id, status")
+        .eq("order_id", orderId)
+        .eq("status", "completed")
+        .limit(1)
+        .maybeSingle();
+
+      if (!completedPick && current.packing_status !== "done") {
+        return json(
+          { ok: false, error: "Chưa hoàn tất soạn hàng, không thể chuyển sang trạng thái Đang giao (shipping)." },
+          409
+        );
+      }
+    }
+
     // HOÀN THÀNH phải qua bước XÁC NHẬN THỰC GIAO (yêu cầu 2026-09-20): hóa đơn tính theo số thực giao.
     // confirmFullDelivery=true => giao đủ 100% (1 chạm). Nếu migration 20260920g chưa chạy
     // (cột delivery_confirmed_at chưa có) thì bỏ qua chốt chặn để luồng cũ vẫn chạy.
@@ -727,12 +771,60 @@ export async function PATCH(req: NextRequest) {
     // (idempotent). Không chặn việc đổi trạng thái nếu bước này lỗi — trạng
     // thái đơn quan trọng hơn, lệch tồn kho có thể chỉnh tay sau qua trang
     // Hàng hóa (inventory_transactions là nguồn sự thật, xem lại được).
+    let pickingWarning = "";
     if (nextStatus === "confirmed" && current.status !== "confirmed") {
       const { error: deductError } = await supabase.rpc("deduct_inventory_for_order", {
         p_order_id: orderId,
         p_actor: auth.profile?.name || "admin",
       });
       if (deductError) console.error("deduct_inventory_for_order lỗi:", deductError.message);
+
+      // Tự động phát hành picking task cho kho khi đơn được xác nhận kèm retry loop và queue
+      let pickSuccess = false;
+      let lastPickError = "";
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const pickRes = await supabase.rpc("create_picking_task_on_confirm", {
+            p_order_id: orderId,
+            p_actor_id: auth.profile?.id || null,
+            p_version: Number(updated.price_revision || 1),
+          });
+          if (pickRes.error) {
+            lastPickError = pickRes.error.message || "Lỗi kết nối RPC";
+          } else if (pickRes.data && pickRes.data.success === false) {
+            lastPickError = pickRes.data.message || `Lỗi nghiệp vụ (${pickRes.data.error_code || 'UNKNOWN'})`;
+          } else if (pickRes.data && pickRes.data.success === true) {
+            pickSuccess = true;
+            break;
+          }
+        } catch (pickErr: any) {
+          lastPickError = pickErr?.message || "Ngoại lệ khi gọi create_picking_task_on_confirm";
+        }
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 150));
+        }
+      }
+
+      if (!pickSuccess) {
+        console.error(`Không thể phát hành picking task sau 3 lần thử cho đơn ${orderId}:`, lastPickError);
+        try {
+          await supabase.from("picking_task_retry_queue").upsert(
+            {
+              order_id: orderId,
+              actor_id: auth.profile?.id || null,
+              version: Number(updated.price_revision || 1),
+              status: "pending",
+              last_error: lastPickError,
+              next_retry_at: new Date(Date.now() + 60000).toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "order_id,version" }
+          );
+        } catch (qErr: any) {
+          console.error("Lỗi khi ghi nhận hàng đợi retry:", qErr?.message);
+        }
+        pickingWarning = `Đơn đã xác nhận nhưng chưa thể phát hành lệnh soạn hàng: ${lastPickError}. Đã đưa vào hàng đợi tự động retry để đảm bảo không mất đơn.`;
+      }
     }
 
     // Hủy đơn đã xác nhận/đang soạn: hoàn lại tồn kho đã trừ (idempotent; migration 20260920g). Lỗi không chặn hủy.
@@ -781,7 +873,8 @@ export async function PATCH(req: NextRequest) {
       }).catch((err) => console.error("sendPushToCustomer lỗi:", err));
     }
 
-    return json({ ok: true, order: updated, warning: invoiceWarning || undefined });
+    const combinedWarning = [invoiceWarning, pickingWarning].filter(Boolean).join(". ");
+    return json({ ok: true, order: updated, warning: combinedWarning || undefined });
   } catch (error) {
     console.error("Admin orders PATCH error:", error);
     return json(

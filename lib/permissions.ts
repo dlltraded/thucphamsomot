@@ -67,6 +67,30 @@ const PERMISSIONS: Record<string, Role[]> = {
   /** Xuất file Excel đơn tổng / tuyến */
   'procurement.export': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
 
+  // ─── Thu mua Kiểm tra hàng ──────────────────────────────────────
+  /** Xem danh sách/chi tiết kiểm tra hàng */
+  'procurement.review_view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  /** Vận hành gửi yêu cầu Thu mua kiểm tra */
+  'procurement.review_request': ['admin', 'truong_phong', 'sale'],
+  /** Nhân viên Thu mua tiếp nhận yêu cầu */
+  'procurement.review_claim': ['admin', 'truong_phong', 'thu_mua'],
+  /** Thu mua lưu nháp / gửi kết quả kiểm tra cho Vận hành */
+  'procurement.review_submit': ['admin', 'truong_phong', 'thu_mua'],
+  /** Vận hành chấp nhận kết quả hoặc yêu cầu kiểm tra lại */
+  'procurement.review_accept': ['admin', 'truong_phong', 'sale'],
+
+  // ─── Soạn hàng & Ngoại lệ ───────────────────────────────────────
+  /** Xem danh sách soạn hàng */
+  'picking.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho'],
+  /** Nhận tác vụ soạn hàng */
+  'picking.claim': ['admin', 'truong_phong', 'thu_mua', 'kho'],
+  /** Cập nhật số lượng thực soạn / hoàn tất soạn */
+  'picking.update': ['admin', 'truong_phong', 'thu_mua', 'kho'],
+  /** Báo cáo ngoại lệ khi soạn hàng */
+  'picking.exception': ['admin', 'truong_phong', 'thu_mua', 'kho'],
+  /** Vận hành giải quyết / duyệt ngoại lệ soạn hàng */
+  'picking.exception_resolve': ['admin', 'truong_phong', 'sale'],
+
   // ─── Hàng hóa ───────────────────────────────────────────────────
   /** Xem danh sách hàng hóa */
   'products.view': ['admin', 'truong_phong', 'sale', 'thu_mua', 'kho', 'ke_toan'],

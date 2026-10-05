@@ -328,10 +328,10 @@ export default function DonTongPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2.5">
             <FileSpreadsheet className="text-green-600" size={26} />
-            Đơn tổng &amp; Tổng hợp soạn hàng
+            Đơn tổng &amp; Kiểm tra nhu cầu Thu mua
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">
-            Tổng hợp theo ngày giao, chuẩn bị file Excel cho Thu mua và xử lý ngoại lệ trước giờ soạn hàng.
+            Bảng kiểm tra nhu cầu hàng hóa phục vụ Thu mua &amp; Kho đối soát — Chưa phải lệnh soạn hàng.
           </p>
         </div>
 
@@ -388,7 +388,7 @@ export default function DonTongPage() {
             className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
           >
             {exporting ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
-            Xuất Excel soạn hàng
+            Xuất Bảng kiểm tra nhu cầu
           </button>
 
           <button
@@ -534,7 +534,7 @@ export default function DonTongPage() {
             }`}
           >
             <Package size={17} />
-            Tổng hợp soạn hàng ({groups.reduce((s, g) => s + g.itemCount, 0)} món)
+            Tổng hợp nhu cầu hàng hóa ({groups.reduce((s, g) => s + g.itemCount, 0)} món)
           </button>
 
           <button

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { can, ROLE_LABELS } from '../lib/permissions';
 import {
   LayoutDashboard, ShoppingCart, Users, PackageOpen, LogOut, PlusSquare, Package,
   Wallet, BarChart3, MoreHorizontal, X, ClipboardList, Tag, FileSpreadsheet,
+  ClipboardCheck,
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -24,6 +25,7 @@ const NAV_GROUP_BY_PATH: Record<string, string> = {
   '/ap-gia-hang-ngay': 'sales',
   '/hang-hoa': 'products',
   '/thiet-lap-gia': 'products',
+  '/kiem-tra-hang': 'operations',
   '/don-tong': 'operations',
   '/soan-hang': 'operations',
   '/cong-no': 'finance',
@@ -33,6 +35,14 @@ const NAV_GROUP_BY_PATH: Record<string, string> = {
 // GIAI ĐOẠN A/E: 2 bộ khung điều hướng riêng theo userType — chặn thật sự
 // nằm ở route guard trong App.tsx (StaffOnlyRoute/CustomerOnlyRoute), đây
 // chỉ là ẩn/hiện menu cho gọn giao diện.
+interface NavItem {
+  path: string;
+  icon: React.ReactNode;
+  label: string;
+  badge?: number | null;
+  perm?: string | null;
+}
+
 export default function SaleLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -42,7 +52,33 @@ export default function SaleLayout() {
   const isCustomer = user?.userType === 'customer';
   const role = user?.role ?? '';
 
-  const navItems = isCustomer
+  const [reviewCount, setReviewCount] = useState<number>(0);
+  const [pickingCount, setPickingCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (isCustomer || !user) return;
+    const fetchBadges = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+        const token = localStorage.getItem('tps1_admin_token') || '';
+        const res = await fetch(`${apiBase}/api/admin/procurement/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setReviewCount(data.review_metrics?.pending_acceptance || 0);
+          setPickingCount(data.picking_metrics?.released || 0);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 60000);
+    return () => clearInterval(interval);
+  }, [isCustomer, user]);
+
+  const navItems: NavItem[] = isCustomer
     ? [
         { path: '/', icon: <ShoppingCart size={20} />, label: 'Đặt hàng' },
         { path: '/don-hang-cua-toi', icon: <ClipboardList size={20} />, label: 'Đơn hàng của tôi' },
@@ -57,12 +93,21 @@ export default function SaleLayout() {
         can(role, 'orders.create') && { path: '/tao-don-hang', icon: <PlusSquare size={20} />, label: 'Tạo đơn (POS)', perm: 'orders.create' },
         // Áp giá — admin/truong_phong/sale/thu_mua (Thu mua báo giá lại, sale áp giá rồi soạn đơn ra phiếu tạm)
         can(role, 'pricing.edit') && { path: '/ap-gia-hang-ngay', icon: <Tag size={20} />, label: 'Áp giá hàng ngày', perm: 'pricing.edit' },
-        // Thu mua & Soạn hàng (hợp nhất Đơn tổng gom hàng & Soạn hàng từng đơn)
-        (can(role, 'procurement.view') || can(role, 'orders.packing')) && {
-          path: '/don-tong',
+        // Kiểm tra hàng — Thu mua
+        can(role, 'procurement.review_view') && {
+          path: '/kiem-tra-hang',
+          icon: <ClipboardCheck size={20} />,
+          label: 'Kiểm tra hàng',
+          badge: reviewCount > 0 ? reviewCount : null,
+          perm: 'procurement.review_view',
+        },
+        // Soạn hàng — Kho & Thu mua
+        (can(role, 'picking.view') || can(role, 'orders.packing')) && {
+          path: '/soan-hang',
           icon: <PackageOpen size={20} />,
-          label: 'Thu mua & Soạn hàng',
-          perm: 'procurement.view',
+          label: 'Soạn hàng',
+          badge: pickingCount > 0 ? pickingCount : null,
+          perm: 'orders.packing',
         },
         // Khách hàng
         can(role, 'customers.view') && { path: '/khach-hang', icon: <Users size={20} />, label: 'Quản lý Khách hàng', perm: 'customers.view' },
@@ -73,17 +118,14 @@ export default function SaleLayout() {
         can(role, 'finance.view') && { path: '/cong-no', icon: <Wallet size={20} />, label: 'Công nợ', perm: 'finance.view' },
         // Báo cáo — admin/truong_phong/ke_toan
         can(role, 'reports.view') && { path: '/bao-cao', icon: <BarChart3 size={20} />, label: 'Báo cáo', perm: 'reports.view' },
-      ].filter(Boolean) as { path: string; icon: React.ReactNode; label: string; perm: string | null }[];
+      ].filter(Boolean) as NavItem[];
 
   // Mobile: chỉ hiện 4 mục dùng nhiều nhất, còn lại gom vào nút "Thêm".
-  const MOBILE_PRIMARY_PATHS = ['/', '/don-hang', '/tao-don-hang', '/hang-hoa'];
+  const MOBILE_PRIMARY_PATHS = ['/', '/don-hang', '/kiem-tra-hang', '/soan-hang'];
   const primaryItems = isCustomer ? navItems : navItems.filter((i) => MOBILE_PRIMARY_PATHS.includes(i.path));
   const moreItems = isCustomer ? [] : navItems.filter((i) => !MOBILE_PRIMARY_PATHS.includes(i.path));
 
   const isActivePath = (path: string) => {
-    if (path === '/don-tong') {
-      return location.pathname === '/don-tong' || location.pathname === '/soan-hang';
-    }
     return location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
   };
 
@@ -124,8 +166,20 @@ export default function SaleLayout() {
                         isActivePath(item.path) ? 'bg-green-100 text-green-800 shadow-sm' : 'text-slate-600 hover:bg-green-50 hover:text-green-700'
                       }`}
                     >
-                      <span className="shrink-0">{item.icon}</span>
-                      <span className={`min-w-[150px] whitespace-nowrap transition-opacity ${sidebarExpanded ? 'opacity-100' : 'opacity-0'}`}>{item.label}</span>
+                      <span className="shrink-0 relative">
+                        {item.icon}
+                        {item.badge && !sidebarExpanded && (
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-white" />
+                        )}
+                      </span>
+                      <span className={`min-w-[150px] whitespace-nowrap transition-opacity flex items-center justify-between ${sidebarExpanded ? 'opacity-100' : 'opacity-0'}`}>
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-white ml-2">
+                            {item.badge}
+                          </span>
+                        )}
+                      </span>
                     </Link>
                   ))}
                 </div>
