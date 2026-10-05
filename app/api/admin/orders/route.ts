@@ -9,6 +9,7 @@ import { sendPushToCustomer } from "@/lib/push";
 import { reconcileDelivery } from "@/lib/order-reconcile";
 import { can } from "@/lib/permissions";
 import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
+import { enqueuePickingRetry } from "@/lib/picking-retry-service";
 
 const ORDER_STATUSES = [
   "draft",
@@ -807,23 +808,22 @@ export async function PATCH(req: NextRequest) {
 
       if (!pickSuccess) {
         console.error(`Không thể phát hành picking task sau 3 lần thử cho đơn ${orderId}:`, lastPickError);
+        let queued = false;
         try {
-          await supabase.from("picking_task_retry_queue").upsert(
-            {
-              order_id: orderId,
-              actor_id: auth.profile?.id || null,
-              version: Number(updated.price_revision || 1),
-              status: "pending",
-              last_error: lastPickError,
-              next_retry_at: new Date(Date.now() + 60000).toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "order_id,version" }
-          );
+          await enqueuePickingRetry(supabase, {
+            orderId,
+            actorId: auth.profile?.id || null,
+            version: Number(updated.price_revision || 1),
+            lastError: lastPickError,
+          });
+          queued = true;
         } catch (qErr: any) {
           console.error("Lỗi khi ghi nhận hàng đợi retry:", qErr?.message);
+          lastPickError = `${lastPickError}. Đồng thời không thể ghi hàng đợi: ${qErr?.message || "không rõ lỗi"}`;
         }
-        pickingWarning = `Đơn đã xác nhận nhưng chưa thể phát hành lệnh soạn hàng: ${lastPickError}. Đã đưa vào hàng đợi tự động retry để đảm bảo không mất đơn.`;
+        pickingWarning = queued
+          ? `Đơn đã xác nhận nhưng chưa thể phát hành lệnh soạn hàng: ${lastPickError}. Đã đưa vào hàng đợi tự động xử lý lại.`
+          : `CẢNH BÁO NGHIÊM TRỌNG: đơn đã xác nhận nhưng chưa tạo được lệnh soạn và cũng không ghi được hàng đợi. ${lastPickError}`;
       }
     }
 

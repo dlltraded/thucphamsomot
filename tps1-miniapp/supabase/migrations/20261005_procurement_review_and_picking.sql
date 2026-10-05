@@ -186,6 +186,7 @@ create or replace function public.claim_procurement_review(
 returns jsonb
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_review record;
@@ -270,6 +271,7 @@ create or replace function public.claim_picking_task(
 returns jsonb
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_task record;
@@ -369,6 +371,7 @@ create or replace function public.create_picking_task_on_confirm(
 returns jsonb
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_order record;
@@ -524,6 +527,54 @@ create table if not exists public.picking_task_retry_queue (
 
 create index if not exists idx_picking_retry_status on public.picking_task_retry_queue (status, next_retry_at);
 
+-- Nhận một lô retry nguyên tử. SKIP LOCKED cho phép nhiều worker chạy song song
+-- mà không xử lý trùng cùng một đơn. Job processing bị treo quá 5 phút sẽ được
+-- thu hồi để worker khác tiếp tục xử lý.
+create or replace function public.claim_picking_retry_batch(
+  p_limit integer default 20
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_jobs jsonb;
+begin
+  with candidates as (
+    select q.id
+    from public.picking_task_retry_queue q
+    where q.retry_count < q.max_retries
+      and (
+        (q.status = 'pending' and q.next_retry_at <= now())
+        or (q.status = 'processing' and q.updated_at < now() - interval '5 minutes')
+      )
+    order by q.next_retry_at asc, q.created_at asc
+    for update skip locked
+    limit greatest(1, least(coalesce(p_limit, 20), 100))
+  ), claimed as (
+    update public.picking_task_retry_queue q
+    set status = 'processing',
+        retry_count = q.retry_count + 1,
+        updated_at = now()
+    from candidates c
+    where q.id = c.id
+    returning q.*
+  )
+  select coalesce(jsonb_agg(to_jsonb(claimed)), '[]'::jsonb)
+  into v_jobs
+  from claimed;
+
+  return jsonb_build_object('success', true, 'data', v_jobs);
+exception when others then
+  return jsonb_build_object(
+    'success', false,
+    'error_code', 'CLAIM_RETRY_FAILED',
+    'message', SQLERRM
+  );
+end;
+$$;
+
 -- 13. Row Level Security & Quyền truy cập
 alter table public.procurement_review_requests enable row level security;
 alter table public.procurement_review_items enable row level security;
@@ -610,3 +661,6 @@ grant execute on function public.claim_picking_task(uuid, uuid, uuid) to service
 
 revoke execute on function public.create_picking_task_on_confirm(uuid, uuid, integer) from public, anon, authenticated;
 grant execute on function public.create_picking_task_on_confirm(uuid, uuid, integer) to service_role;
+
+revoke execute on function public.claim_picking_retry_batch(integer) from public, anon, authenticated;
+grant execute on function public.claim_picking_retry_batch(integer) to service_role;

@@ -12,7 +12,7 @@
     "postbuild": "next-sitemap",
     "test:g83": "tsx scratch/test_g8_3_integration_suite.mjs",
     "test:g84": "tsx scratch/test_g8_3_integration_suite.mjs",
-    "test:g85": "tsx scratch/test_g8_5_full_negative_suite.mjs"
+    "test:g85": "node scripts/run-g85.mjs"
   },
   "keywords": [],
   "author": "",

@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { generateOrderConfirmationPdf, type ConfirmationOrderSnapshot } from "@/lib/order-confirmation-pdf";
 import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
+import { enqueuePickingRetry } from "@/lib/picking-retry-service";
 
 // Lõi chốt giá đơn hàng — tách ra khỏi app/api/admin/orders/route.ts vì route
 // handler của Next.js App Router chỉ được export GET/POST/... (không export
@@ -439,25 +440,25 @@ export async function finalizeOrderCore(
 
     if (!pickSuccess) {
       console.error(`Lỗi phát hành picking task sau 3 lần thử cho đơn ${params.orderId}:`, lastErrorMsg);
-      // Ghi nhận vào hàng đợi retry để không mất đơn
+      // Ghi nhận vào hàng đợi retry để không mất đơn. Supabase trả lỗi qua
+      // thuộc tính `error`, vì vậy helper bắt buộc kiểm tra thay vì chỉ try/catch.
+      let queued = false;
       try {
-        await supabase.from("picking_task_retry_queue").upsert(
-          {
-            order_id: params.orderId,
-            actor_id: params.actorId || null,
-            version: Number(finalized.price_revision || 1),
-            status: "pending",
-            last_error: lastErrorMsg,
-            next_retry_at: new Date(Date.now() + 60000).toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "order_id,version" }
-        );
+        await enqueuePickingRetry(supabase, {
+          orderId: params.orderId,
+          actorId: params.actorId || null,
+          version: Number(finalized.price_revision || 1),
+          lastError: lastErrorMsg,
+        });
+        queued = true;
       } catch (queueErr: any) {
         console.error("Lỗi khi đưa đơn vào picking_task_retry_queue:", queueErr?.message);
+        lastErrorMsg = `${lastErrorMsg}. Đồng thời không thể ghi hàng đợi: ${queueErr?.message || "không rõ lỗi"}`;
       }
 
-      pickingTaskWarning = `Đơn đã được xác nhận nhưng Lệnh Soạn Hàng chưa được phát hành ngay: ${lastErrorMsg}. Hệ thống đã đưa vào hàng đợi tự động retry để đảm bảo không mất đơn.`;
+      pickingTaskWarning = queued
+        ? `Đơn đã được xác nhận nhưng Lệnh Soạn Hàng chưa được phát hành ngay: ${lastErrorMsg}. Hệ thống đã đưa vào hàng đợi tự động xử lý lại.`
+        : `CẢNH BÁO NGHIÊM TRỌNG: đơn đã xác nhận nhưng chưa tạo được Lệnh Soạn Hàng và cũng không ghi được hàng đợi. ${lastErrorMsg}`;
     }
 
     if (pickingTaskWarning) {

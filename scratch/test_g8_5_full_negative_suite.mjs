@@ -25,6 +25,7 @@ import {
   listInternalNotifications,
   markNotificationAsRead,
 } from '../lib/notification-service.ts';
+import { processPickingRetryQueue } from '../lib/picking-retry-service.ts';
 
 /**
  * PGlite Supabase Adapter
@@ -59,6 +60,13 @@ class PGliteSupabaseAdapter {
         const res = await this.db.query(
           `select public.create_picking_task_on_confirm($1, $2, $3) as res;`,
           [params.p_order_id, params.p_actor_id, params.p_version || 1]
+        );
+        return { data: res.rows[0]?.res || null, error: null };
+      }
+      if (funcName === 'claim_picking_retry_batch') {
+        const res = await this.db.query(
+          `select public.claim_picking_retry_batch($1) as res;`,
+          [params.p_limit || 20]
         );
         return { data: res.rows[0]?.res || null, error: null };
       }
@@ -664,6 +672,7 @@ async function runG85FullNegativeSuite() {
 
   // 4.2 Mô phỏng lỗi tạo picking task khi xác nhận đơn -> Tự động đưa vào hàng đợi retry
   const failOrdId = (await db.query(`insert into public.orders (order_code, status, subtotal, grand_total) values ('ORD-FAIL-1', 'confirmed', 50000, 50000) returning id;`)).rows[0].id;
+  await db.query(`insert into public.order_items (order_id, name, quantity, unit_price, line_total) values ($1, 'Rau cải retry', 2, 25000, 50000);`, [failOrdId]);
   const simError = 'Mô phỏng lỗi DB lock timeout khi sinh picking task';
 
   // Thêm bản ghi vào hàng đợi retry
@@ -680,6 +689,25 @@ async function runG85FullNegativeSuite() {
     pass('Hàng đợi Retry: Ghi nhận thành công đơn lỗi vào picking_task_retry_queue đảm bảo không mất đơn');
   } else {
     fail('picking_task_retry_queue insert', JSON.stringify(retryRecord));
+  }
+
+  // 4.3 Worker thực sự nhận queue, tạo đúng một picking task và hoàn tất queue.
+  const workerResult = await processPickingRetryQueue(client, 10);
+  const completedRetry = (await db.query(`select * from public.picking_task_retry_queue where order_id = $1`, [failOrdId])).rows[0];
+  const generatedTasks = (await db.query(`select count(*)::int as total from public.picking_tasks where order_id = $1`, [failOrdId])).rows[0];
+  if (workerResult.completed === 1 && completedRetry?.status === 'completed' && generatedTasks?.total === 1) {
+    pass('Worker Retry E2E: queue pending → claim nguyên tử → tạo đúng 1 lệnh soạn → completed');
+  } else {
+    fail('Worker Retry E2E', JSON.stringify({ workerResult, completedRetry, generatedTasks }));
+  }
+
+  // 4.4 Chạy worker lần hai không được tạo trùng lệnh soạn.
+  const secondWorkerResult = await processPickingRetryQueue(client, 10);
+  const taskCountAfterSecondRun = (await db.query(`select count(*)::int as total from public.picking_tasks where order_id = $1`, [failOrdId])).rows[0]?.total;
+  if (secondWorkerResult.claimed === 0 && taskCountAfterSecondRun === 1) {
+    pass('Worker Retry Idempotency: chạy lại không tạo trùng lệnh soạn');
+  } else {
+    fail('Worker Retry Idempotency', JSON.stringify({ secondWorkerResult, taskCountAfterSecondRun }));
   }
 
   // =========================================================================
@@ -717,7 +745,11 @@ async function runG85FullNegativeSuite() {
     }
 
     // 5.3 Kiểm tra xác thực Supabase Service Role thật
-    const serviceClient = createClient(env.SUPABASE_PRODUCTS_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+    const serviceKey = env.SUPABASE_PRODUCTS_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) {
+      fail('Supabase Config', 'Thiếu SUPABASE_PRODUCTS_SERVICE_ROLE_KEY / SUPABASE_SERVICE_ROLE_KEY');
+    }
+    const serviceClient = createClient(env.SUPABASE_PRODUCTS_URL, serviceKey);
     const { data: deptReal, error: deptErr } = await serviceClient.from('departments').select('id, code, name').limit(1);
     if (!deptErr && deptReal) {
       pass(`Supabase Real Connection: Service role kết nối thành công tới Database thật (${deptReal.length} phòng ban)`);
