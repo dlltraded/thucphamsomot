@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { calculateReceivablesSummary, CustomerDebtInfo } from "@/lib/receivables";
+import { getCustomerReceipts, getCustomerAdjustments } from "@/lib/receivables-db";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key, X-Admin-Token",
 };
 
 function json(body: unknown, status = 200) {
@@ -16,10 +18,7 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-// Giai đoạn D — trang "Công nợ khách hàng" (mục 13.6). Không có sẵn cột tổng
-// hợp công nợ theo khách nên gom từ orders.debt_amount (cột generated, xem
-// migration 20260910d) theo customer_id ngay tại đây — dữ liệu hiện còn nhỏ
-// nên gom trong Node đủ nhanh, không cần thêm view/RPC riêng.
+// Báo cáo công nợ (Tương thích ngược & dùng chung hàm tính số dư với /cong-no)
 export async function GET(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
@@ -32,11 +31,12 @@ export async function GET(req: NextRequest) {
     if (customerId) {
       const { data: orders, error } = await supabase
         .from("orders")
-        .select("id, order_code, status, grand_total, paid_amount, debt_amount, return_credit_amount, created_at, confirmed_at")
+        .select("id, order_code, status, grand_total, paid_amount, debt_amount, return_credit_amount, created_at, completed_at, payment_method")
         .eq("customer_id", customerId)
-        .not("status", "in", "(canceled,merged)")
+        .eq("status", "completed")
         .order("created_at", { ascending: false });
       if (error) throw error;
+
       return json({
         ok: true,
         orders: (orders || []).map((order) => ({
@@ -48,47 +48,70 @@ export async function GET(req: NextRequest) {
 
     let customerQuery = supabase
       .from("vip_accounts")
-      .select("id, partner_code, name, company, phone, credit_limit, sales_rep_id, is_active")
+      .select("id, partner_code, name, company, phone, credit_limit, sales_rep_id, is_active, payment_terms_days, kiotviet_opening_debt")
       .eq("is_active", true);
-    if (isSale) customerQuery = customerQuery.eq("sales_rep_id", auth.profile!.id);
-    const { data: customers, error: customerError } = await customerQuery;
+    if (isSale && auth.profile?.id) customerQuery = customerQuery.eq("sales_rep_id", auth.profile.id);
+    const { data: customersRaw, error: customerError } = await customerQuery;
     if (customerError) throw customerError;
 
-    const { data: orders, error: orderError } = await supabase
-      .from("orders")
-      .select("customer_id, debt_amount, return_credit_amount, grand_total, paid_amount")
-      .not("status", "in", "(canceled,merged)")
-      .gt("debt_amount", 0);
-    if (orderError) throw orderError;
+    const customers: CustomerDebtInfo[] = (customersRaw || []).map((c: any) => ({
+      id: c.id,
+      partner_code: c.partner_code || "CHƯA_CÓ_MÃ",
+      name: c.name || "Khách hàng",
+      company: c.company || null,
+      phone: c.phone || null,
+      credit_limit: Math.round(Number(c.credit_limit) || 0),
+      payment_terms_days: Math.round(Number(c.payment_terms_days) || 30),
+      kiotviet_opening_debt: c.kiotviet_opening_debt != null ? Math.round(Number(c.kiotviet_opening_debt)) : 0,
+      sales_rep_id: c.sales_rep_id || null,
+    }));
 
-    const debtByCustomer = new Map<string, { debt: number; orderCount: number }>();
-    for (const o of orders || []) {
-      if (!o.customer_id) continue;
-      const entry = debtByCustomer.get(o.customer_id) || { debt: 0, orderCount: 0 };
-      const effectiveDebt = Math.max(0, Number(o.debt_amount) - Number(o.return_credit_amount || 0));
-      entry.debt += effectiveDebt;
-      if (effectiveDebt > 0) entry.orderCount += 1;
-      debtByCustomer.set(o.customer_id, entry);
+    let orderQuery = supabase
+      .from("orders")
+      .select("id, order_code, customer_id, customer_name, customer_company, status, payment_method, payment_status, grand_total, paid_amount, debt_amount, return_credit_amount, created_at, completed_at, delivery_date")
+      .eq("status", "completed");
+
+    if (isSale && auth.profile?.id) {
+      const allowedIds = customers.map((c) => c.id);
+      if (allowedIds.length > 0) orderQuery = orderQuery.in("customer_id", allowedIds);
+      else orderQuery = orderQuery.in("customer_id", ["00000000-0000-0000-0000-000000000000"]);
     }
 
-    const rows = (customers || [])
-      .map((c) => {
-        const d = debtByCustomer.get(c.id) || { debt: 0, orderCount: 0 };
-        const creditLimit = Number(c.credit_limit) || 0;
-        return {
-          ...c,
-          currentDebt: d.debt,
-          openOrders: d.orderCount,
-          overLimit: creditLimit > 0 && d.debt > creditLimit,
-          usagePercent: creditLimit > 0 ? Math.round((d.debt / creditLimit) * 100) : null,
-        };
-      })
-      .filter((c) => c.currentDebt > 0)
-      .sort((a, b) => b.currentDebt - a.currentDebt);
+    const { data: ordersRaw, error: orderError } = await orderQuery;
+    if (orderError) throw orderError;
 
-    const totalDebt = rows.reduce((s, r) => s + r.currentDebt, 0);
+    const receipts = await getCustomerReceipts();
+    const adjustments = await getCustomerAdjustments();
 
-    return json({ ok: true, customers: rows, totalDebt, totalCustomersWithDebt: rows.length });
+    // Dùng chung hàm calculateReceivablesSummary
+    const globalSummary = calculateReceivablesSummary({
+      customers,
+      orders: ordersRaw || [],
+      adjustments,
+      receipts,
+    });
+
+    const rows = globalSummary.customers
+      .filter((c) => c.totalReceivables > 0)
+      .map((c) => ({
+        id: c.customer.id,
+        partner_code: c.customer.partner_code,
+        name: c.customer.name,
+        company: c.customer.company,
+        phone: c.customer.phone,
+        credit_limit: c.creditLimit,
+        currentDebt: c.totalReceivables,
+        openOrders: c.openInvoiceCount,
+        overLimit: c.isOverLimit,
+        usagePercent: c.creditUsagePercent,
+      }));
+
+    return json({
+      ok: true,
+      customers: rows,
+      totalDebt: globalSummary.totalReceivables,
+      totalCustomersWithDebt: rows.length,
+    });
   } catch (error) {
     console.error("GET /api/admin/reports/debt lỗi:", error);
     return json({ ok: false, error: "Không tải được báo cáo công nợ" }, 500);

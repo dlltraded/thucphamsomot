@@ -15,6 +15,7 @@ check_rpc.cjs
 
 # Export dữ liệu hàng hóa/giá thật từ KiotViet — dữ liệu kinh doanh, không đưa lên repo public
 data/imports/
+data/receivables_ledger.json
 
 # Dọn dẹp dung lượng repo (2026-09-10) — file tạm/backup/asset không phục vụ
 # website, từng bị commit nhầm, gây phình dung lượng deploy trên Vercel.
@@ -26,3 +27,5 @@ FB_ADS_TPS1_TEST_ASSETS/
 dummy.txt
 snap_*.png
 .temp/
+.vercel
+.env*
