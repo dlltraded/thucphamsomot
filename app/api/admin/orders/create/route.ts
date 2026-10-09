@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
     paymentMethod: reqPaymentMethod,
     creditOverrideNote,
     idempotencyKey: reqIdempotencyKey,
+    sourceImportBatchId: reqSourceImportBatchId,
   } = body || {};
 
   const paymentMethod = String(reqPaymentMethod || "COD").trim().toUpperCase();
@@ -176,6 +177,7 @@ export async function POST(req: NextRequest) {
       unit: String(i.unit || "Kg").trim(),
       quantity: validQty,
       note: i.note ? String(i.note).trim() : null,
+      sourceImportLineId: typeof i.sourceImportLineId === "string" ? i.sourceImportLineId.trim() || null : null,
     };
   });
 
@@ -185,6 +187,40 @@ export async function POST(req: NextRequest) {
 
   if (rawItems.some((item: any) => !item.productId)) {
     return json({ ok: false, error: "Mọi dòng hàng phải có mã sản phẩm hợp lệ trước khi tạo đơn" }, 400);
+  }
+
+  const sourceImportBatchId = typeof reqSourceImportBatchId === "string" && reqSourceImportBatchId.trim()
+    ? reqSourceImportBatchId.trim()
+    : null;
+  const sourceLinesById = new Map<string, any>();
+  if (!sourceImportBatchId && rawItems.some((item: any) => item.sourceImportLineId)) {
+    return json({ ok: false, error: "Thiếu mã phiên nhập đơn thông minh" }, 409);
+  }
+  if (sourceImportBatchId) {
+    const staffActorId = auth.user?.id || auth.profile?.id || null;
+    const { data: importBatch } = await supabase.from("order_import_batches")
+      .select("id, customer_id, actor_type, actor_id, status")
+      .eq("id", sourceImportBatchId)
+      .maybeSingle();
+    if (!importBatch || importBatch.customer_id !== customerId || importBatch.actor_type !== "staff"
+      || importBatch.actor_id !== staffActorId || importBatch.status !== "confirmed") {
+      return json({ ok: false, error: "Phiên nhập đơn thông minh không hợp lệ hoặc chưa được xác nhận" }, 409);
+    }
+    const requestedLineIds = rawItems.map((item: any) => item.sourceImportLineId).filter(Boolean) as string[];
+    if (!requestedLineIds.length) {
+      return json({ ok: false, error: "Phiên nhập đơn không còn dòng hàng nào trong giỏ" }, 409);
+    }
+    const { data: sourceLines } = await supabase.from("order_import_lines")
+      .select("id, batch_id, selected_product_id, raw_unit, conversion_factor, status")
+      .in("id", requestedLineIds)
+      .eq("batch_id", sourceImportBatchId);
+    for (const line of sourceLines || []) sourceLinesById.set(line.id, line);
+    if (sourceLinesById.size !== new Set(requestedLineIds).size
+      || [...sourceLinesById.values()].some((line) => line.status !== "matched")
+      || rawItems.some((item: any) => item.sourceImportLineId
+        && sourceLinesById.get(item.sourceImportLineId)?.selected_product_id !== item.productId)) {
+      return json({ ok: false, error: "Có dòng nhập thông minh không hợp lệ, vui lòng đọc lại tài liệu" }, 409);
+    }
   }
 
   // Giá và quy cách luôn được resolve lại ở server. Không tin đơn giá client
@@ -344,6 +380,7 @@ export async function POST(req: NextRequest) {
       delivery_alias: deliveryAlias,
       payment_method: paymentMethod,
       updated_at: new Date().toISOString(),
+      source_import_batch_id: sourceImportBatchId,
     };
 
     if (resolvedAddressId) {
@@ -386,6 +423,23 @@ export async function POST(req: NextRequest) {
       warnings.push("delivery_fields_update_warning");
     }
     await applyOrderPricingSnapshot(supabase, orderId, pricing);
+    if (sourceImportBatchId) {
+      const { data: createdLines } = await supabase.from("order_items")
+        .select("id, product_id")
+        .eq("order_id", orderId);
+      const remainingInputs = [...rawItems];
+      for (const createdLine of createdLines || []) {
+        const index = remainingInputs.findIndex((item: any) => item.productId === createdLine.product_id && item.sourceImportLineId);
+        if (index < 0) continue;
+        const sourceInput: any = remainingInputs.splice(index, 1)[0];
+        const sourceLine = sourceLinesById.get(sourceInput.sourceImportLineId);
+        await supabase.from("order_items").update({
+          source_import_line_id: sourceLine.id,
+          source_input_unit: sourceLine.raw_unit || null,
+          source_conversion_factor: sourceLine.conversion_factor ?? 1,
+        }).eq("id", createdLine.id);
+      }
+    }
   } catch (ex) {
     console.warn("[POS CREATE] Ngoại lệ khi cập nhật orders:", ex);
     warnings.push("delivery_fields_exception");

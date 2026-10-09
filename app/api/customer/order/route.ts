@@ -12,6 +12,7 @@ interface OrderItemInput {
   name?: string;
   quantity: number;
   note?: string;
+  sourceImportLineId?: string;
 }
 
 interface CreateOrderBody {
@@ -28,6 +29,7 @@ interface CreateOrderBody {
   deliveryPhone?: string;
   note?: string;
   idempotencyKey?: string;
+  sourceImportBatchId?: string;
 }
 
 const corsHeaders = {
@@ -169,12 +171,44 @@ export async function POST(req: NextRequest) {
           quantity: Number(item.quantity) || 0,
           name: String(item.name || item.title || "").trim(),
           note: typeof item.note === "string" ? item.note.trim().slice(0, 200) : "",
+          sourceImportLineId: typeof item.sourceImportLineId === "string" ? item.sourceImportLineId.trim() || undefined : undefined,
         }))
         .filter((item) => item.productId && item.quantity > 0)
     : [];
 
   if (items.length === 0) {
     return json({ ok: false, error: "Giỏ hàng đang trống" }, 400);
+  }
+
+  const sourceImportBatchId = String(body.sourceImportBatchId || "").trim() || null;
+  const sourceLinesById = new Map<string, any>();
+  if (!sourceImportBatchId && items.some((item) => item.sourceImportLineId)) {
+    return json({ ok: false, error: "Thiếu mã phiên nhập đơn thông minh" }, 409);
+  }
+  if (sourceImportBatchId) {
+    const { data: importBatch } = await supabaseAdmin.from("order_import_batches")
+      .select("id, customer_id, actor_type, actor_id, status")
+      .eq("id", sourceImportBatchId)
+      .maybeSingle();
+    if (!importBatch || importBatch.customer_id !== customerId || importBatch.actor_type !== "customer"
+      || importBatch.actor_id !== customerId || importBatch.status !== "confirmed") {
+      return json({ ok: false, error: "Phiên nhập đơn thông minh không hợp lệ hoặc chưa được xác nhận" }, 409);
+    }
+    const requestedLineIds = items.map((item) => item.sourceImportLineId).filter(Boolean) as string[];
+    if (!requestedLineIds.length) {
+      return json({ ok: false, error: "Phiên nhập đơn không còn dòng hàng nào trong giỏ" }, 409);
+    }
+    const { data: sourceLines } = await supabaseAdmin.from("order_import_lines")
+      .select("id, batch_id, selected_product_id, raw_unit, conversion_factor, status")
+      .in("id", requestedLineIds)
+      .eq("batch_id", sourceImportBatchId);
+    for (const line of sourceLines || []) sourceLinesById.set(line.id, line);
+    if (sourceLinesById.size !== new Set(requestedLineIds).size
+      || [...sourceLinesById.values()].some((line) => line.status !== "matched")
+      || items.some((item) => item.sourceImportLineId
+        && sourceLinesById.get(item.sourceImportLineId)?.selected_product_id !== item.productId)) {
+      return json({ ok: false, error: "Có dòng nhập thông minh không hợp lệ, vui lòng đọc lại tài liệu" }, 409);
+    }
   }
 
   const deliveryType = body.deliveryType === "pickup" ? "pickup" : "shipping";
@@ -262,7 +296,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabaseAdmin.rpc("customer_create_order", {
     p_session_token: orderSessionToken,
     p_source: source,
-    p_items: items.map(({ note: _n, ...it }) => it),
+    p_items: items.map(({ note: _n, sourceImportLineId: _source, ...it }) => it),
     p_delivery_type: deliveryType,
     p_delivery_alias: deliveryAlias,
     p_delivery_address: deliveryAddress,
@@ -313,6 +347,7 @@ export async function POST(req: NextRequest) {
     delivery_name: deliveryName,
     delivery_phone: deliveryPhone,
     delivery_alias: deliveryAlias,
+    source_import_batch_id: sourceImportBatchId,
   };
   if (selectedAddress.id) {
     orderUpdates.delivery_address_id = selectedAddress.id;
@@ -332,6 +367,23 @@ export async function POST(req: NextRequest) {
 
   try {
     await applyOrderPricingSnapshot(supabaseAdmin, order.id, pricing);
+    if (sourceImportBatchId) {
+      const { data: createdLines } = await supabaseAdmin.from("order_items")
+        .select("id, product_id")
+        .eq("order_id", order.id);
+      const remainingInputs = [...items];
+      for (const createdLine of createdLines || []) {
+        const index = remainingInputs.findIndex((item) => item.productId === createdLine.product_id && item.sourceImportLineId);
+        if (index < 0) continue;
+        const sourceInput = remainingInputs.splice(index, 1)[0];
+        const sourceLine = sourceLinesById.get(sourceInput.sourceImportLineId!);
+        await supabaseAdmin.from("order_items").update({
+          source_import_line_id: sourceLine.id,
+          source_input_unit: sourceLine.raw_unit || null,
+          source_conversion_factor: sourceLine.conversion_factor ?? 1,
+        }).eq("id", createdLine.id);
+      }
+    }
   } catch (pricingSnapshotError) {
     console.error("Lỗi lưu snapshot bảng giá sau customer_create_order:", pricingSnapshotError);
     warnings.push("pricing_snapshot_not_saved");
