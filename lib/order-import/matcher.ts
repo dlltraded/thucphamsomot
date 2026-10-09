@@ -1,6 +1,7 @@
 import { resolveOrderPriceBook } from '@/lib/order-price-book';
 import { normalizeUnit, validateOrderQuantity } from '@/lib/order-quantity';
 import type { ExtractedOrderLine, ProductSuggestion } from './types';
+import { canonicalProductKey, compactProductText, normalizeProductText, rankProductCandidates } from './product-match';
 
 type SupabaseAdmin = any;
 type ProductRow = {
@@ -8,26 +9,6 @@ type ProductRow = {
   min_order_qty: number | null; order_step: number | null; enforce_order_step: boolean | null;
   packaging_note: string | null; quantity_precision: number | null;
 };
-
-export function normalizeProductText(value: unknown) {
-  return String(value || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ|Đ/g, 'd')
-    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-function trigrams(value: string) {
-  const padded = `  ${value} `;
-  const grams = new Set<string>();
-  for (let i = 0; i < padded.length - 2; i++) grams.add(padded.slice(i, i + 3));
-  return grams;
-}
-
-function dice(a: Set<string>, b: Set<string>) {
-  if (!a.size || !b.size) return 0;
-  let overlap = 0;
-  for (const gram of a) if (b.has(gram)) overlap++;
-  return (2 * overlap) / (a.size + b.size);
-}
 
 export async function matchExtractedLines(supabase: SupabaseAdmin, customerId: string, lines: ExtractedOrderLine[]) {
   const { data: products, error } = await supabase
@@ -45,25 +26,36 @@ export async function matchExtractedLines(supabase: SupabaseAdmin, customerId: s
 
   const byId = new Map(productRows.map((product) => [product.id, product]));
   const bySku = new Map(productRows.filter((p) => p.sku).map((p) => [String(p.sku).trim().toLowerCase(), p]));
-  const byName = new Map(productRows.map((p) => [normalizeProductText(p.name), p]));
+  const byName = new Map(productRows.map((p) => [canonicalProductKey(p), p]));
+  const byCompactName = new Map<string, ProductRow[]>();
+  for (const product of productRows) {
+    const key = compactProductText(canonicalProductKey(product));
+    byCompactName.set(key, [...(byCompactName.get(key) || []), product]);
+  }
   const aliasMap = new Map<string, ProductRow>();
+  const compactAliasMap = new Map<string, ProductRow>();
   for (const alias of aliases || []) {
     const product = byId.get(alias.product_id);
-    if (product) aliasMap.set(alias.alias_normalized, product);
+    if (product) {
+      const normalizedAlias = normalizeProductText(alias.alias_normalized);
+      aliasMap.set(normalizedAlias, product);
+      compactAliasMap.set(compactProductText(normalizedAlias), product);
+    }
   }
-  const searchable = productRows.map((product) => ({ product, grams: trigrams(normalizeProductText(`${product.sku} ${product.name}`)) }));
   const preliminary = lines.map((line) => {
     const skuKey = String(line.sku || '').trim().toLowerCase();
     const nameKey = normalizeProductText(line.name);
     let product = skuKey ? bySku.get(skuKey) : undefined;
     let matchedBy = product ? 'exact_sku' : '';
     if (!product) { product = byName.get(nameKey); if (product) matchedBy = 'exact_name'; }
+    if (!product) {
+      const compactMatches = byCompactName.get(compactProductText(nameKey)) || [];
+      if (compactMatches.length === 1) { product = compactMatches[0]; matchedBy = 'exact_compact_name'; }
+    }
     if (!product) { product = aliasMap.get(nameKey); if (product) matchedBy = 'verified_alias'; }
-    const scored = product ? [] : searchable
-      .map(({ product: p, grams }) => ({ product: p, score: dice(trigrams(nameKey), grams) }))
-      .filter((entry) => entry.score >= 0.28)
-      .sort((a, b) => b.score - a.score).slice(0, 3);
-    if (!product && scored[0] && scored[0].score >= 0.86 && scored[0].score - (scored[1]?.score || 0) >= 0.1) {
+    if (!product) { product = compactAliasMap.get(compactProductText(nameKey)); if (product) matchedBy = 'verified_alias'; }
+    const scored = product ? [] : rankProductCandidates(productRows, line.name).slice(0, 5);
+    if (!product && scored[0] && scored[0].score >= 0.94 && scored[0].score - (scored[1]?.score || 0) >= 0.08) {
       product = scored[0].product;
       matchedBy = 'high_confidence_fuzzy';
     }
