@@ -12,4 +12,5 @@ const products = [
 assert.equal(rankProductCandidates(products, 'susu')[0]?.product.id, 'susu');
 assert.equal(rankProductCandidates(products, 'su su')[0]?.product.id, 'susu');
 assert.equal(rankProductCandidates(products, 'Hành lá')[0]?.product.id, 'hanhla');
+assert.ok((rankProductCandidates(products, 'su su')[0]?.score || 0) > (rankProductCandidates(products, 'su su')[1]?.score || 0));
 console.log('Product matcher ranking: PASS');

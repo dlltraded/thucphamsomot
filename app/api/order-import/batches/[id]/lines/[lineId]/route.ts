@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeImportBatch } from '@/lib/order-import/auth';
 import { reevaluateImportLine } from '@/lib/order-import/matcher';
+import { normalizeProductText } from '@/lib/order-import/product-match';
 
 export const runtime = 'nodejs';
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
@@ -29,6 +30,22 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     const update = { ...evaluation, selected: body.selected === false ? false : evaluation.selected, raw_note: body.note != null ? String(body.note).slice(0, 500) : line.raw_note, updated_at: new Date().toISOString() };
     const { data, error } = await auth.supabase.from('order_import_lines').update(update).eq('id', lineId).select('*').single();
     if (error) throw error;
+    // Khi người dùng tự chọn lại đúng sản phẩm, lưu cách gọi riêng của khách
+    // để lần sau hệ thống nhận ra ngay. Không tạo alias toàn hệ thống.
+    if (body.productId && line.raw_name && productId !== line.selected_product_id) {
+      const aliasNormalized = normalizeProductText(line.raw_name);
+      if (aliasNormalized) {
+        const { error: aliasError } = await auth.supabase.from('product_aliases').upsert({
+          product_id: productId,
+          customer_id: auth.actor.customerId,
+          alias: String(line.raw_name).slice(0, 200),
+          alias_normalized: aliasNormalized,
+          source: 'confirmed_order_import',
+          verified_by: auth.actor.actorId,
+        }, { onConflict: 'product_id,customer_id,alias_normalized', ignoreDuplicates: true });
+        if (aliasError && !/duplicate/i.test(aliasError.message || '')) console.warn('Không lưu được tên gọi thay thế:', aliasError.message);
+      }
+    }
     return json({ ok: true, line: data });
   } catch (error: any) { return json({ ok: false, error: error?.message || 'Không cập nhật được dòng hàng' }, 400); }
 }

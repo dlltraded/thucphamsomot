@@ -52,6 +52,12 @@ export function rankProductCandidates<T extends ProductSearchRow>(products: T[],
       score = Math.max(score, 0.86 - Math.min(0.12, (nameWords.length - queryWords.length) * 0.025));
     }
 
+    // Những từ này thường làm thay đổi hẳn mặt hàng. Nếu chứng từ không có
+    // nhưng tên sản phẩm có, hạ thứ hạng để "su su" không đứng sau "đọt su su".
+    const differentiators = ['dot', 'baby', 'mam', 'bong', 'cu', 'la', 'dong', 'lanh', 'kho', 'xay', 'cat', 'loai', 'dac', 'biet'];
+    const unexpectedModifiers = differentiators.filter((word) => nameWords.includes(word) && !queryWords.includes(word));
+    score -= Math.min(0.32, unexpectedModifiers.length * 0.08);
+
     return { product, score };
   }).filter((entry) => entry.score >= 0.28)
     .sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name, 'vi'));
