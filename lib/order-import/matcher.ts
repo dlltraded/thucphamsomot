@@ -25,37 +25,50 @@ export async function matchExtractedLines(supabase: SupabaseAdmin, customerId: s
   if (conversionError && !/does not exist|schema cache/i.test(conversionError.message || '')) throw conversionError;
 
   const byId = new Map(productRows.map((product) => [product.id, product]));
-  const bySku = new Map(productRows.filter((p) => p.sku).map((p) => [String(p.sku).trim().toLowerCase(), p]));
-  const byName = new Map(productRows.map((p) => [canonicalProductKey(p), p]));
+  const byName = new Map<string, ProductRow[]>();
   const byCompactName = new Map<string, ProductRow[]>();
   for (const product of productRows) {
+    const nameKey = canonicalProductKey(product);
+    byName.set(nameKey, [...(byName.get(nameKey) || []), product]);
     const key = compactProductText(canonicalProductKey(product));
     byCompactName.set(key, [...(byCompactName.get(key) || []), product]);
   }
-  const aliasMap = new Map<string, ProductRow>();
-  const compactAliasMap = new Map<string, ProductRow>();
+  const aliasMap = new Map<string, ProductRow[]>();
+  const compactAliasMap = new Map<string, ProductRow[]>();
   for (const alias of aliases || []) {
     const product = byId.get(alias.product_id);
     if (product) {
       const normalizedAlias = normalizeProductText(alias.alias_normalized);
-      aliasMap.set(normalizedAlias, product);
-      compactAliasMap.set(compactProductText(normalizedAlias), product);
+      aliasMap.set(normalizedAlias, [...(aliasMap.get(normalizedAlias) || []), product]);
+      const compactAlias = compactProductText(normalizedAlias);
+      compactAliasMap.set(compactAlias, [...(compactAliasMap.get(compactAlias) || []), product]);
     }
   }
   const preliminary = lines.map((line) => {
-    const skuKey = String(line.sku || '').trim().toLowerCase();
     const nameKey = normalizeProductText(line.name);
-    let product = skuKey ? bySku.get(skuKey) : undefined;
-    let matchedBy = product ? 'exact_sku' : '';
-    if (!product) { product = byName.get(nameKey); if (product) matchedBy = 'exact_name'; }
-    if (!product) {
-      const compactMatches = byCompactName.get(compactProductText(nameKey)) || [];
-      if (compactMatches.length === 1) { product = compactMatches[0]; matchedBy = 'exact_compact_name'; }
+    const compactNameKey = compactProductText(nameKey);
+    let product: ProductRow | undefined;
+    let matchedBy = '';
+    let exactCandidates = byName.get(nameKey) || [];
+    if (!exactCandidates.length) exactCandidates = byCompactName.get(compactNameKey) || [];
+    if (exactCandidates.length === 1) { product = exactCandidates[0]; matchedBy = 'exact_name'; }
+
+    let aliasCandidates: ProductRow[] = [];
+    if (!product && !exactCandidates.length) {
+      aliasCandidates = aliasMap.get(nameKey) || compactAliasMap.get(compactNameKey) || [];
+      if (aliasCandidates.length === 1) { product = aliasCandidates[0]; matchedBy = 'verified_alias'; }
     }
-    if (!product) { product = aliasMap.get(nameKey); if (product) matchedBy = 'verified_alias'; }
-    if (!product) { product = compactAliasMap.get(compactProductText(nameKey)); if (product) matchedBy = 'verified_alias'; }
-    const scored = product ? [] : rankProductCandidates(productRows, line.name).slice(0, 5);
-    if (!product && scored[0] && scored[0].score >= 0.94 && scored[0].score - (scored[1]?.score || 0) >= 0.08) {
+
+    // SKU do AI đọc được chỉ được lưu để đối chiếu, tuyệt đối không dùng để
+    // tự ghép. Nếu một tên có nhiều mã, trả toàn bộ mã để người dùng tự chọn.
+    const forcedCandidates = exactCandidates.length > 1 ? exactCandidates : aliasCandidates.length > 1 ? aliasCandidates : [];
+    const scored = product ? [] : forcedCandidates.length
+      ? forcedCandidates.map((candidate) => ({ product: candidate, score: 1 }))
+      : rankProductCandidates(productRows, line.name).slice(0, 10);
+    const topNameHasMultipleSkus = scored[0]
+      ? (byName.get(canonicalProductKey(scored[0].product)) || []).length > 1
+      : false;
+    if (!product && !topNameHasMultipleSkus && scored[0] && scored[0].score >= 0.97 && scored[0].score - (scored[1]?.score || 0) >= 0.1) {
       product = scored[0].product;
       matchedBy = 'high_confidence_fuzzy';
     }
