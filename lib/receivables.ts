@@ -253,6 +253,9 @@ export function calculateReceivablesSummary(params: {
     // Nếu chưa có adjustment riêng mà lấy từ cust.kiotviet_opening_debt, phải trừ đi phần đã cấn trừ qua các phiếu thu posted.
     const custAdjs = adjustmentsByCustomer.get(cust.id) || [];
     const openingAdj = custAdjs.find((a) => a.adjustment_type === 'opening_balance');
+    const invoiceAdjustmentCredit = custAdjs
+      .filter((a) => a.adjustment_type === 'credit_adjustment' && a.source === 'invoice_adjustment')
+      .reduce((sum, a) => sum + Math.max(0, Math.round(Number(a.remaining_amount) || 0)), 0);
     const allocatedOpeningDebt = allocatedOpeningDebtByCustomer.get(cust.id) || 0;
 
     let positiveOpeningDebt = 0;
@@ -274,7 +277,7 @@ export function calculateReceivablesSummary(params: {
     // Tiền khách trả trước (Customer Advance / Số dư có):
     // Gồm: số dư âm đầu kỳ + tiền thừa từ các phiếu thu (unallocated)
     const unallocatedReceipts = unallocatedReceiptsByCustomer.get(cust.id) || 0;
-    const totalCustomerAdvance = negativeOpeningDebt + unallocatedReceipts;
+    const totalCustomerAdvance = negativeOpeningDebt + unallocatedReceipts + invoiceAdjustmentCredit;
 
     // Tổng nợ hóa đơn
     const totalInvoiceDebt = invoiceItems.reduce((sum, item) => sum + item.effective_debt, 0);

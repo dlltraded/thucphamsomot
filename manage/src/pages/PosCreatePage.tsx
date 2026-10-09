@@ -5,11 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { printOrderSlip } from '../lib/printOrder';
 import QuickAddProductModal from '../components/QuickAddProductModal';
 import ProductSearchBox, { type SearchProductItem } from '../components/ProductSearchBox';
+import SmartOrderImportModal, { type PosSmartImportItem } from '../components/SmartOrderImportModal';
 import { getApiBase } from '../lib/apiBase';
 import { can } from '../lib/permissions';
 import {
   Search, Plus, Tag, Truck, RefreshCw, ShoppingCart, User, X, CheckCircle2, AlertTriangle, PlusCircle, ClipboardEdit,
-  Calendar, Clock, MapPin
+  Calendar, Clock, MapPin, ScanLine
 } from 'lucide-react';
 
 function money(v: number) { return new Intl.NumberFormat('vi-VN').format(Math.round(Number(v) || 0)) + 'đ'; }
@@ -29,6 +30,7 @@ interface CartItem {
   trackInventory?: boolean;
   stockQty?: number | null;
   lowStock?: boolean;
+  sourceImportLineId?: string;
 }
 
 export interface DeletedOriginalItem {
@@ -73,8 +75,12 @@ interface OrderTab {
   assignedDriver: string;
   codCollectAmount: string;
   mode: 'quick' | 'normal' | 'delivery';
+  paymentMethod: 'COD' | 'CREDIT';
   processingOrderId?: string;
   orderCode?: string;
+  copiedFromOrderId?: string;
+  copiedFromOrderCode?: string;
+  sourceImportBatchId?: string;
 }
 
 function generateUuid(): string {
@@ -100,6 +106,7 @@ function newTab(defaultDeliveryDate = ''): OrderTab {
     discountAmount: 0, voucherCode: '', voucherDiscount: 0, shippingAmount: 0,
     packageWeightG: '', packageDimensions: '', assignedDriver: '', codCollectAmount: '',
     mode: 'normal',
+    paymentMethod: 'COD',
   };
 }
 
@@ -129,6 +136,7 @@ export default function PosCreatePage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loadingDebt, setLoadingDebt] = useState(false);
   const [loadingProcessOrder, setLoadingProcessOrder] = useState(false);
+  const [showSmartImport, setShowSmartImport] = useState(false);
 
   const [earliestDeliveryDate, setEarliestDeliveryDate] = useState<string>('');
 
@@ -156,6 +164,20 @@ export default function PosCreatePage() {
   const updateActiveTab = useCallback((patch: Partial<OrderTab> | ((t: OrderTab) => Partial<OrderTab>)) => {
     setTabs(prev => prev.map(t => t.id !== activeTabId ? t : { ...t, ...(typeof patch === 'function' ? patch(t) : patch) }));
   }, [activeTabId]);
+
+  const addSmartImportItems = (sourceImportBatchId: string, items: PosSmartImportItem[]) => {
+    updateActiveTab((tab) => {
+      const cart = [...tab.cart];
+      for (const item of items) {
+        const note = item.note?.trim() || '';
+        const existing = cart.findIndex((line) => line.productId === item.productId && (line.note?.trim() || '') === note);
+        if (existing >= 0) cart[existing] = { ...cart[existing], quantity: cart[existing].quantity + item.quantity, sourceImportLineId: cart[existing].sourceImportLineId || item.importLineId };
+        else cart.push({ productId: item.productId, name: item.name, unit: item.unit, quantity: item.quantity, price: item.price, note, image_url: item.imageUrl || undefined, sourceImportLineId: item.importLineId });
+      }
+      return { cart, sourceImportBatchId };
+    });
+    alert(`Đã thêm ${items.length} dòng hợp lệ vào đơn.`);
+  };
 
   // 1. Lấy thông tin cutoff và earliestDate từ server ngay khi mount
   useEffect(() => {
@@ -298,6 +320,62 @@ export default function PosCreatePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, token]);
 
+  // Sao chép hóa đơn hoàn thành thành một đơn MỚI. Server trả giá hiện hành;
+  // giá cũ chỉ dùng để đối chiếu, tuyệt đối không trở thành giá chốt mới.
+  const loadedCopyOrderRef = useRef<string | null>(null);
+  useEffect(() => {
+    const copyOrderId = searchParams.get('copyOrderId');
+    if (!copyOrderId || loadedCopyOrderRef.current === copyOrderId || !token) return;
+    loadedCopyOrderRef.current = copyOrderId;
+    setLoadingProcessOrder(true);
+    (async () => {
+      try {
+        const apiBase = getApiBase();
+        const res = await fetch(`${apiBase}/api/admin/invoices/copy-payload?orderId=${encodeURIComponent(copyOrderId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Không sao chép được hóa đơn');
+        const availableItems = (data.items || []).filter((item: any) => item.available);
+        const unavailableItems = (data.items || []).filter((item: any) => !item.available);
+        const tab: OrderTab = {
+          ...newTab(earliestDeliveryDate),
+          selectedCustomerId: data.customerId || '',
+          deliveryName: data.deliveryName || '',
+          deliveryPhone: data.deliveryPhone || '',
+          deliveryAddress: data.deliveryAddress || '',
+          note: data.note || '',
+          mode: data.deliveryAddress ? 'delivery' : 'normal',
+          paymentMethod: String(data.paymentMethod || '').toUpperCase() === 'CREDIT' ? 'CREDIT' : 'COD',
+          copiedFromOrderId: data.sourceOrderId,
+          copiedFromOrderCode: data.sourceOrderCode,
+          cart: availableItems.map((item: any) => ({
+            productId: item.productId,
+            name: item.name,
+            unit: item.unit || 'Kg',
+            quantity: Number(item.quantity),
+            price: Number(item.currentPrice),
+            note: Number(item.previousPrice) !== Number(item.currentPrice)
+              ? `Giá hóa đơn cũ ${money(item.previousPrice)} → giá hiện hành ${money(item.currentPrice)}`
+              : '',
+          })),
+        };
+        setTabs(prev => [...prev, tab]);
+        setActiveTabId(tab.id);
+        if (data.customerId) fetchCustomerDebt(data.customerId);
+        if (unavailableItems.length) {
+          alert(`Đã bỏ ${unavailableItems.length} mặt hàng không thể sao chép:\n${unavailableItems.map((item: any) => `• ${item.name}: ${item.warning}`).join('\n')}`);
+        }
+      } catch (error: any) {
+        alert('Lỗi sao chép hóa đơn: ' + (error.message || 'Không xác định'));
+      } finally {
+        setLoadingProcessOrder(false);
+        setSearchParams(prev => { prev.delete('copyOrderId'); return prev; }, { replace: true });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, token, earliestDeliveryDate]);
+
   // Custom product (staging trước khi thêm vào giỏ — dùng chung, không cần tách theo tab)
   const [customName, setCustomName] = useState('');
   const [customPrice, setCustomPrice] = useState(0);
@@ -356,8 +434,10 @@ export default function PosCreatePage() {
 
   useEffect(() => { loadCustomers(); }, [loadCustomers]);
 
-  const handleSelectCustomer = (id: string) => {
+  const handleSelectCustomer = async (id: string) => {
     const cust = customers.find(c => c.id === id);
+    const previousCustomerId = activeTab.selectedCustomerId;
+    const cartBeforeChange = activeTab.cart;
     setSavedAddresses([]);
     if (cust) {
       updateActiveTab({
@@ -368,6 +448,32 @@ export default function PosCreatePage() {
         deliveryAddressId: '',
         customerDebt: null,
       });
+      if (previousCustomerId && previousCustomerId !== id && cartBeforeChange.some(item => item.productId)) {
+        try {
+          const response = await fetch(`${getApiBase()}/api/admin/products/resolve-cart`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customerId: id, items: cartBeforeChange.filter(item => item.productId).map(item => ({ productId: item.productId, quantity: item.quantity })) }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.error || 'Không tải được bảng giá mới');
+          const priceByProduct = new Map((data.items || []).map((item: any) => [item.productId, item]));
+          const errors: string[] = [];
+          updateActiveTab((tab) => ({
+            cart: tab.cart.map((line) => {
+              if (!line.productId) return line;
+              const resolved: any = priceByProduct.get(line.productId);
+              if (!resolved?.ok) { errors.push(`${line.name}: ${resolved?.error || 'chưa có giá'}`); return { ...line, sourceImportLineId: undefined }; }
+              return { ...line, price: Number(resolved.price), sourceImportLineId: undefined };
+            }),
+            sourceImportBatchId: undefined,
+          }));
+          if (errors.length) alert(`Đã đổi khách hàng và tính lại giá. Cần kiểm tra:\n${errors.join('\n')}`);
+        } catch (error: any) {
+          updateActiveTab({ sourceImportBatchId: undefined, cart: cartBeforeChange.map(line => ({ ...line, sourceImportLineId: undefined })) });
+          alert(error?.message || 'Không tính lại được bảng giá cho khách hàng mới');
+        }
+      }
       fetchCustomerDebt(id);
       supabase.from('customer_addresses').select('*').eq('customer_id', id).order('is_default', { ascending: false })
         .then(({ data }) => {
@@ -511,7 +617,10 @@ export default function PosCreatePage() {
       }));
       return;
     }
-    updateActiveTab(t => ({ cart: t.cart.filter((_, n) => n !== idx) }));
+    updateActiveTab(t => {
+      const cart = t.cart.filter((_, n) => n !== idx);
+      return { cart, sourceImportBatchId: cart.some((line) => line.sourceImportLineId) ? t.sourceImportBatchId : undefined };
+    });
   };
 
   const restoreDeletedItem = (delIdx: number) => {
@@ -750,6 +859,7 @@ export default function PosCreatePage() {
             quantity: i.quantity,
             price: i.price,
             note: i.note || null,
+            sourceImportLineId: i.sourceImportLineId,
           })),
           deliveryDate: deliveryDate || earliestDeliveryDate || '',
           deliveryAddressId: deliveryAddressId || null,
@@ -765,6 +875,9 @@ export default function PosCreatePage() {
           assignedDriver: assignedDriver || null,
           codCollectAmount: codCollectAmount ? Number(codCollectAmount) : null,
           creditOverrideNote: overrideNote || null,
+          paymentMethod: activeTab.paymentMethod,
+          copiedFromOrderId: activeTab.copiedFromOrderId || null,
+          sourceImportBatchId: activeTab.sourceImportBatchId || null,
         }),
       });
 
@@ -815,6 +928,11 @@ export default function PosCreatePage() {
       {activeTab.processingOrderId && (
         <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
           <ClipboardEdit size={16} /> Đang xử lý đơn <b>{activeTab.orderCode}</b> — sửa xong bấm "Cập nhật & chốt đơn" bên dưới để lưu lại đúng đơn này (không tạo đơn mới).
+        </div>
+      )}
+      {activeTab.copiedFromOrderId && (
+        <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5">
+          <ClipboardEdit size={16} /> Đơn mới được sao chép từ <b>{activeTab.copiedFromOrderCode}</b>. Giá đã được cập nhật theo bảng giá hiện hành; hãy chọn lại ngày giao trước khi tạo đơn.
         </div>
       )}
 
@@ -889,6 +1007,14 @@ export default function PosCreatePage() {
                   </p>
                 ) : null}
               </div>
+            </div>
+            <div className="max-w-sm">
+              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Thanh toán</label>
+              <select value={activeTab.paymentMethod} onChange={e => updateActiveTab({ paymentMethod: e.target.value as 'COD' | 'CREDIT' })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20">
+                <option value="COD">COD (trả khi giao)</option>
+                <option value="CREDIT">Công nợ</option>
+              </select>
             </div>
 
             {activeTab.selectedCustomerId && (() => {
@@ -998,7 +1124,7 @@ export default function PosCreatePage() {
 
           {/* Product Search */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
-            <h2 className="font-bold text-slate-800 flex items-center gap-2"><Search size={18} className="text-green-600" />Tìm & thêm sản phẩm</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-bold text-slate-800 flex items-center gap-2"><Search size={18} className="text-green-600" />Tìm & thêm sản phẩm</h2><button type="button" onClick={() => activeTab.selectedCustomerId ? setShowSmartImport(true) : alert('Vui lòng chọn khách hàng trước khi đọc đơn')} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-emerald-700"><ScanLine size={16}/>Đọc đơn từ ảnh/tài liệu</button></div>
             
             <ProductSearchBox
               apiBase={getApiBase()}
@@ -1260,6 +1386,13 @@ export default function PosCreatePage() {
           }}
         />
       )}
+      <SmartOrderImportModal
+        open={showSmartImport}
+        token={token || ''}
+        customerId={activeTab.selectedCustomerId}
+        onClose={() => setShowSmartImport(false)}
+        onConfirm={addSmartImportItems}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { can } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { actorIdentity, assertInvoiceWriteAccess } from "@/lib/invoice-access";
 
 function json(body: unknown, status = 200) {
   return NextResponse.json(body, { status });
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdminAuth(req);
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
-  if (!can(auth.profile?.role, "orders.returns")) {
+  if (!can(auth.profile?.role, "invoices.return")) {
     return json({ ok: false, error: "Chỉ Admin, Trưởng phòng hoặc Kế toán được xác nhận đổi/trả" }, 403);
   }
   const body = await req.json().catch(() => null);
@@ -42,14 +43,21 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getCustomerSupabaseAdmin();
-  const actor = auth.profile?.name || auth.profile?.email || "admin";
-  const { data, error } = await supabase.rpc("create_sales_return", {
-    p_order_id: orderId,
-    p_items: items,
-    p_reason: reason,
-    p_actor: actor,
-  });
-  if (error) return json({ ok: false, error: error.message }, 409);
-  return json({ ok: true, salesReturn: data });
+  try {
+    await assertInvoiceWriteAccess(supabase, auth.profile, orderId);
+    const actor = actorIdentity(auth.profile);
+    const { data, error } = await supabase.rpc("create_sales_return_secured", {
+      p_order_id: orderId,
+      p_items: items,
+      p_reason: reason,
+      p_actor_id: actor.id,
+      p_actor_name: actor.name,
+      p_actor_role: actor.role,
+      p_actor_department_id: actor.departmentId,
+    });
+    if (error) return json({ ok: false, error: error.message }, 409);
+    return json({ ok: true, salesReturn: data });
+  } catch (error) {
+    return json({ ok: false, error: error instanceof Error ? error.message : "Không có quyền đổi/trả" }, 403);
+  }
 }
-

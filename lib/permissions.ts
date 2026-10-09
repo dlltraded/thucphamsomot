@@ -60,6 +60,12 @@ const PERMISSIONS: Record<string, Role[]> = {
   /** Xuất hóa đơn bán hàng, báo cáo công nợ */
   'orders.export_invoice': ['admin', 'truong_phong', 'ke_toan'],
   'orders.returns': ['admin', 'truong_phong', 'ke_toan'],
+  /** Điều chỉnh hóa đơn hoàn thành; API còn giới hạn Trưởng phòng theo đúng phòng Vận hành */
+  'invoices.adjust': ['admin', 'truong_phong', 'ke_toan'],
+  'invoices.return': ['admin', 'truong_phong', 'ke_toan'],
+  'invoices.view_audit': ['admin', 'truong_phong', 'ke_toan'],
+  /** Sao chép hóa đơn/đơn cũ thành đơn POS mới */
+  'orders.copy': ['admin', 'truong_phong', 'sale'],
 
   // ─── Thu mua / Đơn tổng ─────────────────────────────────────────
   /** Xem màn đơn tổng, xuất Excel đơn tổng */

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   ArrowLeft, User, Phone, MapPin, RefreshCw, CheckCircle2,
   Clock, Package, FileText, Plus, Trash2, Save, Search as SearchIcon, Wallet, Truck, Printer, FileSpreadsheet, ClipboardEdit, Receipt, RotateCcw, X,
-  ClipboardCheck, Send, AlertCircle
+  ClipboardCheck, Send, AlertCircle, Copy, Pencil
 } from 'lucide-react';
 import { printOrderSlip } from '../lib/printOrder';
 import QuickAddProductModal from '../components/QuickAddProductModal';
@@ -52,6 +52,7 @@ interface LineItem {
   official_price_book_name?: string | null;
   price_difference?: number | null;
   price_difference_percent?: number | null;
+  vat_rate?: number;
   isNew?: boolean;
 }
 
@@ -100,6 +101,22 @@ export default function OrderDetailPage() {
   const [returnQuantities, setReturnQuantities] = useState<Record<string, string>>({});
   const [returnReason, setReturnReason] = useState('');
   const [submittingReturn, setSubmittingReturn] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(false);
+  const [invoiceEditReason, setInvoiceEditReason] = useState('');
+  const [invoiceDiscountAmount, setInvoiceDiscountAmount] = useState(0);
+  const [invoiceNote, setInvoiceNote] = useState('');
+  const [invoiceAdjustments, setInvoiceAdjustments] = useState<any[]>([]);
+  const [savingInvoice, setSavingInvoice] = useState(false);
+
+  const fetchInvoiceAdjustments = useCallback(async () => {
+    if (!id || !token) return;
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/invoices/adjustments?orderId=${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.ok) setInvoiceAdjustments(data.adjustments || []);
+    } catch { /* người không có quyền sẽ không thấy nhật ký tài chính */ }
+  }, [id, token]);
 
   const fetchSalesReturns = useCallback(async () => {
     if (!id || !token) return;
@@ -439,6 +456,7 @@ export default function OrderDetailPage() {
         official_price_book_name: item.official_price_book_name,
         price_difference: item.price_difference == null ? null : Number(item.price_difference),
         price_difference_percent: item.price_difference_percent == null ? null : Number(item.price_difference_percent),
+        vat_rate: Number(item.vat_rate || 0),
       })));
 
       // Giá hiển thị là snapshot bảng giá do API server trả về; chỉ các dòng
@@ -446,6 +464,8 @@ export default function OrderDetailPage() {
       setPricingMode(data.pricing_mode === 'manual_item_price' ? 'manual_item_price' : 'price_book');
 
       setShippingAmount(Number(data.shipping_amount || 0));
+      setInvoiceDiscountAmount(Number(data.discount_amount || 0));
+      setInvoiceNote(data.note || '');
       setPricingNote(data.pricing_note || '');
       setDeliveryForm({
         packageWeightG: data.package_weight_g != null ? String(data.package_weight_g) : '',
@@ -466,22 +486,34 @@ export default function OrderDetailPage() {
 
   useEffect(() => { fetchOrder(); }, [fetchOrder]);
   useEffect(() => { if (order?.status === 'completed') fetchSalesReturns(); }, [order?.status, fetchSalesReturns]);
+  useEffect(() => { if (order?.status === 'completed') fetchInvoiceAdjustments(); }, [order?.status, fetchInvoiceAdjustments]);
 
   // Giá trong dòng là snapshot do server resolve từ bảng giá; UI không tự suy giá.
   const calcTotals = useCallback(() => {
-    let subtotal = 0, merchandise = 0;
+    let subtotal = 0, merchandise = 0, tax = 0;
     const priced = lines.map(line => {
       const up = Number(line.unit_price) || 0;
       subtotal += Math.round((line.base_unit_price || up) * line.quantity);
-      merchandise += Math.round(up * line.quantity);
+      const lineTotal = Math.round(up * line.quantity);
+      merchandise += lineTotal;
+      tax += Math.round(lineTotal * Number(line.vat_rate || 0) / 100);
       return { ...line, unit_price: up };
     });
-    return { subtotal, merchandise, total: merchandise + shippingAmount, priced };
-  }, [lines, shippingAmount]);
+    const discount = editingInvoice ? Math.max(0, invoiceDiscountAmount) : Math.max(0, Number(order?.discount_amount || 0));
+    return { subtotal, merchandise, tax, discount, total: merchandise - discount + shippingAmount + tax, priced };
+  }, [lines, shippingAmount, editingInvoice, invoiceDiscountAmount, order?.discount_amount]);
 
   const totals = calcTotals();
 
   const isLocked = order && (['shipping', 'completed', 'canceled'].includes(order.status) || ['paid', 'refunded'].includes(order.payment_status) || !!order.delivery_confirmed_at);
+  const isAccountingUser = user?.role === 'ke_toan' || user?.department?.function_group === 'accounting';
+  const isResponsibleOperationsHead = user?.position === 'truong_phong'
+    && user?.department?.function_group === 'operations'
+    && !!user.departmentId
+    && user.departmentId === order?.operations_department_id;
+  const canAdjustInvoice = order?.status === 'completed' && (user?.role === 'admin' || isAccountingUser || isResponsibleOperationsHead);
+  const canCopyOrder = user?.userType === 'staff' && can(user.role, 'orders.copy');
+  const canEditLines = !isLocked || (editingInvoice && canAdjustInvoice);
   const canFinalizePricing = user?.userType === 'staff' && can(user.role, 'orders.finalize_pricing');
   const canBypassReview = user?.userType === 'staff' && (user.role === 'admin' || can(user.role, 'orders.credit_override'));
   const isTerminalStatus = !!order && ['completed', 'canceled'].includes(order.status);
@@ -530,6 +562,60 @@ export default function OrderDetailPage() {
 
   const updateLine = (idx: number, field: keyof LineItem, value: any) => {
     setLines(prev => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
+  };
+
+  const startInvoiceEdit = () => {
+    setInvoiceEditReason('');
+    setInvoiceDiscountAmount(Number(order.discount_amount || 0));
+    setInvoiceNote(order.note || '');
+    setEditingInvoice(true);
+  };
+
+  const cancelInvoiceEdit = async () => {
+    if (!confirm('Hủy các thay đổi chưa lưu?')) return;
+    setEditingInvoice(false);
+    setInvoiceEditReason('');
+    await fetchOrder();
+  };
+
+  const saveInvoiceAdjustment = async () => {
+    if (invoiceEditReason.trim().length < 3) return alert('Bắt buộc nhập lý do điều chỉnh hóa đơn.');
+    if (!lines.length || lines.some(line => Number(line.quantity) <= 0 || Number(line.unit_price) < 0 || ![0, 5, 8].includes(Number(line.vat_rate || 0)))) {
+      return alert('Kiểm tra lại số lượng, đơn giá và VAT của từng sản phẩm.');
+    }
+    if (!confirm(`Lưu lần điều chỉnh hóa đơn ${order.invoice_number}? Công nợ sẽ được cập nhật tự động.`)) return;
+    setSavingInvoice(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const res = await fetch(`${apiBase}/api/admin/invoices/adjustments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          orderId: order.id,
+          expectedRevision: Number(order.invoice_revision || 1),
+          reason: invoiceEditReason.trim(),
+          discountAmount: invoiceDiscountAmount,
+          shippingAmount,
+          note: invoiceNote,
+          items: lines.map(line => ({
+            itemId: line.isNew ? null : line.itemId,
+            productId: line.productId,
+            quantity: line.quantity,
+            unitPrice: line.unit_price,
+            vatRate: Number(line.vat_rate || 0),
+            note: line.pricing_note || '',
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Không lưu được điều chỉnh');
+      setEditingInvoice(false);
+      setInvoiceEditReason('');
+      await Promise.all([fetchOrder(), fetchPayments(), fetchInvoiceAdjustments()]);
+      alert(data.warning ? `Đã lưu điều chỉnh. ${data.warning}` : 'Đã lưu điều chỉnh và phát hành bản hóa đơn mới.');
+    } catch (error: any) {
+      alert(error.message || 'Không lưu được điều chỉnh hóa đơn');
+    } finally { setSavingInvoice(false); }
   };
 
   const handleFinalize = async () => {
@@ -779,7 +865,19 @@ export default function OrderDetailPage() {
               <Receipt size={16} /> {downloadingInvoice ? 'Đang tải...' : 'Tải hóa đơn'}
             </button>
           )}
-          {order.status === 'completed' && can(user?.role, 'orders.returns') && (
+          {order.status === 'completed' && canAdjustInvoice && !editingInvoice && (
+            <button onClick={startInvoiceEdit}
+              className="px-3 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 flex items-center gap-1.5">
+              <Pencil size={16} /> Chỉnh sửa
+            </button>
+          )}
+          {order.status === 'completed' && canCopyOrder && !editingInvoice && (
+            <button onClick={() => navigate(`/tao-don-hang?copyOrderId=${order.id}`)}
+              className="px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-50 flex items-center gap-1.5">
+              <Copy size={16} /> Sao chép
+            </button>
+          )}
+          {order.status === 'completed' && canAdjustInvoice && !editingInvoice && (
             <button onClick={() => setShowReturnModal(true)}
               className="px-3 py-2 bg-orange-50 border border-orange-200 text-orange-700 rounded-xl text-sm font-medium hover:bg-orange-100 flex items-center gap-1.5">
               <RotateCcw size={16} /> Đổi/Trả hàng
@@ -842,6 +940,25 @@ export default function OrderDetailPage() {
         </div>
       ))}
 
+      {editingInvoice && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="font-bold text-blue-900">Đang chỉnh sửa hóa đơn {order.invoice_number}</p>
+              <p className="text-xs text-blue-700">Lần điều chỉnh hiện tại: {Number(order.invoice_revision || 1) + 1}. Tổng tiền và công nợ sẽ được tính lại khi lưu.</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={cancelInvoiceEdit} disabled={savingInvoice} className="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-xl text-sm font-medium">Bỏ qua</button>
+              <button onClick={saveInvoiceAdjustment} disabled={savingInvoice} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold disabled:opacity-50 flex items-center gap-2">
+                <Save size={16} /> {savingInvoice ? 'Đang lưu...' : 'Lưu điều chỉnh'}
+              </button>
+            </div>
+          </div>
+          <textarea value={invoiceEditReason} onChange={e => setInvoiceEditReason(e.target.value)} rows={2}
+            placeholder="Lý do điều chỉnh (bắt buộc)" className="w-full border border-blue-300 rounded-xl px-3 py-2 text-sm bg-white" />
+        </div>
+      )}
+
       {salesReturns.length > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
           <p className="font-bold text-orange-900 text-sm mb-2">Phiếu đổi/trả đã xác nhận</p>
@@ -882,6 +999,7 @@ export default function OrderDetailPage() {
                     <th className="px-4 py-3 text-center">SL</th>
                     <th className="px-4 py-3 text-center">Đã giao</th>
                     <th className="px-4 py-3 text-right">Đơn giá</th>
+                    <th className="px-4 py-3 text-center">VAT</th>
                     <th className="px-4 py-3 text-right">Thành tiền</th>
                     <th className="px-4 py-3"></th>
                   </tr>
@@ -892,7 +1010,7 @@ export default function OrderDetailPage() {
                     const displayPrice = priced?.unit_price || line.unit_price;
                     const lineTotal = Math.round(displayPrice * line.quantity);
                     return (
-                      <tr key={idx} className={`hover:bg-slate-50/50 ${isLocked ? 'opacity-70' : ''}`}>
+                      <tr key={idx} className={`hover:bg-slate-50/50 ${isLocked && !editingInvoice ? 'opacity-70' : ''}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-slate-800">{line.name}</p>
@@ -910,7 +1028,7 @@ export default function OrderDetailPage() {
                                   {line.price_difference_percent != null ? ` (${line.price_difference_percent > 0 ? '+' : ''}${line.price_difference_percent}%)` : ''}
                                 </span>
                               )}
-                              {!isLocked && line.unit_price !== line.official_price && (
+                              {canEditLines && !editingInvoice && line.unit_price !== line.official_price && (
                                 <button type="button" onClick={() => {
                                   setPricingMode('price_book');
                                   updateLine(idx, 'unit_price', Number(line.official_price));
@@ -920,13 +1038,13 @@ export default function OrderDetailPage() {
                               )}
                             </div>
                           )}
-                          {!isLocked && (
+                          {canEditLines && (
                             <input type="text" value={line.pricing_note || ''} onChange={e => updateLine(idx, 'pricing_note', e.target.value)}
                               placeholder="Quy cách / ghi chú riêng..." className="mt-1 text-xs w-full border-0 border-b border-slate-200 focus:outline-none focus:border-green-500 bg-transparent text-slate-500" />
                           )}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          {!isLocked ? (
+                          {canEditLines ? (
                             <input type="number" min="0.001" step="0.001" value={line.quantity}
                               onChange={e => updateLine(idx, 'quantity', Number(e.target.value))}
                               className="w-20 text-center border border-slate-200 rounded-lg p-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20" />
@@ -943,7 +1061,7 @@ export default function OrderDetailPage() {
                           ) : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {!isLocked ? (
+                          {canEditLines ? (
                             <div className="flex items-center justify-end gap-1.5">
                               <input
                                 type="number"
@@ -971,9 +1089,17 @@ export default function OrderDetailPage() {
                             <span className="text-slate-600 font-medium">{money(priced?.unit_price || line.unit_price)}</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-center">
+                          {editingInvoice ? (
+                            <select value={Number(line.vat_rate || 0)} onChange={e => updateLine(idx, 'vat_rate', Number(e.target.value))}
+                              className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white">
+                              <option value={0}>Không</option><option value={5}>5%</option><option value={8}>8%</option>
+                            </select>
+                          ) : <span className="text-slate-600">{Number(line.vat_rate || 0) ? `${Number(line.vat_rate)}%` : '—'}</span>}
+                        </td>
                         <td className="px-4 py-3 text-right font-semibold text-slate-800">{money(lineTotal)}</td>
                         <td className="px-4 py-3">
-                          {!isLocked && (
+                          {canEditLines && (
                             <button onClick={() => removeLine(idx)} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
                               <Trash2 size={16} />
                             </button>
@@ -1019,7 +1145,7 @@ export default function OrderDetailPage() {
             )}
 
             {/* Add Product */}
-            {!isLocked && (
+            {canEditLines && (
               <div className="p-4 border-t border-slate-100">
                 <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Thêm sản phẩm vào đơn</p>
                 <div className="relative">
@@ -1046,10 +1172,10 @@ export default function OrderDetailPage() {
                     {!searchingProducts && productResults.length === 0 && (
                       <p className="px-3 py-2 text-xs text-slate-400">Không tìm thấy — có thể tạo mới bên dưới.</p>
                     )}
-                    <button onClick={() => setShowQuickAdd(true)}
+                    {!editingInvoice && <button onClick={() => setShowQuickAdd(true)}
                       className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-green-700 hover:bg-green-50 border-t border-slate-100">
                       <Plus size={15} /> Thêm sản phẩm mới "{productSearch}"
-                    </button>
+                    </button>}
                   </div>
                 )}
               </div>
@@ -1423,10 +1549,11 @@ export default function OrderDetailPage() {
             <h2 className="font-bold text-slate-800 flex items-center gap-2"><FileText size={18} className="text-green-600" />Tổng kết đơn</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-slate-500">Tạm tính</span><span className="font-medium">{money(order.subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Chiết khấu ({order.discount_percent || 0}%)</span><span className="text-red-600 font-medium">-{money(order.discount_amount)}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Phí giao hàng</span><span className="font-medium">{money(order.shipping_amount || 0)}</span></div>
+              <div className="flex justify-between items-center gap-2"><span className="text-slate-500">Chiết khấu</span>{editingInvoice ? <input type="number" min="0" value={invoiceDiscountAmount} onChange={e => setInvoiceDiscountAmount(Number(e.target.value))} className="w-28 border border-slate-200 rounded-lg px-2 py-1 text-right" /> : <span className="text-red-600 font-medium">-{money(order.discount_amount)}</span>}</div>
+              <div className="flex justify-between items-center gap-2"><span className="text-slate-500">Phí giao hàng</span>{editingInvoice ? <input type="number" min="0" value={shippingAmount} onChange={e => setShippingAmount(Number(e.target.value))} className="w-28 border border-slate-200 rounded-lg px-2 py-1 text-right" /> : <span className="font-medium">{money(order.shipping_amount || 0)}</span>}</div>
+              <div className="flex justify-between"><span className="text-slate-500">VAT</span><span className="font-medium">{money(editingInvoice ? totals.tax : Number(order.tax_amount || 0))}</span></div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-100">
-                <span>Tổng thanh toán</span><span className="text-green-700">{money(order.grand_total)}</span>
+                <span>Tổng thanh toán</span><span className="text-green-700">{money(editingInvoice ? totals.total : order.grand_total)}</span>
               </div>
               {order.status === 'completed' && Number(order.return_credit_amount || 0) > 0 && (
                 <>
@@ -1435,6 +1562,10 @@ export default function OrderDetailPage() {
                 </>
               )}
             </dl>
+            {editingInvoice && (
+              <textarea value={invoiceNote} onChange={e => setInvoiceNote(e.target.value)} rows={2} placeholder="Ghi chú hóa đơn"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            )}
             <div>
               <p className="text-xs font-semibold text-slate-500 mb-1">Thanh toán</p>
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -1504,13 +1635,33 @@ export default function OrderDetailPage() {
                     <div className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0"></div>
                     <div>
                       <p className="font-medium text-slate-700">{STATUS_LABELS[h.to_status] || h.action || 'Cập nhật'}</p>
-                      <p className="text-xs text-slate-400">{dt(h.created_at)}{h.note ? ` · ${h.note}` : ''}</p>
+                      <p className="text-xs text-slate-400">{dt(h.created_at)} · {h.actor || 'Hệ thống'}{h.note ? ` · ${h.note}` : ''}</p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {invoiceAdjustments.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+              <h2 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><ClipboardEdit size={18} className="text-blue-600" />Lịch sử can thiệp hóa đơn</h2>
+              <div className="space-y-3">
+                {invoiceAdjustments.map((item: any) => (
+                  <div key={item.id} className="border border-slate-200 rounded-xl p-3 text-sm space-y-1">
+                    <div className="flex justify-between gap-2"><b>{item.adjustment_number}</b><span className="text-xs text-slate-400">{dt(item.created_at)}</span></div>
+                    <p className="text-slate-700">{item.reason}</p>
+                    <p className="text-xs text-slate-500">Người thực hiện: <b>{item.created_by_name}</b> · Lần {item.revision_from} → {item.revision_to}</p>
+                    <div className="text-xs flex flex-wrap gap-x-4 gap-y-1">
+                      <span>Tổng tiền: <b>{money(item.total_before)}</b> → <b>{money(item.total_after)}</b></span>
+                      <span>Công nợ: <b>{money(item.debt_before)}</b> → <b>{money(item.debt_after)}</b></span>
+                      {Number(item.customer_credit_amount || 0) > 0 && <span className="text-emerald-700">Số dư có: <b>{money(item.customer_credit_amount)}</b></span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -334,7 +334,7 @@ async function createInvoiceDocument(
 ) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, order_code, invoice_number, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_name, delivery_phone, delivery_address, note, subtotal, discount_amount, shipping_amount, grand_total, paid_amount, debt_amount, completed_at, sales_rep_id, order_items(id, sku, name, unit, quantity, unit_price, line_total)")
+    .select("id, order_code, invoice_number, invoice_revision, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_name, delivery_phone, delivery_address, note, subtotal, discount_amount, shipping_amount, tax_amount, grand_total, paid_amount, debt_amount, completed_at, sales_rep_id, order_items(id, sku, name, unit, quantity, base_unit_price, discount_percent, unit_price, line_total, item_note, pricing_note, vat_rate, vat_amount)")
     .eq("id", orderId)
     .single();
   if (orderError || !order) throw orderError || new Error("Không tìm thấy đơn hàng để tạo hóa đơn");
@@ -362,6 +362,7 @@ async function createInvoiceDocument(
     subtotal: Number(order.subtotal),
     discount_amount: Number(order.discount_amount),
     shipping_amount: Number(order.shipping_amount),
+    tax_amount: Number(order.tax_amount) || 0,
     grand_total: Number(order.grand_total),
     paid_amount: Number(order.paid_amount) || 0,
     debt_amount: order.debt_amount != null ? Number(order.debt_amount) : null,
@@ -371,7 +372,8 @@ async function createInvoiceDocument(
     order_items: (order.order_items || []).filter((item: { quantity?: number }) => Number(item.quantity) > 0) as ConfirmationOrderItem[],
   };
 
-  const fileName = `HOA-DON_${order.invoice_number || order.order_code}.pdf`;
+  const revision = Number(order.invoice_revision) || 1;
+  const fileName = `HOA-DON_${order.invoice_number || order.order_code}_L${revision}.pdf`;
   const storagePath = `${order.id}/${fileName}`;
   const pdf = await generateSalesInvoicePdf(snapshot);
   const fileHash = createHash("sha256").update(pdf).digest("hex");
@@ -385,7 +387,7 @@ async function createInvoiceDocument(
     {
       order_id: order.id,
       document_type: "invoice",
-      revision: 1,
+      revision,
       storage_path: storagePath,
       file_hash: fileHash,
       snapshot,

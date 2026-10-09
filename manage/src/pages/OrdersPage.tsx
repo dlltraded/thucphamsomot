@@ -8,7 +8,7 @@ import {
   RefreshCw, Search, Eye, Printer, Clock, Truck,
   ShoppingBag, ClipboardEdit, FileSpreadsheet, AlertCircle,
   ChevronLeft, ChevronRight, Trash2, Plus, Package, CheckSquare,
-  Square, ChevronDown, Download, X, Calendar, MapPin
+  Square, ChevronDown, Download, X, Calendar, MapPin, Copy
 } from 'lucide-react';
 
 const PAGE_SIZE = 50;
@@ -898,6 +898,13 @@ export default function OrdersPage({ view = 'orders' }: { view?: 'orders' | 'inv
                           <ClipboardEdit size={16} />
                         </button>
                       )}
+                      {view === 'invoices' && ['admin', 'truong_phong', 'sale'].includes(user?.role || '') && (
+                        <button onClick={() => navigate(`/tao-don-hang?copyOrderId=${order.id}`)}
+                          className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center justify-center transition-colors"
+                          title="Sao chép thành đơn mới" aria-label="Sao chép thành đơn mới">
+                          <Copy size={16} />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => handlePrint(order, e)}
                         className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center justify-center transition-colors"
@@ -1085,6 +1092,12 @@ export default function OrdersPage({ view = 'orders' }: { view?: 'orders' | 'inv
                               title="Xử lý đơn hàng (mở POS)"
                             >
                               <ClipboardEdit size={16} />
+                            </button>
+                          )}
+                          {view === 'invoices' && ['admin', 'truong_phong', 'sale'].includes(user?.role || '') && (
+                            <button onClick={() => navigate(`/tao-don-hang?copyOrderId=${order.id}`)}
+                              className="p-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors" title="Sao chép thành đơn mới">
+                              <Copy size={16} />
                             </button>
                           )}
                           <button

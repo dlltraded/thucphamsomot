@@ -3,6 +3,7 @@ import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer
 import { getCustomerSupabase, getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, getOrderCutoffInfo, getVnDateParts } from "@/lib/order-cutoff";
 import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
+import { validateOrderQuantity } from "@/lib/order-quantity";
 
 interface OrderItemInput {
   id?: string;
@@ -12,6 +13,7 @@ interface OrderItemInput {
   name?: string;
   quantity: number;
   note?: string;
+  sourceImportLineId?: string;
 }
 
 interface CreateOrderBody {
@@ -28,6 +30,7 @@ interface CreateOrderBody {
   deliveryPhone?: string;
   note?: string;
   idempotencyKey?: string;
+  sourceImportBatchId?: string;
 }
 
 const corsHeaders = {
@@ -169,12 +172,61 @@ export async function POST(req: NextRequest) {
           quantity: Number(item.quantity) || 0,
           name: String(item.name || item.title || "").trim(),
           note: typeof item.note === "string" ? item.note.trim().slice(0, 200) : "",
+          sourceImportLineId: typeof item.sourceImportLineId === "string" ? item.sourceImportLineId : undefined,
         }))
         .filter((item) => item.productId && item.quantity > 0)
     : [];
 
   if (items.length === 0) {
     return json({ ok: false, error: "Giỏ hàng đang trống" }, 400);
+  }
+
+  const productIdsToValidate = [...new Set(items.map((item) => item.productId))];
+  const { data: constraintProducts, error: constraintError } = await supabaseAdmin
+    .from("products")
+    .select("id, name, unit, active, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision")
+    .in("id", productIdsToValidate)
+    .eq("active", true);
+  if (constraintError) return json({ ok: false, error: "Không kiểm tra được quy cách sản phẩm" }, 500);
+  const constraintById = new Map((constraintProducts || []).map((product) => [product.id, product]));
+  const quantityErrors: string[] = [];
+  for (const item of items) {
+    const product = constraintById.get(item.productId);
+    if (!product) { quantityErrors.push(`${item.name || item.productId}: sản phẩm không tồn tại hoặc đã ngừng kinh doanh`); continue; }
+    const validation = validateOrderQuantity(product, item.quantity, product.unit, []);
+    if (!validation.ok) quantityErrors.push(`${product.name}: ${validation.message}`);
+  }
+  if (quantityErrors.length) return json({ ok: false, code: "INVALID_ORDER_QUANTITY", error: quantityErrors.join("; ") }, 409);
+
+  const sourceImportBatchId = String(body.sourceImportBatchId || "").trim() || null;
+  const sourceLinesById = new Map<string, any>();
+  if (!sourceImportBatchId && items.some((item) => item.sourceImportLineId)) {
+    return json({ ok: false, error: "Thiếu mã phiên nhập đơn thông minh" }, 409);
+  }
+  if (sourceImportBatchId) {
+    const { data: importBatch } = await supabaseAdmin.from("order_import_batches")
+      .select("id, customer_id, status").eq("id", sourceImportBatchId).maybeSingle();
+    if (!importBatch || importBatch.customer_id !== customerId || importBatch.status !== "confirmed") {
+      return json({ ok: false, error: "Phiên nhập đơn thông minh không hợp lệ hoặc chưa được xác nhận" }, 409);
+    }
+    const requestedLineIds = items.map((item) => item.sourceImportLineId).filter(Boolean) as string[];
+    if (!requestedLineIds.length) {
+      return json({ ok: false, error: "Phiên nhập đơn không còn dòng hàng nào trong giỏ" }, 409);
+    }
+    if (requestedLineIds.length) {
+      const { data: sourceLines } = await supabaseAdmin.from("order_import_lines")
+        .select("id, batch_id, selected_product_id, raw_unit, conversion_factor, status")
+        .in("id", requestedLineIds).eq("batch_id", sourceImportBatchId);
+      for (const line of sourceLines || []) sourceLinesById.set(line.id, line);
+      if (sourceLinesById.size !== new Set(requestedLineIds).size || [...sourceLinesById.values()].some((line) => line.status !== "matched")) {
+        return json({ ok: false, error: "Có dòng nhập thông minh không hợp lệ, vui lòng đọc lại tài liệu" }, 409);
+      }
+      const mismatchedProduct = items.some((item) => item.sourceImportLineId
+        && sourceLinesById.get(item.sourceImportLineId)?.selected_product_id !== item.productId);
+      if (mismatchedProduct) {
+        return json({ ok: false, error: "Sản phẩm trong giỏ không khớp kết quả đã xác nhận" }, 409);
+      }
+    }
   }
 
   const deliveryType = body.deliveryType === "pickup" ? "pickup" : "shipping";
@@ -229,7 +281,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase.rpc("customer_create_order", {
     p_session_token: orderSessionToken,
     p_source: source,
-    p_items: items.map(({ note: _n, ...it }) => it),
+    p_items: items.map(({ note: _n, sourceImportLineId: _source, ...it }) => it),
     p_delivery_type: deliveryType,
     p_delivery_alias: deliveryAlias,
     p_delivery_address: deliveryAddress,
@@ -287,6 +339,8 @@ export async function POST(req: NextRequest) {
 
   let resolvedSubtotal = 0;
   const usedBooks = new Map<string, { id: string; version: number; name: string; source: string }>();
+  const pendingInputsByProduct = new Map<string, typeof items>();
+  for (const input of items) pendingInputsByProduct.set(input.productId, [...(pendingInputsByProduct.get(input.productId) || []), input]);
   for (const item of createdItems || []) {
     const priceInfo = resolvedPrices.get(item.product_id)!;
     const price = Number(priceInfo.price);
@@ -300,6 +354,9 @@ export async function POST(req: NextRequest) {
         source: priceInfo.priceSource,
       });
     }
+    const sourceInput = pendingInputsByProduct.get(item.product_id)?.shift();
+    const sourceLine = sourceInput?.sourceImportLineId ? sourceLinesById.get(sourceInput.sourceImportLineId) : null;
+    const constraint = constraintById.get(item.product_id);
     const { error: itemPriceError } = await supabaseAdmin.from("order_items").update({
       base_unit_price: price,
       general_unit_price: priceInfo.priceSource === "general_price_book" || priceInfo.priceSource === "general_fallback" ? price : null,
@@ -314,6 +371,12 @@ export async function POST(req: NextRequest) {
       price_book_id: priceInfo.priceBookId,
       price_book_version: priceInfo.priceBookVersion,
       price_resolved_at: new Date().toISOString(),
+      packaging_note: constraint?.packaging_note || null,
+      min_qty_snapshot: constraint?.min_order_qty ?? null,
+      order_step_snapshot: constraint?.order_step ?? null,
+      source_import_line_id: sourceLine?.id || null,
+      source_input_unit: sourceLine?.raw_unit || null,
+      source_conversion_factor: sourceLine?.conversion_factor || null,
     }).eq("id", item.id);
     if (itemPriceError) {
       await supabaseAdmin.from("orders").delete().eq("id", order.id);
@@ -331,6 +394,7 @@ export async function POST(req: NextRequest) {
     price_book_version: primaryBook?.version || null,
     price_resolution_status: "resolved",
     customer_price_source: [...new Set([...usedBooks.values()].map((book) => book.source))].join(","),
+    source_import_batch_id: sourceImportBatchId,
   }).eq("id", order.id);
   if (resolvedOrderError) {
     await supabaseAdmin.from("orders").delete().eq("id", order.id);

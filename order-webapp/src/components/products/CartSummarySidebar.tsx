@@ -87,7 +87,7 @@ export default function CartSummarySidebar({
               const lineTotal = item.quantity * (item.product.price || 0);
               return (
                 <div
-                  key={item.product.id}
+                  key={item.lineKey || item.product.id}
                   className="p-2 rounded-xl hover:bg-[#f8faf7] transition-colors space-y-1.5 group"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -108,7 +108,7 @@ export default function CartSummarySidebar({
 
                     <button
                       type="button"
-                      onClick={() => onRemoveItem(item.product.id)}
+                      onClick={() => onRemoveItem(item.lineKey || item.product.id)}
                       className="text-[#59665f]/40 hover:text-red-600 p-1 rounded transition-colors cursor-pointer"
                       title="Xóa món"
                     >
@@ -123,7 +123,7 @@ export default function CartSummarySidebar({
                         type="button"
                         onClick={() =>
                           onUpdateQty(
-                            item.product.id,
+                            item.lineKey || item.product.id,
                             Math.max(0, Number((item.quantity - 1).toFixed(2)))
                           )
                         }
@@ -138,7 +138,7 @@ export default function CartSummarySidebar({
                         value={item.quantity}
                         onChange={(e) => {
                           const v = parseFloat(e.target.value);
-                          onUpdateQty(item.product.id, isNaN(v) ? 0 : v);
+                          onUpdateQty(item.lineKey || item.product.id, isNaN(v) ? 0 : v);
                         }}
                         className="w-11 text-center font-bold text-xs bg-transparent focus:outline-none"
                       />
@@ -146,7 +146,7 @@ export default function CartSummarySidebar({
                         type="button"
                         onClick={() =>
                           onUpdateQty(
-                            item.product.id,
+                            item.lineKey || item.product.id,
                             Number((item.quantity + 1).toFixed(2))
                           )
                         }

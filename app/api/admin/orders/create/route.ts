@@ -9,6 +9,7 @@ import {
   getVnDateParts,
 } from "@/lib/order-cutoff";
 import { resolvePriceBookPrices } from "@/lib/price-book-resolver";
+import { validateOrderQuantity } from "@/lib/order-quantity";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -62,6 +63,8 @@ export async function POST(req: NextRequest) {
     paymentMethod: reqPaymentMethod,
     creditOverrideNote,
     idempotencyKey: reqIdempotencyKey,
+    copiedFromOrderId: reqCopiedFromOrderId,
+    sourceImportBatchId: reqSourceImportBatchId,
   } = body || {};
 
   const paymentMethod = String(reqPaymentMethod || "COD").trim().toUpperCase();
@@ -169,7 +172,7 @@ export async function POST(req: NextRequest) {
   const invalidQtyNames: string[] = [];
   const productIds = [...new Set(items.map((i: any) => String(i.productId || "").trim()).filter(Boolean))] as string[];
   const { data: databaseProducts, error: databaseProductsError } = productIds.length
-    ? await supabase.from("products").select("id, name, sku, unit, active").in("id", productIds)
+    ? await supabase.from("products").select("id, name, sku, unit, active, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision").in("id", productIds)
     : { data: [], error: null };
   if (databaseProductsError) throw databaseProductsError;
   const productById = new Map((databaseProducts || []).map((product: any) => [product.id, product]));
@@ -195,6 +198,10 @@ export async function POST(req: NextRequest) {
       if (!product || !product.active) {
         missingProductNames.push(String(i.name || productId));
       } else {
+        const quantityValidation = validateOrderQuantity(product, validQty, product.unit, []);
+        if (!quantityValidation.ok) {
+          invalidQtyNames.push(`${product.name}: ${quantityValidation.message}`);
+        }
         const resolved = resolvedPriceMap.get(productId);
         if (resolved?.price == null) {
           missingPriceNames.push(product.name || String(i.name || productId));
@@ -233,11 +240,12 @@ export async function POST(req: NextRequest) {
       priceSource,
       priceBookId,
       priceBookVersion,
+      sourceImportLineId: typeof i.sourceImportLineId === "string" ? i.sourceImportLineId.trim() || null : null,
     };
   });
 
   if (invalidQtyNames.length) {
-    return json({ ok: false, error: `Số lượng không hợp lệ (phải > 0): ${invalidQtyNames.join(", ")}` }, 400);
+    return json({ ok: false, code: "INVALID_ORDER_QUANTITY", error: `Số lượng hoặc quy cách không hợp lệ: ${invalidQtyNames.join(", ")}` }, 409);
   }
   if (missingProductNames.length) {
     return json({ ok: false, error: `Sản phẩm không tồn tại hoặc đã ngừng kinh doanh: ${missingProductNames.join(", ")}` }, 400);
@@ -248,6 +256,46 @@ export async function POST(req: NextRequest) {
       code: "PRICE_MISSING",
       error: `Chưa có giá hợp lệ: ${missingPriceNames.join(", ")}`,
     }, 409);
+  }
+
+  const sourceImportBatchId = typeof reqSourceImportBatchId === "string" && reqSourceImportBatchId.trim()
+    ? reqSourceImportBatchId.trim()
+    : null;
+  const sourceLinesById = new Map<string, any>();
+  if (!sourceImportBatchId && sanitizedItems.some((item) => item.sourceImportLineId)) {
+    return json({ ok: false, error: "Thiếu mã phiên nhập đơn thông minh" }, 409);
+  }
+  if (sourceImportBatchId) {
+    const staffActorId = auth.user?.id || auth.profile?.id || null;
+    const { data: importBatch } = await supabase.from("order_import_batches")
+      .select("id, customer_id, actor_type, actor_id, status")
+      .eq("id", sourceImportBatchId)
+      .maybeSingle();
+    if (!importBatch || importBatch.customer_id !== customerId || importBatch.actor_type !== "staff"
+      || importBatch.actor_id !== staffActorId || importBatch.status !== "confirmed") {
+      return json({ ok: false, error: "Phiên nhập đơn thông minh không hợp lệ hoặc chưa được xác nhận" }, 409);
+    }
+    const requestedLineIds = sanitizedItems.map((item) => item.sourceImportLineId).filter(Boolean) as string[];
+    if (!requestedLineIds.length) {
+      return json({ ok: false, error: "Phiên nhập đơn không còn dòng hàng nào trong giỏ" }, 409);
+    }
+    if (requestedLineIds.length) {
+      const { data: sourceLines } = await supabase.from("order_import_lines")
+        .select("id, batch_id, selected_product_id, raw_unit, conversion_factor, status")
+        .in("id", requestedLineIds)
+        .eq("batch_id", sourceImportBatchId);
+      for (const line of sourceLines || []) sourceLinesById.set(line.id, line);
+      const invalidSourceLine = sourceLinesById.size !== new Set(requestedLineIds).size
+        || [...sourceLinesById.values()].some((line) => line.status !== "matched");
+      if (invalidSourceLine) {
+        return json({ ok: false, error: "Có dòng nhập thông minh không hợp lệ, vui lòng đọc lại tài liệu" }, 409);
+      }
+      const mismatchedProduct = sanitizedItems.some((item) => item.sourceImportLineId
+        && sourceLinesById.get(item.sourceImportLineId)?.selected_product_id !== item.productId);
+      if (mismatchedProduct) {
+        return json({ ok: false, error: "Sản phẩm trong giỏ không khớp kết quả đã xác nhận" }, 409);
+      }
+    }
   }
 
   // 6. Kiểm tra hạn mức công nợ (credit_limit > 0)
@@ -353,9 +401,13 @@ export async function POST(req: NextRequest) {
   const { data: createdLines } = await supabase.from("order_items")
     .select("id, product_id")
     .eq("order_id", orderId);
+  const remainingSources = [...sanitizedItems];
   for (const line of createdLines || []) {
-    const source = sanitizedItems.find((item) => item.productId === line.product_id);
+    const sourceIndex = remainingSources.findIndex((item) => item.productId === line.product_id);
+    const source = sourceIndex >= 0 ? remainingSources.splice(sourceIndex, 1)[0] : null;
     if (!source) continue;
+    const product = source.productId ? productById.get(source.productId) : null;
+    const sourceLine = source.sourceImportLineId ? sourceLinesById.get(source.sourceImportLineId) : null;
     await supabase.from("order_items").update({
       assigned_unit_price: source.price,
       final_unit_price: source.price,
@@ -363,6 +415,11 @@ export async function POST(req: NextRequest) {
       price_book_id: source.priceBookId,
       price_book_version: source.priceBookVersion,
       price_resolved_at: new Date().toISOString(),
+      min_qty_snapshot: product?.min_order_qty ?? null,
+      order_step_snapshot: product?.order_step ?? null,
+      source_import_line_id: source.sourceImportLineId,
+      source_input_unit: sourceLine?.raw_unit || null,
+      source_conversion_factor: sourceLine?.conversion_factor ?? 1,
     }).eq("id", line.id);
   }
   const primaryBook = [...usedBooks.values()][0] || null;
@@ -373,6 +430,7 @@ export async function POST(req: NextRequest) {
     price_book_version: primaryBook?.version || null,
     price_resolution_status: "resolved",
     customer_price_source: [...new Set([...usedBooks.values()].map((book) => book.source))].join(",") || "manual",
+    source_import_batch_id: sourceImportBatchId,
   }).eq("id", orderId);
 
   // 8. Cập nhật các trường Phase 1 (F1: không bao giờ trả lỗi sau khi đơn đã tạo)
@@ -387,6 +445,14 @@ export async function POST(req: NextRequest) {
       payment_method: paymentMethod,
       updated_at: new Date().toISOString(),
     };
+    if (reqCopiedFromOrderId && typeof reqCopiedFromOrderId === "string") {
+      const { data: source } = await supabase.from("orders")
+        .select("id, status")
+        .eq("id", reqCopiedFromOrderId.trim())
+        .eq("status", "completed")
+        .maybeSingle();
+      if (source) updatePayload.copied_from_order_id = source.id;
+    }
 
     if (resolvedAddressId) {
       updatePayload.delivery_address_id = resolvedAddressId;
@@ -467,6 +533,29 @@ export async function POST(req: NextRequest) {
       });
     } catch (histErr) {
       console.warn("[POS CREATE] Không thể ghi lịch sử duyệt hạn mức:", histErr);
+    }
+  }
+
+  if (reqCopiedFromOrderId && typeof reqCopiedFromOrderId === "string") {
+    try {
+      const actor = auth.profile?.name || auth.profile?.email || "Admin";
+      await Promise.all([
+        supabase.from("order_history").insert({
+          order_id: orderId,
+          action: "order_copied_from_invoice",
+          actor,
+          payload: { sourceOrderId: reqCopiedFromOrderId.trim() },
+        }),
+        supabase.from("order_history").insert({
+          order_id: reqCopiedFromOrderId.trim(),
+          action: "invoice_copied_to_order",
+          actor,
+          payload: { newOrderId: orderId, newOrderCode: orderCode },
+        }),
+      ]);
+    } catch (copyHistoryError) {
+      console.warn("[POS CREATE] Không thể ghi lịch sử sao chép:", copyHistoryError);
+      warnings.push("copy_history_warning");
     }
   }
 

@@ -104,7 +104,7 @@ export default function CartCheckoutDrawer({
                 const lineTotal = item.quantity * (item.product.price || 0);
                 return (
                   <div
-                    key={item.product.id}
+                    key={item.lineKey || item.product.id}
                     className="p-3 rounded-2xl border border-[#17231d]/10 bg-[#fbfcfb] space-y-2"
                   >
                     <div className="flex items-start justify-between gap-2.5">
@@ -123,7 +123,7 @@ export default function CartCheckoutDrawer({
 
                       <button
                         type="button"
-                        onClick={() => onRemoveItem(item.product.id)}
+                        onClick={() => onRemoveItem(item.lineKey || item.product.id)}
                         className="text-[#59665f]/50 hover:text-red-600 p-1.5 rounded-lg active:bg-red-50"
                         title="Xóa món này"
                       >
@@ -138,7 +138,7 @@ export default function CartCheckoutDrawer({
                           type="button"
                           onClick={() =>
                             onUpdateQty(
-                              item.product.id,
+                              item.lineKey || item.product.id,
                               Math.max(0, Number((item.quantity - 1).toFixed(2)))
                             )
                           }
@@ -153,7 +153,7 @@ export default function CartCheckoutDrawer({
                           value={item.quantity}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value);
-                            onUpdateQty(item.product.id, isNaN(val) ? 0 : val);
+                            onUpdateQty(item.lineKey || item.product.id, isNaN(val) ? 0 : val);
                           }}
                           className="w-14 text-center font-bold text-sm bg-transparent focus:outline-none"
                         />
@@ -161,7 +161,7 @@ export default function CartCheckoutDrawer({
                           type="button"
                           onClick={() =>
                             onUpdateQty(
-                              item.product.id,
+                              item.lineKey || item.product.id,
                               Number((item.quantity + 1).toFixed(2))
                             )
                           }
@@ -184,7 +184,7 @@ export default function CartCheckoutDrawer({
                       <input
                         type="text"
                         value={item.note || ''}
-                        onChange={(e) => onUpdateNote(item.product.id, e.target.value)}
+                        onChange={(e) => onUpdateNote(item.lineKey || item.product.id, e.target.value)}
                         placeholder="Ghi chú quy cách (vd: sơ chế, thái lát...)"
                         className="w-full text-xs py-1.5 px-2.5 bg-white border border-[#17231d]/15 rounded-lg text-[#17231d] placeholder:text-[#59665f]/50 focus:outline-none focus:border-[#0f7a4f]"
                       />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock } from 'lucide-react';
+import { Clock, ScanLine } from 'lucide-react';
 import {
   api,
   type Product,
@@ -19,6 +19,7 @@ import CartSummarySidebar from '../components/products/CartSummarySidebar';
 import CartFloatingBar from '../components/products/CartFloatingBar';
 import CartCheckoutDrawer from '../components/products/CartCheckoutDrawer';
 import OrderSuccessModal from '../components/products/OrderSuccessModal';
+import SmartOrderImportModal, { type SmartImportItem } from '../components/SmartOrderImportModal';
 
 const STORAGE_KEY = 'tps1_b2b_pos_tabs_v1';
 const PRODUCT_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -171,6 +172,8 @@ export default function ProductsPage() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [frequentItems, setFrequentItems] = useState<FrequentItem[]>([]);
   const [loadingLatestOrder, setLoadingLatestOrder] = useState(false);
+  const [showSmartImport, setShowSmartImport] = useState(false);
+  const [importNotice, setImportNotice] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('tps1_favorite_products_v1');
@@ -416,7 +419,7 @@ export default function ProductsPage() {
   ) => {
     const qty = Math.max(0.1, Number(quantityToAdd) || 1);
     updateActiveTab((tab) => {
-      const existingIdx = tab.items.findIndex((item) => item.product.id === product.id);
+      const existingIdx = tab.items.findIndex((item) => item.product.id === product.id && !item.note?.trim());
       if (existingIdx >= 0) {
         const updated = [...tab.items];
         updated[existingIdx] = {
@@ -442,34 +445,63 @@ export default function ProductsPage() {
     }
   };
 
-  const handleUpdateQty = (productId: string, newQty: number) => {
+  const handleUpdateQty = (lineKey: string, newQty: number) => {
     const qty = Number(newQty);
     if (qty <= 0) {
-      handleRemoveItem(productId);
+      handleRemoveItem(lineKey);
       return;
     }
     updateActiveTab((tab) => ({
       ...tab,
       items: tab.items.map((item) =>
-        item.product.id === productId ? { ...item, quantity: qty } : item
+        (item.lineKey || item.product.id) === lineKey ? { ...item, quantity: qty } : item
       ),
     }));
   };
 
-  const handleUpdateItemNote = (productId: string, note: string) => {
+  const handleUpdateItemNote = (lineKey: string, note: string) => {
     updateActiveTab((tab) => ({
       ...tab,
       items: tab.items.map((item) =>
-        item.product.id === productId ? { ...item, note } : item
+        (item.lineKey || item.product.id) === lineKey ? { ...item, note } : item
       ),
     }));
   };
 
-  const handleRemoveItem = (productId: string) => {
-    updateActiveTab((tab) => ({
-      ...tab,
-      items: tab.items.filter((item) => item.product.id !== productId),
-    }));
+  const handleRemoveItem = (lineKey: string) => {
+    updateActiveTab((tab) => {
+      const items = tab.items.filter((item) => (item.lineKey || item.product.id) !== lineKey);
+      return { ...tab, items, sourceImportBatchId: items.some((item) => item.sourceImportLineId) ? tab.sourceImportBatchId : undefined };
+    });
+  };
+
+  const handleSmartImport = (sourceImportBatchId: string, imported: SmartImportItem[]) => {
+    updateActiveTab((tab) => {
+      const next = [...tab.items];
+      for (const item of imported) {
+        const note = item.note?.trim() || '';
+        const existing = next.findIndex((line) => line.product.id === item.productId && (line.note?.trim() || '') === note);
+        if (existing >= 0) {
+          next[existing] = { ...next[existing], quantity: next[existing].quantity + item.quantity, sourceImportLineId: next[existing].sourceImportLineId || item.importLineId };
+          continue;
+        }
+        next.push({
+          lineKey: `import-${item.importLineId}`,
+          sourceImportLineId: item.importLineId,
+          product: {
+            id: item.productId, sku: item.sku, name: item.name, category: item.category, unit: item.unit,
+            imageUrl: item.imageUrl, thumbUrl: item.imageUrl, price: item.price, priceOnRequest: item.price <= 0,
+            available: true, minOrderQty: item.minOrderQty, orderStep: item.orderStep,
+            enforceOrderStep: item.enforceOrderStep, packagingNote: item.packagingNote, quantityPrecision: item.quantityPrecision,
+          },
+          quantity: item.quantity,
+          note,
+        });
+      }
+      return { ...tab, items: next, sourceImportBatchId };
+    });
+    setImportNotice(`Đã thêm ${imported.length} dòng hợp lệ vào giỏ hàng.`);
+    window.setTimeout(() => setImportNotice(''), 5000);
   };
 
   // Nhận yêu cầu "Đặt lại" từ lịch sử đơn sau khi catalog đã sẵn sàng.
@@ -663,6 +695,7 @@ export default function ProductsPage() {
           name: it.product.name,
           quantity: it.quantity,
           note: it.note?.trim() || undefined,
+          sourceImportLineId: it.sourceImportLineId,
         })),
         deliveryName: activeTab.deliveryName.trim(),
         deliveryPhone: activeTab.deliveryPhone.trim(),
@@ -670,6 +703,7 @@ export default function ProductsPage() {
         deliveryDate: activeTab.deliveryDate,
         note: fullNote,
         idempotencyKey: activeTab.idempotencyKey,
+        sourceImportBatchId: activeTab.sourceImportBatchId,
       });
 
       const subtotal = activeTab.items.reduce(
@@ -681,7 +715,7 @@ export default function ProductsPage() {
       setIsDrawerOpen(false);
 
       // Reset giỏ của tab vừa gửi
-      updateActiveTab((t) => ({ ...t, items: [], note: '', idempotencyKey: crypto.randomUUID() }));
+      updateActiveTab((t) => ({ ...t, items: [], note: '', idempotencyKey: crypto.randomUUID(), sourceImportBatchId: undefined }));
     } catch (err) {
       setErrorMessage(
         err instanceof ApiError ? err.message : 'Không gửi được đơn hàng, vui lòng thử lại'
@@ -736,6 +770,10 @@ export default function ProductsPage() {
           onKeyDown={handleSearchKeyDown}
         />
 
+        <button type="button" onClick={() => setShowSmartImport(true)} className="shrink-0 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#17231d] text-white text-xs font-bold hover:bg-[#0f7a4f] transition-colors">
+          <ScanLine size={17}/> <span>Nhập đơn thông minh</span>
+        </button>
+
         <OrderTabsBar
           tabs={tabs}
           activeTabId={activeTab.id}
@@ -744,6 +782,8 @@ export default function ProductsPage() {
           onCloseTab={handleCloseTab}
         />
       </div>
+
+      {importNotice && <div className="rounded-xl bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 text-sm font-semibold">{importNotice}</div>}
 
       {/* 3. Khối đặt nhanh cho bếp (Đơn gần nhất, Thường mua, Yêu thích, Nhóm hàng) */}
       <QuickOrderSections
@@ -844,6 +884,7 @@ export default function ProductsPage() {
         order={successOrder}
         onClose={() => setSuccessOrder(null)}
       />
+      <SmartOrderImportModal open={showSmartImport} onClose={() => setShowSmartImport(false)} onConfirm={handleSmartImport}/>
     </div>
   );
 }
