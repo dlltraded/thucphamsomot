@@ -189,26 +189,30 @@ export async function applyOrderPricingSnapshot(
   orderId: string,
   pricing: Awaited<ReturnType<typeof resolveOrderPriceBook>>,
 ) {
-  const { error: orderError } = await supabase.from("orders").update({
-    price_book_id: pricing.primaryPriceBookId,
-    price_book_version: pricing.primaryPriceBookVersion,
-    price_resolution_status: pricing.priceResolutionStatus,
-    customer_price_source: pricing.customerPriceSource,
-  }).eq("id", orderId);
+  const [orderUpdateResult, orderItemsResult] = await Promise.all([
+    supabase.from("orders").update({
+      price_book_id: pricing.primaryPriceBookId,
+      price_book_version: pricing.primaryPriceBookVersion,
+      price_resolution_status: pricing.priceResolutionStatus,
+      customer_price_source: pricing.customerPriceSource,
+    }).eq("id", orderId),
+    supabase.from("order_items")
+      .select("id, product_id, quantity")
+      .eq("order_id", orderId),
+  ]);
+  const { error: orderError } = orderUpdateResult;
   if (orderError) throw orderError;
-
-  const { data: orderItems, error: findError } = await supabase.from("order_items")
-    .select("id, product_id, quantity")
-    .eq("order_id", orderId);
+  const { data: orderItems, error: findError } = orderItemsResult;
   if (findError) throw findError;
   const resolvedByProduct = new Map(pricing.resolved.map((row) => [row.productId, row]));
   let subtotal = 0;
+  const itemUpdates = [];
   for (const orderItem of orderItems || []) {
     const row = resolvedByProduct.get(orderItem.product_id);
     if (!row) throw new Error(`Không tìm thấy kết quả áp giá cho dòng hàng ${orderItem.product_id}`);
     const lineTotal = Math.round(Number(orderItem.quantity) * row.price);
     subtotal += lineTotal;
-    const { error: updateError } = await supabase.from("order_items").update({
+    itemUpdates.push(supabase.from("order_items").update({
       base_unit_price: row.price,
       unit_price: row.price,
       line_total: lineTotal,
@@ -221,8 +225,12 @@ export async function applyOrderPricingSnapshot(
       packaging_note: row.packagingNote,
       min_qty_snapshot: row.minQtySnapshot,
       order_step_snapshot: row.orderStepSnapshot,
-    }).eq("id", orderItem.id);
-    if (updateError) throw updateError;
+    }).eq("id", orderItem.id));
+  }
+  const itemUpdateResults = await Promise.all(itemUpdates);
+  const itemUpdateError = itemUpdateResults.find((result) => result.error)?.error;
+  if (itemUpdateError) {
+    throw itemUpdateError;
   }
 
   const { data: updated, error: readError } = await supabase.from("orders")
@@ -230,9 +238,11 @@ export async function applyOrderPricingSnapshot(
     .eq("id", orderId)
     .single();
   if (readError) throw readError;
+  const grandTotal = subtotal + Number(updated.shipping_amount || 0) - Number(updated.discount_amount || 0);
   const { error: totalError } = await supabase.from("orders").update({
     subtotal,
-    grand_total: subtotal + Number(updated.shipping_amount || 0) - Number(updated.discount_amount || 0),
+    grand_total: grandTotal,
   }).eq("id", orderId);
   if (totalError) throw totalError;
+  return { subtotal, grandTotal };
 }

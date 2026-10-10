@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, getOrderCutoffInfo, getVnDateParts } from "@/lib/order-cutoff";
@@ -365,23 +365,31 @@ export async function POST(req: NextRequest) {
     warnings.push("delivery_info_not_saved");
   }
 
+  let committedTotal = Number(order.grand_total || 0);
   try {
-    await applyOrderPricingSnapshot(supabaseAdmin, order.id, pricing);
+    const pricingSnapshot = await applyOrderPricingSnapshot(supabaseAdmin, order.id, pricing);
+    committedTotal = pricingSnapshot.grandTotal;
     if (sourceImportBatchId) {
       const { data: createdLines } = await supabaseAdmin.from("order_items")
         .select("id, product_id")
         .eq("order_id", order.id);
       const remainingInputs = [...items];
+      const sourceUpdates = [];
       for (const createdLine of createdLines || []) {
         const index = remainingInputs.findIndex((item) => item.productId === createdLine.product_id && item.sourceImportLineId);
         if (index < 0) continue;
         const sourceInput = remainingInputs.splice(index, 1)[0];
         const sourceLine = sourceLinesById.get(sourceInput.sourceImportLineId!);
-        await supabaseAdmin.from("order_items").update({
+        sourceUpdates.push(supabaseAdmin.from("order_items").update({
           source_import_line_id: sourceLine.id,
           source_input_unit: sourceLine.raw_unit || null,
           source_conversion_factor: sourceLine.conversion_factor ?? 1,
-        }).eq("id", createdLine.id);
+        }).eq("id", createdLine.id));
+      }
+      const sourceUpdateResults = await Promise.all(sourceUpdates);
+      const sourceUpdateError = sourceUpdateResults.find((result) => result.error)?.error;
+      if (sourceUpdateError) {
+        throw sourceUpdateError;
       }
     }
   } catch (pricingSnapshotError) {
@@ -390,69 +398,62 @@ export async function POST(req: NextRequest) {
   }
 
   // Cập nhật customer_note cho từng dòng order_items (≤200 ký tự)
-  for (const it of items) {
-    if (it.note) {
-      const { error: noteErr } = await supabaseAdmin
+  const noteResults = await Promise.all(items.filter((item) => item.note).map(async (item) => {
+      const { error } = await supabaseAdmin
         .from("order_items")
-        .update({ customer_note: it.note })
+        .update({ customer_note: item.note })
         .eq("order_id", order.id)
-        .eq("product_id", it.productId);
-
-      if (noteErr) {
-        console.error("Lỗi UPDATE order_items.customer_note:", noteErr);
-        if (!warnings.includes("item_notes_not_saved")) {
-          warnings.push("item_notes_not_saved");
-        }
-      }
+        .eq("product_id", item.productId);
+      return error;
+  }));
+  const noteError = noteResults.find(Boolean);
+  if (noteError) {
+    console.error("Lỗi UPDATE order_items.customer_note:", noteError);
+    if (!warnings.includes("item_notes_not_saved")) {
+      warnings.push("item_notes_not_saved");
     }
   }
-
-  const { data: customerOrders } = await supabaseAdmin.rpc("customer_list_orders", {
-    p_session_token: orderSessionToken,
-  });
-  const fullOrder = (customerOrders || []).find(
-    (candidate: { id?: string }) => candidate.id === order.id
-  );
 
   // Google Sheets chỉ là bản sao vận hành. Lỗi Sheets không làm mất đơn trung tâm.
   const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL?.trim();
   if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          vaiTro: "Người mua",
-          loaiForm: "dat_hang",
-          kenh: source === "zalo_mini_app" ? "Zalo Mini App" : "Website",
-          name: order.customer_name,
-          phone: order.customer_phone,
-          company: order.customer_company || "",
-          source: source === "zalo_mini_app" ? "Zalo Mini App" : "Website",
-          customerCode: order.customer_code,
-          customerTier: order.customer_tier,
-          discountPercent: order.discount_percent,
-          orderId: order.id,
-          orderCode: order.order_code,
-          deliveryDate,
-          isLate,
-          deliveryType,
-          deliveryAlias,
-          deliveryAddress,
-          deliveryName,
-          deliveryPhone,
-          message: `Mã đơn: ${order.order_code}\nNgày giao: ${deliveryDate} ${isLate ? "(TRỄ GIỜ CHỐT)" : ""}\nĐịa chỉ giao: ${deliveryAddress || "Nhận tại điểm"}\nNgười nhận: ${deliveryName} - ${deliveryPhone}\nGhi chú: ${note || "Không có"}\nTạm tính: ${order.grand_total}đ`,
-          selectedItems: items
-            .map((item) => `${item.name || item.productId} x${item.quantity}${item.note ? ` [${item.note}]` : ""}`)
-            .join(" | "),
-          selectedCount: items.length,
-          miniAppSource: source === "zalo_mini_app" ? "central_order" : "website_portal",
-          gioHang: JSON.stringify(fullOrder?.items || items),
-        }),
-      });
-    } catch (sheetError) {
-      console.error("Không đồng bộ được bản sao đơn sang Google Sheets:", sheetError);
-    }
+    after(async () => {
+      try {
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          signal: AbortSignal.timeout(5_000),
+          body: JSON.stringify({
+            vaiTro: "Người mua",
+            loaiForm: "dat_hang",
+            kenh: source === "zalo_mini_app" ? "Zalo Mini App" : "Website",
+            name: order.customer_name,
+            phone: order.customer_phone,
+            company: order.customer_company || "",
+            source: source === "zalo_mini_app" ? "Zalo Mini App" : "Website",
+            customerCode: order.customer_code,
+            orderId: order.id,
+            orderCode: order.order_code,
+            deliveryDate,
+            isLate,
+            deliveryType,
+            deliveryAlias,
+            deliveryAddress,
+            deliveryName,
+            deliveryPhone,
+            message: `Mã đơn: ${order.order_code}\nNgày giao: ${deliveryDate} ${isLate ? "(TRỄ GIỜ CHỐT)" : ""}\nĐịa chỉ giao: ${deliveryAddress || "Nhận tại điểm"}\nNgười nhận: ${deliveryName} - ${deliveryPhone}\nGhi chú: ${note || "Không có"}\nTạm tính: ${committedTotal}đ`,
+            selectedItems: items
+              .map((item) => `${item.name || item.productId} x${item.quantity}${item.note ? ` [${item.note}]` : ""}`)
+              .join(" | "),
+            selectedCount: items.length,
+            miniAppSource: source === "zalo_mini_app" ? "central_order" : "website_portal",
+            gioHang: JSON.stringify(items),
+          }),
+        });
+      } catch (sheetError) {
+        console.error("Không đồng bộ được bản sao đơn sang Google Sheets:", sheetError);
+      }
+    });
   }
 
   return json({
@@ -460,12 +461,12 @@ export async function POST(req: NextRequest) {
     orderId: order.id,
     orderCode: order.order_code,
     status: order.status,
-    pricingStatus: fullOrder?.pricing_status || "provisional",
-    total: Number(order.grand_total || 0),
+    pricingStatus: order.pricing_status || (pricing.priceResolutionStatus === "resolved" ? "resolved" : "provisional"),
+    total: committedTotal,
     deliveryDate,
     isLate,
     warnings: warnings.length ? warnings : undefined,
-    items: fullOrder?.items || [],
+    items,
     idempotencyKey,
   });
 }
