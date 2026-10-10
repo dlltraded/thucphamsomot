@@ -9,9 +9,12 @@ const products = [
   { ...base, id: 'muongsu', sku: 'cc-muongsu', name: 'Muỗng sứ' },
   { ...base, id: 'botsutu', sku: 'k-botsutu', name: 'Bột sư tử' },
   { ...base, id: 'ca-chua-don', sku: 'r-cachuadon', name: 'Cà chua dồn' },
+  { ...base, id: 'ca-phao', sku: 'r-caphaomc', name: 'Cà pháo muối chua' },
   { ...base, id: 'ca-chem', sku: 'qh-cachem', name: 'Cá chém' },
   { ...base, id: 'choi-lua', sku: 'cc-choilua', name: 'Chổi lúa cán nhựa' },
   { ...base, id: 'ca-rot', sku: 'r-carot', name: 'Cà rốt trắng củ' },
+  { ...base, id: 'ga14', sku: 'v-ga14', name: 'Gà 1/4 nóng' },
+  { ...base, id: 'nong', sku: 'h-nong', name: 'Nọng' },
   { ...base, id: 'hanhla', sku: 'r-hanhla', name: 'Hành lá (Kg)' },
   { ...base, id: 'hanhbaro', sku: 'r-hanhbaro', name: 'Hành baro' },
 ];
@@ -22,6 +25,8 @@ assert.equal(rankProductCandidates(products, 'Hành lá')[0]?.product.id, 'hanhl
 assert.deepEqual(rankProductCandidates(products, 'su su').map((entry) => entry.product.id), ['susu', 'susu2', 'dotsusu']);
 assert.ok(!rankProductCandidates(products, 'su su').some((entry) => ['muongsu', 'botsutu'].includes(entry.product.id)));
 assert.ok(rankProductCandidates(products, 'cà chua nhỏ').some((entry) => entry.product.id === 'ca-chua-don'));
-assert.ok(!rankProductCandidates(products, 'cà chua nhỏ').some((entry) => ['ca-chem', 'choi-lua'].includes(entry.product.id)));
+assert.ok(!rankProductCandidates(products, 'cà chua nhỏ').some((entry) => ['ca-chem', 'choi-lua', 'ca-phao'].includes(entry.product.id)));
 assert.deepEqual(rankProductCandidates(products, 'cà rốt').map((entry) => entry.product.id), ['ca-rot']);
+assert.equal(rankProductCandidates(products, 'gà 1/4 nóng')[0]?.product.id, 'ga14');
+assert.ok(!rankProductCandidates(products, 'gà 1/4 nóng').some((entry) => entry.product.id === 'nong'));
 console.log('Product matcher ranking: PASS');

@@ -4,7 +4,7 @@ import { reevaluateImportLine } from '@/lib/order-import/matcher';
 import { normalizeProductText } from '@/lib/order-import/product-match';
 
 export const runtime = 'nodejs';
-const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'PATCH, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: cors }); }
 export async function OPTIONS() { return new NextResponse(null, { status: 204, headers: cors }); }
 
@@ -48,4 +48,18 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     }
     return json({ ok: true, line: data });
   } catch (error: any) { return json({ ok: false, error: error?.message || 'Không cập nhật được dòng hàng' }, 400); }
+}
+
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string; lineId: string }> }) {
+  const { id, lineId } = await context.params;
+  const auth = await authorizeImportBatch(req, id);
+  if (!auth.ok) return json({ ok: false, error: auth.error }, auth.status);
+  if (auth.batch.status !== 'review') return json({ ok: false, error: 'Phiên nhập đơn không còn ở trạng thái chỉnh sửa' }, 409);
+  const { data, error } = await auth.supabase.from('order_import_lines')
+    .delete().eq('id', lineId).eq('batch_id', id).select('id').maybeSingle();
+  if (error) return json({ ok: false, error: 'Không bỏ được dòng hàng' }, 400);
+  if (!data) return json({ ok: false, error: 'Không tìm thấy dòng hàng' }, 404);
+  const { count } = await auth.supabase.from('order_import_lines').select('id', { count: 'exact', head: true }).eq('batch_id', id);
+  await auth.supabase.from('order_import_batches').update({ line_count: count || 0, updated_at: new Date().toISOString() }).eq('id', id);
+  return json({ ok: true, removedLineId: lineId });
 }

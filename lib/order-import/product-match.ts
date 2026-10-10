@@ -53,11 +53,17 @@ export function rankProductCandidates<T extends ProductSearchRow>(products: T[],
     const name = canonicalProductName(product);
     const nameCompact = compactProductText(name);
     const nameWords = name.split(' ').filter(Boolean);
-    const queryIsContained = nameCompact.includes(queryCompact);
-    const nameIsContained = queryCompact.includes(nameCompact);
+    const queryIsContained = queryWords.length === 1
+      ? nameWords.includes(queryWords[0])
+      : nameCompact.includes(queryCompact);
+    const nameIsContained = nameWords.length === 1
+      ? queryWords.length === 1 && queryWords.includes(nameWords[0])
+      : queryCompact.includes(nameCompact);
     const allQueryWordsMatch = includesEveryWord(nameWords, queryWords);
     const allNameWordsMatch = includesEveryWord(queryWords, nameWords);
     const sharedWords = queryWords.filter((word, index) => queryWords.indexOf(word) === index && nameWords.includes(word));
+    const sharesLeadingPhrase = queryWords.length >= 2
+      && nameWords.some((word, index) => word === queryWords[0] && nameWords[index + 1] === queryWords[1]);
 
     // Chỉ gợi ý khi tên thực sự cùng mặt hàng. Độ giống ký tự đơn thuần
     // không đủ vì "su su" rất dễ bị ghép nhầm với "muỗng sứ".
@@ -66,8 +72,8 @@ export function rankProductCandidates<T extends ProductSearchRow>(products: T[],
       || queryIsContained
       || nameIsContained
       || allQueryWordsMatch
-      || allNameWordsMatch
-      || (queryWords.length >= 3 && sharedWords.length >= 2 && sharedWords.length / queryWords.length >= 0.66);
+      || (allNameWordsMatch && (nameWords.length >= 2 || queryWords.length === 1))
+      || (queryWords.length >= 3 && sharesLeadingPhrase && sharedWords.length / queryWords.length >= 0.66);
     if (!isRelevant) return null;
 
     let score = 0;
@@ -79,7 +85,7 @@ export function rankProductCandidates<T extends ProductSearchRow>(products: T[],
     else if (queryIsContained) score = 0.89 - Math.min(0.12, Math.max(0, nameCompact.length - queryCompact.length) / 80);
     else if (nameIsContained) score = 0.84 - Math.min(0.12, Math.max(0, queryCompact.length - nameCompact.length) / 80);
     else if (allQueryWordsMatch) score = 0.86 - Math.min(0.12, Math.max(0, nameWords.length - queryWords.length) * 0.025);
-    else if (allNameWordsMatch) score = 0.80 - Math.min(0.12, Math.max(0, queryWords.length - nameWords.length) * 0.025);
+    else if (allNameWordsMatch && (nameWords.length >= 2 || queryWords.length === 1)) score = 0.80 - Math.min(0.12, Math.max(0, queryWords.length - nameWords.length) * 0.025);
     else score = 0.66 + Math.min(0.12, dice(trigrams(query), trigrams(name)) * 0.12);
 
     // Những từ này thường làm thay đổi hẳn mặt hàng. Nếu chứng từ không có

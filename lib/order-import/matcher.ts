@@ -10,13 +10,37 @@ type ProductRow = {
   packaging_note: string | null; quantity_precision: number | null;
 };
 
+const PRODUCT_CACHE_TTL_MS = 5 * 60_000;
+let activeProductCache: { expiresAt: number; rows: ProductRow[] } | null = null;
+let activeProductLoad: Promise<ProductRow[]> | null = null;
+
+async function loadAllActiveProducts(supabase: SupabaseAdmin) {
+  if (activeProductCache && activeProductCache.expiresAt > Date.now()) return activeProductCache.rows;
+  if (activeProductLoad) return activeProductLoad;
+  activeProductLoad = (async () => {
+    const fields = 'id, sku, name, unit, active, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision';
+    const pageSize = 1000;
+    const first = await supabase.from('products').select(fields, { count: 'exact' })
+      .eq('active', true).order('id', { ascending: true }).range(0, pageSize - 1);
+    if (first.error) throw first.error;
+    const total = first.count || first.data?.length || 0;
+    const remaining = await Promise.all(Array.from({ length: Math.max(0, Math.ceil(total / pageSize) - 1) }, (_, index) => {
+      const page = index + 1;
+      return supabase.from('products').select(fields).eq('active', true)
+        .order('id', { ascending: true }).range(page * pageSize, (page + 1) * pageSize - 1);
+    }));
+    for (const page of remaining) if (page.error) throw page.error;
+    const rows = [...(first.data || []), ...remaining.flatMap((page) => page.data || [])] as ProductRow[];
+    activeProductCache = { expiresAt: Date.now() + PRODUCT_CACHE_TTL_MS, rows };
+    return rows;
+  })();
+  try { return await activeProductLoad; } finally { activeProductLoad = null; }
+}
+
 export async function matchExtractedLines(supabase: SupabaseAdmin, customerId: string, lines: ExtractedOrderLine[]) {
-  const { data: products, error } = await supabase
-    .from('products')
-    .select('id, sku, name, unit, active, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision')
-    .eq('active', true);
-  if (error) throw error;
-  const productRows = (products || []) as ProductRow[];
+  // PostgREST đang giới hạn 1.000 dòng/truy vấn trong khi TPS1 có hơn 5.000
+  // mã đang hoạt động. Tải đủ theo trang và cache ngắn hạn để vừa đúng vừa nhanh.
+  const productRows = await loadAllActiveProducts(supabase);
   const [{ data: aliases, error: aliasError }, { data: conversions, error: conversionError }] = await Promise.all([
     supabase.from('product_aliases').select('product_id, customer_id, alias_normalized').or(`customer_id.is.null,customer_id.eq.${customerId}`),
     supabase.from('product_unit_conversions').select('product_id, input_unit, input_unit_normalized, factor_to_order_unit').eq('is_active', true),
