@@ -25,6 +25,8 @@ type CatalogProduct = {
   min_order_qty?: number | null;
   order_step?: number | null;
   enforce_order_step?: boolean | null;
+  quantity_precision?: number | null;
+  quantity_adjustment_mode?: string | null;
 };
 let baseCatalogCache: { expiresAt: number; products: CatalogProduct[] } | null = null;
 const pricedCatalogCache = new Map<string, { expiresAt: number; products: unknown[] }>();
@@ -36,7 +38,7 @@ export function invalidateAdminCatalogCache() {
 
 async function loadBaseCatalog(supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
   if (baseCatalogCache && baseCatalogCache.expiresAt > Date.now()) return baseCatalogCache.products;
-  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock, packaging_note, min_order_qty, order_step, enforce_order_step";
+  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
   const pageSize = 1000;
   const first = await supabase.from("products").select(fields, { count: "exact" }).eq("active", true).order("name").range(0, pageSize - 1);
   if (first.error) throw first.error;
@@ -86,6 +88,8 @@ const EDITABLE_FIELDS = [
   "min_order_qty",
   "order_step",
   "enforce_order_step",
+  "quantity_precision",
+  "quantity_adjustment_mode",
 ] as const;
 
 function slugifySku(name: string) {
@@ -141,6 +145,8 @@ export async function GET(req: NextRequest) {
           p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
           p.order_step == null ? 1 : Number(p.order_step) || 1,
           Boolean(p.enforce_order_step),
+          p.quantity_precision == null ? 3 : Number(p.quantity_precision),
+          p.quantity_adjustment_mode || "reject",
         ];
       });
       pricedCatalogCache.set(cacheKey, { products: compact, expiresAt: Date.now() + CATALOG_CACHE_TTL_MS });
@@ -237,7 +243,7 @@ export async function GET(req: NextRequest) {
           if (productIds.length > 0) {
             const { data: specRows, error: specErr } = await supabase
               .from("products")
-              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step")
+              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
               .in("id", productIds);
             if (specErr) {
               console.error("Lỗi truy vấn bổ sung quy cách sản phẩm:", specErr);
@@ -272,6 +278,8 @@ export async function GET(req: NextRequest) {
                 min_order_qty: spec?.min_order_qty == null ? 1 : Number(spec.min_order_qty) || 1,
                 order_step: spec?.order_step == null ? 1 : Number(spec.order_step) || 1,
                 enforce_order_step: Boolean(spec?.enforce_order_step),
+                quantity_precision: spec?.quantity_precision == null ? 3 : Number(spec.quantity_precision),
+                quantity_adjustment_mode: spec?.quantity_adjustment_mode || "reject",
               };
             });
           }
@@ -285,7 +293,7 @@ export async function GET(req: NextRequest) {
       let query = supabase
         .from("products")
         .select(
-          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active, packaging_note, min_order_qty, order_step, enforce_order_step",
+          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode",
           { count: "exact" }
         )
         .order("name")
@@ -376,6 +384,8 @@ export async function GET(req: NextRequest) {
           min_order_qty: p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
           order_step: p.order_step == null ? 1 : Number(p.order_step) || 1,
           enforce_order_step: Boolean(p.enforce_order_step),
+          quantity_precision: p.quantity_precision == null ? 3 : Number(p.quantity_precision),
+          quantity_adjustment_mode: p.quantity_adjustment_mode || "reject",
         };
       }),
       canEdit: canForProfile(auth.profile, "products.edit"),
@@ -387,6 +397,13 @@ export async function GET(req: NextRequest) {
 }
 
 function validateSpecFields(fields: Record<string, unknown>): string | null {
+  if (fields.quantity_precision !== undefined && fields.quantity_precision !== null) {
+    const precision = Number(fields.quantity_precision);
+    if (!Number.isInteger(precision) || precision < 0 || precision > 6) return "Số chữ số thập phân phải là số nguyên từ 0 đến 6";
+  }
+  if (fields.quantity_adjustment_mode !== undefined && !["reject", "ceil_to_step"].includes(String(fields.quantity_adjustment_mode))) {
+    return "Cách xử lý sai quy cách không hợp lệ";
+  }
   if (fields.packaging_note !== undefined && fields.packaging_note !== null) {
     if (typeof fields.packaging_note !== "string") return "Quy cách đóng gói phải là chuỗi ký tự";
     if (fields.packaging_note.trim().length > 120) return "Quy cách đóng gói tối đa 120 ký tự";

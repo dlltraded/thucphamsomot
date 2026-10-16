@@ -9,6 +9,7 @@ import {
   getVnDateParts,
 } from "@/lib/order-cutoff";
 import { applyOrderPricingSnapshot, resolveOrderPriceBook } from "@/lib/order-price-book";
+import { normalizeOrderQuantity } from "@/lib/order-quantity";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -176,6 +177,8 @@ export async function POST(req: NextRequest) {
       name: String(i.name || "Sản phẩm").trim(),
       unit: String(i.unit || "Kg").trim(),
       quantity: validQty,
+      requestedQuantity: Number(i.requestedQuantity ?? qty),
+      adjustmentAcknowledged: Boolean(i.adjustmentAcknowledged),
       note: i.note ? String(i.note).trim() : null,
       sourceImportLineId: typeof i.sourceImportLineId === "string" ? i.sourceImportLineId.trim() || null : null,
     };
@@ -187,6 +190,27 @@ export async function POST(req: NextRequest) {
 
   if (rawItems.some((item: any) => !item.productId)) {
     return json({ ok: false, error: "Mọi dòng hàng phải có mã sản phẩm hợp lệ trước khi tạo đơn" }, 400);
+  }
+
+  const productIds = [...new Set(rawItems.map((item: any) => item.productId))] as string[];
+  const { data: quantityProducts, error: quantityProductError } = await supabase.from("products")
+    .select("id, unit, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode, packaging_note")
+    .in("id", productIds);
+  if (quantityProductError) return json({ ok: false, error: "Không kiểm tra được quy cách sản phẩm" }, 500);
+  const quantityProductMap = new Map((quantityProducts || []).map((product: any) => [product.id, product]));
+  const quantityAdjustments: any[] = [];
+  for (const item of rawItems as any[]) {
+    const product: any = quantityProductMap.get(item.productId);
+    if (!product) return json({ ok: false, error: `Không tìm thấy sản phẩm ${item.name} trong danh mục` }, 400);
+    const result = normalizeOrderQuantity(product, item.requestedQuantity, item.unit);
+    if (!result.ok) return json({ ok: false, code: "INVALID_ORDER_QUANTITY", error: `${item.name}: ${result.message}`, suggestedQuantities: result.suggestedQuantities }, 422);
+    const normalizedQuantity = Number(result.normalizedQuantity ?? result.quantity);
+    if (!Number.isFinite(normalizedQuantity) || normalizedQuantity <= 0) return json({ ok: false, code: "INVALID_ORDER_QUANTITY", error: `${item.name}: không xác định được số lượng hợp lệ` }, 422);
+    if (Math.abs(item.quantity - normalizedQuantity) > 1e-7) return json({ ok: false, code: "QUANTITY_MISMATCH", error: `${item.name}: số lượng gửi lên không khớp kết quả kiểm tra của hệ thống` }, 422);
+    if (result.adjusted && !item.adjustmentAcknowledged) return json({ ok: false, code: "QUANTITY_ADJUSTMENT_REQUIRED", error: result.message, requestedQuantity: result.requestedQuantity, normalizedQuantity: result.normalizedQuantity }, 422);
+    item.quantity = normalizedQuantity;
+    item.quantityAdjustment = result;
+    if (result.adjusted) quantityAdjustments.push({ productId: item.productId, name: item.name, ...result });
   }
 
   const sourceImportBatchId = typeof reqSourceImportBatchId === "string" && reqSourceImportBatchId.trim()
@@ -423,6 +447,20 @@ export async function POST(req: NextRequest) {
       warnings.push("delivery_fields_update_warning");
     }
     await applyOrderPricingSnapshot(supabase, orderId, pricing);
+    const { data: quantityLines } = await supabase.from("order_items").select("id, product_id").eq("order_id", orderId);
+    const remainingQuantityInputs = [...rawItems];
+    for (const createdLine of quantityLines || []) {
+      const index = remainingQuantityInputs.findIndex((item: any) => item.productId === createdLine.product_id);
+      if (index < 0) continue;
+      const sourceInput: any = remainingQuantityInputs.splice(index, 1)[0];
+      const product: any = quantityProductMap.get(sourceInput.productId);
+      await supabase.from("order_items").update({
+        requested_quantity: sourceInput.requestedQuantity,
+        quantity_precision_snapshot: Number(product?.quantity_precision) || 0,
+        quantity_adjustment_mode_snapshot: product?.quantity_adjustment_mode || "reject",
+        quantity_adjustment_note: sourceInput.quantityAdjustment?.adjusted ? sourceInput.quantityAdjustment.message : null,
+      }).eq("id", createdLine.id);
+    }
     if (sourceImportBatchId) {
       const { data: createdLines } = await supabase.from("order_items")
         .select("id, product_id")
@@ -490,6 +528,7 @@ export async function POST(req: NextRequest) {
     deliveryDate,
     isLate: isLateOrder,
     externalRef,
+    quantityAdjustments,
     warnings: warnings.length ? warnings : undefined,
   });
 }

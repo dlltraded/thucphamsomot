@@ -3,6 +3,7 @@ import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { fetchOrderCutoffConfig, getOrderCutoffInfo, getVnDateParts } from "@/lib/order-cutoff";
 import { applyOrderPricingSnapshot, resolveOrderPriceBook } from "@/lib/order-price-book";
+import { normalizeOrderQuantity } from "@/lib/order-quantity";
 
 interface OrderItemInput {
   id?: string;
@@ -11,6 +12,8 @@ interface OrderItemInput {
   title?: string;
   name?: string;
   quantity: number;
+  requestedQuantity?: number;
+  adjustmentAcknowledged?: boolean;
   note?: string;
   sourceImportLineId?: string;
 }
@@ -169,6 +172,8 @@ export async function POST(req: NextRequest) {
         .map((item) => ({
           productId: String(item.productId || item.id || item.slug || "").trim(),
           quantity: Number(item.quantity) || 0,
+          requestedQuantity: Number(item.requestedQuantity ?? item.quantity) || 0,
+          adjustmentAcknowledged: Boolean(item.adjustmentAcknowledged),
           name: String(item.name || item.title || "").trim(),
           note: typeof item.note === "string" ? item.note.trim().slice(0, 200) : "",
           sourceImportLineId: typeof item.sourceImportLineId === "string" ? item.sourceImportLineId.trim() || undefined : undefined,
@@ -178,6 +183,68 @@ export async function POST(req: NextRequest) {
 
   if (items.length === 0) {
     return json({ ok: false, error: "Giỏ hàng đang trống" }, 400);
+  }
+
+  // Chuẩn hóa số lượng trên server. Client chỉ hiển thị/ghi nhận xác nhận;
+  // không được tự quyết định số lượng cuối cùng.
+  const uniqueProductIds = [...new Set(items.map((item) => item.productId))];
+  const { data: quantityProducts, error: quantityProductsError } = await supabaseAdmin
+    .from("products")
+    .select("id, name, unit, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
+    .in("id", uniqueProductIds)
+    .eq("active", true);
+  if (quantityProductsError) {
+    return json({ ok: false, error: "Không kiểm tra được quy cách sản phẩm" }, 500);
+  }
+  const quantityProductMap = new Map((quantityProducts || []).map((product: any) => [product.id, product]));
+  const quantityAdjustments: Array<{ productId: string; productName: string; requestedQuantity: number; normalizedQuantity: number; message: string }> = [];
+  for (const item of items) {
+    const product: any = quantityProductMap.get(item.productId);
+    if (!product) {
+      return json({ ok: false, error: `Không tìm thấy sản phẩm ${item.productId} trong danh mục` }, 400);
+    }
+    const result = normalizeOrderQuantity(product, item.requestedQuantity, product.unit);
+    if (!result.ok || result.quantity == null) {
+      return json({
+        ok: false,
+        code: "INVALID_ORDER_QUANTITY",
+        productId: item.productId,
+        error: `${product.name}: ${result.message || "Số lượng không hợp lệ"}`,
+        suggestedQuantities: result.suggestedQuantities || [],
+      }, 422);
+    }
+    const normalizedQuantity = Number(result.quantity);
+    if (Math.abs(item.quantity - normalizedQuantity) > 1e-7) {
+      return json({
+        ok: false,
+        code: "QUANTITY_MISMATCH",
+        productId: item.productId,
+        error: `${product.name}: số lượng gửi lên không khớp quy cách`,
+        requestedQuantity: item.requestedQuantity,
+        normalizedQuantity,
+        message: result.message,
+      }, 422);
+    }
+    if (result.adjusted && !item.adjustmentAcknowledged) {
+      return json({
+        ok: false,
+        code: "QUANTITY_ADJUSTMENT_REQUIRED",
+        productId: item.productId,
+        error: result.message || `${product.name}: vui lòng xác nhận số lượng đã điều chỉnh`,
+        requestedQuantity: item.requestedQuantity,
+        normalizedQuantity,
+      }, 422);
+    }
+    item.quantity = normalizedQuantity;
+    if (result.adjusted) {
+      quantityAdjustments.push({
+        productId: item.productId,
+        productName: product.name || item.name,
+        requestedQuantity: item.requestedQuantity,
+        normalizedQuantity,
+        message: result.message || "Số lượng đã được điều chỉnh theo quy cách",
+      });
+    }
   }
 
   const sourceImportBatchId = String(body.sourceImportBatchId || "").trim() || null;
@@ -296,7 +363,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabaseAdmin.rpc("customer_create_order", {
     p_session_token: orderSessionToken,
     p_source: source,
-    p_items: items.map(({ note: _n, sourceImportLineId: _source, ...it }) => it),
+    p_items: items.map(({ note: _n, sourceImportLineId: _source, requestedQuantity: _requested, adjustmentAcknowledged: _ack, ...it }) => it),
     p_delivery_type: deliveryType,
     p_delivery_alias: deliveryAlias,
     p_delivery_address: deliveryAddress,
@@ -369,49 +436,38 @@ export async function POST(req: NextRequest) {
   try {
     const pricingSnapshot = await applyOrderPricingSnapshot(supabaseAdmin, order.id, pricing);
     committedTotal = pricingSnapshot.grandTotal;
-    if (sourceImportBatchId) {
-      const { data: createdLines } = await supabaseAdmin.from("order_items")
-        .select("id, product_id")
-        .eq("order_id", order.id);
-      const remainingInputs = [...items];
-      const sourceUpdates = [];
-      for (const createdLine of createdLines || []) {
-        const index = remainingInputs.findIndex((item) => item.productId === createdLine.product_id && item.sourceImportLineId);
-        if (index < 0) continue;
-        const sourceInput = remainingInputs.splice(index, 1)[0];
-        const sourceLine = sourceLinesById.get(sourceInput.sourceImportLineId!);
-        sourceUpdates.push(supabaseAdmin.from("order_items").update({
-          source_import_line_id: sourceLine.id,
-          source_input_unit: sourceLine.raw_unit || null,
-          source_conversion_factor: sourceLine.conversion_factor ?? 1,
-        }).eq("id", createdLine.id));
-      }
-      const sourceUpdateResults = await Promise.all(sourceUpdates);
-      const sourceUpdateError = sourceUpdateResults.find((result) => result.error)?.error;
-      if (sourceUpdateError) {
-        throw sourceUpdateError;
-      }
+    const { data: createdLines, error: createdLinesError } = await supabaseAdmin.from("order_items")
+      .select("id, product_id, quantity")
+      .eq("order_id", order.id)
+      .order("created_at", { ascending: true });
+    if (createdLinesError) throw createdLinesError;
+    const remainingInputs = [...items];
+    const snapshotUpdates = [];
+    for (const createdLine of createdLines || []) {
+      let index = remainingInputs.findIndex((item) => item.productId === createdLine.product_id && Math.abs(item.quantity - Number(createdLine.quantity)) < 1e-7);
+      if (index < 0) index = remainingInputs.findIndex((item) => item.productId === createdLine.product_id);
+      if (index < 0) continue;
+      const sourceInput = remainingInputs.splice(index, 1)[0];
+      const product: any = quantityProductMap.get(sourceInput.productId);
+      const sourceLine = sourceInput.sourceImportLineId ? sourceLinesById.get(sourceInput.sourceImportLineId) : null;
+      const adjustment = quantityAdjustments.find((entry) => entry.productId === sourceInput.productId && entry.requestedQuantity === sourceInput.requestedQuantity);
+      snapshotUpdates.push(supabaseAdmin.from("order_items").update({
+        requested_quantity: sourceInput.requestedQuantity,
+        quantity_precision_snapshot: Math.max(0, Number(product?.quantity_precision) || 0),
+        quantity_adjustment_mode_snapshot: product?.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
+        quantity_adjustment_note: adjustment?.message || null,
+        customer_note: sourceInput.note || null,
+        source_import_line_id: sourceLine?.id || null,
+        source_input_unit: sourceLine?.raw_unit || null,
+        source_conversion_factor: sourceLine?.conversion_factor ?? null,
+      }).eq("id", createdLine.id));
     }
+    const snapshotResults = await Promise.all(snapshotUpdates);
+    const snapshotError = snapshotResults.find((result) => result.error)?.error;
+    if (snapshotError) throw snapshotError;
   } catch (pricingSnapshotError) {
     console.error("Lỗi lưu snapshot bảng giá sau customer_create_order:", pricingSnapshotError);
     warnings.push("pricing_snapshot_not_saved");
-  }
-
-  // Cập nhật customer_note cho từng dòng order_items (≤200 ký tự)
-  const noteResults = await Promise.all(items.filter((item) => item.note).map(async (item) => {
-      const { error } = await supabaseAdmin
-        .from("order_items")
-        .update({ customer_note: item.note })
-        .eq("order_id", order.id)
-        .eq("product_id", item.productId);
-      return error;
-  }));
-  const noteError = noteResults.find(Boolean);
-  if (noteError) {
-    console.error("Lỗi UPDATE order_items.customer_note:", noteError);
-    if (!warnings.includes("item_notes_not_saved")) {
-      warnings.push("item_notes_not_saved");
-    }
   }
 
   // Google Sheets chỉ là bản sao vận hành. Lỗi Sheets không làm mất đơn trung tâm.
@@ -466,6 +522,7 @@ export async function POST(req: NextRequest) {
     deliveryDate,
     isLate,
     warnings: warnings.length ? warnings : undefined,
+    quantityAdjustments: quantityAdjustments.length ? quantityAdjustments : undefined,
     items,
     idempotencyKey,
   });

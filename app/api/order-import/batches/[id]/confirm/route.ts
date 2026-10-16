@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 
   const productIds = [...new Set(refreshed.map((line) => line.selected_product_id))];
   const { data: products, error: productError } = await auth.supabase.from('products')
-    .select('id, sku, name, category, unit, image_url, thumb_url, active, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision')
+    .select('id, sku, name, category, unit, image_url, thumb_url, active, min_order_qty, order_step, enforce_order_step, packaging_note, quantity_precision, quantity_adjustment_mode')
     .in('id', productIds).eq('active', true);
   if (productError) return json({ ok: false, error: 'Không tải được sản phẩm đã chọn' }, 500);
   const productMap = new Map((products || []).map((product: any) => [product.id, product]));
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       conversionFactor: line.conversion_factor, note: line.raw_note || '', price: Number(line.resolved_price), priceSource: line.price_source,
       minOrderQty: product.min_order_qty, orderStep: product.order_step, enforceOrderStep: product.enforce_order_step,
       packagingNote: product.packaging_note, quantityPrecision: product.quantity_precision,
+      quantityAdjustmentMode: product.quantity_adjustment_mode,
     };
   });
 

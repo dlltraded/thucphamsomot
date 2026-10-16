@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
+import { normalizeOrderQuantity } from "@/lib/order-quantity";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -81,9 +82,12 @@ interface MatchResult {
   input: string;
   quantity: number;
   note: string;
+  requestedQuantity?: number;
+  adjustmentAcknowledged?: boolean;
+  adjustmentMessage?: string;
   status: "matched" | "ambiguous" | "not_found" | "invalid_quantity";
-  product?: { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest: boolean };
-  suggestions?: { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest: boolean; score: number }[];
+  product?: { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest: boolean; minOrderQty: number; orderStep: number; enforceOrderStep: boolean; quantityPrecision: number; quantityAdjustmentMode: string };
+  suggestions?: { id: string; sku: string; name: string; unit: string; price: number; priceOnRequest: boolean; minOrderQty: number; orderStep: number; enforceOrderStep: boolean; quantityPrecision: number; quantityAdjustmentMode: string; score: number }[];
 }
 
 export async function POST(req: NextRequest) {
@@ -106,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, sku, name, unit, price_retail, price_wholesale")
+      .select("id, sku, name, unit, price_retail, price_wholesale, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
       .eq("active", true);
     if (error) throw error;
 
@@ -164,9 +168,12 @@ export async function POST(req: NextRequest) {
       const skuMatch = bySkuLower.get(input.toLowerCase());
       if (skuMatch) {
         const price = priceFor(skuMatch);
+        const quantityResult = normalizeOrderQuantity(skuMatch, quantity, skuMatch.unit);
+        if (!quantityResult.ok) { results.push({ row: rowNum, input, quantity, note, requestedQuantity: quantity, status: "invalid_quantity" }); continue; }
         results.push({
-          row: rowNum, input, quantity, note, status: "matched",
-          product: { id: skuMatch.id, sku: skuMatch.sku, name: skuMatch.name, unit: skuMatch.unit || "Kg", price, priceOnRequest: price <= 0 },
+          row: rowNum, input, quantity: Number(quantityResult.quantity), note, requestedQuantity: quantity,
+          adjustmentAcknowledged: true, adjustmentMessage: quantityResult.adjusted ? quantityResult.message : undefined, status: "matched",
+          product: { id: skuMatch.id, sku: skuMatch.sku, name: skuMatch.name, unit: skuMatch.unit || "Kg", price, priceOnRequest: price <= 0, minOrderQty: Number(skuMatch.min_order_qty) || 1, orderStep: Number(skuMatch.order_step) || 1, enforceOrderStep: Boolean(skuMatch.enforce_order_step), quantityPrecision: Number(skuMatch.quantity_precision ?? 3), quantityAdjustmentMode: skuMatch.quantity_adjustment_mode || "reject" },
         });
         continue;
       }
@@ -174,9 +181,12 @@ export async function POST(req: NextRequest) {
       const nameMatch = byNormalizedName.get(normalize(input));
       if (nameMatch) {
         const price = priceFor(nameMatch);
+        const quantityResult = normalizeOrderQuantity(nameMatch, quantity, nameMatch.unit);
+        if (!quantityResult.ok) { results.push({ row: rowNum, input, quantity, note, requestedQuantity: quantity, status: "invalid_quantity" }); continue; }
         results.push({
-          row: rowNum, input, quantity, note, status: "matched",
-          product: { id: nameMatch.id, sku: nameMatch.sku, name: nameMatch.name, unit: nameMatch.unit || "Kg", price, priceOnRequest: price <= 0 },
+          row: rowNum, input, quantity: Number(quantityResult.quantity), note, requestedQuantity: quantity,
+          adjustmentAcknowledged: true, adjustmentMessage: quantityResult.adjusted ? quantityResult.message : undefined, status: "matched",
+          product: { id: nameMatch.id, sku: nameMatch.sku, name: nameMatch.name, unit: nameMatch.unit || "Kg", price, priceOnRequest: price <= 0, minOrderQty: Number(nameMatch.min_order_qty) || 1, orderStep: Number(nameMatch.order_step) || 1, enforceOrderStep: Boolean(nameMatch.enforce_order_step), quantityPrecision: Number(nameMatch.quantity_precision ?? 3), quantityAdjustmentMode: nameMatch.quantity_adjustment_mode || "reject" },
         });
         continue;
       }
@@ -191,7 +201,7 @@ export async function POST(req: NextRequest) {
       if (scored.length > 0) {
         const suggestions = scored.map(({ p, score }) => {
           const price = priceFor(p);
-          return { id: p.id, sku: p.sku, name: p.name, unit: p.unit || "Kg", price, priceOnRequest: price <= 0, score: Math.round(score * 100) / 100 };
+          return { id: p.id, sku: p.sku, name: p.name, unit: p.unit || "Kg", price, priceOnRequest: price <= 0, minOrderQty: Number(p.min_order_qty) || 1, orderStep: Number(p.order_step) || 1, enforceOrderStep: Boolean(p.enforce_order_step), quantityPrecision: Number(p.quantity_precision ?? 3), quantityAdjustmentMode: p.quantity_adjustment_mode || "reject", score: Math.round(score * 100) / 100 };
         });
         results.push({ row: rowNum, input, quantity, note, status: "ambiguous", suggestions });
       } else {

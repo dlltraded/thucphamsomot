@@ -102,7 +102,7 @@ async function loadProductCatalog(
     ? baseProductCatalogCache.products
     : null;
   if (!products) {
-    const selectFields = "id, sku, name, category, unit, thumb_url, price_retail, price_wholesale, packaging_note, min_order_qty, order_step, enforce_order_step";
+    const selectFields = "id, sku, name, category, unit, thumb_url, price_retail, price_wholesale, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
     const pageSize = 1000;
     const first = await supabase
       .from("products")
@@ -156,7 +156,7 @@ async function loadProductCatalog(
     : "";
 
   // Mảng tuple giảm kích thước JSON khoảng 4 lần so với lặp lại tên field 5.000 lần.
-  // [id, sku, name, category, unit, price, priceOnRequest, hasImage, packagingNote, minOrderQty, orderStep, enforceOrderStep]
+  // [id, sku, name, category, unit, price, priceOnRequest, hasImage, packagingNote, minOrderQty, orderStep, enforceOrderStep, quantityPrecision, quantityAdjustmentMode]
   const items = products.map((product) => {
     const priceInfo = priceMap.get(product.id);
     const price = customerContext
@@ -175,6 +175,8 @@ async function loadProductCatalog(
       product.min_order_qty == null ? 1 : Number(product.min_order_qty) || 1,
       product.order_step == null ? 1 : Number(product.order_step) || 1,
       Boolean(product.enforce_order_step),
+      product.quantity_precision == null ? 0 : Math.max(0, Number(product.quantity_precision) || 0),
+      product.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
     ];
   });
   const body = { ok: true, count: items.length, imageBaseUrl, items };
@@ -295,7 +297,7 @@ export async function GET(req: NextRequest) {
           if (productIds.length > 0) {
             const { data: specRows, error: specErr } = await supabase
               .from("products")
-              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step")
+              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
               .in("id", productIds);
             if (specErr) {
               console.error("Lỗi truy vấn bổ sung quy cách sản phẩm khách hàng:", specErr);
@@ -328,6 +330,8 @@ export async function GET(req: NextRequest) {
                 min_order_qty: spec?.min_order_qty == null ? 1 : Number(spec.min_order_qty) || 1,
                 order_step: spec?.order_step == null ? 1 : Number(spec.order_step) || 1,
                 enforce_order_step: Boolean(spec?.enforce_order_step),
+                quantity_precision: spec?.quantity_precision == null ? 0 : Number(spec.quantity_precision) || 0,
+                quantity_adjustment_mode: spec?.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
               };
             });
           }
@@ -340,7 +344,7 @@ export async function GET(req: NextRequest) {
     if (!usedRpc) {
       let query = supabase
         .from("products")
-        .select("id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, packaging_note, min_order_qty, order_step, enforce_order_step", { count: "exact" })
+        .select("id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode", { count: "exact" })
         .eq("active", true)
         .order("name")
         .range(page * pageSize, page * pageSize + pageSize - 1);
@@ -390,6 +394,8 @@ export async function GET(req: NextRequest) {
         minOrderQty: p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
         orderStep: p.order_step == null ? 1 : Number(p.order_step) || 1,
         enforceOrderStep: Boolean(p.enforce_order_step),
+        quantityPrecision: p.quantity_precision == null ? 0 : Math.max(0, Number(p.quantity_precision) || 0),
+        quantityAdjustmentMode: p.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
       };
     });
 

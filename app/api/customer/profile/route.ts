@@ -7,21 +7,15 @@ import {
   parseSessionCookieValue,
   type CustomerSession,
 } from "@/lib/customer-session";
+import { resolveCustomerApiAuth } from "@/lib/customer-api-auth";
 
-const optionalText = (max: number) => z.string().trim().max(max).optional().default("");
 const profileSchema = z.object({
   customerId: z.string().uuid().optional(),
   orderSessionToken: z.string().uuid().optional(),
   name: z.string().trim().min(2, "Tên liên hệ phải có ít nhất 2 ký tự").max(120),
   phone: z.string().trim().min(8, "Số điện thoại chưa hợp lệ").max(20),
-  company: optionalText(180),
   email: z.union([z.literal(""), z.string().trim().email("Email chưa đúng định dạng").max(180)]).optional().default(""),
-  taxCode: optionalText(30),
-  address: optionalText(500),
-  shippingAlias: optionalText(80),
-  shippingAddress: optionalText(500),
-  shippingName: optionalText(120),
-  shippingPhone: optionalText(20),
+  address: z.string().trim().max(500).optional().default(""),
 });
 
 const corsHeaders = {
@@ -42,17 +36,14 @@ export async function PATCH(req: NextRequest) {
   }
 
   const values = parsed.data;
-  const customerId = websiteSession?.id || values.customerId;
-  const orderSessionToken = websiteSession?.orderSessionToken || values.orderSessionToken;
+  const auth = await resolveCustomerApiAuth(req);
+  const customerId = auth?.customerId || websiteSession?.id || values.customerId;
+  const orderSessionToken = auth?.token || websiteSession?.orderSessionToken || values.orderSessionToken;
   if (!customerId || !orderSessionToken) {
     return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
   }
-  if (values.shippingAddress && (!values.shippingName || values.shippingPhone.length < 8)) {
-    return json({ ok: false, error: "Vui lòng nhập đủ người nhận và số điện thoại giao hàng" }, 400);
-  }
-
   try {
-    const supabase = getCustomerSupabaseAdmin();
+    const supabase = auth?.supabase || getCustomerSupabaseAdmin();
     const now = new Date().toISOString();
     const { data: validSession, error: sessionError } = await supabase
       .from("customer_sessions")
@@ -66,20 +57,13 @@ export async function PATCH(req: NextRequest) {
       return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
     }
 
-    const shippingAddress = values.shippingAddress || values.address;
     const { data: customer, error: updateError } = await supabase
       .from("vip_accounts")
       .update({
         name: values.name,
         phone: values.phone,
-        company: values.company || null,
         email: values.email || null,
-        tax_code: values.taxCode || null,
         address: values.address || null,
-        default_shipping_alias: values.shippingAlias || "Địa chỉ mặc định",
-        default_shipping_address: shippingAddress || null,
-        default_shipping_name: values.shippingName || values.name,
-        default_shipping_phone: values.shippingPhone || values.phone,
         updated_at: now,
       })
       .eq("id", customerId)

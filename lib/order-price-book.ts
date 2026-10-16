@@ -1,5 +1,7 @@
 type SupabaseAdmin = any;
 
+import { validateOrderQuantity } from "@/lib/order-quantity";
+
 export type OrderPricingInput = {
   productId: string;
   quantity: number;
@@ -17,6 +19,8 @@ export type ResolvedOrderPrice = {
   packagingNote: string | null;
   minQtySnapshot: number;
   orderStepSnapshot: number;
+  quantityPrecisionSnapshot: number;
+  quantityAdjustmentModeSnapshot: "reject" | "ceil_to_step";
 };
 
 function isActiveAt(
@@ -41,17 +45,6 @@ function sortAssignments<T extends { price_book_id: string; priority?: number | 
     if (priority) return priority;
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   });
-}
-
-function quantityError(quantity: number, minimum: number, step: number, enforce: boolean) {
-  if (!(quantity > 0)) return "Số lượng phải lớn hơn 0";
-  if (!enforce) return null;
-  if (quantity + 1e-9 < minimum) return `Số lượng tối thiểu là ${minimum}`;
-  const units = (quantity - minimum) / step;
-  if (Math.abs(units - Math.round(units)) > 1e-7) {
-    return `Số lượng phải từ ${minimum} và tăng theo bước ${step}`;
-  }
-  return null;
 }
 
 export async function resolveOrderPriceBook(
@@ -118,7 +111,7 @@ export async function resolveOrderPriceBook(
 
   const { data: products, error: productError } = await supabase
     .from("products")
-    .select("id, sku, name, unit, active, packaging_note, min_order_qty, order_step, enforce_order_step")
+    .select("id, sku, name, unit, active, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
     .in("id", productIds)
     .eq("active", true);
   if (productError) throw productError;
@@ -135,8 +128,8 @@ export async function resolveOrderPriceBook(
     }
     const minimum = Math.max(0, Number(product.min_order_qty) || 1);
     const step = Math.max(0.000001, Number(product.order_step) || 1);
-    const qtyIssue = quantityError(Number(input.quantity), minimum, step, Boolean(product.enforce_order_step));
-    if (qtyIssue) errors.push(`${product.name}: ${qtyIssue}`);
+    const quantityValidation = validateOrderQuantity(product, Number(input.quantity), product.unit);
+    if (!quantityValidation.ok) errors.push(`${product.name}: ${quantityValidation.message || "Số lượng không hợp lệ"}`);
 
     const generalItem: any = generalBook ? itemByKey.get(`${generalBook.id}:${input.productId}`) : null;
     let selected: any = null;
@@ -168,6 +161,8 @@ export async function resolveOrderPriceBook(
       packagingNote: product.packaging_note || null,
       minQtySnapshot: minimum,
       orderStepSnapshot: step,
+      quantityPrecisionSnapshot: Math.max(0, Number(product.quantity_precision) || 0),
+      quantityAdjustmentModeSnapshot: product.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
     });
   }
 
@@ -225,6 +220,8 @@ export async function applyOrderPricingSnapshot(
       packaging_note: row.packagingNote,
       min_qty_snapshot: row.minQtySnapshot,
       order_step_snapshot: row.orderStepSnapshot,
+      quantity_precision_snapshot: row.quantityPrecisionSnapshot,
+      quantity_adjustment_mode_snapshot: row.quantityAdjustmentModeSnapshot,
     }).eq("id", orderItem.id));
   }
   const itemUpdateResults = await Promise.all(itemUpdates);

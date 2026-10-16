@@ -6,6 +6,7 @@ export type OrderConstraintProduct = {
   order_step?: number | string | null;
   enforce_order_step?: boolean | null;
   quantity_precision?: number | string | null;
+  quantity_adjustment_mode?: "reject" | "ceil_to_step" | string | null;
   packaging_note?: string | null;
 };
 
@@ -22,9 +23,30 @@ export type QuantityValidationResult = {
   inputUnit: string;
   orderUnit: string;
   conversionFactor: number | null;
+  requestedQuantity?: number;
+  normalizedQuantity?: number | null;
+  adjusted?: boolean;
+  adjustmentCode?: 'ROUNDED_UP';
+  suggestedQuantities?: number[];
   code?: 'INVALID_QUANTITY' | 'UNIT_CONFLICT' | 'BELOW_MINIMUM' | 'INVALID_STEP' | 'INVALID_PRECISION';
   message?: string;
 };
+
+function roundForStorage(value: number) {
+  return Math.round((value + Number.EPSILON) * 1000) / 1000;
+}
+
+function formatQuantity(value: number) {
+  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(value);
+}
+
+function nearestValidQuantities(quantity: number, minimum: number, step: number) {
+  if (!(step > 0)) return [];
+  const offset = Math.max(0, quantity - minimum);
+  const lower = minimum + Math.floor(offset / step) * step;
+  const upper = minimum + Math.ceil(offset / step) * step;
+  return [...new Set([Math.max(minimum, lower), Math.max(minimum, upper)].map(roundForStorage))];
+}
 
 export function normalizeUnit(value: unknown) {
   const unit = String(value || '')
@@ -57,6 +79,15 @@ export function validateOrderQuantity(
   inputUnit?: string | null,
   conversions: UnitConversion[] = [],
 ): QuantityValidationResult {
+  return normalizeOrderQuantity(product, inputQuantity, inputUnit, conversions);
+}
+
+export function normalizeOrderQuantity(
+  product: OrderConstraintProduct,
+  inputQuantity: number,
+  inputUnit?: string | null,
+  conversions: UnitConversion[] = [],
+): QuantityValidationResult {
   const orderUnit = String(product.unit || '').trim();
   const rawUnit = String(inputUnit || orderUnit).trim();
   if (!Number.isFinite(inputQuantity) || inputQuantity <= 0) {
@@ -80,7 +111,8 @@ export function validateOrderQuantity(
     factor = Number(conversion.factor_to_order_unit);
   }
 
-  const quantity = inputQuantity * factor;
+  const requestedQuantity = inputQuantity;
+  const quantity = roundForStorage(inputQuantity * factor);
   const minimum = Math.max(0, Number(product.min_order_qty) || 0);
   const step = Math.max(0, Number(product.order_step) || 0);
   const precision = Math.max(0, Number(product.quantity_precision) || 0);
@@ -90,20 +122,46 @@ export function validateOrderQuantity(
   // tối thiểu, bước đặt và số lẻ khi nhân viên đã bật kiểm soát quy cách cho
   // đúng sản phẩm; nếu chưa bật thì chỉ kiểm tra số lượng dương và đơn vị.
   if (!product.enforce_order_step) {
-    return { ok: true, quantity, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor };
+    return { ok: true, quantity, requestedQuantity, normalizedQuantity: quantity, adjusted: false, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor };
   }
 
   if (quantity + epsilon < minimum) {
-    return { ok: false, quantity, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor, code: 'BELOW_MINIMUM', message: `Tối thiểu ${minimum} ${orderUnit}` };
+    if (product.quantity_adjustment_mode === 'ceil_to_step') {
+      const normalized = roundForStorage(Math.max(minimum, minimum));
+      return {
+        ok: true, quantity: normalized, requestedQuantity, normalizedQuantity: normalized, adjusted: true,
+        adjustmentCode: 'ROUNDED_UP', inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor,
+        message: `Đã làm tròn lên ${formatQuantity(normalized)} ${orderUnit} theo quy cách đặt hàng.`,
+      };
+    }
+    return { ok: false, quantity, requestedQuantity, normalizedQuantity: quantity, adjusted: false, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor, code: 'BELOW_MINIMUM', message: `Tối thiểu ${minimum} ${orderUnit}`, suggestedQuantities: [minimum] };
   }
   if (step > 0) {
-    const ratio = quantity / step;
+    const ratio = (quantity - minimum) / step;
     if (Math.abs(ratio - Math.round(ratio)) > epsilon) {
-      return { ok: false, quantity, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor, code: 'INVALID_STEP', message: `Số lượng phải là bội số của ${step} ${orderUnit}` };
+      if (product.quantity_adjustment_mode === 'ceil_to_step') {
+        const normalized = roundForStorage(Math.max(minimum, minimum + Math.ceil(Math.max(0, quantity - minimum) / step) * step));
+        return {
+          ok: true, quantity: normalized, requestedQuantity, normalizedQuantity: normalized, adjusted: true,
+          adjustmentCode: 'ROUNDED_UP', inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor,
+          message: `Đã làm tròn lên ${formatQuantity(normalized)} ${orderUnit} theo quy cách đặt hàng.`,
+        };
+      }
+      const suggestions = nearestValidQuantities(quantity, minimum, step);
+      return { ok: false, quantity, requestedQuantity, normalizedQuantity: quantity, adjusted: false, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor, code: 'INVALID_STEP', message: `Số lượng phải từ ${minimum} và tăng theo bước ${step} ${orderUnit}`, suggestedQuantities: suggestions };
     }
   }
   if (decimalPlaces(quantity) > precision) {
-    return { ok: false, quantity, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor, code: 'INVALID_PRECISION', message: precision === 0 ? `Sản phẩm chỉ nhận số lượng nguyên (${orderUnit})` : `Số lượng chỉ được tối đa ${precision} chữ số thập phân` };
+    if (product.quantity_adjustment_mode === 'ceil_to_step') {
+      const factorForPrecision = 10 ** precision;
+      const normalized = roundForStorage(Math.ceil(quantity * factorForPrecision - epsilon) / factorForPrecision);
+      return {
+        ok: true, quantity: normalized, requestedQuantity, normalizedQuantity: normalized, adjusted: true,
+        adjustmentCode: 'ROUNDED_UP', inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor,
+        message: `Đã làm tròn lên ${formatQuantity(normalized)} ${orderUnit} vì sản phẩm bán theo số nguyên.`,
+      };
+    }
+    return { ok: false, quantity, requestedQuantity, normalizedQuantity: quantity, adjusted: false, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor, code: 'INVALID_PRECISION', message: precision === 0 ? `Sản phẩm chỉ nhận số lượng nguyên (${orderUnit})` : `Số lượng chỉ được tối đa ${precision} chữ số thập phân`, suggestedQuantities: nearestValidQuantities(quantity, minimum, step || 10 ** -precision) };
   }
-  return { ok: true, quantity, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor };
+  return { ok: true, quantity, requestedQuantity, normalizedQuantity: quantity, adjusted: false, inputQuantity, inputUnit: rawUnit, orderUnit, conversionFactor: factor };
 }
