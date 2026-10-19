@@ -21,19 +21,15 @@ export default function BaRiaVungTauLandingPage() {
       <section className="content-section" style={{ marginTop: 24 }}>
         <div className="content-section__body">
           <div className="content-section__eyebrow">Nội dung liên quan</div>
-          <h2>Bài hỗ trợ cho Bà Rịa - Vũng Tàu</h2>
+          <h2>Doanh nghiệp tại Bà Rịa - Vũng Tàu nên xem thêm</h2>
           <p>
-            Có thêm bài vệ tinh để người đọc đi từ nhu cầu khu vực sang bài phân tích rồi mới sang form báo giá.
+            Quy trình báo giá, nhóm hàng và chứng từ dành cho bếp ăn nhà máy, xí nghiệp.
           </p>
           <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 14 }}>
-            <Link
-              href="/kien-thuc/bao-gia-thuc-pham-cho-bep-an-tap-the-o-ba-ria-vung-tau"
-              className="home-local__card"
-              style={{ minHeight: 0 }}
-            >
-              <h3>Báo giá thực phẩm cho bếp ăn tập thể ở Bà Rịa - Vũng Tàu</h3>
+            <Link href="/cung-cap-thuc-pham-cho-nha-may" className="home-local__card" style={{ minHeight: 0 }}>
+              <h3>Cung cấp thực phẩm cho nhà máy, xí nghiệp</h3>
               <span className="home-local__link">
-                Xem bài <ArrowRight size={16} />
+                Xem trang <ArrowRight size={16} />
               </span>
             </Link>
             <Link href="/bao-gia" className="home-local__card" style={{ minHeight: 0 }}>

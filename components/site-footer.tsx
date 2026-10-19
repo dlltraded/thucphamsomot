@@ -56,6 +56,13 @@ const footerText = {
   }
 >;
 
+const segmentFooterLinks = [
+  { href: "/cung-cap-thuc-pham-cho-truong-hoc", label: "Trường học, bếp bán trú" },
+  { href: "/cung-cap-thuc-pham-cho-nha-may", label: "Nhà máy, xí nghiệp" },
+  { href: "/cung-cap-thuc-pham-cho-co-quan", label: "Cơ quan, văn phòng" },
+  { href: "/cung-cap-thuc-pham-dong-nai", label: "Doanh nghiệp tại Đồng Nai" },
+];
+
 export function SiteFooter() {
   const pathname = usePathname();
   const locale: Locale = pathname.startsWith("/en") ? "en" : "vi";
@@ -86,6 +93,20 @@ export function SiteFooter() {
             </li>
           </ul>
         </div>
+
+        {locale === "vi" && (
+          <div>
+            <h2>Cung cấp thực phẩm cho</h2>
+            <ul className="site-footer__links">
+              {segmentFooterLinks.map((item) => (
+                <li key={item.href}>
+                  <ArrowUpRight size={14} />
+                  <Link href={item.href}>{item.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div>
           <h2>{text.served}</h2>

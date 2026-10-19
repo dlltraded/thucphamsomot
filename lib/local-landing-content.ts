@@ -17,14 +17,14 @@ export type LocalLandingPageConfig = {
 
 const baseFaqs: FaqItem[] = [
   {
-    question: "Trang này dành cho ai?",
+    question: "Cần gửi những thông tin gì để nhận báo giá?",
     answer:
-      "Trang này phù hợp với khách cần mua thực phẩm theo khu vực, muốn xem nhanh khu vực phục vụ, nhóm hàng phù hợp và cách gửi yêu cầu báo giá.",
+      "Danh mục hàng cần mua, số lượng dự kiến mỗi ngày hoặc mỗi tuần, địa điểm giao và khung giờ bếp nhận hàng. TPS1 xác nhận yêu cầu trong 30 phút làm việc và gửi báo giá trong 24 giờ.",
   },
   {
-    question: "Sau khi đọc xong nên làm gì?",
+    question: "TPS1 có xuất hóa đơn VAT và hồ sơ an toàn thực phẩm không?",
     answer:
-      "Có thể chuyển sang form báo giá hoặc xem danh mục sản phẩm liên quan để chốt nhóm hàng, số lượng và lịch giao.",
+      "Có. TPS1 xuất hóa đơn VAT cho từng đợt mua hàng. Quy trình của TPS1 đạt chứng nhận ISO 22000 và HACCP; hồ sơ nguồn gốc theo nhóm hàng được cung cấp khi khách yêu cầu.",
   },
 ];
 
@@ -41,20 +41,20 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       {
         heading: "Đồng Nai cần nguồn hàng ổn định cho bếp và nhà máy",
         body:
-          "Người mua tại Đồng Nai thường cần nhà cung cấp giao đúng lịch, báo giá rõ và hỗ trợ danh mục mua hàng lặp lại. Khi trang nói rõ nhóm hàng và quy trình phản hồi, khách sẽ dễ ra quyết định hơn.",
-        items: ["Giao theo khung giờ của bếp", "Danh mục phù hợp mua số lượng lớn", "Phản hồi báo giá theo nhu cầu thực tế"],
+          "Bếp ăn, nhà máy và trường học ở Đồng Nai cần nhà cung cấp giao đúng lịch, báo giá rõ và lấy hàng lặp lại theo cùng một danh mục. TPS1 làm việc theo lịch bếp của từng đơn vị: giờ nhận hàng, thực đơn tuần và định mức từng nhóm hàng.",
+        items: ["Giao theo khung giờ của bếp", "Danh mục phù hợp mua số lượng lớn", "Báo trước khi giá hoặc mùa vụ thay đổi"],
       },
       {
-        heading: "Nhóm hàng nên nhấn mạnh ở Đồng Nai",
+        heading: "Nhóm hàng TPS1 cung cấp tại Đồng Nai",
         body:
-          "Trên trang này, nên ưu tiên nhắc đến rau củ quả, thịt cá hải sản, hàng đông lạnh, gia vị nhà bếp và thực phẩm chay để khách thấy ngay nhóm hàng có thể chốt theo menu.",
+          "Rau củ quả, thịt cá hải sản, hàng đông lạnh, gia vị và thực phẩm chay, đặt chung ở một đầu mối để bếp dễ chốt theo thực đơn tuần.",
         items: ["Rau củ quả tươi sống", "Thịt cá hải sản tươi sống", "Hàng đông lạnh cho bếp công nghiệp", "Gia vị nhà bếp và thực phẩm chay"],
       },
       {
-        heading: "Gửi báo giá ngay khi cần",
+        heading: "Nhận báo giá trong 24 giờ",
         body:
-          "Sau khi xem trang, khách có thể đi thẳng sang form báo giá, hồ sơ năng lực hoặc các trang nhóm hàng liên quan để chốt nhu cầu nhanh.",
-        items: ["CTA báo giá ở đầu và cuối trang", "Liên kết sang sản phẩm và ngành hàng", "FAQ về vùng giao, quy cách và thời gian phản hồi"],
+          "Đơn vị gửi danh mục qua form báo giá, Zalo hoặc gọi hotline. TPS1 xác nhận trong 30 phút làm việc, gửi báo giá trong 24 giờ và chốt lịch giao trước khi hàng vào bếp.",
+        items: ["Báo giá theo đúng danh mục đơn vị gửi", "Hóa đơn VAT cho từng đợt mua", "Hồ sơ năng lực công ty khi cần"],
       },
     ],
     faqs: [
@@ -62,17 +62,12 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       {
         question: "TPS1 có nhận giao định kỳ tại Đồng Nai không?",
         answer:
-          "Có. Trang này phục vụ nhóm khách cần nguồn hàng đều đặn tại Biên Hòa, Nhơn Trạch, Long Thành, Trảng Bom và khu vực lân cận.",
+          "Có. TPS1 giao định kỳ cho bếp ăn, nhà máy và trường học tại Biên Hòa, Nhơn Trạch, Long Thành, Trảng Bom và khu vực lân cận.",
       },
       {
-        question: "Nên đo hiệu quả trang này bằng gì?",
+        question: "TPS1 có cung cấp thực phẩm cho trường học và cơ quan không?",
         answer:
-          "Nên đo bằng lượt hiển thị với truy vấn địa phương, lượt click sang form báo giá, số đơn hỏi thật và số cuộc gọi hoặc Zalo phát sinh từ trang.",
-      },
-      {
-        question: "Keyword nào phù hợp nhất?",
-        answer:
-          "Các keyword phù hợp gồm cung cấp thực phẩm Đồng Nai, nhà cung cấp thực phẩm Đồng Nai, báo giá thực phẩm định kỳ và thực phẩm cho bếp ăn tập thể Đồng Nai.",
+          "Có. Ngoài bếp ăn nhà máy, TPS1 cung cấp thực phẩm cho bếp bán trú trường mầm non, tiểu học và bếp ăn của cơ quan, văn phòng doanh nghiệp tại Đồng Nai.",
       },
     ],
     ctaLabel: "BÁO GIÁ",
@@ -84,7 +79,9 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       { href: "/cung-cap-thuc-pham-nhon-trach", label: "Cung cấp thực phẩm Nhơn Trạch" },
       { href: "/cung-cap-thuc-pham-binh-duong", label: "Cung cấp thực phẩm Bình Dương" },
       { href: "/cung-cap-thuc-pham-tp-hcm", label: "Cung cấp thực phẩm TP.HCM" },
-      { href: "/kien-thuc/bao-gia-thuc-pham-cho-bep-an-tap-the-o-bien-hoa", label: "Báo giá thực phẩm cho bếp ăn tập thể ở Biên Hòa" },
+      { href: "/cung-cap-thuc-pham-cho-truong-hoc", label: "Cung cấp thực phẩm cho trường học" },
+      { href: "/cung-cap-thuc-pham-cho-nha-may", label: "Cung cấp thực phẩm cho nhà máy, xí nghiệp" },
+      { href: "/cung-cap-thuc-pham-cho-co-quan", label: "Cung cấp thực phẩm cho bếp ăn cơ quan" },
       { href: "/san-pham", label: "Xem danh mục sản phẩm" },
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
@@ -101,33 +98,32 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       {
         heading: "Biên Hòa có nhu cầu mua hàng theo lịch vận hành",
         body:
-          "Khách tại Biên Hòa thường cần nguồn cung đủ ổn định để bám ca làm việc, giờ giao nhận và menu hàng tuần. Vì vậy trang này cần trả lời rõ về khu vực giao, quy cách và cách lấy báo giá.",
-        items: ["Giao theo lịch bếp", "Nhóm hàng dễ so sánh", "Phản hồi nhanh theo nhu cầu thật"],
+          "Bếp ăn tập thể, nhà máy và trường học ở Biên Hòa cần nguồn hàng đủ ổn định để bám ca làm việc, giờ nhận hàng và thực đơn hằng tuần. TPS1 đặt tại Tam Hiệp, ngay trong thành phố Biên Hòa.",
+        items: ["Giao theo lịch bếp", "Danh mục rõ, dễ so sánh giá", "Một đầu mối phụ trách cố định"],
       },
       {
-        heading: "Nội dung nên nhấn mạnh ở Biên Hòa",
+        heading: "Đơn vị TPS1 đang phục vụ ở Biên Hòa",
         body:
-          "Nội dung hiệu quả nên tập trung vào giao nhận, nguồn hàng rõ, quy trình báo giá ngắn và khả năng phục vụ các đơn vị có nhu cầu lặp lại.",
+          "TPS1 cung cấp thực phẩm định kỳ cho nhiều nhóm khách theo cùng một quy trình: báo giá theo danh mục, giao theo lịch bếp, bếp kiểm tra và ký nhận khi hàng đến.",
         items: ["Bếp ăn tập thể", "Nhà máy, khu công nghiệp", "Trường học và bệnh viện"],
       },
       {
         heading: "Gửi báo giá nhanh",
         body:
-          "Sau khi xem trang, khách có thể đi thẳng sang báo giá hoặc xem thêm hồ sơ năng lực và các trang liên quan để chốt nhu cầu nhanh.",
-        items: ["CTA rõ", "FAQ ngắn gọn", "Liên kết về hồ sơ năng lực"],
+          "Đơn vị gửi danh mục qua form báo giá, Zalo hoặc gọi hotline. TPS1 xác nhận trong 30 phút làm việc và gửi báo giá trong 24 giờ.",
+        items: ["Báo giá theo danh mục", "Hóa đơn VAT đầy đủ", "Hồ sơ năng lực khi cần"],
       },
     ],
     faqs: [
       ...baseFaqs,
       {
-        question: "Trang Biên Hòa khác gì trang Đồng Nai tổng?",
-        answer:
-          "Trang Biên Hòa tập trung vào nhu cầu tìm kiếm hẹp hơn, dễ tối ưu cho nhóm khách ở thành phố Biên Hòa và các khu công nghiệp lân cận.",
+        question: "TPS1 đặt văn phòng ở đâu tại Biên Hòa?",
+        answer: "TPS1 đặt tại B19 KP15, Tam Hiệp, Biên Hòa, Đồng Nai.",
       },
       {
-        question: "Có nên lặp keyword trên nhiều trang không?",
+        question: "Bếp ăn ở khu công nghiệp Biên Hòa có được giao theo ca không?",
         answer:
-          "Không. Trang này nên giữ một nhu cầu chính là cung cấp thực phẩm tại Biên Hòa, còn trang Đồng Nai là cụm rộng hơn.",
+          "Có. Lịch giao được thống nhất theo khung giờ bếp nhận hàng, gồm ca sáng sớm, trưa hoặc chiều.",
       },
     ],
     ctaLabel: "BÁO GIÁ",
@@ -138,6 +134,8 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       { href: "/cung-cap-thuc-pham-dong-nai", label: "Cung cấp thực phẩm Đồng Nai" },
       { href: "/cung-cap-thuc-pham-binh-duong", label: "Cung cấp thực phẩm Bình Dương" },
       { href: "/cung-cap-thuc-pham-tp-hcm", label: "Cung cấp thực phẩm TP.HCM" },
+      { href: "/cung-cap-thuc-pham-cho-nha-may", label: "Cung cấp thực phẩm cho nhà máy, xí nghiệp" },
+      { href: "/cung-cap-thuc-pham-cho-truong-hoc", label: "Cung cấp thực phẩm cho trường học" },
       { href: "/lien-he", label: "Liên hệ nhanh" },
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
@@ -154,7 +152,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       {
         heading: "Bình Dương là thị trường cần giao hàng ổn định",
         body:
-          "Trang này hướng tới khách ở Bình Dương thường xuyên mua hàng cho bếp ăn, nhà máy và đơn vị suất ăn. Nội dung cần làm rõ tuyến giao, số lượng và cách nhận báo giá.",
+          "Bếp ăn, nhà máy và đơn vị nấu suất ăn ở Bình Dương cần hàng giao đều theo lịch. TPS1 xếp tuyến giao từ Biên Hòa sang Bình Dương khi lịch nhận hàng của đơn vị phù hợp.",
         items: ["Giao đúng lịch", "Danh mục rõ", "Báo giá nhanh"],
       },
       {
@@ -164,10 +162,10 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
         items: ["Rau củ quả", "Thịt cá hải sản", "Hàng đông lạnh", "Gia vị", "Thực phẩm chay"],
       },
       {
-        heading: "Chốt nhu cầu nhanh",
+        heading: "Nhận báo giá nhanh",
         body:
-          "Sau khi xem trang, khách có thể chuyển thẳng sang form báo giá hoặc hồ sơ năng lực để nhận phản hồi nhanh hơn.",
-        items: ["CTA rõ", "Hồ sơ năng lực", "FAQ ngắn về giao hàng"],
+          "Đơn vị gửi danh mục qua form báo giá, Zalo hoặc gọi hotline. TPS1 xác nhận trong 30 phút làm việc và gửi báo giá trong 24 giờ.",
+        items: ["Báo giá theo danh mục", "Hóa đơn VAT đầy đủ", "Hồ sơ năng lực khi cần"],
       },
     ],
     faqs: [
@@ -175,11 +173,6 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
       {
         question: "TPS1 có giao Bình Dương không?",
         answer: "Có, nếu tuyến và lịch giao phù hợp nhu cầu thực tế của đơn vị.",
-      },
-      {
-        question: "Nên tách riêng Bình Dương với Đồng Nai không?",
-        answer:
-          "Có. Đây là hai cụm tìm kiếm khác nhau và nên có landing page riêng để tránh loãng nội dung.",
       },
     ],
     ctaLabel: "BÁO GIÁ",
@@ -189,7 +182,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     relatedLinks: [
       { href: "/cung-cap-thuc-pham-dong-nai", label: "Cung cấp thực phẩm Đồng Nai" },
       { href: "/cung-cap-thuc-pham-tp-hcm", label: "Cung cấp thực phẩm TP.HCM" },
-      { href: "/kien-thuc/bao-gia-thuc-pham-cho-bep-an-tap-the-o-binh-duong", label: "Báo giá thực phẩm cho bếp ăn tập thể ở Bình Dương" },
+      { href: "/cung-cap-thuc-pham-cho-nha-may", label: "Cung cấp thực phẩm cho nhà máy, xí nghiệp" },
       { href: "/san-pham", label: "Xem danh mục sản phẩm" },
       { href: "/bao-gia", label: "Mở form báo giá" },
     ],
@@ -325,7 +318,7 @@ export const localLandingPages: Record<string, LocalLandingPageConfig> = {
     quoteTitle: "Báo Giá Thực Phẩm TP. Hồ Chí Minh",
     quoteSummary: "Báo giá nhanh cho khách hàng tại TP. Hồ Chí Minh",
     relatedLinks: [
-      { href: "/kien-thuc/cach-chon-nha-cung-cap-thuc-pham-cho-nha-may-o-tp-hcm", label: "Cách chọn nhà cung cấp thực phẩm cho nhà máy ở TP.HCM" },
+      { href: "/cung-cap-thuc-pham-cho-nha-may", label: "Cung cấp thực phẩm cho nhà máy, xí nghiệp" },
       { href: "/cung-cap-thuc-pham-dong-nai", label: "Cung cấp thực phẩm Đồng Nai" },
       { href: "/cung-cap-thuc-pham-nhon-trach", label: "Cung cấp thực phẩm Nhơn Trạch" },
       { href: "/san-pham", label: "Danh mục sản phẩm" },

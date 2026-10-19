@@ -9,6 +9,33 @@ import { PageShell } from "@/components/page-shell";
 import { siteConfig } from "@/lib/site";
 import { FadeInUp, StaggerContainer, StaggerItem, ScaleIn } from "@/components/ui/motion-wrapper";
 
+const industrySeoTitles: Record<string, string> = {
+  "bep-an-tap-the": "Thực phẩm cho bếp ăn tập thể tại Đồng Nai",
+  "suat-an-cong-nghiep": "Nguyên liệu cho đơn vị suất ăn công nghiệp",
+  "truong-hoc": "Thực phẩm cho bếp ăn trường học, bán trú",
+  "benh-vien": "Thực phẩm cho bếp ăn bệnh viện",
+  "nha-hang-khach-san": "Thực phẩm cho nhà hàng, khách sạn",
+};
+
+const industrySegmentLinks: Record<string, { href: string; label: string }> = {
+  "truong-hoc": {
+    href: "/cung-cap-thuc-pham-cho-truong-hoc",
+    label: "Xem quy trình cung cấp thực phẩm cho trường học tại Đồng Nai",
+  },
+  "bep-an-tap-the": {
+    href: "/cung-cap-thuc-pham-cho-nha-may",
+    label: "Xem quy trình cung cấp thực phẩm cho nhà máy, xí nghiệp",
+  },
+  "suat-an-cong-nghiep": {
+    href: "/cung-cap-thuc-pham-cho-nha-may",
+    label: "Xem quy trình cung cấp thực phẩm cho nhà máy, xí nghiệp",
+  },
+  "benh-vien": {
+    href: "/cung-cap-thuc-pham-cho-co-quan",
+    label: "Xem quy trình cung cấp thực phẩm cho bếp ăn cơ quan",
+  },
+};
+
 export function generateStaticParams() {
   return industries.map((item) => ({ slug: item.slug }));
 }
@@ -18,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const item = findBySlug(industries, slug);
   if (!item) return makeMetadata({ title: "Ngành hàng", path: `/nganh-hang/${slug}` });
   return makeMetadata({
-    title: item.title,
+    title: industrySeoTitles[item.slug] ?? item.title,
     description: item.description,
     path: `/nganh-hang/${item.slug}`,
   });
@@ -30,6 +57,7 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
   if (!item) return notFound();
   
   const description = item.description ?? item.title;
+  const segmentLink = industrySegmentLinks[slug];
   const heroImage = `/images/industries/${slug}-vn.png`;
   
   return (
@@ -129,6 +157,18 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
           })}
         </StaggerContainer>
       </section>
+
+      {segmentLink && (
+        <section className="container-shell mb-20">
+          <Link
+            href={segmentLink.href}
+            className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 font-bold text-emerald-900 hover:border-emerald-400"
+          >
+            <span>{segmentLink.label}</span>
+            <ArrowRight size={20} />
+          </Link>
+        </section>
+      )}
 
       {/* 5. FAQs */}
       {item.faqs && item.faqs.length > 0 && (

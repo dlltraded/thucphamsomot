@@ -7,6 +7,7 @@ import "@fontsource/be-vietnam-pro/800.css";
 import "@fontsource/be-vietnam-pro/900.css";
 import "./globals.css";
 import "./quick-quote.css";
+import "./segment-landing.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CompanyProfileWidget } from "@/components/company-profile-widget";
