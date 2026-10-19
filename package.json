@@ -44,7 +44,6 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4.3.0",
-    "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^25.7.0",
     "@types/pdfmake": "^0.3.3",
     "@types/react": "^19.2.14",

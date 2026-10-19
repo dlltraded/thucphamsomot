@@ -96,7 +96,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-8 md:p-12">
           {/* Prose */}
           <div 
-            className="prose prose-lg md:prose-xl max-w-none prose-neutral prose-headings:text-neutral-900 prose-headings:font-bold prose-a:text-brand-600 hover:prose-a:text-brand-700 prose-img:rounded-xl prose-img:shadow-md"
+            className="blog-content"
             dangerouslySetInnerHTML={{ __html: article.contentHtml || "" }} 
           />
         </div>

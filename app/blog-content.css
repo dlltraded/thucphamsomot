@@ -1,0 +1,135 @@
+/* Article body for /blog/[slug]. Markdown HTML from lib/blog.ts. */
+.blog-content {
+  color: #2b3a33;
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.blog-content > *:first-child {
+  margin-top: 0;
+}
+
+.blog-content h2 {
+  margin: 2.2em 0 0.7em;
+  font-size: 1.6em;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #14231c;
+}
+
+.blog-content h3 {
+  margin: 1.8em 0 0.6em;
+  font-size: 1.25em;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #14231c;
+}
+
+.blog-content p {
+  margin: 0 0 1.2em;
+}
+
+.blog-content ul,
+.blog-content ol {
+  margin: 0 0 1.3em;
+  padding-left: 1.4em;
+}
+
+.blog-content ul {
+  list-style: disc;
+}
+
+.blog-content ol {
+  list-style: decimal;
+}
+
+.blog-content li {
+  margin: 0.4em 0;
+  padding-left: 0.2em;
+}
+
+.blog-content li::marker {
+  color: #0f6f4b;
+}
+
+.blog-content strong {
+  color: #14231c;
+  font-weight: 700;
+}
+
+.blog-content a {
+  color: #0f6f4b;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.blog-content a:hover {
+  color: #0a4f35;
+}
+
+.blog-content blockquote {
+  margin: 1.5em 0;
+  padding: 0.8em 1.2em;
+  border-left: 4px solid #0f6f4b;
+  background: #f1f7f3;
+  border-radius: 0 12px 12px 0;
+  color: #14231c;
+}
+
+.blog-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.blog-content hr {
+  margin: 2.5em 0;
+  border: 0;
+  border-top: 1px solid #e3e8e4;
+}
+
+.blog-content img {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(20, 35, 28, 0.1);
+}
+
+.blog-content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.blog-content th,
+.blog-content td {
+  padding: 0.7em 0.9em;
+  border-bottom: 1px solid #e3e8e4;
+  text-align: left;
+  vertical-align: top;
+}
+
+.blog-content th {
+  background: #f1f7f3;
+  color: #14231c;
+  font-weight: 700;
+  border-bottom: 2px solid #cfe0d6;
+}
+
+.blog-content code {
+  padding: 0.15em 0.35em;
+  border-radius: 6px;
+  background: #f1f4f2;
+  font-size: 0.9em;
+}
+
+@media (max-width: 640px) {
+  .blog-content {
+    font-size: 16.5px;
+  }
+
+  .blog-content h2 {
+    font-size: 1.4em;
+  }
+}
