@@ -8,8 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "migrate:supabase": "node scripts/migrate-json-to-supabase.mjs",
-    "postbuild": "next-sitemap"
+    "migrate:supabase": "node scripts/migrate-json-to-supabase.mjs"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +33,7 @@
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.75.0",
     "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
     "remark-html": "^16.0.1",
     "sharp": "^0.35.5",
     "three": "^0.185.1",
@@ -44,6 +44,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^25.7.0",
     "@types/pdfmake": "^0.3.3",
     "@types/react": "^19.2.14",

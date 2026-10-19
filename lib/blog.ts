@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
+import gfm from 'remark-gfm';
 
 const blogDir = path.join(process.cwd(), 'data', 'blog');
 
@@ -51,6 +52,7 @@ export async function getBlogPostBySlug(slug: string, includeContent = true): Pr
 
   if (includeContent) {
     const processedContent = await remark()
+      .use(gfm)
       .use(html)
       .process(content);
     post.contentHtml = processedContent.toString();
