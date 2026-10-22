@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const products = (await readManagedProducts()).map(toContentProduct);
   const item = findBySlug(products, slug);
-  if (!item) return makeMetadata({ title: "San pham", path: `/san-pham/${slug}` });
+  if (!item) return makeMetadata({ title: "Sản phẩm", path: `/san-pham/${slug}` });
   return makeMetadata({
     title: item.title,
     description: item.summary,
@@ -28,7 +28,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const description = item.summary ?? item.description ?? item.title;
 
   return (
-    <PageShell eyebrow="San pham" title={item.title} description={description}>
+    <PageShell eyebrow="Sản phẩm" title={item.title} description={description}>
       <ContentPage
         title={item.title}
         description={description}

@@ -7,6 +7,10 @@ export const siteConfig = {
   name: "Thực Phẩm Số Một",
   englishName: "Thuc Pham So Mot",
   shortName: "TPS1",
+  legalName: "CÔNG TY TNHH THỰC PHẨM SỐ MỘT",
+  taxId: "3602885156",
+  // Official start of operations used in all communications (not the 2013 first registration).
+  foundingYear: "2017",
   domain: "thucphamsomot.vn",
   url: "https://thucphamsomot.vn",
   description:
@@ -20,8 +24,8 @@ export const siteConfig = {
   zaloDisplay: "+84.898902222",
   facebook: "https://www.facebook.com/thucphamsomot.vn",
   address: "Đồng Nai, Việt Nam",
-  addressFull: "B19 KP15, Tam Hiệp, Đồng Nai",
-  englishAddress: "Dong Nai, Vietnam",
+  addressFull: "B19 Khu phố 15, phường Tam Hiệp, TP. Biên Hòa, Đồng Nai",
+  englishAddress: "B19 Quarter 15, Tam Hiep Ward, Bien Hoa City, Dong Nai, Vietnam",
   shareImage: "/images/tps1-share-thumbnail.png",
   profilePagePath: "/ho-so-nang-luc",
   profilePdfUrl: "https://drive.google.com/file/d/1uJ7gCVsCRsXMAZAZLKMcFbgv5um6--8L/view?usp=sharing",

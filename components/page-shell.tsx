@@ -10,6 +10,9 @@ type PageShellProps = {
   title: string;
   description?: string;
   compact?: boolean;
+  // Compact pages have no hero; render the title as a visually hidden H1
+  // when the page content has no H1 of its own.
+  hiddenTitle?: boolean;
   locale?: Locale;
   children: ReactNode;
 };
@@ -74,14 +77,17 @@ const shellText = {
   }
 >;
 
-export function PageShell({ eyebrow, title, description, compact = false, locale = "vi", children }: PageShellProps) {
+export function PageShell({ eyebrow, title, description, compact = false, hiddenTitle = false, locale = "vi", children }: PageShellProps) {
   const visual = pageVisuals[eyebrow] ?? brandAssets.coverFood;
   const text = shellText[locale];
 
   if (compact) {
     return (
       <main className="page-shell">
-        <section className="container-shell section-pad">{children}</section>
+        <section className="container-shell section-pad">
+          {hiddenTitle ? <h1 className="sr-only">{title}</h1> : null}
+          {children}
+        </section>
       </main>
     );
   }

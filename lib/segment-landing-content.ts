@@ -36,9 +36,14 @@ export const productGroups = [
     text: "Rau ăn lá, củ quả theo mùa từ Đà Lạt, miền Tây; có nhóm hàng VietGAP.",
   },
   {
-    href: "/danh-muc/thit-ca-hai-san",
-    label: "Thịt, cá, hải sản",
-    text: "Thịt heo, bò, gà, cá và hải sản tươi; cắt thái, phi lê theo yêu cầu của bếp.",
+    href: "/danh-muc/thit-heo",
+    label: "Thịt heo, bò, gia cầm",
+    text: "Thịt heo, bò, gà, vịt; cắt thái theo yêu cầu của bếp.",
+  },
+  {
+    href: "/danh-muc/hai-san",
+    label: "Hải sản",
+    text: "Cá, tôm, mực và hải sản tươi; phi lê theo yêu cầu của bếp.",
   },
   {
     href: "/danh-muc/hang-dong-lanh",

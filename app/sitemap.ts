@@ -1,7 +1,11 @@
 import type { MetadataRoute } from "next";
-import { categories, industries, policies, products, services } from "@/lib/content";
+import { categories, industries, policies, services } from "@/lib/content";
 import { getAllBlogPosts } from "@/lib/blog";
 import { siteConfig } from "@/lib/site";
+
+// Date the page content last changed. Bump it when editing static pages or
+// lib/content.ts — Google ignores lastmod values that change on every request.
+const CONTENT_UPDATED = new Date("2026-10-22");
 
 const staticPaths = [
   "/",
@@ -41,17 +45,19 @@ const staticPaths = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-  const pages = staticPaths.map((path) => ({ url: `${siteConfig.url}${path}`, lastModified: now }));
+  const entry = (path: string, lastModified: Date = CONTENT_UPDATED) => ({
+    url: `${siteConfig.url}${path}`,
+    lastModified,
+  });
   const blogPosts = await getAllBlogPosts();
-  const dynamic = [
-    ...categories.map((item) => `${siteConfig.url}/danh-muc/${item.slug}`),
-    ...industries.map((item) => `${siteConfig.url}/nganh-hang/${item.slug}`),
-    ...services.map((item) => `${siteConfig.url}/dich-vu/${item.slug}`),
-    ...products.map((item) => `${siteConfig.url}/san-pham/${item.slug}`),
-    ...blogPosts.map((item) => `${siteConfig.url}/blog/${item.slug}`),
-    ...policies.map((item) => `${siteConfig.url}/chinh-sach/${item.slug}`),
-  ].map((url) => ({ url, lastModified: now }));
 
-  return [...pages, ...dynamic];
+  // /san-pham/[slug] group pages now 308 to /danh-muc, so they are not listed.
+  return [
+    ...staticPaths.map((path) => entry(path)),
+    ...categories.map((item) => entry(`/danh-muc/${item.slug}`)),
+    ...industries.map((item) => entry(`/nganh-hang/${item.slug}`)),
+    ...services.map((item) => entry(`/dich-vu/${item.slug}`)),
+    ...blogPosts.map((item) => entry(`/blog/${item.slug}`, new Date(item.publishedAt))),
+    ...policies.map((item) => entry(`/chinh-sach/${item.slug}`)),
+  ];
 }

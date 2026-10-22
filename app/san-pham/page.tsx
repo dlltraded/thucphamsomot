@@ -1,16 +1,41 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Building2, Clock3, PackageCheck, ShieldCheck, Truck } from "lucide-react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { makeMetadata } from "@/lib/seo";
+import { getSkuPage, SKU_GROUPS, type SkuPage } from "@/lib/sku-catalog";
 import { ProductsGrid } from "./products-grid";
 
-export const metadata = makeMetadata({
-  title: "Sản phẩm",
-  description:
-    "Danh mục sản phẩm chính: rau củ quả, thịt cá hải sản, hàng đông lạnh, gia vị và thực phẩm chay cho bếp ăn B2B.",
-  path: "/san-pham",
-});
+type PageProps = { searchParams: Promise<{ trang?: string }> };
 
-export default function SanPhamPage() {
+function parsePage(value: string | undefined) {
+  const page = parseInt(value ?? "1", 10);
+  return Number.isFinite(page) && page > 1 ? page : 1;
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const page = parsePage((await searchParams).trang);
+  return makeMetadata({
+    title: page > 1
+      ? `Danh mục 5.000+ sản phẩm thực phẩm cho bếp ăn – trang ${page}`
+      : "Danh mục 5.000+ sản phẩm thực phẩm cho bếp ăn công nghiệp",
+    description:
+      "Hơn 5.000 sản phẩm: rau củ quả, thịt heo, thịt bò, gia cầm, hải sản, hàng đông lạnh, gia vị, đồ khô cho bếp ăn công nghiệp, trường học tại Đồng Nai. Báo giá theo sản lượng.",
+    path: page > 1 ? `/san-pham?trang=${page}` : "/san-pham",
+  });
+}
+
+export default async function SanPhamPage({ searchParams }: PageProps) {
+  const page = parsePage((await searchParams).trang);
+  let initialData: SkuPage | undefined;
+  try {
+    initialData = await getSkuPage({ page, revalidate: 3600 });
+  } catch (error) {
+    // Fall back to client-side loading; the page must still render.
+    console.error("[san-pham] server catalog fetch failed", error);
+  }
+  if (initialData && page > initialData.totalPages) notFound();
+
   return (
     <main className="sp-page">
       <section className="sp-hero">
@@ -45,7 +70,18 @@ export default function SanPhamPage() {
         </div>
       </section>
 
-      <ProductsGrid />
+      <nav className="sku-group-links" aria-labelledby="sku-group-links-title">
+        <h2 id="sku-group-links-title">Nhóm hàng</h2>
+        <ul>
+          {SKU_GROUPS.filter((group) => group.hasPage).map((group) => (
+            <li key={group.slug}>
+              <Link href={`/danh-muc/${group.slug}`} className="sku-tab">{group.label}</Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <ProductsGrid initialData={initialData} basePath="/san-pham" />
 
       <div className="container-shell sp-page__cta-wrap">
         <section className="sp-page__cta">

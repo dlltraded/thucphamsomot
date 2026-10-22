@@ -2,37 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Search, ArrowRight, ChevronLeft, ChevronRight, X, SlidersHorizontal, PackageSearch } from "lucide-react";
-import type { SkuProduct } from "@/app/api/sku-products/route";
+import { SKU_GROUPS, type SkuPage, type SkuProduct } from "@/lib/sku-catalog";
 import type { Locale } from "@/lib/site";
 
 // ─── Category tabs ─────────────────────────────────────────────────────────
 const CATEGORIES: Record<Locale, { slug: string; label: string }[]> = {
-  vi: [
-    { slug: "", label: "Tất cả" },
-    { slug: "rau-cu", label: "Rau củ quả" },
-    { slug: "thit-heo", label: "Thịt heo" },
-    { slug: "thit-bo", label: "Thịt bò nhập" },
-    { slug: "ga-vit", label: "Gia cầm" },
-    { slug: "hai-san", label: "Hải sản" },
-    { slug: "dong-lanh", label: "Đông lạnh" },
-    { slug: "gia-vi", label: "Gia vị" },
-    { slug: "gao-mi", label: "Gạo, mì, khô" },
-    { slug: "thiet-bi-bep", label: "Thiết bị bếp" },
-  ],
-  en: [
-    { slug: "", label: "All" },
-    { slug: "rau-cu", label: "🥦 Produce" },
-    { slug: "thit-heo", label: "🐷 Pork" },
-    { slug: "thit-bo", label: "🐄 Imported Beef" },
-    { slug: "ga-vit", label: "🐔 Poultry" },
-    { slug: "hai-san", label: "🦐 Seafood" },
-    { slug: "dong-lanh", label: "❄️ Frozen" },
-    { slug: "gia-vi", label: "🫙 Seasonings" },
-    { slug: "gao-mi", label: "🌾 Dry Goods" },
-    { slug: "thiet-bi-bep", label: "🍳 Kitchen equipment" },
-  ]
+  vi: [{ slug: "", label: "Tất cả" }, ...SKU_GROUPS.map((group) => ({ slug: group.slug, label: group.label }))],
+  en: [{ slug: "", label: "All" }, ...SKU_GROUPS.map((group) => ({ slug: group.slug, label: group.labelEn }))],
 };
 
 const UI = {
@@ -60,7 +38,7 @@ const UI = {
 };
 
 // ─── Single product list row ────────────────────────────────────────────────────
-function SkuRow({
+export function SkuRow({
   product,
   locale = "vi",
 }: {
@@ -111,18 +89,32 @@ function SkuRow({
 }
 
 // ─── Products Grid (main export) ───────────────────────────────────────────
-export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
-  const [products, setProducts] = useState<SkuProduct[]>([]);
+export function ProductsGrid({
+  locale = "vi",
+  initialData,
+  basePath,
+}: {
+  locale?: Locale;
+  // Server-rendered first page (unfiltered) so the catalog is in the initial HTML.
+  initialData?: SkuPage;
+  // Page URL used for crawlable pagination links, e.g. "/san-pham".
+  basePath?: string;
+}) {
+  const [products, setProducts] = useState<SkuProduct[]>(initialData?.products ?? []);
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState(""); // debounced
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(!initialData);
+  const [page, setPage] = useState(initialData?.page ?? 1);
+  const [totalPages, setTotalPages] = useState(initialData?.totalPages ?? 1);
+  const [totalCount, setTotalCount] = useState(initialData?.totalCount ?? 0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const cacheRef = useRef(new Map<string, { products: SkuProduct[]; totalCount: number; totalPages: number }>());
+  const cacheRef = useRef(
+    new Map<string, { products: SkuProduct[]; totalCount: number; totalPages: number }>(
+      initialData ? [[`||${initialData.page}`, initialData]] : [],
+    ),
+  );
   const text = UI[locale];
   const catList = CATEGORIES[locale];
 
@@ -212,51 +204,56 @@ export function ProductsGrid({ locale = "vi" }: { locale?: Locale }) {
     const start = Math.max(1, page - 2);
     const end = Math.min(totalPages, page + 2);
     
+    // Unfiltered pages are real links (?trang=n) so crawlers can walk the
+    // catalog; clicks are still handled client-side.
+    const linkable = Boolean(basePath) && !category && !query.trim();
+    const pageButton = (target: number, content: ReactNode, opts: { active?: boolean; disabled?: boolean; label?: string } = {}) => {
+      const className = `sku-page-btn${opts.active ? " is-active" : ""}`;
+      if (opts.disabled) {
+        return <button key={opts.label ?? target} className={className} disabled aria-label={opts.label}>{content}</button>;
+      }
+      if (linkable) {
+        return (
+          <a
+            key={opts.label ?? target}
+            href={target === 1 ? basePath : `${basePath}?trang=${target}`}
+            className={className}
+            aria-label={opts.label}
+            aria-current={opts.active ? "page" : undefined}
+            onClick={(e) => { e.preventDefault(); setPage(target); }}
+          >
+            {content}
+          </a>
+        );
+      }
+      return <button key={opts.label ?? target} className={className} aria-label={opts.label} onClick={() => setPage(target)}>{content}</button>;
+    };
+
     for (let i = start; i <= end; i++) {
-      pages.push(
-        <button 
-          key={i} 
-          onClick={() => setPage(i)} 
-          className={`sku-page-btn ${page === i ? 'is-active' : ''}`}
-        >
-          {i}
-        </button>
-      );
+      pages.push(pageButton(i, i, { active: page === i }));
     }
 
     return (
       <div className="sku-pagination">
-        <button 
-          className="sku-page-btn" 
-          disabled={page <= 1} 
-          onClick={() => setPage(p => Math.max(1, p - 1))}
-        >
-          <ChevronLeft size={16} />
-        </button>
-        
+        {pageButton(Math.max(1, page - 1), <ChevronLeft size={16} />, { disabled: page <= 1, label: "Trang trước" })}
+
         {start > 1 && (
           <>
-            <button className="sku-page-btn" onClick={() => setPage(1)}>1</button>
+            {pageButton(1, 1)}
             {start > 2 && <span className="sku-page-ellipsis">...</span>}
           </>
         )}
-        
+
         {pages}
-        
+
         {end < totalPages && (
           <>
             {end < totalPages - 1 && <span className="sku-page-ellipsis">...</span>}
-            <button className="sku-page-btn" onClick={() => setPage(totalPages)}>{totalPages}</button>
+            {pageButton(totalPages, totalPages)}
           </>
         )}
-        
-        <button 
-          className="sku-page-btn" 
-          disabled={page >= totalPages} 
-          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-        >
-          <ChevronRight size={16} />
-        </button>
+
+        {pageButton(Math.min(totalPages, page + 1), <ChevronRight size={16} />, { disabled: page >= totalPages, label: "Trang sau" })}
       </div>
     );
   };

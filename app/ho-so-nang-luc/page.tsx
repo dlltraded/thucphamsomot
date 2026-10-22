@@ -18,6 +18,7 @@ export default function CompanyProfilePage() {
       title="Xem nhanh company profile TPS1"
       description="Trang riêng để khách xem hồ sơ năng lực công ty ngay trong site hoặc mở file PDF ở tab mới."
       compact={true}
+      hiddenTitle
     >
       <div className="company-profile-page">
         <div className="company-profile-page__toolbar">
@@ -46,7 +47,7 @@ export default function CompanyProfilePage() {
             Xem file trực tiếp
           </div>
           <p>
-            Nếu trình duyệt chặn preview, anh vẫn có thể mở file PDF gốc ở tab mới để xem đầy đủ hồ sơ năng lực.
+            Nếu trình duyệt chặn bản xem trước, có thể mở file PDF gốc ở tab mới để xem đầy đủ hồ sơ năng lực.
           </p>
         </div>
       </div>

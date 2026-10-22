@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, CalendarDays, Clock3, Tag } from "lucide-react";
 import { makeMetadata } from "@/lib/seo";
 import { getBlogPostBySlug, formatBlogDate } from "@/lib/blog";
 import { ArticleJsonLd } from "@/components/article-json-ld";
+import { BreadcrumbJsonLd } from "@/components/breadcrumb-json-ld";
 import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,13 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
   return (
     <main className="min-h-screen bg-neutral-50 pb-20">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Trang chủ", item: "/" },
+          { name: "Blog", item: "/blog" },
+          { name: article.title, item: `/blog/${article.slug}` },
+        ]}
+      />
       <ArticleJsonLd
         type="BlogPosting"
         title={article.title}
@@ -142,14 +150,14 @@ const categoryLinkBySlug: Record<string, { href: string; label: string; descript
     description: "Giải pháp dự phòng nguồn hàng khi cần chủ động tồn kho.",
   },
   "quy-trinh-chuan-kiem-tra-thit": {
-    href: "/danh-muc/thit-ca-hai-san",
-    label: "Danh mục Thịt cá hải sản",
-    description: "Nguồn thịt cá kiểm dịch mỗi ngày, đúng quy cách bếp cần.",
+    href: "/danh-muc/thit-heo",
+    label: "Danh mục Thịt heo",
+    description: "Thịt heo kiểm tra khi nhập kho, cắt đúng quy cách bếp cần.",
   },
   "du-bao-gia-thit-heo-cuoi-nam-2026": {
-    href: "/danh-muc/thit-ca-hai-san",
-    label: "Danh mục Thịt cá hải sản",
-    description: "Xem quy cách và cách nhận báo giá thịt heo, thịt bò, hải sản.",
+    href: "/danh-muc/thit-heo",
+    label: "Danh mục Thịt heo",
+    description: "Xem các mặt hàng thịt heo và cách nhận báo giá theo sản lượng.",
   },
   "cach-xay-dung-thuc-don-suat-an-25k": {
     href: "/danh-muc/gia-vi",
@@ -162,8 +170,8 @@ const categoryLinkBySlug: Record<string, { href: string; label: string; descript
     description: "Tối ưu chi phí gia vị và nguyên liệu để tránh lãng phí ngân sách.",
   },
   "tieu-chuan-vsattp-suat-an-cong-nghiep": {
-    href: "/danh-muc/thit-ca-hai-san",
-    label: "Danh mục Thịt cá hải sản",
+    href: "/danh-muc/hai-san",
+    label: "Danh mục Hải sản",
     description: "Nhóm hàng nhạy về an toàn thực phẩm, kiểm soát chặt từ đầu vào.",
   },
   "tai-sao-chon-nha-cung-cap-thuc-pham-dia-phuong": {
@@ -174,7 +182,7 @@ const categoryLinkBySlug: Record<string, { href: string; label: string; descript
   "case-study-giam-15-phan-tram-chi-phi-thuc-pham": {
     href: "/san-pham",
     label: "Xem toàn bộ sản phẩm",
-    description: "Danh mục 2.000+ SKU giúp tái cấu trúc chi phí nguyên liệu.",
+    description: "Danh mục 5.000+ sản phẩm giúp tái cấu trúc chi phí nguyên liệu.",
   },
   "giai-phap-cung-ung-thuc-pham-nha-may-3-ca": {
     href: "/danh-muc/hang-dong-lanh",
