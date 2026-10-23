@@ -84,16 +84,16 @@ export const categories: ContentItem[] = [
     highlights: ["Cắt theo quy cách bếp", "Kiểm tra khi nhập kho", "Giao lạnh theo tuyến cố định"],
     sections: [
       {
-        heading: "Thịt heo theo quy cách của bếp",
+        heading: "Thịt heo chuẩn quy cách cho từng bữa ăn",
         body:
-          "Bếp ăn tập thể gần như ngày nào cũng nấu thịt heo. TPS1 chia sẵn từng phần thịt theo quy cách bếp đặt, nên bếp dễ tính định lượng cho mỗi ca.",
+          "Thịt heo hiện diện trong hầu hết thực đơn của bếp ăn tập thể, từ bữa trưa của học sinh đến bữa ăn giữa ca của công nhân. TPS1 sơ chế và chia phần theo đúng quy cách mỗi bếp đặt ra, để từng suất ăn được định lượng chuẩn xác và đồng đều qua mọi ca.",
         items: ["Thịt đùi, vai, ba rọi, nạc dăm, sườn, xương", "Cắt khối, cắt lát hoặc xay theo yêu cầu", "Đóng gói theo ca hoặc theo bữa"],
       },
       {
-        heading: "Kiểm tra từ lúc nhập kho tới lúc giao",
+        heading: "Chất lượng được giữ trọn từ kho đến bếp",
         body:
-          "Thịt về kho được kiểm tra màu, mùi, độ đàn hồi, rồi giữ lạnh đúng nhiệt độ và lên xe lạnh tới bếp. Cả quy trình này TPS1 làm theo hệ thống ISO 22000 và HACCP.",
-        items: ["Kiểm tra màu, mùi, độ đàn hồi khi nhận", "Giữ lạnh suốt đường giao", "Có hóa đơn VAT"],
+          "Mỗi lô thịt nhập kho đều được kiểm tra màu sắc, mùi và độ đàn hồi, sau đó bảo quản ở nhiệt độ tiêu chuẩn và vận chuyển bằng xe lạnh đến tận bếp. Toàn bộ quy trình vận hành theo hệ thống ISO 22000 và HACCP mà TPS1 đã được chứng nhận.",
+        items: ["Kiểm tra màu sắc, mùi, độ đàn hồi khi nhận hàng", "Duy trì chuỗi lạnh suốt hành trình giao", "Hóa đơn VAT đầy đủ"],
       },
     ],
     faqs: sharedFaqs,
@@ -111,16 +111,16 @@ export const categories: ContentItem[] = [
     highlights: ["Thịt bò tươi và đông lạnh", "Quy cách theo món", "Giao lạnh theo lịch bếp"],
     sections: [
       {
-        heading: "Thịt bò cho thực đơn bếp ăn",
+        heading: "Thịt bò cho những bữa ăn được chăm chút",
         body:
-          "Thịt bò hay có mặt trong bữa tăng khẩu phần hoặc thực đơn đặc biệt. TPS1 giúp bếp chọn phần thịt hợp với món mà vẫn giữ được định mức chi phí mỗi suất.",
-        items: ["Thịt bò tươi và thịt bò đông lạnh", "Phần thịt để xào, kho, hầm, nướng", "Cắt và đóng gói theo yêu cầu"],
+          "Thịt bò thường xuất hiện trong những bữa tăng khẩu phần hay thực đơn dịp đặc biệt, khi bếp muốn dành cho người ăn một bữa tươm tất hơn. TPS1 tư vấn phần thịt phù hợp với từng món, để bữa ăn trọn vị mà chi phí mỗi suất vẫn nằm trong định mức.",
+        items: ["Thịt bò tươi và thịt bò đông lạnh", "Phần thịt chuyên dùng cho xào, kho, hầm, nướng", "Cắt và đóng gói theo yêu cầu"],
       },
       {
-        heading: "Bảo quản và giao hàng",
+        heading: "Bảo quản riêng biệt, giao bằng xe lạnh",
         body:
-          "TPS1 bảo quản bò tươi và bò đông lạnh riêng, mỗi loại theo điều kiện của nó. Hàng được kiểm tra lại trước khi xuất kho rồi mới lên xe lạnh đi giao.",
-        items: ["Kiểm tra trước khi xuất kho", "Giao lạnh theo tuyến cố định", "Có hóa đơn VAT"],
+          "Thịt bò tươi và thịt bò đông lạnh được bảo quản tách biệt, mỗi loại theo điều kiện nhiệt độ riêng. Trước khi xuất kho, từng lô hàng được kiểm tra thêm một lần rồi mới lên xe lạnh đến bếp.",
+        items: ["Kiểm tra lại trước khi xuất kho", "Giao lạnh theo tuyến cố định", "Hóa đơn VAT đầy đủ"],
       },
     ],
     faqs: sharedFaqs,
@@ -138,16 +138,16 @@ export const categories: ContentItem[] = [
     highlights: ["Gà, vịt nguyên con và theo phần", "Quy cách theo món", "Giao lạnh theo lịch bếp"],
     sections: [
       {
-        heading: "Gà, vịt cho bếp ăn tập thể",
+        heading: "Gà, vịt cho thực đơn phong phú mỗi tuần",
         body:
-          "Gà, vịt dễ đổi món nên bếp xoay vòng được nhiều lần trong tuần. TPS1 giao nguyên con hoặc chia sẵn theo phần để bếp khỏi mất công định lượng.",
+          "Gà, vịt là nguồn đạm quen thuộc và dễ biến tấu, giúp bếp xoay vòng thực đơn mà không lặp món. TPS1 cung cấp nguyên con hoặc chia sẵn theo phần, để việc định lượng tại bếp nhanh chóng và chuẩn xác hơn.",
         items: ["Gà, vịt nguyên con", "Đùi, cánh, ức, má đùi theo quy cách", "Đóng gói theo ca hoặc theo bữa"],
       },
       {
-        heading: "Giữ hàng tươi tới lúc bếp sơ chế",
+        heading: "Giữ trọn độ tươi đến khâu sơ chế",
         body:
-          "Gà, vịt được kiểm tra khi nhập kho, giữ lạnh trong kho và giao theo tuyến cố định, để tới lúc bếp sơ chế hàng vẫn còn tươi.",
-        items: ["Kiểm tra cảm quan khi nhận", "Giữ lạnh suốt đường giao", "Có hóa đơn VAT"],
+          "Gia cầm được kiểm tra ngay khi nhập kho, bảo quản lạnh liên tục và giao theo tuyến cố định. Nhờ vậy, khi đến tay người đầu bếp, hàng vẫn giữ được độ tươi cần có cho từng món ăn.",
+        items: ["Kiểm tra cảm quan khi nhận hàng", "Duy trì chuỗi lạnh suốt hành trình giao", "Hóa đơn VAT đầy đủ"],
       },
     ],
     faqs: sharedFaqs,
@@ -165,15 +165,15 @@ export const categories: ContentItem[] = [
     highlights: ["Thủy hải sản về kho mỗi ngày", "Hàng tươi và đông lạnh", "Quy cách theo nhu cầu bếp"],
     sections: [
       {
-        heading: "Hải sản cho bếp đặt hàng đều đặn",
+        heading: "Hải sản về đều đặn theo nhịp đặt hàng của bếp",
         body:
-          "TPS1 chia hải sản theo nhóm hàng và quy cách, giao theo tần suất bếp đã chốt, nên bếp đặt lặp lại hằng tuần vẫn có hàng về đều.",
+          "TPS1 phân loại hải sản theo nhóm hàng và quy cách, giao đúng tần suất mà bếp đã thống nhất. Nhờ vậy, những đơn hàng lặp lại mỗi tuần có nguồn cung ổn định, hạn chế tối đa việc thực đơn bị gián đoạn.",
         items: ["Cá tươi và cá phi lê", "Tôm, mực và hải sản khác", "Hàng đông lạnh theo quy cách"],
       },
       {
-        heading: "Mua hải sản cần hỏi kỹ những gì",
+        heading: "Với hải sản, an toàn thực phẩm luôn đi trước",
         body:
-          "Với hải sản, an toàn thực phẩm phải đặt lên trước. Khi chọn nhà cung cấp, bếp nên hỏi rõ họ nhận hàng thế nào, bảo quản ra sao, đổi trả và xử lý sự cố như thế nào.",
+          "Hải sản là nhóm hàng đòi hỏi sự cẩn trọng cao về an toàn thực phẩm. Vì thế, khi lựa chọn nhà cung cấp, bếp ăn nên tìm hiểu kỹ quy trình nhận hàng, cách bảo quản, chính sách đổi trả và phương án xử lý khi phát sinh sự cố.",
         items: ["Kiểm tra cảm quan khi nhận hàng", "Tư vấn lịch giao theo ngày chế biến", "Ưu tiên giữ giá ổn định cho khách mua định kỳ"],
       },
     ],
@@ -243,19 +243,19 @@ export const categories: ContentItem[] = [
     title: "Đồ khô",
     description:
       "Gạo, mì, bún khô, đậu, nấm khô, đồ hộp và hàng khô cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể.",
-    highlights: ["Nhóm có nhiều mã hàng nhất", "Đặt chung đơn với hàng tươi", "Giao cùng tuyến định kỳ"],
+    highlights: ["Nhóm hàng có nhiều mã nhất", "Đặt chung đơn với hàng tươi", "Giao cùng tuyến định kỳ"],
     sections: [
       {
-        heading: "Hàng khô bếp dùng mỗi ngày",
+        heading: "Hàng khô, nền tảng của mỗi bữa ăn",
         body:
-          "Trong danh mục của TPS1, đồ khô là nhóm có nhiều mã hàng nhất. Bếp đặt hàng khô chung đơn với hàng tươi thì bớt được một nhà cung cấp phải làm việc.",
+          "Trong danh mục của TPS1, đồ khô là nhóm hàng có số lượng mã nhiều nhất. Khi đặt hàng khô cùng đơn hàng tươi, bếp chỉ cần làm việc với một đầu mối, giảm bớt số nhà cung cấp phải theo dõi mỗi ngày.",
         items: ["Gạo, mì, bún, miến, phở khô", "Đậu, nấm, rong biển và hàng khô khác", "Đồ hộp và nguyên liệu chế biến"],
       },
       {
-        heading: "Đặt vừa đủ, không ôm hàng",
+        heading: "Đặt hàng vừa đủ, tồn kho hợp lý",
         body:
-          "Hàng khô để được lâu nên bếp có thể đặt theo tuần hoặc theo tháng. TPS1 tính số lượng theo định mức suất ăn của bếp, để kho không phải chứa quá nhiều.",
-        items: ["Đặt theo tuần hoặc theo tháng", "Giao chung tuyến với hàng tươi", "Có hóa đơn VAT"],
+          "Với thời hạn sử dụng dài, hàng khô phù hợp đặt theo tuần hoặc theo tháng. TPS1 tính toán số lượng dựa trên định mức suất ăn của từng bếp, để kho luôn đủ hàng mà không tồn đọng quá mức.",
+        items: ["Đặt theo tuần hoặc theo tháng", "Giao chung tuyến với hàng tươi", "Hóa đơn VAT đầy đủ"],
       },
     ],
     faqs: sharedFaqs,

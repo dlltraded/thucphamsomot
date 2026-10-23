@@ -29,8 +29,8 @@ export default function GioiThieuPage() {
               Về Chúng Tôi
             </div>
             <h1 className="b2b-about-hero__title">
-              Lo nguồn thực phẩm<br />
-              <span style={{ color: "#4ade80" }}>để bếp ăn chạy đều mỗi ngày</span>
+              Vững nguồn thực phẩm,<br />
+              <span style={{ color: "#4ade80" }}>trọn vẹn từng bữa ăn</span>
             </h1>
             <p className="b2b-about-hero__desc">
               Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, cung cấp nguyên liệu thực phẩm
@@ -47,20 +47,20 @@ export default function GioiThieuPage() {
             <div className="b2b-about-story__text">
               <div className="section-label">Câu chuyện TPS1</div>
               <h2 className="section-title" style={{ marginBottom: "24px" }}>
-                Hiểu áp lực của người quản lý bếp
+                Thấu hiểu những áp lực phía sau mỗi bữa ăn tập thể
               </h2>
               <p className="section-desc" style={{ marginBottom: "20px" }}>
-                Người quản lý bếp ăn ngày nào cũng phải cân chi phí, giữ đủ định lượng và không được sai sót về vệ sinh an toàn thực phẩm. Đó cũng là những việc TPS1 làm cùng khách hàng mỗi ngày.
+                Mỗi ngày, người quản lý bếp ăn phải cân đối chi phí, giữ vững định lượng và không được phép sai sót về vệ sinh an toàn thực phẩm. Chỉ một chuyến hàng đến trễ cũng đủ khiến cả ca ăn bị xáo trộn.
               </p>
               <p className="section-desc" style={{ marginBottom: "32px" }}>
-                Vì vậy TPS1 chỉ bán sỉ cho khách doanh nghiệp, không bán lẻ. Kho bãi, xe lạnh và khâu sơ chế đều xoay quanh một việc: hàng tới bếp đúng giờ, đúng quy cách để bếp nấu kịp mỗi ca.
+                Vì thế, TPS1 lựa chọn tập trung trọn vẹn vào khách hàng doanh nghiệp. Kho bãi, đội xe lạnh và khâu sơ chế đều được tổ chức hướng về một mục tiêu: hàng đến bếp đúng giờ, đúng quy cách, để mỗi bữa ăn được phục vụ chu đáo.
               </p>
 
               <div className="b2b-about-story__values">
                 {[
-                  "Nguồn gốc rõ ràng, hàng kiểm dịch mỗi ngày",
-                  "Giao đúng giờ, đúng quy cách",
-                  "Giữ giá ổn định, giúp bếp kiểm soát food cost"
+                  "Nguồn gốc minh bạch, kiểm dịch mỗi ngày",
+                  "Giao hàng đúng giờ, đúng quy cách",
+                  "Bình ổn giá, giúp bếp chủ động kiểm soát chi phí"
                 ].map((item, i) => (
                   <div key={i} className="b2b-about-story__value">
                     <CheckCircle2 size={24} color="#0f6f4b" className="shrink-0" />
@@ -88,9 +88,9 @@ export default function GioiThieuPage() {
         <div className="container-shell">
           <div style={{ textAlign: "center", maxWidth: "700px", margin: "0 auto 56px" }}>
             <div className="section-label">Chứng nhận & bảo hiểm</div>
-            <h2 className="section-title">Giấy tờ đầy đủ, có bảo hiểm trách nhiệm sản phẩm</h2>
+            <h2 className="section-title">Chứng nhận đầy đủ, trách nhiệm rõ ràng</h2>
             <p className="section-desc" style={{ margin: "0 auto" }}>
-              TPS1 có giấy chứng nhận cơ sở đủ điều kiện an toàn thực phẩm, ISO 22000:2018, HACCP và bảo hiểm trách nhiệm sản phẩm với tổng hạn mức 5 tỷ đồng. Khách cần làm hồ sơ nhà cung cấp, TPS1 gửi bản sao các giấy tờ này theo yêu cầu.
+              TPS1 sở hữu giấy chứng nhận cơ sở đủ điều kiện an toàn thực phẩm, ISO 22000:2018, HACCP và hợp đồng bảo hiểm trách nhiệm sản phẩm với tổng hạn mức 5 tỷ đồng. Toàn bộ hồ sơ sẵn sàng được cung cấp khi quý doanh nghiệp, nhà trường cần thẩm định nhà cung cấp.
             </p>
           </div>
 
@@ -198,14 +198,14 @@ export default function GioiThieuPage() {
         <div className="container-shell">
           <div className="b2b-about-scale__wrapper">
             <div className="b2b-about-scale__header">
-              <div className="section-label">TPS1 qua các con số</div>
-              <h2 className="section-title">Đủ sức cung cấp cho bếp công nghiệp</h2>
+              <div className="section-label">TPS1 qua những con số</div>
+              <h2 className="section-title">Năng lực đáp ứng quy mô công nghiệp</h2>
             </div>
             
             <div className="b2b-about-scale__stats">
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">109+</div>
-                <div className="b2b-scale-stat__label">Doanh nghiệp, bếp ăn đang lấy hàng</div>
+                <div className="b2b-scale-stat__label">Doanh nghiệp và bếp ăn tin chọn</div>
               </div>
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">5.000+</div>
@@ -213,7 +213,7 @@ export default function GioiThieuPage() {
               </div>
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">24/7</div>
-                <div className="b2b-scale-stat__label">Xe lạnh trực giao hàng</div>
+                <div className="b2b-scale-stat__label">Đội xe lạnh sẵn sàng giao hàng</div>
               </div>
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">5 tỷ</div>
@@ -227,9 +227,9 @@ export default function GioiThieuPage() {
       {/* 5. CTA */}
       <section className="b2b-cta-band">
         <div className="container-shell position-relative z-10" style={{ textAlign: "center" }}>
-          <h2 className="section-title-light">Cần báo giá cho bếp của quý doanh nghiệp?</h2>
+          <h2 className="section-title-light">Chuẩn bị nguồn hàng vững vàng cho bếp ăn của quý doanh nghiệp</h2>
           <p className="section-desc" style={{ color: "rgba(255,255,255,0.7)", margin: "0 auto 32px" }}>
-            Gửi danh sách hàng và số lượng dự kiến, TPS1 báo giá sỉ trong 24 giờ.
+            Quý doanh nghiệp chỉ cần gửi danh sách hàng và số lượng dự kiến, TPS1 sẽ gửi báo giá sỉ trong vòng 24 giờ.
           </p>
           <Link href="/lien-he" className="btn-hero-primary" style={{ display: "inline-flex" }}>
             Gửi yêu cầu báo giá <ArrowRight size={18} />
