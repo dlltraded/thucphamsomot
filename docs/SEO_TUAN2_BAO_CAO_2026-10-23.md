@@ -49,9 +49,31 @@ Lighthouse dao động vài điểm giữa các lần đo (trang chủ lần 3 �
 
 **Kết quả:** TBT trang chủ giảm hơn 4 lần. LCP chưa đổi đáng kể, vẫn khoảng 4,5 s.
 
-**Việc tiếp theo để hạ LCP** (chưa làm):
-- Mỗi trang tải **15–18 file font** Be Vietnam Pro (gói `@fontsource`, đủ mọi bảng chữ), cộng một file CSS 51 KB chặn hiển thị khoảng 0,3 s. Chuyển sang `next/font` chỉ lấy bộ chữ tiếng Việt + Latin sẽ bớt phần lớn số file này.
-- Hình hero trang chủ (ảnh kho hàng) nên có bản nhỏ riêng cho điện thoại.
+### Đợt 2: bớt font, hình hero riêng cho điện thoại (commit 1810d30)
+
+**Đã làm:**
+- Font Be Vietnam Pro chỉ còn bộ chữ tiếng Việt + Latin (`app/fonts.css`), bỏ latin-ext. Số file font mỗi trang: trang chủ 18 → 12, trang con 14–15 → 10. Đo lại kích thước chữ trên trang thật: cùng số dòng, cùng chiều cao trang, lệch tối đa 2 px trên đoạn nhiều dòng. `next/font/google` đã thử nhưng vẫn tải latin-ext nên không dùng.
+- Điện thoại (≤ 768 px) dùng bản cắt giữa 480×960 của ảnh kho hàng. Khung hình giữ nguyên; điện thoại màn hình nét cao (DPR 3) giảm từ ~120 KB xuống ~52 KB.
+- Dung lượng trang chủ khi đo: 763 KB → 663 KB.
+
+**Lưu ý về cách đo:** máy đo cho chỉ số CPU (`benchmarkIndex`) dao động từ 260 đến 2.500 giữa các lần chạy, tức tốc độ máy chênh tới 10 lần. Lần đo trên web thật ngay sau deploy cho điểm 83–97 nhưng lúc đó máy chạy nhanh gấp 3–4 lần các lần trước, nên **không dùng con số đó để so**.
+
+**So sánh công bằng:** build bản trước (08f9a9c) và bản sau (1810d30), chạy xen kẽ cũ/mới/cũ/mới trên cùng máy, rồi chỉ so các lần có tốc độ máy tương đương:
+
+| Trang | Nhóm máy | FCP cũ → mới | LCP cũ → mới |
+|---|---|---|---|
+| `/` | nhanh | 3,47 → 2,80 s | 5,75 → 5,06 s |
+| `/` | chậm | 3,71 → 3,00 s | 6,25 → 5,61 s |
+| `/danh-muc/thit-heo` | nhanh | 3,09 → 2,59 s | 5,15 → 4,53 s |
+| `/danh-muc/thit-heo` | chậm | 3,45 → 2,83 s | 6,22 → 5,80 s |
+| `/gioi-thieu` | nhanh | 2,90 → 2,62 s | 5,28 → 5,16 s |
+| `/gioi-thieu` | chậm | 3,06 → 2,03 s | 5,64 → 4,63 s |
+
+(Chạy trên máy chủ local nên số tuyệt đối cao hơn web thật; chỉ dùng để so cũ/mới.)
+
+**Kết luận:** cả 6 cặp đều nhanh hơn: chữ hiện sớm hơn 0,3–1,0 s, nội dung chính (LCP) sớm hơn 0,1–1,0 s. TBT không đổi có ý nghĩa (lên xuống theo tốc độ máy, font không ảnh hưởng TBT).
+
+**Còn lại để hạ LCP xuống dưới 2,5 s:** số liệu thật từ người dùng (Core Web Vitals trong Search Console) sẽ chính xác hơn đo trên máy; chờ Search Console có đủ dữ liệu (thường 28 ngày) rồi quyết định bước tiếp.
 
 ---
 
