@@ -145,7 +145,7 @@ Trang `/danh-muc/thuc-pham-chay`, các trang ngành hàng, khu vực và blog s�
 | `/tin-tuc`, `/blog/meo-vat-cuoc-song`, `/blog/song-khoe` | `/blog` |
 | `/hop-tac` | `/lien-he` |
 
-Search Console sẽ tự cập nhật khi Google thu thập lại các URL này; có thể bấm "Xác thực kết quả khắc phục" ở mục 404 để Google kiểm tra sớm hơn.
+Đã bấm "Xác thực kết quả khắc phục" ở mục 404 ngày 23/10/2026; Search Console báo "Kết quả xác thực: đã bắt đầu". Google thường mất khoảng 2 tuần (có thể đến 28 ngày) để xác thực xong; kết quả và email thông báo gửi về tài khoản quản lý Search Console.
 
 Core Web Vitals trong Search Console hiện "Không có dữ liệu" (chưa đủ lượt truy cập thật từ Chrome).
 
