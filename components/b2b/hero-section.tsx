@@ -31,10 +31,10 @@ const ThreeBackground = dynamic(
 const texts = {
   vi: {
     heroStats: [
-      { value: "24h", label: "Gửi báo giá" },
-      { value: "30'", label: "Xác nhận yêu cầu" },
-      { value: "109+", label: "Doanh nghiệp và bếp ăn tin chọn" },
-      { value: "99,8%", label: "Đơn hàng giao đúng hẹn" },
+      { value: "24 giờ", label: "Thời gian gửi báo giá" },
+      { value: "30 phút", label: "Thời gian xác nhận yêu cầu" },
+      { value: "109+", label: "Doanh nghiệp và bếp ăn đang hợp tác" },
+      { value: "99,8%", label: "Tỷ lệ đơn hàng giao đúng hẹn" },
     ],
     trustBadges: [
       { icon: ShieldCheck, label: "Cung cấp hồ sơ an toàn thực phẩm khi cần" },
