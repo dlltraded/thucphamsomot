@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { preload } from "react-dom";
 import {
   ShieldCheck,
   Award,
@@ -27,6 +28,20 @@ const ThreeBackground = dynamic(
   () => import("@/components/b2b/three-background").then((mod) => mod.ThreeBackground),
   { ssr: false, loading: () => null },
 );
+
+// Up to 768px the hero box is far taller than wide, so object-cover only ever
+// shows a central strip of the 1920px photo. Phones get a 720px centre crop of
+// the same photo: identical framing, far fewer bytes.
+const HERO_MOBILE_MEDIA = "(max-width: 768px)";
+const heroImageCommon = {
+  alt: "Kho hàng Thực Phẩm Số Một - Năng lực cung ứng B2B",
+  fill: true,
+  priority: true,
+  quality: 88,
+  sizes: "100vw",
+};
+const heroDesktopImage = getImageProps({ ...heroImageCommon, src: "/images/hero-warehouse.jpg" }).props;
+const heroMobileImage = getImageProps({ ...heroImageCommon, src: "/images/hero-warehouse-mobile.jpg" }).props;
 
 // Phones skip the 3D scene entirely (not even the chunk is fetched): it was
 // the main source of mobile blocking time on the homepage.
@@ -153,6 +168,21 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const show3D = useDesktop3D();
 
+  preload(heroMobileImage.src, {
+    as: "image",
+    imageSrcSet: heroMobileImage.srcSet,
+    imageSizes: heroMobileImage.sizes,
+    fetchPriority: "high",
+    media: HERO_MOBILE_MEDIA,
+  });
+  preload(heroDesktopImage.src, {
+    as: "image",
+    imageSrcSet: heroDesktopImage.srcSet,
+    imageSizes: heroDesktopImage.sizes,
+    fetchPriority: "high",
+    media: "(min-width: 769px)",
+  });
+
   const t = texts[locale];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,15 +241,11 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
     <section className="b2b-hero" aria-label="Hero B2B - Thực Phẩm Số Một">
       {/* Background image */}
       <div className="b2b-hero__bg">
-        <Image
-          src="/images/hero-warehouse.jpg"
-          alt="Kho hàng Thực Phẩm Số Một - Năng lực cung ứng B2B"
-          fill
-          priority
-          quality={88}
-          className="object-cover object-center"
-          sizes="100vw"
-        />
+        <picture>
+          <source media={HERO_MOBILE_MEDIA} srcSet={heroMobileImage.srcSet} sizes={heroMobileImage.sizes} />
+          {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- art-directed next/image props */}
+          <img {...heroDesktopImage} className="object-cover object-center" />
+        </picture>
       </div>
 
       {/* Gradient overlay */}
