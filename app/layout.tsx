@@ -20,7 +20,6 @@ import { FloatingCart } from "@/components/floating-cart";
 import { MetaPixel } from "@/components/meta-pixel";
 import { CustomerSessionProvider } from "@/lib/customer-session-context";
 import { GoogleAdsTag } from "@/components/google-ads-tag";
-import { StickyMobileCta } from "@/components/b2b/sticky-mobile-cta";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -74,7 +73,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <SocialWidget />
             <SiteFooter />
             <FloatingCart />
-            <StickyMobileCta />
           </CartProvider>
         </CustomerSessionProvider>
       </body>
