@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -27,6 +27,22 @@ const ThreeBackground = dynamic(
   () => import("@/components/b2b/three-background").then((mod) => mod.ThreeBackground),
   { ssr: false, loading: () => null },
 );
+
+// Phones skip the 3D scene entirely (not even the chunk is fetched): it was
+// the main source of mobile blocking time on the homepage.
+const DESKTOP_3D_QUERY = "(min-width: 769px)";
+
+function useDesktop3D() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia(DESKTOP_3D_QUERY);
+    const update = () => setEnabled(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  return enabled;
+}
 
 const texts = {
   vi: {
@@ -135,6 +151,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
   const [formState, setFormState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [lastSubmitName, setLastSubmitName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const show3D = useDesktop3D();
 
   const t = texts[locale];
 
@@ -209,7 +226,7 @@ export function B2BHeroSection({ locale = "vi" }: { locale?: "vi" | "en" }) {
       <div className="b2b-hero__overlay" />
 
       {/* Three.js 3D Background */}
-      <ThreeBackground />
+      {show3D && <ThreeBackground />}
 
       {/* Content */}
       <div className="b2b-hero__content">
