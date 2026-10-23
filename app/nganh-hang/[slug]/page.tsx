@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, ChevronDown, ShieldCheck, MapPin } from "luci
 import { findBySlug, industries } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
 import { PageShell } from "@/components/page-shell";
+import { BreadcrumbJsonLd } from "@/components/breadcrumb-json-ld";
 import { siteConfig } from "@/lib/site";
 import { FadeInUp, StaggerContainer, StaggerItem, ScaleIn } from "@/components/ui/motion-wrapper";
 
@@ -62,6 +63,13 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
   
   return (
     <main className="industry-detail-page bg-gray-50 pb-20">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Trang chủ", item: "/" },
+          { name: "Ngành hàng", item: "/nganh-hang" },
+          { name: item.title, item: `/nganh-hang/${item.slug}` },
+        ]}
+      />
       {/* 1. Hero Banner */}
       <section className="relative w-full h-[60vh] md:h-[70vh] flex items-end pb-16 md:pb-24">
         <div className="absolute inset-0 z-0">

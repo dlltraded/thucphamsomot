@@ -20,7 +20,7 @@ const footerText = {
     quoteHref: "/bao-gia",
     quoteLabel: "Mở form báo giá",
     adminLabel: "Quản trị nội dung",
-    address: siteConfig.address,
+    address: siteConfig.addressFull,
     customers: customerHighlights.slice(0, 5),
   },
   en: {

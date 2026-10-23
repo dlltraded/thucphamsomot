@@ -52,7 +52,7 @@ export default async function EnglishQuotePage() {
   }
 
   return (
-    <PageShell eyebrow="Quote form" title="Send a buying request or supplier pitch" compact locale="en">
+    <PageShell eyebrow="Quote form" title="Send a buying request or supplier pitch" compact hiddenTitle locale="en">
       <QuotePortal initialNotice={initialNotice} locale="en" />
     </PageShell>
   );

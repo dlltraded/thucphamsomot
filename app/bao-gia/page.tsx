@@ -52,7 +52,7 @@ export default async function QuotePage() {
   }
 
   return (
-    <PageShell eyebrow="Báo giá" title="Gửi nhu cầu mua hàng hoặc chào hàng" compact>
+    <PageShell eyebrow="Báo giá" title="Gửi nhu cầu mua hàng hoặc chào hàng" compact hiddenTitle>
       <QuotePortal initialNotice={initialNotice} locale="vi" />
     </PageShell>
   );

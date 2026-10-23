@@ -113,7 +113,7 @@ export default function ContactPage() {
                   <span style={{ color: "#4ade80", fontSize: "0.78rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em" }}>Đội ngũ chuyên nghiệp</span>
                 </div>
                 <p style={{ margin: 0, color: "#fff", fontSize: "0.92rem", fontWeight: 600, lineHeight: 1.5 }}>
-                  Hơn 10 năm kinh nghiệm phân phối thực phẩm B2B tại Đồng Nai và khu vực lân cận
+                  Chính thức hoạt động từ năm 2017, phân phối thực phẩm B2B tại Đồng Nai và khu vực lân cận
                 </p>
               </div>
             </div>

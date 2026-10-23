@@ -45,7 +45,7 @@ const texts = {
         icon: Zap,
         color: "#0891b2",
         bg: "rgba(8,145,178,0.10)",
-        title: "Danh mục 2.000+ SKU",
+        title: "Danh mục 5.000+ sản phẩm",
         desc: "Rau củ, thịt cá, đông lạnh, gia vị, thực phẩm chay — tất cả từ một nhà cung cấp duy nhất.",
       },
     ]
@@ -94,7 +94,7 @@ const texts = {
         icon: Zap,
         color: "#0891b2",
         bg: "rgba(8,145,178,0.10)",
-        title: "2,000+ SKU Catalog",
+        title: "5,000+ Product Catalog",
         desc: "Vegetables, meat, frozen foods, spices, vegetarian foods — all from a single supplier.",
       },
     ]

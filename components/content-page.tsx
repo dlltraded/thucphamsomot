@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ArrowRight, BookOpenText, CheckCircle2, ClipboardCheck } from "lucide-react";
 import type { ContentSection, FaqItem } from "@/lib/content";
 import { siteConfig } from "@/lib/site";
@@ -30,6 +31,8 @@ type ContentPageProps = {
     title: string;
     summary?: string;
   };
+  // Rendered after the highlight chips (e.g. a category's product list).
+  children?: ReactNode;
 };
 
 const sectionImages = [
@@ -55,6 +58,7 @@ export function ContentPage({
   ctaHref = "/bao-gia",
   ctaLabel = "Mở form báo giá",
   quoteItem,
+  children,
 }: ContentPageProps) {
   return (
     <article className="content-detail">
@@ -62,7 +66,8 @@ export function ContentPage({
       <div className="content-detail__hero">
         <div className="content-detail__copy">
           <div className="pill">thucphamsomot.vn</div>
-          <h1 className="content-detail__title">{title}</h1>
+          {/* PageShell already renders the page's H1. */}
+          <h2 className="content-detail__title">{title}</h2>
           <p className="content-detail__description">{description}</p>
           <div className="content-detail__actions">
             <Link href={ctaHref} className="btn-primary">
@@ -117,6 +122,8 @@ export function ContentPage({
           ))}
         </div>
       ) : null}
+
+      {children}
 
       {sections.length > 0 ? (
         <div className="content-sections">

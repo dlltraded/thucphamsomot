@@ -77,30 +77,111 @@ export const categories: ContentItem[] = [
     ],
   },
   {
-    slug: "thit-ca-hai-san",
-    title: "Thịt cá hải sản",
+    slug: "thit-heo",
+    title: "Thịt heo",
     description:
-      "Nhóm thực phẩm giàu đạm cho nhà hàng, khách sạn, bếp ăn tập thể, bệnh viện và suất ăn công nghiệp.",
-    highlights: ["Thủy hải sản về kho mỗi ngày", "Nguồn thịt từ đơn vị lớn", "Quy cách theo nhu cầu bếp"],
+      "Thịt heo cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể tại Đồng Nai, TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
+    highlights: ["Cắt theo quy cách bếp", "Kiểm tra khi nhập kho", "Giao lạnh theo tuyến cố định"],
     sections: [
       {
-        heading: "Nguồn cung thịt cá cho đơn hàng lớn",
+        heading: "Thịt heo theo quy cách của bếp",
         body:
-          "Nguồn thủy hải sản và thịt cá được trình bày theo năng lực cung ứng: nhóm hàng, quy cách, tần suất giao và khả năng đáp ứng đơn hàng lặp lại.",
-        items: ["Cá và hải sản tươi sống", "Thịt heo, bò, gà theo quy cách", "Phù hợp đơn hàng lặp lại cho bếp công nghiệp"],
+          "Thịt heo là nhóm hàng dùng hằng ngày ở hầu hết bếp ăn tập thể. TPS1 cung cấp các phần thịt theo quy cách bếp yêu cầu để bếp chủ động định lượng cho từng ca.",
+        items: ["Thịt đùi, vai, ba rọi, nạc dăm, sườn, xương", "Cắt khối, cắt lát hoặc xay theo yêu cầu", "Đóng gói theo ca hoặc theo bữa"],
+      },
+      {
+        heading: "Kiểm soát chất lượng và bảo quản",
+        body:
+          "Thịt được kiểm tra cảm quan khi nhập kho, bảo quản đúng nhiệt độ và vận chuyển bằng chuỗi lạnh tới bếp. Quy trình vận hành theo hệ thống ISO 22000 và HACCP.",
+        items: ["Kiểm tra màu, mùi, độ đàn hồi khi nhận", "Giữ lạnh trong suốt quá trình giao", "Hóa đơn VAT đầy đủ"],
+      },
+    ],
+    faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/quy-trinh-chuan-kiem-tra-thit", label: "Quy trình kiểm tra thịt khi nhận hàng", description: "Các bước kiểm soát chất lượng thịt ngay tại khâu nhận hàng." },
+      { href: "/blog/du-bao-gia-thit-heo-cuoi-nam-2026", label: "Dự báo giá thịt heo cuối năm", description: "Cách ứng phó biến động giá thịt heo cho bếp ăn công nghiệp." },
+      { href: "/danh-muc/thit-bo", label: "Xem thêm: Thịt bò", description: "Thịt bò theo quy cách cho thực đơn bếp ăn tập thể." },
+    ],
+  },
+  {
+    slug: "thit-bo",
+    title: "Thịt bò",
+    description:
+      "Thịt bò cho bếp ăn công nghiệp, trường học, bệnh viện, nhà hàng và suất ăn tập thể, cung cấp theo quy cách và lịch giao của bếp.",
+    highlights: ["Thịt bò tươi và đông lạnh", "Quy cách theo món", "Giao lạnh theo lịch bếp"],
+    sections: [
+      {
+        heading: "Thịt bò cho thực đơn bếp ăn",
+        body:
+          "Thịt bò thường dùng cho các bữa tăng khẩu phần hoặc thực đơn đặc biệt. TPS1 tư vấn phần thịt phù hợp với món và định mức chi phí suất ăn của bếp.",
+        items: ["Thịt bò tươi và thịt bò đông lạnh", "Các phần thịt cho xào, kho, hầm, nướng", "Cắt và đóng gói theo yêu cầu"],
+      },
+      {
+        heading: "Bảo quản và giao hàng",
+        body:
+          "Thịt bò được bảo quản đúng điều kiện của từng loại hàng tươi hoặc đông lạnh, kiểm tra trước khi xuất kho và giao bằng xe lạnh.",
+        items: ["Kiểm tra trước khi xuất kho", "Giao lạnh theo tuyến cố định", "Hóa đơn VAT đầy đủ"],
+      },
+    ],
+    faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/quy-trinh-chuan-kiem-tra-thit", label: "Quy trình kiểm tra thịt khi nhận hàng", description: "Các bước kiểm soát chất lượng thịt ngay tại khâu nhận hàng." },
+      { href: "/danh-muc/hang-dong-lanh", label: "Xem thêm: Hàng đông lạnh", description: "Thịt bò đông lạnh giúp bếp chủ động kế hoạch nguyên liệu." },
+      { href: "/danh-muc/thit-heo", label: "Xem thêm: Thịt heo", description: "Thịt heo theo quy cách cho bếp ăn tập thể." },
+    ],
+  },
+  {
+    slug: "gia-cam",
+    title: "Gia cầm",
+    description:
+      "Thịt gà, vịt cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể, cung cấp theo quy cách và lịch giao của bếp.",
+    highlights: ["Gà, vịt nguyên con và theo phần", "Quy cách theo món", "Giao lạnh theo lịch bếp"],
+    sections: [
+      {
+        heading: "Gà, vịt cho bếp ăn tập thể",
+        body:
+          "Gia cầm là nguồn đạm phổ biến, dễ xoay vòng trong thực đơn hằng tuần. TPS1 cung cấp gà, vịt nguyên con hoặc theo phần để bếp dễ định lượng.",
+        items: ["Gà, vịt nguyên con", "Đùi, cánh, ức, má đùi theo quy cách", "Đóng gói theo ca hoặc theo bữa"],
+      },
+      {
+        heading: "Kiểm soát chất lượng",
+        body:
+          "Hàng được kiểm tra khi nhập kho, bảo quản lạnh và giao theo tuyến cố định để giữ chất lượng tới khi bếp chế biến.",
+        items: ["Kiểm tra cảm quan khi nhận", "Giữ lạnh trong suốt quá trình giao", "Hóa đơn VAT đầy đủ"],
+      },
+    ],
+    faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/quy-trinh-chuan-kiem-tra-thit", label: "Quy trình kiểm tra thịt khi nhận hàng", description: "Các bước kiểm soát chất lượng thịt ngay tại khâu nhận hàng." },
+      { href: "/danh-muc/hang-dong-lanh", label: "Xem thêm: Hàng đông lạnh", description: "Gia cầm đông lạnh khi bếp cần chủ động nguồn hàng." },
+      { href: "/danh-muc/thit-heo", label: "Xem thêm: Thịt heo", description: "Thịt heo theo quy cách cho bếp ăn tập thể." },
+    ],
+  },
+  {
+    slug: "hai-san",
+    title: "Hải sản",
+    description:
+      "Cá, tôm, mực và hải sản cho bếp ăn công nghiệp, trường học, bệnh viện, nhà hàng và suất ăn tập thể tại Đồng Nai và khu vực lân cận.",
+    highlights: ["Thủy hải sản về kho mỗi ngày", "Hàng tươi và đông lạnh", "Quy cách theo nhu cầu bếp"],
+    sections: [
+      {
+        heading: "Nguồn cung hải sản cho đơn hàng lớn",
+        body:
+          "Nguồn thủy hải sản được tổ chức theo nhóm hàng, quy cách và tần suất giao, đáp ứng đơn hàng lặp lại của bếp công nghiệp.",
+        items: ["Cá tươi và cá phi lê", "Tôm, mực và hải sản khác", "Hàng đông lạnh theo quy cách"],
       },
       {
         heading: "Tín hiệu tin cậy khi mua hàng",
         body:
-          "Đây là nhóm hàng nhạy về an toàn thực phẩm. Khách cần quan tâm quy trình nhận hàng, bảo quản, đổi trả và phản hồi khi phát sinh sự cố.",
+          "Hải sản là nhóm hàng nhạy về an toàn thực phẩm. Khách cần quan tâm quy trình nhận hàng, bảo quản, đổi trả và phản hồi khi phát sinh sự cố.",
         items: ["Kiểm tra cảm quan khi nhận hàng", "Tư vấn lịch giao theo ngày chế biến", "Ưu tiên ổn định giá cho khách mua định kỳ"],
       },
     ],
     faqs: sharedFaqs,
     relatedLinks: [
-      { href: "/blog/quy-trinh-chuan-kiem-tra-thit", label: "Quy trình kiểm tra thịt khi nhận hàng", description: "Các bước kiểm soát chất lượng thịt cá ngay tại khâu nhận hàng." },
-      { href: "/blog/du-bao-gia-thit-heo-cuoi-nam-2026", label: "Dự báo giá thịt heo cuối năm", description: "Cách ứng phó biến động giá thịt heo cho bếp ăn công nghiệp." },
-      { href: "/danh-muc/hang-dong-lanh", label: "Xem thêm: Hàng đông lạnh", description: "Phương án dự phòng khi cần chủ động nguồn thịt cá cho bếp." },
+      { href: "/blog/so-sanh-thuc-pham-tuoi-song-va-dong-lanh", label: "Tươi sống hay đông lạnh?", description: "So sánh chi phí và chất lượng để chọn phương án phù hợp cho bếp." },
+      { href: "/danh-muc/hang-dong-lanh", label: "Xem thêm: Hàng đông lạnh", description: "Phương án dự phòng khi cần chủ động nguồn hải sản cho bếp." },
+      { href: "/danh-muc/thit-heo", label: "Xem thêm: Thịt heo", description: "Thịt heo theo quy cách cho bếp ăn tập thể." },
     ],
   },
   {
@@ -127,7 +208,7 @@ export const categories: ContentItem[] = [
     relatedLinks: [
       { href: "/blog/so-sanh-thuc-pham-tuoi-song-va-dong-lanh", label: "Tươi sống hay đông lạnh?", description: "Bài toán tối ưu chi phí giữa thực phẩm tươi sống và đông lạnh." },
       { href: "/blog/giai-phap-cung-ung-thuc-pham-nha-may-3-ca", label: "Cung ứng cho nhà máy 3 ca", description: "Giải pháp logistics thực phẩm cho nhà máy hoạt động liên tục." },
-      { href: "/danh-muc/thit-ca-hai-san", label: "Xem thêm: Thịt cá hải sản", description: "Nguồn thịt cá tươi hằng ngày kết hợp cùng hàng đông lạnh." },
+      { href: "/danh-muc/hai-san", label: "Xem thêm: Hải sản", description: "Nguồn hải sản tươi hằng ngày kết hợp cùng hàng đông lạnh." },
     ],
   },
   {
@@ -155,6 +236,33 @@ export const categories: ContentItem[] = [
       { href: "/blog/7-sai-lam-lang-phi-ngan-sach-suat-an", label: "7 sai lầm lãng phí ngân sách suất ăn", description: "Nhận diện sai lầm phổ biến khiến nhà máy tốn thêm chi phí." },
       { href: "/blog/cach-xay-dung-thuc-don-suat-an-25k", label: "Xây dựng thực đơn suất ăn 25k", description: "Cân đối gia vị và nguyên liệu để giữ định mức chi phí suất ăn." },
       { href: "/danh-muc/thuc-pham-chay", label: "Xem thêm: Thực phẩm chay", description: "Gia vị chay đi kèm khi bếp cần menu linh hoạt." },
+    ],
+  },
+  {
+    slug: "do-kho",
+    title: "Đồ khô",
+    description:
+      "Gạo, mì, bún khô, đậu, nấm khô, đồ hộp và hàng khô cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể.",
+    highlights: ["Danh mục hàng khô đầy đủ", "Một đầu mối cùng hàng tươi", "Giao chung tuyến định kỳ"],
+    sections: [
+      {
+        heading: "Hàng khô cho bếp vận hành hằng ngày",
+        body:
+          "Đồ khô là nhóm hàng có nhiều mã nhất trong danh mục của TPS1. Bếp có thể đặt hàng khô cùng đơn hàng tươi để giảm số nhà cung cấp phải làm việc.",
+        items: ["Gạo, mì, bún, miến, phở khô", "Đậu, nấm, rong biển và hàng khô khác", "Đồ hộp và nguyên liệu chế biến"],
+      },
+      {
+        heading: "Kế hoạch tồn kho cho bếp",
+        body:
+          "Hàng khô có hạn dùng dài, phù hợp đặt theo tuần hoặc theo tháng. TPS1 tư vấn số lượng theo định mức suất ăn để bếp không tồn kho quá nhiều.",
+        items: ["Đặt theo tuần hoặc theo tháng", "Giao chung tuyến với hàng tươi", "Hóa đơn VAT đầy đủ"],
+      },
+    ],
+    faqs: sharedFaqs,
+    relatedLinks: [
+      { href: "/blog/7-sai-lam-lang-phi-ngan-sach-suat-an", label: "7 sai lầm lãng phí ngân sách suất ăn", description: "Nhận diện sai lầm phổ biến khiến bếp tốn thêm chi phí." },
+      { href: "/danh-muc/gia-vi", label: "Xem thêm: Gia vị", description: "Gia vị đi kèm để hoàn thiện đơn hàng khô." },
+      { href: "/danh-muc/rau-cu-qua", label: "Xem thêm: Rau củ quả", description: "Đặt hàng tươi và hàng khô trong cùng một đơn." },
     ],
   },
   {

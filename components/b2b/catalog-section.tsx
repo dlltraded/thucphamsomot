@@ -5,7 +5,8 @@ import { categories } from "@/lib/content";
 
 const imageMap: Record<string, string> = {
   "rau-cu-qua": "/images/categories/rau-cu-qua.png",
-  "thit-ca-hai-san": "/images/categories/thit-ca.png",
+  "thit-heo": "/images/categories/thit-ca.png",
+  "hai-san": "/images/tps1-meat-seafood.png",
   "hang-dong-lanh": "/images/categories/dong-lanh.png",
   "gia-vi": "/images/categories/gia-vi.png",
   "thuc-pham-chay": "/images/categories/chay.png",
@@ -40,10 +41,15 @@ const enCategoryOverrides: Record<string, { title: string; description: string; 
     description: "Fresh vegetables for canteens, schools, hospitals, restaurants, and industrial catering.",
     highlights: ["Dalat & West sources", "VietGAP available", "Scheduled delivery"]
   },
-  "thit-ca-hai-san": {
-    title: "Meat & Seafood",
-    description: "High-protein foods for restaurants, hotels, canteens, hospitals, and industrial catering.",
-    highlights: ["Daily fresh seafood", "Major meat suppliers", "Custom specs"]
+  "thit-heo": {
+    title: "Pork",
+    description: "Pork cut to kitchen specifications for canteens, schools, hospitals, and industrial catering.",
+    highlights: ["Custom cuts", "Checked on arrival", "Cold-chain delivery"]
+  },
+  "hai-san": {
+    title: "Seafood",
+    description: "Fish, shrimp, squid, and seafood for canteens, hospitals, restaurants, and industrial catering.",
+    highlights: ["Daily fresh seafood", "Fresh and frozen", "Custom specs"]
   },
   "hang-dong-lanh": {
     title: "Frozen Foods",
@@ -64,7 +70,9 @@ const enCategoryOverrides: Record<string, { title: string; description: string; 
 
 
 export function B2BCatalog({ locale = "vi" }: { locale?: "vi" | "en" }) {
-  const displayCats = categories.slice(0, 5);
+  const displayCats = ["rau-cu-qua", "thit-heo", "hai-san", "hang-dong-lanh", "gia-vi"]
+    .map((slug) => categories.find((item) => item.slug === slug))
+    .filter((item): item is (typeof categories)[number] => Boolean(item));
   const t = texts[locale];
 
   return (

@@ -30,11 +30,11 @@ export default function GioiThieuPage() {
             </div>
             <h1 className="b2b-about-hero__title">
               Đối tác vận hành bếp ăn<br />
-              <span style={{ color: "#4ade80" }}>đáng tin cậy của bạn</span>
+              <span style={{ color: "#4ade80" }}>đáng tin cậy cho doanh nghiệp</span>
             </h1>
             <p className="b2b-about-hero__desc">
-              Hơn 10 năm kinh nghiệm phân phối thực phẩm B2B cho suất ăn công nghiệp,
-              trường học, bệnh viện và nhà hàng tại Đồng Nai & khu vực lân cận.
+              Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, chuyên cung cấp thực phẩm
+              và giải pháp bếp ăn toàn diện cho nhà máy, trường học, bệnh viện và các công ty suất ăn công nghiệp.
             </p>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function GioiThieuPage() {
                 Tại Thực Phẩm Số Một (TPS1), chúng tôi thấu hiểu áp lực của người quản lý bếp ăn: từ việc cân đối chi phí, đảm bảo định lượng, đến việc tuân thủ tuyệt đối các tiêu chuẩn vệ sinh an toàn thực phẩm.
               </p>
               <p className="section-desc" style={{ marginBottom: "32px" }}>
-                Thay vì bán lẻ rời rạc, chúng tôi chọn con đường chuyên biệt hóa B2B. Hệ thống kho bãi, xe lạnh và quy trình sơ chế của TPS1 được xây dựng chỉ để giải quyết một mục tiêu duy nhất: Giúp bếp ăn của bạn vận hành trơn tru mỗi ngày.
+                Thay vì bán lẻ rời rạc, chúng tôi chọn con đường chuyên biệt hóa B2B. Hệ thống kho bãi, xe lạnh và quy trình sơ chế của TPS1 được xây dựng chỉ để giải quyết một mục tiêu duy nhất: Giúp bếp ăn của khách hàng vận hành trơn tru mỗi ngày.
               </p>
               
               <div className="b2b-about-story__values">
@@ -208,8 +208,8 @@ export default function GioiThieuPage() {
                 <div className="b2b-scale-stat__label">Đối tác B2B tin dùng</div>
               </div>
               <div className="b2b-scale-stat">
-                <div className="b2b-scale-stat__num">2,000+</div>
-                <div className="b2b-scale-stat__label">SKU Sản phẩm đa dạng</div>
+                <div className="b2b-scale-stat__num">5.000+</div>
+                <div className="b2b-scale-stat__label">Sản phẩm đa dạng</div>
               </div>
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">24/7</div>
@@ -227,7 +227,7 @@ export default function GioiThieuPage() {
       {/* 5. CTA */}
       <section className="b2b-cta-band">
         <div className="container-shell position-relative z-10" style={{ textAlign: "center" }}>
-          <h2 className="section-title-light">Sẵn sàng nâng cấp chuỗi cung ứng của bạn?</h2>
+          <h2 className="section-title-light">Sẵn sàng nâng cấp chuỗi cung ứng cho bếp ăn?</h2>
           <p className="section-desc" style={{ color: "rgba(255,255,255,0.7)", margin: "0 auto 32px" }}>
             Liên hệ ngay với đội ngũ chuyên viên của TPS1 để nhận bảng giá sỉ tốt nhất hôm nay.
           </p>

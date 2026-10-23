@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentPage } from "@/components/content-page";
 import { PageShell } from "@/components/page-shell";
+import { BreadcrumbJsonLd } from "@/components/breadcrumb-json-ld";
 import { findBySlug, services } from "@/lib/content";
 import { makeMetadata } from "@/lib/seo";
 
@@ -28,6 +29,12 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
 
   return (
     <PageShell eyebrow="Dịch vụ" title={item.title} description={description}>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Trang chủ", item: "/" },
+          { name: item.title, item: `/dich-vu/${item.slug}` },
+        ]}
+      />
       <ContentPage title={item.title} description={description} sections={item.sections} faqs={item.faqs} />
     </PageShell>
   );
