@@ -33,6 +33,28 @@ Ngưỡng "tốt" của Google: LCP ≤ 2,5 s, CLS ≤ 0,1, TBT càng thấp cà
 
 ---
 
+### Sau khi sửa (đo lại trên web thật, commit cb4d66b)
+
+Đã làm: hình đầu trang con tải ngay (`priority`), tắt hiệu ứng 3D trên điện thoại (phương án A, chủ web chọn). Cùng cách đo như trên.
+
+| Trang | Điểm trước → sau | LCP trước → sau | TBT trước → sau |
+|---|---|---|---|
+| `/` | 44 → **53** | 4,6 → 4,7 s | 4.214 → **995 ms** |
+| `/san-pham` | 51 → 54 | 4,5 → 4,5 s | 1.411 → 1.056 ms |
+| `/danh-muc/rau-cu-qua` | 53 → 53 | 4,5 → 4,5 s | 1.059 → 1.022 ms |
+| `/danh-muc/thit-heo` | 49 → 54 | 4,9 → 4,6 s | 1.169 → 973 ms |
+| `/gioi-thieu` | 63 → 58 | 4,0 → 4,1 s | 871 → 1.128 ms |
+
+Lighthouse dao động vài điểm giữa các lần đo (trang chủ lần 3 đạt 77), nên chênh lệch nhỏ ở `/gioi-thieu` và `/danh-muc/rau-cu-qua` nằm trong sai số.
+
+**Kết quả:** TBT trang chủ giảm hơn 4 lần. LCP chưa đổi đáng kể, vẫn khoảng 4,5 s.
+
+**Việc tiếp theo để hạ LCP** (chưa làm):
+- Mỗi trang tải **15–18 file font** Be Vietnam Pro (gói `@fontsource`, đủ mọi bảng chữ), cộng một file CSS 51 KB chặn hiển thị khoảng 0,3 s. Chuyển sang `next/font` chỉ lấy bộ chữ tiếng Việt + Latin sẽ bớt phần lớn số file này.
+- Hình hero trang chủ (ảnh kho hàng) nên có bản nhỏ riêng cho điện thoại.
+
+---
+
 ## 2. Dữ liệu có cấu trúc (việc 9)
 
 Kiểm tra bằng script đọc toàn bộ JSON-LD trên trang thật và đối chiếu các trường bắt buộc theo tài liệu Google. Công cụ Rich Results Test của Google không chạy xong trong trình duyệt tự động; có thể bấm thử trực tiếp:
