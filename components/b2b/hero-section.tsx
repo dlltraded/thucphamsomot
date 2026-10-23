@@ -75,10 +75,12 @@ const texts = {
     certText: "Đạt chứng nhận ISO 22000 & HACCP",
     title: (
       <>
-        Thực phẩm tươi,<br />
-        giao đúng hẹn<br />
-        cho <span>bếp ăn tập thể</span><br />
-        tại Đồng Nai
+        {/* Phrase groups never break internally, so lines only wrap between phrases. */}
+        <span className="b2b-hero__phrase">Thực phẩm tươi</span>{" "}
+        <span className="b2b-hero__phrase">về đến bếp đúng giờ,</span>{" "}
+        <span className="b2b-hero__phrase">để mỗi <span>bữa ăn tập thể</span></span>{" "}
+        <span className="b2b-hero__phrase">tại Đồng Nai</span>{" "}
+        <span className="b2b-hero__phrase">luôn được trọn vẹn</span>
       </>
     ),
     sub: "TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh và đồ khô cho bếp ăn nhà máy, trường học và bệnh viện. Hàng được giao theo lịch cố định đã thống nhất với bếp, kèm hóa đơn VAT đầy đủ; báo giá được gửi trong vòng 24 giờ.",

@@ -1259,6 +1259,9 @@ a {
 }
 
 .b2b-hero__title span { color: #4ade80; }
+/* Headline phrase groups: stay white and never break mid-phrase; lines are balanced. */
+.b2b-hero__title { text-wrap: balance; }
+.b2b-hero__title .b2b-hero__phrase { color: inherit; white-space: nowrap; }
 
 .b2b-hero__sub {
   font-size: 1.1rem; color: rgba(255,255,255,0.78); line-height: 1.7;
