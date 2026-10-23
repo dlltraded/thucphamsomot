@@ -98,28 +98,41 @@ Không có lỗi JSON, không thiếu trường bắt buộc.
 
 ## 3. Search Console (việc 8)
 
-- DNS của `thucphamsomot.vn` **đã có bản ghi `google-site-verification`**, nên property dạng Domain nhiều khả năng đã được xác minh.
-- Claude không đăng nhập được Search Console, các bước dưới do chủ web làm (khoảng 15 phút).
+Property `thucphamsomot.vn` (loại Miền) đã được xác minh. Đã làm ngày 23/10/2026 (Claude thao tác trên trình duyệt, chủ web đăng nhập):
 
-**Bước làm:**
-1. Search Console → chọn property `thucphamsomot.vn` → **Sơ đồ trang web (Sitemaps)** → nhập `sitemap.xml` → Gửi.
-2. **Kiểm tra URL (URL Inspection)** lần lượt 10 URL dưới đây → bấm **Yêu cầu lập chỉ mục**.
-3. Sau 3–7 ngày, ghi trạng thái vào cột cuối và gửi lại để cập nhật bảng.
+- **Sitemap:** gửi `https://thucphamsomot.vn/sitemap.xml` → **Thành công, 75 URL được phát hiện**. Còn một mục cũ `sitemap_index.xml` (gửi 7/1/2026, của website WordPress trước) báo "Không thể tìm nạp"; có thể xóa cho gọn, không ảnh hưởng.
+- **Yêu cầu lập chỉ mục:** đã gửi cho cả 10 URL, Google báo "Đã yêu cầu lập chỉ mục" cho từng URL.
 
-| # | URL | Trạng thái index |
-|---|---|---|
-| 1 | https://thucphamsomot.vn/ | |
-| 2 | https://thucphamsomot.vn/san-pham | |
-| 3 | https://thucphamsomot.vn/danh-muc/rau-cu-qua | |
-| 4 | https://thucphamsomot.vn/danh-muc/thit-heo | |
-| 5 | https://thucphamsomot.vn/danh-muc/thit-bo | |
-| 6 | https://thucphamsomot.vn/danh-muc/gia-cam | |
-| 7 | https://thucphamsomot.vn/danh-muc/hai-san | |
-| 8 | https://thucphamsomot.vn/danh-muc/hang-dong-lanh | |
-| 9 | https://thucphamsomot.vn/danh-muc/do-kho | |
-| 10 | https://thucphamsomot.vn/danh-muc/gia-vi | |
+| # | URL | Trạng thái lúc gửi (23/10) | Sau 3–7 ngày |
+|---|---|---|---|
+| 1 | https://thucphamsomot.vn/ | Đã có trên Google | |
+| 2 | https://thucphamsomot.vn/san-pham | Đã có trên Google | |
+| 3 | https://thucphamsomot.vn/danh-muc/rau-cu-qua | Đã phát hiện – chưa lập chỉ mục | |
+| 4 | https://thucphamsomot.vn/danh-muc/thit-heo | Đã phát hiện – chưa lập chỉ mục | |
+| 5 | https://thucphamsomot.vn/danh-muc/thit-bo | Đã phát hiện – chưa lập chỉ mục | |
+| 6 | https://thucphamsomot.vn/danh-muc/gia-cam | Đã phát hiện – chưa lập chỉ mục | |
+| 7 | https://thucphamsomot.vn/danh-muc/hai-san | Đã phát hiện – chưa lập chỉ mục | |
+| 8 | https://thucphamsomot.vn/danh-muc/hang-dong-lanh | Đã phát hiện – chưa lập chỉ mục | |
+| 9 | https://thucphamsomot.vn/danh-muc/do-kho | Đã phát hiện – chưa lập chỉ mục | |
+| 10 | https://thucphamsomot.vn/danh-muc/gia-vi | Đã phát hiện – chưa lập chỉ mục | |
 
 Trang `/danh-muc/thuc-pham-chay`, các trang ngành hàng, khu vực và blog sẽ được Google tự tìm qua sitemap.
+
+### Báo cáo "Trang" (Google cập nhật lần cuối 16/10/2026)
+
+**13 trang đã lập chỉ mục, 57 trang chưa.** Lý do:
+
+| Lý do | Số trang | Ghi chú |
+|---|---|---|
+| Không tìm thấy (404) | 45 | Đường dẫn của website WordPress cũ, ví dụ `/thit-trung/thit-bo/`, `/rau-cu-trai-cay/rau-cu-tuoi/`, `/do-hop-do-kho/bot-cac-loai`, `/the-san-pham/...`, `/tin-tuc` |
+| Đã thu thập – chưa lập chỉ mục | 5 | `/en/products`, `/nam/nam-rom-tuoi`, `/sua-cac-loai`, `/danh-muc-san-pham/thit-trung/thit-ga-vit`, `/thit-trung/thit-ga-vit` (đa số cũng là URL cũ) |
+| Trang có lệnh chuyển hướng | 5 | Bình thường (URL cũ đã 308 sang URL mới) |
+| Bị chặn 403 | 1 | Chưa xem chi tiết |
+| Trang thay thế có thẻ chính tắc | 1 | Bình thường |
+
+**Việc nên làm tiếp:** chuyển hướng 301/308 các URL WordPress cũ còn có giá trị (danh mục cũ như `/thit-trung/thit-bo/` → `/danh-muc/thit-bo`) để giữ lại lượt truy cập và liên kết cũ, thay vì để 404.
+
+Core Web Vitals trong Search Console hiện "Không có dữ liệu" (chưa đủ lượt truy cập thật từ Chrome).
 
 ---
 
