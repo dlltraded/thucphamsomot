@@ -120,6 +120,7 @@ export function PageShell({ eyebrow, title, description, compact = false, hidden
             src={visual}
             alt={`${eyebrow} ${text.brandAlt}`}
             fill
+            priority
             sizes="(max-width: 1024px) 100vw, 42vw"
             className="page-hero__image"
           />
