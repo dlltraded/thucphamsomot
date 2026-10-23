@@ -31,30 +31,31 @@ const ThreeBackground = dynamic(
 const texts = {
   vi: {
     heroStats: [
-      { value: "24h", label: "Hoàn thành báo giá" },
+      { value: "24h", label: "Gửi báo giá" },
       { value: "30'", label: "Xác nhận yêu cầu" },
-      { value: "B2B", label: "Báo giá theo sản lượng" },
-      { value: "VAT", label: "Chứng từ đầy đủ" },
+      { value: "109+", label: "Doanh nghiệp và bếp ăn tin chọn" },
+      { value: "99,8%", label: "Đơn hàng giao đúng hẹn" },
     ],
     trustBadges: [
-      { icon: ShieldCheck, label: "Hồ sơ ATTP theo yêu cầu" },
-      { icon: FileText, label: "Báo giá theo sản lượng" },
-      { icon: Award, label: "Giao định kỳ theo thỏa thuận" },
+      { icon: ShieldCheck, label: "Cung cấp hồ sơ an toàn thực phẩm khi cần" },
+      { icon: FileText, label: "Giá sỉ tính theo sản lượng đặt hàng" },
+      { icon: Award, label: "Giao theo lịch ngày, tuần hoặc theo ca" },
     ],
-    certText: "Nguồn nguyên liệu B2B · Hồ sơ rõ ràng · Giao định kỳ",
+    certText: "Đạt chứng nhận ISO 22000 & HACCP",
     title: (
       <>
-        Đối tác cung ứng<br />
-        thực phẩm B2B <span>chuyên nghiệp</span><br />
+        Thực phẩm tươi,<br />
+        giao đúng hẹn<br />
+        cho <span>bếp ăn tập thể</span><br />
         tại Đồng Nai
       </>
     ),
-    sub: "Phục vụ bếp ăn tập thể, nhà máy, trường học và bệnh viện. Báo giá trong 24h · Giao định kỳ · Hóa đơn VAT đầy đủ.",
+    sub: "TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh và đồ khô cho bếp ăn nhà máy, trường học và bệnh viện. Hàng được giao theo lịch cố định đã thống nhất với bếp, kèm hóa đơn VAT đầy đủ; báo giá được gửi trong vòng 24 giờ.",
     formRibbon: "PHẢN HỒI TRONG 30 PHÚT",
     formSuccessTitle: "Đã nhận yêu cầu!",
     formSuccessDesc: (name: string) => (
       <>
-        Hệ thống đã ghi nhận yêu cầu của <strong>{name || "anh/chị"}</strong>.<br/>
+        TPS1 đã ghi nhận yêu cầu của <strong>{name || "quý khách"}</strong>.<br/>
         TPS1 sẽ xác nhận yêu cầu trong <strong>30 phút</strong> và hoàn thành báo giá trong <strong>24 giờ</strong>.
       </>
     ),
@@ -62,9 +63,9 @@ const texts = {
     formCommitment1: "Báo giá minh bạch: Cạnh tranh theo số lượng, không phí ẩn.",
     formCommitment2: "Hồ sơ rõ ràng: Cung cấp chứng từ và hồ sơ ATTP theo yêu cầu.",
     formNewRequest: "← Gửi yêu cầu khác",
-    formTitle: "Gửi nhu cầu nhận báo giá ngay",
-    formDesc: "Tải lên danh sách cần mua hoặc điền nhanh thông tin bên dưới.",
-    uploadPlaceholder: "Kéo thả hoặc Tải lên File danh mục (Excel/PDF)",
+    formTitle: "Gửi nhu cầu, nhận báo giá trong 24 giờ",
+    formDesc: "Tải lên danh sách hàng cần mua, hoặc điền vài thông tin ngắn bên dưới.",
+    uploadPlaceholder: "Kéo thả hoặc tải lên danh sách hàng (Excel/PDF)",
     uploadSub: "Xác nhận trong 30 phút · Hoàn thành báo giá trong 24 giờ",
     companyLabel: "Tên công ty hoặc cơ sở bếp *",
     companyPlaceholder: "Ví dụ: Công ty TNHH ABC",
@@ -72,8 +73,8 @@ const texts = {
     phonePlaceholder: "Nhập số điện thoại",
     categoryLabel: "Nhóm hàng quan tâm",
     catOptions: ["Rau củ quả tươi sạch", "Thịt cá hải sản", "Đồ khô & gia vị", "Tất cả các nhóm"],
-    notesLabel: "Ghi chú nhanh yêu cầu *",
-    notesPlaceholder: "Ví dụ: Cần gà dai 500kg/tuần, hỗ trợ 2 bếp khè...",
+    notesLabel: "Mô tả ngắn nhu cầu *",
+    notesPlaceholder: "Ví dụ: Cần 500 kg gà mỗi tuần, giao cho 2 bếp ăn",
     submitBtn: "GỬI YÊU CẦU BÁO GIÁ",
     submitSubmitting: "Đang gửi yêu cầu...",
     disclaimer: "* TPS1 dùng thông tin này để liên hệ tư vấn và báo giá. Không dùng cho mục đích khác.",
