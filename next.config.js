@@ -41,6 +41,35 @@ const nextConfig = {
       { source: "/san-pham/hang-dong-lanh", destination: "/danh-muc/hang-dong-lanh", permanent: true },
       { source: "/san-pham/gia-vi-nha-bep", destination: "/danh-muc/gia-vi", permanent: true },
       { source: "/san-pham/thuc-pham-chay", destination: "/danh-muc/thuc-pham-chay", permanent: true },
+      // URLs of the old WordPress site that Search Console still reports as 404
+      // (10/2026). Each points to the closest current page; groups follow the
+      // KiotViet group the products now live in (drinks and dairy are in Đồ khô,
+      // cooking oil in Gia vị). /gio-hang is deliberately left as 404.
+      { source: "/rau-cu-tuoi/:slug*", destination: "/danh-muc/rau-cu-qua", statusCode: 301 },
+      { source: "/rau-cu-trai-cay/:slug*", destination: "/danh-muc/rau-cu-qua", statusCode: 301 },
+      { source: "/nam/:slug*", destination: "/danh-muc/rau-cu-qua", statusCode: 301 },
+      { source: "/chua-phan-loai/bap-my", destination: "/danh-muc/rau-cu-qua", statusCode: 301 },
+      {
+        source: "/the-san-pham/cach-bao-quan-bong-cai-xanh",
+        destination: "/blog/bi-quyet-bao-quan-rau-cu-trong-kho-lanh",
+        statusCode: 301,
+      },
+      // Every other /the-san-pham/* tag page was about a vegetable.
+      { source: "/the-san-pham/:slug*", destination: "/danh-muc/rau-cu-qua", statusCode: 301 },
+      { source: "/thit-trung/thit-bo", destination: "/danh-muc/thit-bo", statusCode: 301 },
+      { source: "/thit-trung/thit-ga-vit", destination: "/danh-muc/gia-cam", statusCode: 301 },
+      { source: "/danh-muc-san-pham/thit-trung/thit-ga-vit", destination: "/danh-muc/gia-cam", statusCode: 301 },
+      { source: "/hai-san/:slug*", destination: "/danh-muc/hai-san", statusCode: 301 },
+      { source: "/dau-an-gia-vi/:slug*", destination: "/danh-muc/gia-vi", statusCode: 301 },
+      { source: "/do-hop-do-kho/:slug*", destination: "/danh-muc/do-kho", statusCode: 301 },
+      { source: "/do-uong-cac-loai/:slug*", destination: "/danh-muc/do-kho", statusCode: 301 },
+      { source: "/sua-cac-loai", destination: "/danh-muc/do-kho", statusCode: 301 },
+      { source: "/ve-sinh-nha-cua/:slug*", destination: "/san-pham", statusCode: 301 },
+      { source: "/chua-phan-loai", destination: "/san-pham", statusCode: 301 },
+      { source: "/tin-tuc", destination: "/blog", statusCode: 301 },
+      { source: "/blog/meo-vat-cuoc-song", destination: "/blog", statusCode: 301 },
+      { source: "/blog/song-khoe", destination: "/blog", statusCode: 301 },
+      { source: "/hop-tac", destination: "/lien-he", statusCode: 301 },
       // Single canonical host.
       {
         source: "/:path*",
