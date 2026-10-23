@@ -1,6 +1,8 @@
 ---
 title: "So sánh báo giá thực phẩm cho bếp ăn tập thể: đừng chỉ nhìn đơn giá"
 excerpt: "Hai báo giá chênh nhau vài nghìn đồng một ký chưa chắc bên rẻ hơn là rẻ thật. Cách đưa các báo giá về cùng một chuẩn để so sánh: quy cách, hao hụt, đơn vị tính, VAT và thời hạn giữ giá."
+seoTitle: "So sánh báo giá thực phẩm bếp ăn: đừng chỉ nhìn đơn giá"
+seoDescription: "Báo giá rẻ hơn vài nghìn đồng một ký chưa chắc đã rẻ thật. Cách đưa các báo giá về cùng chuẩn: quy cách, hao hụt, đơn vị tính, VAT và thời hạn giữ giá."
 category: "Vận hành"
 author: "TPS1"
 publishedAt: "2026-10-18T08:00:00.000Z"

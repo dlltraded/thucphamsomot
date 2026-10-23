@@ -9,9 +9,9 @@ import { LeadCaptureSection } from "@/components/b2b/lead-capture";
 import { QuickQuoteForm } from "@/components/b2b/quick-quote-form";
 
 export const metadata = makeMetadata({
-  title: "Nhà Cung Cấp Thực Phẩm Bếp Ăn Công Nghiệp Tại Đồng Nai | TPS1",
+  title: "Nhà cung cấp thực phẩm cho bếp ăn công nghiệp tại Đồng Nai | TPS1",
   description:
-    "Chuyên cung cấp thực phẩm B2B (rau củ, thịt cá, gia vị) cho bếp ăn công nghiệp, nhà máy, xí nghiệp tại Đồng Nai, Nhơn Trạch, Biên Hòa. Chuẩn ISO 22000, HACCP.",
+    "TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh và đồ khô cho bếp ăn nhà máy, trường học, bệnh viện tại Đồng Nai. Đạt ISO 22000, HACCP; báo giá trong 24 giờ.",
   path: "/",
 });
 

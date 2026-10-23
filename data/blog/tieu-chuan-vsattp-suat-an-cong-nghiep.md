@@ -1,6 +1,8 @@
 ---
 title: "Tiêu chuẩn vệ sinh an toàn thực phẩm mới nhất cho suất ăn công nghiệp"
 excerpt: "Cập nhật các quy định mới nhất về VSATTP mà các bếp ăn tập thể, nhà thầu suất ăn công nghiệp cần tuân thủ để tránh rủi ro pháp lý và đảm bảo sức khỏe công nhân."
+seoTitle: "Quy định VSATTP cho bếp ăn và suất ăn công nghiệp"
+seoDescription: "Các quy định về vệ sinh an toàn thực phẩm mà bếp ăn tập thể và nhà thầu suất ăn công nghiệp cần tuân thủ để tránh rủi ro pháp lý, bảo vệ sức khỏe công nhân."
 category: "Kiến thức"
 author: "TPS1"
 publishedAt: "2026-07-22T08:00:00.000Z"

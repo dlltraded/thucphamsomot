@@ -11,6 +11,9 @@ export type BlogPost = {
   slug: string;
   title: string;
   excerpt: string;
+  // Optional search-result title/description; the on-page title and excerpt stay as written.
+  seoTitle?: string;
+  seoDescription?: string;
   category: string;
   author: string;
   publishedAt: string;
@@ -42,6 +45,8 @@ export async function getBlogPostBySlug(slug: string, includeContent = true): Pr
     slug: realSlug,
     title: data.title || '',
     excerpt: data.excerpt || '',
+    seoTitle: data.seoTitle || undefined,
+    seoDescription: data.seoDescription || undefined,
     category: data.category || 'Blog',
     author: data.author || 'TPS1',
     publishedAt: data.publishedAt || new Date().toISOString(),

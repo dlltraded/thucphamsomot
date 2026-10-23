@@ -7,8 +7,8 @@ import { getAllBlogPosts, formatBlogDate } from "@/lib/blog";
 export const dynamic = "force-dynamic";
 
 export const metadata = makeMetadata({
-  title: "Blog - Tin tức & Hướng dẫn",
-  description: "Các bài viết hướng dẫn về thực phẩm, quản lý bếp ăn, suất ăn công nghiệp và cập nhật tin tức thị trường B2B.",
+  title: "Kiến thức vận hành bếp ăn tập thể",
+  description: "Bài viết cho người quản lý bếp ăn, phòng thu mua nhà máy và nhà trường: định mức nguyên liệu, an toàn thực phẩm, chi phí suất ăn và cách chọn nhà cung cấp.",
   path: "/blog",
 });
 

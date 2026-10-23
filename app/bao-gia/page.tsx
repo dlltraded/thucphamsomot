@@ -4,8 +4,8 @@ import { PageShell } from "@/components/page-shell";
 import { QuotePortal } from "@/components/quote-portal";
 
 export const metadata = makeMetadata({
-  title: "Báo giá & chào hàng | Quote",
-  description: "Người mua điền form online, nhà cung cấp điền form trên web bằng tiếng Việt.",
+  title: "Gửi yêu cầu báo giá hoặc chào hàng",
+  description: "Đơn vị mua hàng gửi nhu cầu để nhận báo giá sỉ trong 24 giờ; nhà cung cấp gửi thông tin chào hàng đến bộ phận thu mua của TPS1.",
   path: "/bao-gia",
 });
 

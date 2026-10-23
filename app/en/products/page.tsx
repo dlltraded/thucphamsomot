@@ -5,7 +5,7 @@ import { makeMetadata } from "@/lib/seo";
 import { ProductsGrid } from "@/app/san-pham/products-grid";
 
 export const metadata = makeMetadata({
-  title: "Products",
+  title: "Food Products for B2B Kitchens",
   description: "Core product groups supplied by TPS1 for B2B kitchens and food service operators.",
   path: "/en/products",
 });

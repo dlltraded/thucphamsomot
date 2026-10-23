@@ -6,8 +6,8 @@ import { makeMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Hồ sơ năng lực",
-  description: "Xem hồ sơ năng lực TPS1, năng lực cung ứng và thông tin giới thiệu công ty.",
+  title: "Hồ sơ năng lực Công ty Thực Phẩm Số Một",
+  description: "Hồ sơ năng lực của Thực Phẩm Số Một: thông tin pháp lý, chứng nhận chất lượng và năng lực cung ứng thực phẩm cho bếp ăn tập thể, nhà máy, trường học.",
   path: "/ho-so-nang-luc",
 });
 

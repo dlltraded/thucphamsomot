@@ -46,8 +46,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const item = findBySlug(industries, slug);
   if (!item) return makeMetadata({ title: "Ngành hàng", path: `/nganh-hang/${slug}` });
   return makeMetadata({
-    title: industrySeoTitles[item.slug] ?? item.title,
-    description: item.description,
+    title: item.metaTitle ?? industrySeoTitles[item.slug] ?? item.title,
+    description: item.metaDescription ?? item.description,
     path: `/nganh-hang/${item.slug}`,
   });
 }

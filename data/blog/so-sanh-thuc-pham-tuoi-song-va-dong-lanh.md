@@ -1,6 +1,8 @@
 ---
 title: "So sánh thực phẩm tươi sống và đông lạnh: Bài toán tối ưu chi phí cho bếp ăn"
 excerpt: "Định kiến thực phẩm đông lạnh không ngon bằng đồ tươi đang dần thay đổi nhờ công nghệ cấp đông sâu siêu tốc. Liệu bếp ăn công nghiệp nên chọn tươi hay đông?"
+seoTitle: "Thực phẩm tươi sống hay đông lạnh cho bếp ăn?"
+seoDescription: "So sánh thực phẩm tươi sống và đông lạnh về chất lượng, chi phí và bảo quản, giúp bếp ăn công nghiệp chọn phương án phù hợp cho từng nhóm hàng."
 category: "Kiến thức"
 author: "TPS1"
 publishedAt: "2026-07-25T11:30:00.000Z"

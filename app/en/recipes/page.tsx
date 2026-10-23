@@ -5,7 +5,7 @@ import { PageShell } from "@/components/page-shell";
 import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
-  title: "Recipes and planning",
+  title: "Recipes and Kitchen Planning",
   description: "Kitchen planning notes and menu-oriented food supply content from TPS1.",
   path: "/en/recipes",
 });

@@ -5,7 +5,7 @@ import { PageShell } from "@/components/page-shell";
 import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
-  title: "Ingredients",
+  title: "Ingredient Categories",
   description: "Ingredient categories and B2B supply orientation for TPS1 customers.",
   path: "/en/ingredients",
 });

@@ -1,6 +1,8 @@
 ---
 title: "Cách xây dựng thực đơn suất ăn 25k vẫn đảm bảo dinh dưỡng và định lượng"
 excerpt: "Thách thức lớn nhất của các nhà thầu bếp ăn là lạm phát giá cả trong khi ngân sách suất ăn vẫn giữ nguyên ở mức 25,000đ. Làm sao để giải bài toán này?"
+seoTitle: "Xây dựng thực đơn suất ăn 25.000 đồng đủ dinh dưỡng"
+seoDescription: "Giá nguyên liệu tăng trong khi mức suất ăn vẫn 25.000 đồng. Cách xây dựng thực đơn giữ đủ dinh dưỡng và định lượng cho bếp ăn công nghiệp."
 category: "Thực đơn"
 author: "TPS1"
 publishedAt: "2026-07-26T14:00:00.000Z"

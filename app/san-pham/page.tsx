@@ -17,10 +17,10 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const page = parsePage((await searchParams).trang);
   return makeMetadata({
     title: page > 1
-      ? `Danh mục 5.000+ sản phẩm thực phẩm cho bếp ăn – trang ${page}`
-      : "Danh mục 5.000+ sản phẩm thực phẩm cho bếp ăn công nghiệp",
+      ? `Danh mục 5.000+ sản phẩm cho bếp ăn – trang ${page}`
+      : "Danh mục 5.000+ sản phẩm cho bếp ăn công nghiệp",
     description:
-      "Hơn 5.000 sản phẩm: rau củ quả, thịt heo, thịt bò, gia cầm, hải sản, hàng đông lạnh, gia vị, đồ khô cho bếp ăn công nghiệp, trường học tại Đồng Nai. Báo giá theo sản lượng.",
+      "Hơn 5.000 sản phẩm: rau củ quả, thịt heo, thịt bò, gia cầm, hải sản, hàng đông lạnh, gia vị, đồ khô. Giá sỉ theo sản lượng, giao tận bếp tại Đồng Nai.",
     path: page > 1 ? `/san-pham?trang=${page}` : "/san-pham",
   });
 }

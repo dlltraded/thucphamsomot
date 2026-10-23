@@ -13,6 +13,9 @@ export type ContentItem = {
   slug: string;
   title: string;
   description?: string;
+  // Search-result title/description, when they should differ from the on-page text.
+  metaTitle?: string;
+  metaDescription?: string;
   summary?: string;
   features?: string[];
   targets?: string[];
@@ -47,6 +50,7 @@ const sharedFaqs: FaqItem[] = [
 export const categories: ContentItem[] = [
   {
     slug: "rau-cu-qua",
+    metaDescription: "Rau củ quả tươi từ Đà Lạt, miền Tây và Bảo Lộc cho bếp ăn công nghiệp, trường học, bệnh viện tại Đồng Nai. Giao theo khung giờ bếp, có hóa đơn VAT.",
     title: "Rau củ quả",
     description:
       "Rau củ quả tươi cho bếp ăn tập thể, trường học, bệnh viện, nhà hàng và đơn vị suất ăn công nghiệp.",
@@ -78,6 +82,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "thit-heo",
+    metaDescription: "Thịt heo đùi, vai, ba rọi, nạc dăm, sườn cắt theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Kiểm tra khi nhập kho, giao bằng xe lạnh, hóa đơn VAT.",
     title: "Thịt heo",
     description:
       "Thịt heo cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể tại Đồng Nai, TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
@@ -105,6 +110,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "thit-bo",
+    metaDescription: "Thịt bò tươi và đông lạnh, cắt theo món xào, kho, hầm, nướng cho bếp ăn công nghiệp tại Đồng Nai. Bảo quản riêng từng loại, giao bằng xe lạnh.",
     title: "Thịt bò",
     description:
       "Thịt bò cho bếp ăn công nghiệp, trường học, bệnh viện, nhà hàng và suất ăn tập thể, cung cấp theo quy cách và lịch giao của bếp.",
@@ -132,6 +138,8 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "gia-cam",
+    metaTitle: "Cung cấp gà, vịt cho bếp ăn công nghiệp tại Đồng Nai",
+    metaDescription: "Gà, vịt nguyên con hoặc chia phần đùi, cánh, ức theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Bảo quản lạnh liên tục, giao theo tuyến cố định.",
     title: "Gia cầm",
     description:
       "Thịt gà, vịt cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể, cung cấp theo quy cách và lịch giao của bếp.",
@@ -159,6 +167,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "hai-san",
+    metaDescription: "Cá, tôm, mực tươi và đông lạnh theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Hàng về kho mỗi ngày, giao theo lịch chế biến của bếp.",
     title: "Hải sản",
     description:
       "Cá, tôm, mực và hải sản cho bếp ăn công nghiệp, trường học, bệnh viện, nhà hàng và suất ăn tập thể tại Đồng Nai và khu vực lân cận.",
@@ -186,6 +195,8 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "hang-dong-lanh",
+    metaTitle: "Cung cấp hàng đông lạnh cho bếp ăn công nghiệp",
+    metaDescription: "Thịt bò, gà, cá và hải sản đông lạnh cho bếp ăn công nghiệp tại Đồng Nai. Kho lạnh riêng, giao theo kế hoạch sử dụng để bếp chủ động nguyên liệu.",
     title: "Hàng đông lạnh",
     description:
       "Thực phẩm đông lạnh cho bếp cần tối ưu tồn kho, giữ chất lượng và chủ động kế hoạch nguyên liệu.",
@@ -213,6 +224,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "gia-vi",
+    metaDescription: "Gia vị Việt, Hoa, Hàn, Âu, gia vị chay mặn và dầu ăn cho bếp ăn công nghiệp, nhà hàng tại Đồng Nai. Giá sỉ theo sản lượng, hóa đơn VAT đầy đủ.",
     title: "Gia vị",
     description:
       "Gia vị chay mặn, Âu - Á và vật tư nhà bếp phục vụ chế biến chuyên nghiệp cho canteen, nhà hàng và bếp công nghiệp.",
@@ -240,6 +252,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "do-kho",
+    metaDescription: "Gạo, mì, bún, miến, đậu, nấm khô, đồ hộp và đồ uống cho bếp ăn công nghiệp tại Đồng Nai. Đặt chung đơn với hàng tươi, giao cùng tuyến định kỳ.",
     title: "Đồ khô",
     description:
       "Gạo, mì, bún khô, đậu, nấm khô, đồ hộp và hàng khô cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể.",
@@ -267,6 +280,8 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "thuc-pham-chay",
+    metaTitle: "Cung cấp thực phẩm chay cho bếp ăn công nghiệp",
+    metaDescription: "Đậu hũ, chả chay và thực phẩm chay cho bếp ăn công nghiệp, trường học, nhà hàng tại Đồng Nai; phù hợp thực đơn ngày rằm, mùng một hoặc suất ăn chay.",
     title: "Thực phẩm chay",
     description:
       "Thực phẩm chay và gia vị chay cho nhà hàng, bếp ăn, trường học, sự kiện và đơn vị cần menu linh hoạt.",
@@ -297,6 +312,7 @@ export const categories: ContentItem[] = [
 export const industries: ContentItem[] = [
   {
     slug: "bep-an-tap-the",
+    metaDescription: "TPS1 cung cấp thực phẩm theo định mức suất ăn và lịch giao cố định cho bếp ăn tập thể tại Đồng Nai; đạt ISO 22000, HACCP, có hóa đơn VAT đầy đủ.",
     title: "Bếp ăn tập thể",
     description:
       "Cung ứng thực phẩm theo định mức, lịch giao và quy trình rõ ràng cho bếp vận hành hằng ngày — từ 100 đến 5.000 suất mỗi ngày.",
@@ -371,6 +387,7 @@ export const industries: ContentItem[] = [
   },
   {
     slug: "suat-an-cong-nghiep",
+    metaDescription: "Nguồn nguyên liệu ổn định cho đơn vị suất ăn công nghiệp: giao theo ca, giá sỉ theo sản lượng, hỗ trợ xây dựng thực đơn và kiểm soát chi phí mỗi suất.",
     title: "Suất ăn công nghiệp",
     description: "Hỗ trợ nguyên liệu, menu và tối ưu chi phí cho đơn vị cung cấp suất ăn số lượng lớn phục vụ hàng ngàn công nhân mỗi ca.",
     targets: ["Nhà máy quy mô lớn", "Suất ăn văn phòng", "Ca sáng trưa tối", "Canteen doanh nghiệp"],
@@ -410,6 +427,7 @@ export const industries: ContentItem[] = [
   },
   {
     slug: "truong-hoc",
+    metaDescription: "Thực phẩm cho bếp bán trú các cấp học: nguồn gốc rõ ràng, hồ sơ an toàn thực phẩm đầy đủ, giao theo lịch của nhà trường và có hóa đơn VAT.",
     title: "Trường học",
     description: "Cung cấp nguồn thực phẩm đạt chuẩn vệ sinh an toàn, tươi ngon, giàu dinh dưỡng cho bữa ăn học đường các cấp.",
     targets: ["Trường mầm non", "Trường tiểu học", "Trường nội trú", "Canteen đại học"],
@@ -449,6 +467,7 @@ export const industries: ContentItem[] = [
   },
   {
     slug: "benh-vien",
+    metaDescription: "Thực phẩm cho bếp ăn bệnh viện: đa dạng nhóm hàng, kiểm soát an toàn theo ISO 22000 và HACCP, hỗ trợ xây dựng thực đơn dinh dưỡng cho người bệnh.",
     title: "Bệnh viện",
     description: "Cung cấp thực phẩm đa dạng, tuân thủ tiêu chuẩn y tế nghiêm ngặt, hỗ trợ lên thực đơn dinh dưỡng đặc thù cho bệnh nhân và y bác sĩ.",
     targets: ["Bếp ăn bệnh nhân", "Canteen bệnh viện", "Khu ăn uống nhân viên y tế", "Viện dưỡng lão"],
@@ -488,6 +507,7 @@ export const industries: ContentItem[] = [
   },
   {
     slug: "nha-hang-khach-san",
+    metaDescription: "Thực phẩm tươi sống, gia vị Âu – Á và nguyên liệu chuyên dụng cho bếp nhà hàng, khách sạn; giao theo lịch, giá sỉ theo sản lượng, hóa đơn VAT đầy đủ.",
     title: "Nhà hàng, khách sạn",
     description: "Nguồn hàng cao cấp, đặc sản, gia vị chuyên dụng và thực phẩm tươi sống đáp ứng yêu cầu khắt khe của các đầu bếp chuyên nghiệp.",
     targets: ["Khách sạn 3-5 sao", "Chuỗi nhà hàng cao cấp", "Nhà hàng tiệc cưới", "Resort & Khu nghỉ dưỡng"],
@@ -530,6 +550,8 @@ export const industries: ContentItem[] = [
 export const services: ContentItem[] = [
   {
     slug: "tu-van-menu",
+    metaTitle: "Tư vấn thực đơn cho bếp ăn tập thể",
+    metaDescription: "TPS1 đề xuất thực đơn và danh mục nguyên liệu phù hợp với ngân sách, định lượng mỗi suất và đối tượng ăn của từng bếp ăn tập thể.",
     title: "Tư vấn menu",
     description: "Đề xuất danh mục món và nguyên liệu phù hợp ngân sách, định lượng và đối tượng ăn.",
     sections: [
@@ -544,6 +566,8 @@ export const services: ContentItem[] = [
   },
   {
     slug: "setup-bep-an",
+    metaTitle: "Hỗ trợ thiết lập bếp ăn mới",
+    metaDescription: "Hỗ trợ bếp ăn mới tính danh mục hàng cần nhập, phương án lưu kho và luồng vận hành, để bếp đi vào hoạt động ổn định ngay từ những ngày đầu.",
     title: "Setup bếp ăn",
     description: "Hỗ trợ tính toán danh mục hàng, lưu kho và luồng vận hành cho bếp mới.",
     sections: [
@@ -558,6 +582,8 @@ export const services: ContentItem[] = [
   },
   {
     slug: "tinh-toan-dinh-duong",
+    metaTitle: "Tính toán dinh dưỡng cho suất ăn tập thể",
+    metaDescription: "Phối hợp nguyên liệu theo nhu cầu dinh dưỡng của từng nhóm: trẻ em, người bệnh, phụ nữ mang thai và người lao động nặng.",
     title: "Tính toán dinh dưỡng",
     description: "Phối hợp nguyên liệu theo nhóm đối tượng: trẻ em, người bệnh, phụ nữ mang thai, lao động nặng.",
     sections: [
@@ -572,6 +598,8 @@ export const services: ContentItem[] = [
   },
   {
     slug: "cung-cap-dinh-ky",
+    metaTitle: "Cung cấp thực phẩm theo lịch định kỳ",
+    metaDescription: "Giao thực phẩm theo lịch ngày, tuần hoặc theo ca với quy cách cố định, giúp bếp ăn hạn chế thiếu hàng, hư hao và thất thoát.",
     title: "Cung cấp định kỳ",
     description: "Lịch giao và quy cách ổn định để giảm rủi ro thiếu hàng, hư hao và thất thoát.",
     sections: [
@@ -961,6 +989,8 @@ export const posts: ContentItem[] = [
 export const policies: ContentItem[] = [
   {
     slug: "bao-mat",
+    metaTitle: "Chính sách bảo mật dữ liệu báo giá",
+    metaDescription: "Cách TPS1 thu thập, sử dụng và bảo vệ thông tin liên hệ cùng dữ liệu yêu cầu báo giá của khách hàng doanh nghiệp.",
     title: "Chính sách bảo mật",
     description: "Cách chúng tôi xử lý dữ liệu liên hệ và thông tin yêu cầu báo giá.",
     sections: [
@@ -973,6 +1003,7 @@ export const policies: ContentItem[] = [
   },
   {
     slug: "giao-hang",
+    metaDescription: "Khu vực giao hàng, khung giờ giao và cách phối hợp nhận hàng giữa TPS1 với bếp ăn tại Đồng Nai, TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
     title: "Chính sách giao hàng",
     description: "Khung thời gian, khu vực giao và cách phối hợp nhận hàng.",
     sections: [
@@ -985,6 +1016,8 @@ export const policies: ContentItem[] = [
   },
   {
     slug: "doi-tra",
+    metaTitle: "Chính sách đổi trả hàng",
+    metaDescription: "Nguyên tắc TPS1 xử lý hàng lỗi, hàng sai quy cách và các phát sinh trong quá trình giao nhận với khách hàng doanh nghiệp.",
     title: "Chính sách đổi trả",
     description: "Nguyên tắc xử lý hàng lỗi, sai quy cách hoặc phát sinh trong giao nhận.",
     sections: [

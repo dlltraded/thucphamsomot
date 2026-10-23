@@ -1,6 +1,8 @@
 ---
 title: "Chọn nhà cung cấp thực phẩm cho nhà máy: 8 điểm cần kiểm tra trước khi ký hợp đồng"
 excerpt: "Checklist cho phòng hành chính, thu mua khi chọn nhà cung cấp thực phẩm cho bếp ăn công nhân: từ hồ sơ pháp lý, năng lực giao theo ca đến cách xử lý khi thiếu hàng."
+seoTitle: "Chọn nhà cung cấp thực phẩm cho nhà máy: 8 điểm cần xét"
+seoDescription: "Checklist cho phòng hành chính, thu mua khi chọn nhà cung cấp thực phẩm cho bếp ăn công nhân: hồ sơ pháp lý, năng lực giao theo ca, phương án khi thiếu hàng."
 category: "Vận hành"
 author: "TPS1"
 publishedAt: "2026-10-18T09:00:00.000Z"

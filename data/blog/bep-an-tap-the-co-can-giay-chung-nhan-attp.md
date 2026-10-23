@@ -1,6 +1,8 @@
 ---
 title: "Bếp ăn tập thể có cần giấy chứng nhận đủ điều kiện an toàn thực phẩm không?"
 excerpt: "Bếp ăn trường học, nhà máy tự nấu có thể được miễn giấy chứng nhận, còn đơn vị nấu suất ăn có đăng ký kinh doanh thì không. Phân biệt theo Nghị định 15/2018 và cập nhật tình hình pháp lý năm 2026."
+seoTitle: "Bếp ăn tập thể có cần giấy chứng nhận ATTP không?"
+seoDescription: "Bếp ăn trường học, nhà máy tự nấu có thể được miễn giấy chứng nhận ATTP; đơn vị nấu suất ăn có đăng ký kinh doanh thì không. Phân tích theo Nghị định 15/2018."
 category: "Kiến thức"
 author: "TPS1"
 publishedAt: "2026-10-19T08:00:00.000Z"

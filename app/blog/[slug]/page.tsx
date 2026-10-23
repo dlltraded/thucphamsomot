@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   return makeMetadata({
-    title: article.title,
-    description: article.excerpt,
+    title: article.seoTitle ?? article.title,
+    description: article.seoDescription ?? article.excerpt,
     path: `/blog/${article.slug}`,
   });
 }

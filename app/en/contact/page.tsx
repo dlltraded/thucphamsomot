@@ -5,7 +5,7 @@ import { makeMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata = makeMetadata({
-  title: "Contact",
+  title: "Contact Us",
   description: "Contact Thuc Pham So Mot for buying requests, supplier pitches, and B2B food supply information.",
   path: "/en/contact",
 });

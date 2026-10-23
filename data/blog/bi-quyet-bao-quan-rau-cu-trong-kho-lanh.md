@@ -1,6 +1,8 @@
 ---
 title: "Bí quyết bảo quản rau củ tươi lâu trong kho lạnh công nghiệp"
 excerpt: "Rau củ héo úa là nguyên nhân hàng đầu gây thất thoát chi phí tại bếp ăn. Cùng tìm hiểu cách setup và vận hành kho lạnh để giữ rau củ tươi rói suốt tuần."
+seoTitle: "Bảo quản rau củ tươi lâu trong kho lạnh bếp ăn"
+seoDescription: "Rau củ hư hỏng là nguồn thất thoát lớn tại bếp ăn. Cách thiết lập và vận hành kho lạnh để rau củ giữ được độ tươi lâu hơn trong suốt tuần."
 category: "Kho bãi"
 author: "TPS1"
 publishedAt: "2026-07-27T10:00:00.000Z"

@@ -6,9 +6,9 @@ import { localLandingPages } from "@/lib/local-landing-content";
 import { LocalLandingPage } from "@/components/local-landing-page";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho bếp ăn tập thể và doanh nghiệp",
+  title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho bếp ăn",
   description:
-    "TPS1 phục vụ khách tại Bà Rịa - Vũng Tàu cần nguồn hàng thực phẩm định kỳ, báo giá rõ ràng cho doanh nghiệp, xí nghiệp, bếp ăn tập thể.",
+    "Nguồn thực phẩm theo lịch định kỳ cho doanh nghiệp, xí nghiệp và bếp ăn tập thể tại Bà Rịa - Vũng Tàu; báo giá rõ ràng, có hóa đơn VAT đầy đủ.",
   path: "/cung-cap-thuc-pham-ba-ria-vung-tau",
   ogTitle: "Cung Cấp Thực Phẩm",
   ogSubtitle: "Tại Bà Rịa - Vũng Tàu",

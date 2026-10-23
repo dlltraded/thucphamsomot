@@ -1,6 +1,8 @@
 ---
 title: "Nhận hàng xong, cất thế nào? Nhiệt độ và thứ tự bảo quản thực phẩm trong bếp ăn tập thể"
 excerpt: "Từ lúc ký nhận đến lúc đưa vào chế biến là khoảng thời gian dễ phát sinh rủi ro nhất. Thứ tự cất hàng, mức nhiệt cho từng nhóm và những thói quen nên bỏ trong bếp ăn tập thể."
+seoTitle: "Bảo quản thực phẩm sau khi nhận hàng tại bếp ăn"
+seoDescription: "Từ lúc ký nhận đến lúc chế biến là khoảng thời gian dễ phát sinh rủi ro. Thứ tự cất hàng và mức nhiệt cho từng nhóm thực phẩm trong bếp ăn tập thể."
 category: "Kho bãi"
 author: "TPS1"
 publishedAt: "2026-10-17T08:00:00.000Z"

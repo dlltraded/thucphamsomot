@@ -1,6 +1,8 @@
 ---
 title: "Thực đơn bán trú mầm non: chọn nguyên liệu sao cho đủ chất mà vẫn trong mức tiền ăn"
 excerpt: "Trẻ học bán trú nhận khoảng một nửa đến hai phần ba năng lượng trong ngày từ bữa ăn ở trường. Cách chọn và luân phiên nguyên liệu để thực đơn đủ chất, ít ngán và không vượt mức tiền ăn khi giá chợ thay đổi."
+seoTitle: "Thực đơn bán trú mầm non: chọn nguyên liệu đủ chất"
+seoDescription: "Bữa ăn bán trú cung cấp phần lớn năng lượng trong ngày của trẻ. Cách chọn và luân phiên nguyên liệu để thực đơn đủ chất, ít ngán và không vượt mức tiền ăn."
 category: "Thực đơn"
 author: "TPS1"
 publishedAt: "2026-10-17T09:00:00.000Z"

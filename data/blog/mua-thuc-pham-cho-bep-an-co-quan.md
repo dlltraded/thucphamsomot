@@ -1,6 +1,8 @@
 ---
 title: "Mua thực phẩm cho bếp ăn cơ quan: chuẩn bị báo giá, hợp đồng và chứng từ thế nào cho gọn"
 excerpt: "Bếp ăn cơ quan nhỏ hơn bếp nhà máy nhưng thủ tục giấy tờ thường nhiều hơn. Cách chuẩn bị danh mục, chọn nhà cung cấp và giữ chứng từ để thanh quyết toán không bị vướng."
+seoTitle: "Mua thực phẩm cho bếp ăn cơ quan: báo giá và chứng từ"
+seoDescription: "Bếp ăn cơ quan nhỏ hơn bếp nhà máy nhưng thủ tục giấy tờ nhiều hơn. Cách chuẩn bị danh mục, chọn nhà cung cấp và lưu chứng từ để thanh quyết toán thuận lợi."
 category: "Vận hành"
 author: "TPS1"
 publishedAt: "2026-10-16T09:00:00.000Z"

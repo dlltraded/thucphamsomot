@@ -1,6 +1,8 @@
 ---
 title: "Giải pháp cung ứng thực phẩm cho nhà máy hoạt động 3 ca liên tục"
 excerpt: "Bếp ăn phục vụ công nhân 3 ca (sáng, chiều, đêm) đòi hỏi một hệ thống logistics cung ứng thực phẩm cực kỳ linh hoạt và bảo mật cao."
+seoTitle: "Cung ứng thực phẩm cho nhà máy làm việc 3 ca"
+seoDescription: "Bếp ăn phục vụ công nhân ba ca sáng, chiều, đêm cần lịch cung ứng linh hoạt. Cách tổ chức nguồn hàng và giao nhận cho nhà máy làm việc liên tục."
 category: "Thị trường"
 author: "TPS1"
 publishedAt: "2026-07-23T15:00:00.000Z"

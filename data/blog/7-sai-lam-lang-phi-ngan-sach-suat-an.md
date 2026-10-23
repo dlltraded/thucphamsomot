@@ -1,6 +1,8 @@
 ---
 title: "7 sai lầm phổ biến khiến nhà máy lãng phí ngân sách suất ăn"
 excerpt: "Kiểm soát chi phí suất ăn công nghiệp không chỉ nằm ở việc mua rẻ. Dưới đây là 7 lỗ hổng thất thoát chi phí lớn nhất mà nhiều bếp ăn đang gặp phải."
+seoTitle: "7 sai lầm khiến nhà máy lãng phí ngân sách suất ăn"
+seoDescription: "Mua rẻ chưa đủ để kiểm soát chi phí suất ăn công nghiệp. Bảy điểm thất thoát ngân sách thường gặp tại bếp ăn nhà máy và cách khắc phục từng điểm."
 category: "Vận hành"
 author: "TPS1"
 publishedAt: "2026-07-28T09:00:00.000Z"

@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 
 export const metadata = makeMetadata({
-  title: "Liên hệ | Thực Phẩm Số Một – Hotline, Địa Chỉ, Form Báo Giá",
+  title: "Liên hệ và yêu cầu báo giá",
   description:
-    "Liên hệ ngay với Thực Phẩm Số Một qua hotline 0898 902 222, email contact@thucphamsomot.vn hoặc điền form để nhận báo giá thực phẩm B2B nhanh nhất.",
+    "Hotline 089 890 2222, email contact@thucphamsomot.vn. Gửi danh sách hàng cần mua, TPS1 xác nhận trong 30 phút và gửi báo giá sỉ trong vòng 24 giờ.",
   path: "/lien-he",
 });
 

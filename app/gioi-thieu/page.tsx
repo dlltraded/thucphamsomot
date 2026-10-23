@@ -4,8 +4,8 @@ import { ArrowRight, CheckCircle2, ShieldCheck, Award } from "lucide-react";
 import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
-  title: "Giới thiệu - Thực Phẩm Số 1",
-  description: "Thực Phẩm Số Một hoạt động từ năm 2017, cung cấp nguyên liệu thực phẩm cho bếp ăn tập thể tại Đồng Nai. Có chứng nhận ISO 22000, HACCP và bảo hiểm trách nhiệm sản phẩm 5 tỷ đồng.",
+  title: "Giới thiệu Công ty TNHH Thực Phẩm Số Một",
+  description: "Thực Phẩm Số Một hoạt động từ năm 2017, cung cấp nguyên liệu cho bếp ăn tập thể tại Đồng Nai; đạt ISO 22000, HACCP, có bảo hiểm trách nhiệm sản phẩm 5 tỷ đồng.",
   path: "/gioi-thieu",
 });
 

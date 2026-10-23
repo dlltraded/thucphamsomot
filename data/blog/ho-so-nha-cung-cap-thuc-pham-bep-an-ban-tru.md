@@ -1,6 +1,8 @@
 ---
 title: "Bếp ăn bán trú cần lưu những hồ sơ gì của nhà cung cấp thực phẩm?"
 excerpt: "Danh sách hồ sơ nhà trường nên có trong tủ khi chọn và làm việc với nhà cung cấp thực phẩm cho bếp bán trú: trước khi ký hợp đồng, mỗi chuyến hàng và hằng tháng."
+seoTitle: "Hồ sơ nhà cung cấp thực phẩm bếp bán trú cần lưu"
+seoDescription: "Danh sách hồ sơ nhà trường cần lưu khi làm việc với nhà cung cấp thực phẩm cho bếp bán trú: trước khi ký hợp đồng, theo từng chuyến hàng và hằng tháng."
 category: "Kiến thức"
 author: "TPS1"
 publishedAt: "2026-10-19T07:00:00.000Z"

@@ -1,6 +1,8 @@
 ---
 title: "Quy trình chuẩn kiểm tra chất lượng thịt khi nhận hàng tại bếp ăn"
 excerpt: "Kiểm soát chặt khâu nhận hàng (Receiving) là bước quan trọng nhất để ngăn chặn thực phẩm bẩn tuồn vào bếp ăn, bảo đảm an toàn cho hàng ngàn suất ăn."
+seoTitle: "Quy trình kiểm tra chất lượng thịt khi nhận hàng"
+seoDescription: "Kiểm soát chặt khâu nhận hàng là bước quan trọng để ngăn thực phẩm kém chất lượng vào bếp. Quy trình kiểm tra thịt từng bước cho bếp ăn tập thể."
 category: "Vận hành"
 author: "TPS1"
 publishedAt: "2026-07-24T08:15:00.000Z"

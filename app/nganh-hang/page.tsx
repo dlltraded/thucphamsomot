@@ -6,9 +6,9 @@ import { PageShell } from "@/components/page-shell";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Ngành hàng chúng tôi phục vụ",
+  title: "Lĩnh vực phục vụ: bếp ăn, trường học, bệnh viện",
   description:
-    "TPS1 cung ứng thực phẩm cho bếp ăn tập thể, suất ăn công nghiệp, trường học, bệnh viện và nhà hàng khách sạn tại Đồng Nai và khu vực lân cận.",
+    "TPS1 cung cấp thực phẩm cho bếp ăn tập thể, đơn vị suất ăn công nghiệp, trường học, bệnh viện, nhà hàng và khách sạn tại Đồng Nai cùng các tỉnh lân cận.",
   path: "/nganh-hang",
 });
 

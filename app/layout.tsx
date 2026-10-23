@@ -20,7 +20,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
     default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
+    // Short brand suffix keeps page titles within Google's ~65-character display.
+    template: "%s | TPS1",
   },
   description: siteConfig.description,
   icons: {

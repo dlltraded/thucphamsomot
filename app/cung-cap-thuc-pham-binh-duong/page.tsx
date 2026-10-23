@@ -4,9 +4,9 @@ import { localLandingPages } from "@/lib/local-landing-content";
 import { LocalLandingPage } from "@/components/local-landing-page";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Cung cấp thực phẩm Bình Dương cho bếp ăn tập thể và nhà máy",
+  title: "Cung cấp thực phẩm Bình Dương cho bếp ăn, nhà máy",
   description:
-    "TPS1 cung cấp thực phẩm tại Bình Dương, chuyên mảng bếp ăn tập thể, xí nghiệp, trường học với quy trình giao nhận rõ ràng và báo giá nhanh.",
+    "TPS1 cung cấp thực phẩm cho bếp ăn tập thể, xí nghiệp và trường học tại Bình Dương, với quy trình giao nhận rõ ràng và báo giá trong 24 giờ.",
   path: "/cung-cap-thuc-pham-binh-duong",
   ogTitle: "Cung Cấp Thực Phẩm",
   ogSubtitle: "Tại Bình Dương",

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ShieldCheck, Phone, Mail, ArrowRight } from "lucide-react";
 
 export const metadata = makeMetadata({
-  title: "Chính sách bảo mật | Thực Phẩm Số Một – Bảo vệ thông tin khách hàng",
+  title: "Chính sách bảo mật thông tin khách hàng",
   description:
     "Chính sách bảo mật thông tin của Công ty TNHH Thực Phẩm Số Một: mục đích thu thập, phạm vi sử dụng, cam kết không chia sẻ cho bên thứ ba.",
   path: "/chinh-sach-bao-mat",

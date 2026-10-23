@@ -1,6 +1,8 @@
 ---
 title: "Dự báo biến động giá thịt heo quý cuối năm: Cách ứng phó cho bếp ăn công nghiệp"
 excerpt: "Thị trường thịt heo cuối năm luôn tiềm ẩn nhiều rủi ro về giá. Tìm hiểu nguyên nhân và các chiến lược nhập hàng thông minh giúp bếp ăn công nghiệp giữ vững ngân sách."
+seoTitle: "Giá thịt heo cuối năm 2026: bếp ăn cần chuẩn bị gì"
+seoDescription: "Giá thịt heo cuối năm thường biến động mạnh. Bài viết phân tích nguyên nhân và cách nhập hàng giúp bếp ăn công nghiệp giữ ổn định chi phí suất ăn."
 category: "Thị trường"
 author: "TPS1"
 publishedAt: "2026-07-29T08:00:00.000Z"

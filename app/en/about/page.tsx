@@ -3,7 +3,7 @@ import { PageShell } from "@/components/page-shell";
 import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
-  title: "About TPS1",
+  title: "About Thuc Pham So Mot",
   description: "About Thuc Pham So Mot, a B2B food supply partner in Dong Nai.",
   path: "/en/about",
 });

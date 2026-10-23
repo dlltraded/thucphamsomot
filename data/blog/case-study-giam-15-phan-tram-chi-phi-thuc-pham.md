@@ -1,6 +1,8 @@
 ---
 title: "Case Study: Cách giảm 15% chi phí thực phẩm nhờ tối ưu danh mục nhập hàng"
 excerpt: "Nghiên cứu tình huống thực tế (Case Study) từ một nhà máy 2,000 công nhân tại KCN Amata đã hợp tác cùng TPS1 để tái cấu trúc danh mục nguyên liệu, giúp tiết kiệm hàng trăm triệu đồng."
+seoTitle: "Giảm 15% chi phí thực phẩm nhờ tối ưu danh mục nhập hàng"
+seoDescription: "Tình huống một nhà thầu bếp ăn tại KCN Amata tái cấu trúc danh mục nguyên liệu cùng TPS1 và giảm 15% chi phí thực phẩm."
 category: "Vận hành"
 author: "TPS1"
 publishedAt: "2026-07-20T10:00:00.000Z"

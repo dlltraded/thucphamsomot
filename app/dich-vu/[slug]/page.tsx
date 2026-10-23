@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const item = findBySlug(services, slug);
   if (!item) return makeMetadata({ title: "Dịch vụ", path: `/dich-vu/${slug}` });
   return makeMetadata({
-    title: item.title,
-    description: item.description,
+    title: item.metaTitle ?? item.title,
+    description: item.metaDescription ?? item.description,
     path: `/dich-vu/${item.slug}`,
   });
 }

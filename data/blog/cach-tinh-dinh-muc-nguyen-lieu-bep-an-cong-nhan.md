@@ -1,6 +1,8 @@
 ---
 title: "Cách tính định mức nguyên liệu cho bếp ăn công nhân theo số suất"
 excerpt: "Từ định lượng mỗi suất đến số ký cần đặt mỗi ngày: công thức tính, cách đưa hao hụt sơ chế vào và mẹo đặt hàng khi số suất thay đổi theo ca."
+seoTitle: "Cách tính định mức nguyên liệu cho bếp ăn công nhân"
+seoDescription: "Từ định lượng mỗi suất đến số ký cần đặt mỗi ngày: công thức tính, cách đưa hao hụt sơ chế vào và mẹo đặt hàng khi số suất thay đổi theo ca."
 category: "Vận hành"
 author: "TPS1"
 publishedAt: "2026-10-18T07:00:00.000Z"

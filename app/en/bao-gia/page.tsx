@@ -4,8 +4,8 @@ import { PageShell } from "@/components/page-shell";
 import { QuotePortal } from "@/components/quote-portal";
 
 export const metadata = makeMetadata({
-  title: "Quote form | English",
-  description: "Buyers can submit requests online, and suppliers can pitch through the form in English entry point.",
+  title: "Request a Quote or Send a Supplier Pitch",
+  description: "Buyers can request a wholesale quote within 24 hours; suppliers can send product offers to the TPS1 purchasing team.",
   path: "/en/bao-gia",
 });
 

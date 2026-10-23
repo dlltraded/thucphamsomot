@@ -86,9 +86,9 @@ const verifiedTrust = {
 export const segmentLandingPages = {
   truongHoc: {
     path: "/cung-cap-thuc-pham-cho-truong-hoc",
-    metaTitle: "Cung cấp thực phẩm cho trường học tại Đồng Nai, Biên Hòa",
+    metaTitle: "Cung cấp thực phẩm cho trường học tại Đồng Nai",
     metaDescription:
-      "TPS1 cung cấp rau củ, thịt cá, đồ khô cho bếp bán trú trường mầm non, tiểu học tại Đồng Nai. ISO 22000 & HACCP, hóa đơn VAT, báo giá trong 24 giờ.",
+      "TPS1 cung cấp rau củ, thịt cá, đồ khô cho bếp bán trú trường mầm non, tiểu học tại Đồng Nai; đạt ISO 22000, HACCP, có hóa đơn VAT, báo giá trong 24 giờ.",
     breadcrumbName: "Cung cấp thực phẩm cho trường học",
     eyebrow: "Bếp ăn bán trú",
     title: "Cung cấp thực phẩm cho trường học tại Đồng Nai",
@@ -185,9 +185,9 @@ export const segmentLandingPages = {
 
   nhaMay: {
     path: "/cung-cap-thuc-pham-cho-nha-may",
-    metaTitle: "Cung cấp thực phẩm cho nhà máy, xí nghiệp, KCN Đồng Nai",
+    metaTitle: "Cung cấp thực phẩm cho nhà máy, KCN Đồng Nai",
     metaDescription:
-      "Nguồn thực phẩm cho bếp ăn công nhân nhà máy, xí nghiệp tại các KCN Đồng Nai: giao theo ca, ISO 22000 & HACCP, 109+ doanh nghiệp đang dùng, báo giá 24 giờ.",
+      "Thực phẩm cho bếp ăn công nhân tại các KCN Đồng Nai: giao theo ca, đạt ISO 22000 và HACCP, hơn 109 doanh nghiệp và bếp ăn đang hợp tác, báo giá trong 24 giờ.",
     breadcrumbName: "Cung cấp thực phẩm cho nhà máy, xí nghiệp",
     eyebrow: "Nhà máy · Xí nghiệp · KCN",
     title: "Cung cấp thực phẩm cho nhà máy, xí nghiệp tại Đồng Nai",
@@ -296,9 +296,9 @@ export const segmentLandingPages = {
 
   coQuan: {
     path: "/cung-cap-thuc-pham-cho-co-quan",
-    metaTitle: "Cung cấp thực phẩm cho cơ quan, bếp ăn văn phòng Đồng Nai",
+    metaTitle: "Cung cấp thực phẩm cho bếp ăn cơ quan tại Đồng Nai",
     metaDescription:
-      "TPS1 cung cấp thực phẩm cho bếp ăn cơ quan, văn phòng, doanh nghiệp tại Đồng Nai: báo giá theo danh mục, hóa đơn VAT, ISO 22000 & HACCP, giao định kỳ.",
+      "Thực phẩm cho bếp ăn cơ quan, văn phòng tại Đồng Nai: báo giá theo danh mục, hóa đơn VAT và chứng từ đầy đủ cho thanh quyết toán, giao theo lịch cố định.",
     breadcrumbName: "Cung cấp thực phẩm cho cơ quan",
     eyebrow: "Cơ quan · Văn phòng · Doanh nghiệp",
     title: "Cung cấp thực phẩm cho bếp ăn cơ quan, doanh nghiệp tại Đồng Nai",

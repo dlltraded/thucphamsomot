@@ -1,6 +1,8 @@
 ---
 title: "Mùa mưa, giá rau tăng: bếp ăn giữ chi phí suất ăn bằng cách nào?"
 excerpt: "Mưa kéo dài ở Lâm Đồng làm sản lượng rau giảm và giá tăng theo đợt. Bếp ăn tập thể có thể chuẩn bị trước bằng thực đơn hai phương án, đổi nhóm rau và thống nhất cách báo giá với nhà cung cấp."
+seoTitle: "Mùa mưa giá rau tăng: giữ chi phí suất ăn thế nào"
+seoDescription: "Mưa kéo dài ở Lâm Đồng đẩy giá rau tăng theo đợt. Bếp ăn có thể chủ động bằng thực đơn hai phương án, đổi nhóm rau và thống nhất cách báo giá với nhà cung cấp."
 category: "Thị trường"
 author: "TPS1"
 publishedAt: "2026-10-17T07:00:00.000Z"

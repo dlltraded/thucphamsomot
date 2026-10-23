@@ -1,6 +1,8 @@
 ---
 title: "Kiểm thực ba bước và lưu mẫu thức ăn: bếp ăn tập thể cần làm gì từ khâu nhận hàng"
 excerpt: "Tóm tắt Quyết định 1246/QĐ-BYT cho người phụ trách bếp: nhận hàng cần kiểm tra giấy tờ gì, ghi sổ ra sao, lưu mẫu bao nhiêu gam, giữ ở nhiệt độ nào và trong bao lâu."
+seoTitle: "Kiểm thực ba bước và lưu mẫu thức ăn ở bếp ăn tập thể"
+seoDescription: "Tóm tắt Quyết định 1246/QĐ-BYT cho người phụ trách bếp: kiểm tra giấy tờ khi nhận hàng, ghi sổ kiểm thực, lưu mẫu bao nhiêu gam và trong bao lâu."
 category: "Kiến thức"
 author: "TPS1"
 publishedAt: "2026-10-19T09:00:00.000Z"

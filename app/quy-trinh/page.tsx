@@ -4,8 +4,8 @@ import { ArrowRight, CheckCircle2, ShieldCheck, Clock, FileText, Truck, Box, Use
 import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
-  title: "Quy Trình Giao Nhận - Thực Phẩm Số 1",
-  description: "Quy trình vận hành khép kín 6 bước chuẩn ISO 22000 và HACCP của TPS1, đảm bảo chất lượng từ nông trại đến bếp ăn.",
+  title: "Quy trình giao nhận thực phẩm theo ISO 22000",
+  description: "Sáu bước giao nhận của TPS1 theo ISO 22000 và HACCP: lên kế hoạch, thu mua và kiểm dịch, sơ chế, lưu kho lạnh, vận chuyển xe lạnh, bàn giao tại bếp.",
   path: "/quy-trinh",
 });
 

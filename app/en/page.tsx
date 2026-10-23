@@ -8,9 +8,9 @@ import { B2BCatalog } from "@/components/b2b/catalog-section";
 import { LeadCaptureSection } from "@/components/b2b/lead-capture";
 
 export const metadata = makeMetadata({
-  title: "Thuc Pham So Mot | B2B Food Supplier in Dong Nai",
+  title: "B2B Food Supplier for Canteens in Dong Nai",
   description:
-    "B2B food supplier for canteens, factories, schools, and hospitals in Dong Nai. ISO 22000 & HACCP certified. Quotes within 24h. Scheduled delivery. Full VAT invoices.",
+    "B2B food supplier for canteens, factories, schools and hospitals in Dong Nai. ISO 22000 & HACCP certified, quotes within 24 hours, full VAT invoices.",
   path: "/en",
 });
 
