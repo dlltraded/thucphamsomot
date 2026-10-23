@@ -130,7 +130,22 @@ Trang `/danh-muc/thuc-pham-chay`, các trang ngành hàng, khu vực và blog s�
 | Bị chặn 403 | 1 | Chưa xem chi tiết |
 | Trang thay thế có thẻ chính tắc | 1 | Bình thường |
 
-**Việc nên làm tiếp:** chuyển hướng 301/308 các URL WordPress cũ còn có giá trị (danh mục cũ như `/thit-trung/thit-bo/` → `/danh-muc/thit-bo`) để giữ lại lượt truy cập và liên kết cũ, thay vì để 404.
+**Đã xử lý (commit 08dfe1a, 23/10):** 47 URL WordPress cũ được chuyển hướng 301 sang trang hiện có gần nhất (quy tắc trong `next.config.js`). Kiểm tra trên web thật: cả 47 về trang 200; `/blog` và `/en/products` vốn đã 200; `/gio-hang` giữ 404 có chủ đích.
+
+| URL cũ | Chuyển về |
+|---|---|
+| `/rau-cu-tuoi/*`, `/rau-cu-trai-cay/*`, `/the-san-pham/*`, `/nam/*`, `/chua-phan-loai/bap-my` | `/danh-muc/rau-cu-qua` |
+| `/the-san-pham/cach-bao-quan-bong-cai-xanh` | `/blog/bi-quyet-bao-quan-rau-cu-trong-kho-lanh` |
+| `/thit-trung/thit-bo` | `/danh-muc/thit-bo` |
+| `/thit-trung/thit-ga-vit`, `/danh-muc-san-pham/thit-trung/thit-ga-vit` | `/danh-muc/gia-cam` |
+| `/hai-san/*` | `/danh-muc/hai-san` |
+| `/dau-an-gia-vi/*` | `/danh-muc/gia-vi` |
+| `/do-hop-do-kho/*`, `/do-uong-cac-loai/*`, `/sua-cac-loai` | `/danh-muc/do-kho` |
+| `/ve-sinh-nha-cua/*`, `/chua-phan-loai` | `/san-pham` |
+| `/tin-tuc`, `/blog/meo-vat-cuoc-song`, `/blog/song-khoe` | `/blog` |
+| `/hop-tac` | `/lien-he` |
+
+Search Console sẽ tự cập nhật khi Google thu thập lại các URL này; có thể bấm "Xác thực kết quả khắc phục" ở mục 404 để Google kiểm tra sớm hơn.
 
 Core Web Vitals trong Search Console hiện "Không có dữ liệu" (chưa đủ lượt truy cập thật từ Chrome).
 
