@@ -5,7 +5,7 @@ import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
   title: "Giới thiệu - Thực Phẩm Số 1",
-  description: "Khám phá quy mô, năng lực cung ứng và các chứng nhận chất lượng (ISO, HACCP) của Thực Phẩm Số 1.",
+  description: "Thực Phẩm Số Một hoạt động từ năm 2017, cung cấp nguyên liệu thực phẩm cho bếp ăn tập thể tại Đồng Nai. Có chứng nhận ISO 22000, HACCP và bảo hiểm trách nhiệm sản phẩm 5 tỷ đồng.",
   path: "/gioi-thieu",
 });
 
@@ -29,12 +29,12 @@ export default function GioiThieuPage() {
               Về Chúng Tôi
             </div>
             <h1 className="b2b-about-hero__title">
-              Đối tác vận hành bếp ăn<br />
-              <span style={{ color: "#4ade80" }}>đáng tin cậy cho doanh nghiệp</span>
+              Lo nguồn thực phẩm<br />
+              <span style={{ color: "#4ade80" }}>để bếp ăn chạy đều mỗi ngày</span>
             </h1>
             <p className="b2b-about-hero__desc">
-              Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, chuyên cung cấp thực phẩm
-              và giải pháp bếp ăn toàn diện cho nhà máy, trường học, bệnh viện và các công ty suất ăn công nghiệp.
+              Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, cung cấp nguyên liệu thực phẩm
+              cho bếp ăn nhà máy, trường học, bệnh viện và các công ty suất ăn công nghiệp.
             </p>
           </div>
         </div>
@@ -47,20 +47,20 @@ export default function GioiThieuPage() {
             <div className="b2b-about-story__text">
               <div className="section-label">Câu chuyện TPS1</div>
               <h2 className="section-title" style={{ marginBottom: "24px" }}>
-                Không chỉ là nhà cung cấp, chúng tôi là người đồng hành.
+                Hiểu áp lực của người quản lý bếp
               </h2>
               <p className="section-desc" style={{ marginBottom: "20px" }}>
-                Tại Thực Phẩm Số Một (TPS1), chúng tôi thấu hiểu áp lực của người quản lý bếp ăn: từ việc cân đối chi phí, đảm bảo định lượng, đến việc tuân thủ tuyệt đối các tiêu chuẩn vệ sinh an toàn thực phẩm.
+                Người quản lý bếp ăn ngày nào cũng phải cân chi phí, giữ đủ định lượng và không được sai sót về vệ sinh an toàn thực phẩm. Đó cũng là những việc TPS1 làm cùng khách hàng mỗi ngày.
               </p>
               <p className="section-desc" style={{ marginBottom: "32px" }}>
-                Thay vì bán lẻ rời rạc, chúng tôi chọn con đường chuyên biệt hóa B2B. Hệ thống kho bãi, xe lạnh và quy trình sơ chế của TPS1 được xây dựng chỉ để giải quyết một mục tiêu duy nhất: Giúp bếp ăn của khách hàng vận hành trơn tru mỗi ngày.
+                Vì vậy TPS1 chỉ bán sỉ cho khách doanh nghiệp, không bán lẻ. Kho bãi, xe lạnh và khâu sơ chế đều xoay quanh một việc: hàng tới bếp đúng giờ, đúng quy cách để bếp nấu kịp mỗi ca.
               </p>
-              
+
               <div className="b2b-about-story__values">
                 {[
-                  "Nguồn gốc minh bạch, kiểm dịch mỗi ngày",
-                  "Giao hàng đúng giờ, đúng quy cách",
-                  "Bình ổn giá, tối ưu chi phí (food cost)"
+                  "Nguồn gốc rõ ràng, hàng kiểm dịch mỗi ngày",
+                  "Giao đúng giờ, đúng quy cách",
+                  "Giữ giá ổn định, giúp bếp kiểm soát food cost"
                 ].map((item, i) => (
                   <div key={i} className="b2b-about-story__value">
                     <CheckCircle2 size={24} color="#0f6f4b" className="shrink-0" />
@@ -87,10 +87,10 @@ export default function GioiThieuPage() {
       <section className="b2b-about-certs">
         <div className="container-shell">
           <div style={{ textAlign: "center", maxWidth: "700px", margin: "0 auto 56px" }}>
-            <div className="section-label">Bảo chứng chất lượng</div>
-            <h2 className="section-title">An tâm tuyệt đối với pháp lý & bảo hiểm</h2>
+            <div className="section-label">Chứng nhận & bảo hiểm</div>
+            <h2 className="section-title">Giấy tờ đầy đủ, có bảo hiểm trách nhiệm sản phẩm</h2>
             <p className="section-desc" style={{ margin: "0 auto" }}>
-              Chúng tôi không chỉ cam kết bằng lời nói. Mọi quy trình từ TPS1 đều được bảo chứng bởi các tiêu chuẩn quốc tế và hợp đồng bảo hiểm rủi ro 5 Tỷ VNĐ.
+              TPS1 có giấy chứng nhận cơ sở đủ điều kiện an toàn thực phẩm, ISO 22000:2018, HACCP và bảo hiểm trách nhiệm sản phẩm với tổng hạn mức 5 tỷ đồng. Khách cần làm hồ sơ nhà cung cấp, TPS1 gửi bản sao các giấy tờ này theo yêu cầu.
             </p>
           </div>
 
@@ -129,7 +129,7 @@ export default function GioiThieuPage() {
               </div>
               <div className="b2b-cert-card__content" style={{ padding: "20px" }}>
                 <h3 className="b2b-cert-card__title" style={{ fontSize: "1.1rem" }}>ISO 22000:2018</h3>
-                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>Hệ thống quản lý ATTP chuẩn quốc tế.</p>
+                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>Hệ thống quản lý an toàn thực phẩm.</p>
               </div>
             </div>
 
@@ -148,7 +148,7 @@ export default function GioiThieuPage() {
               </div>
               <div className="b2b-cert-card__content" style={{ padding: "20px" }}>
                 <h3 className="b2b-cert-card__title" style={{ fontSize: "1.1rem" }}>HACCP Codex</h3>
-                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>Phân tích mối nguy & kiểm soát tới hạn.</p>
+                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>Phân tích mối nguy và kiểm soát điểm tới hạn.</p>
               </div>
             </div>
 
@@ -166,8 +166,8 @@ export default function GioiThieuPage() {
                 <div className="b2b-cert-card__overlay" style={{ opacity: 0.1 }} />
               </div>
               <div className="b2b-cert-card__content" style={{ padding: "20px" }}>
-                <h3 className="b2b-cert-card__title" style={{ fontSize: "1.1rem" }}>Bảo hiểm rủi ro</h3>
-                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>VietinBank bảo vệ tài chính lên đến 5 Tỷ VNĐ.</p>
+                <h3 className="b2b-cert-card__title" style={{ fontSize: "1.1rem" }}>Bảo hiểm trách nhiệm sản phẩm</h3>
+                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>Do Bảo hiểm VietinBank (VBI) cấp, tổng hạn mức 5 tỷ đồng.</p>
               </div>
             </div>
 
@@ -186,7 +186,7 @@ export default function GioiThieuPage() {
               </div>
               <div className="b2b-cert-card__content" style={{ padding: "20px" }}>
                 <h3 className="b2b-cert-card__title" style={{ fontSize: "1.1rem" }}>Mức bồi thường</h3>
-                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>Chi tiết các hạn mức bồi thường của VietinBank.</p>
+                <p className="b2b-cert-card__desc" style={{ fontSize: "0.9rem" }}>Hạn mức chi tiết cho thiệt hại về người và tài sản.</p>
               </div>
             </div>
           </div>
@@ -198,26 +198,26 @@ export default function GioiThieuPage() {
         <div className="container-shell">
           <div className="b2b-about-scale__wrapper">
             <div className="b2b-about-scale__header">
-              <div className="section-label">Năng lực của chúng tôi</div>
-              <h2 className="section-title">Đáp ứng quy mô công nghiệp</h2>
+              <div className="section-label">TPS1 qua các con số</div>
+              <h2 className="section-title">Đủ sức cung cấp cho bếp công nghiệp</h2>
             </div>
             
             <div className="b2b-about-scale__stats">
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">109+</div>
-                <div className="b2b-scale-stat__label">Đối tác B2B tin dùng</div>
+                <div className="b2b-scale-stat__label">Doanh nghiệp, bếp ăn đang lấy hàng</div>
               </div>
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">5.000+</div>
-                <div className="b2b-scale-stat__label">Sản phẩm đa dạng</div>
+                <div className="b2b-scale-stat__label">Mã sản phẩm trong danh mục</div>
               </div>
               <div className="b2b-scale-stat">
                 <div className="b2b-scale-stat__num">24/7</div>
-                <div className="b2b-scale-stat__label">Đội ngũ xe lạnh sẵn sàng</div>
+                <div className="b2b-scale-stat__label">Xe lạnh trực giao hàng</div>
               </div>
               <div className="b2b-scale-stat">
-                <div className="b2b-scale-stat__num">5 Tỷ</div>
-                <div className="b2b-scale-stat__label">Quỹ bảo hiểm rủi ro</div>
+                <div className="b2b-scale-stat__num">5 tỷ</div>
+                <div className="b2b-scale-stat__label">Bảo hiểm trách nhiệm sản phẩm</div>
               </div>
             </div>
           </div>
@@ -227,12 +227,12 @@ export default function GioiThieuPage() {
       {/* 5. CTA */}
       <section className="b2b-cta-band">
         <div className="container-shell position-relative z-10" style={{ textAlign: "center" }}>
-          <h2 className="section-title-light">Sẵn sàng nâng cấp chuỗi cung ứng cho bếp ăn?</h2>
+          <h2 className="section-title-light">Cần báo giá cho bếp của quý doanh nghiệp?</h2>
           <p className="section-desc" style={{ color: "rgba(255,255,255,0.7)", margin: "0 auto 32px" }}>
-            Liên hệ ngay với đội ngũ chuyên viên của TPS1 để nhận bảng giá sỉ tốt nhất hôm nay.
+            Gửi danh sách hàng và số lượng dự kiến, TPS1 báo giá sỉ trong 24 giờ.
           </p>
           <Link href="/lien-he" className="btn-hero-primary" style={{ display: "inline-flex" }}>
-            Yêu cầu báo giá ngay <ArrowRight size={18} />
+            Gửi yêu cầu báo giá <ArrowRight size={18} />
           </Link>
         </div>
       </section>

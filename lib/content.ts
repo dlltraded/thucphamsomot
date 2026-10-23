@@ -86,14 +86,14 @@ export const categories: ContentItem[] = [
       {
         heading: "Thịt heo theo quy cách của bếp",
         body:
-          "Thịt heo là nhóm hàng dùng hằng ngày ở hầu hết bếp ăn tập thể. TPS1 cung cấp các phần thịt theo quy cách bếp yêu cầu để bếp chủ động định lượng cho từng ca.",
+          "Bếp ăn tập thể gần như ngày nào cũng nấu thịt heo. TPS1 chia sẵn từng phần thịt theo quy cách bếp đặt, nên bếp dễ tính định lượng cho mỗi ca.",
         items: ["Thịt đùi, vai, ba rọi, nạc dăm, sườn, xương", "Cắt khối, cắt lát hoặc xay theo yêu cầu", "Đóng gói theo ca hoặc theo bữa"],
       },
       {
-        heading: "Kiểm soát chất lượng và bảo quản",
+        heading: "Kiểm tra từ lúc nhập kho tới lúc giao",
         body:
-          "Thịt được kiểm tra cảm quan khi nhập kho, bảo quản đúng nhiệt độ và vận chuyển bằng chuỗi lạnh tới bếp. Quy trình vận hành theo hệ thống ISO 22000 và HACCP.",
-        items: ["Kiểm tra màu, mùi, độ đàn hồi khi nhận", "Giữ lạnh trong suốt quá trình giao", "Hóa đơn VAT đầy đủ"],
+          "Thịt về kho được kiểm tra màu, mùi, độ đàn hồi, rồi giữ lạnh đúng nhiệt độ và lên xe lạnh tới bếp. Cả quy trình này TPS1 làm theo hệ thống ISO 22000 và HACCP.",
+        items: ["Kiểm tra màu, mùi, độ đàn hồi khi nhận", "Giữ lạnh suốt đường giao", "Có hóa đơn VAT"],
       },
     ],
     faqs: sharedFaqs,
@@ -113,14 +113,14 @@ export const categories: ContentItem[] = [
       {
         heading: "Thịt bò cho thực đơn bếp ăn",
         body:
-          "Thịt bò thường dùng cho các bữa tăng khẩu phần hoặc thực đơn đặc biệt. TPS1 tư vấn phần thịt phù hợp với món và định mức chi phí suất ăn của bếp.",
-        items: ["Thịt bò tươi và thịt bò đông lạnh", "Các phần thịt cho xào, kho, hầm, nướng", "Cắt và đóng gói theo yêu cầu"],
+          "Thịt bò hay có mặt trong bữa tăng khẩu phần hoặc thực đơn đặc biệt. TPS1 giúp bếp chọn phần thịt hợp với món mà vẫn giữ được định mức chi phí mỗi suất.",
+        items: ["Thịt bò tươi và thịt bò đông lạnh", "Phần thịt để xào, kho, hầm, nướng", "Cắt và đóng gói theo yêu cầu"],
       },
       {
         heading: "Bảo quản và giao hàng",
         body:
-          "Thịt bò được bảo quản đúng điều kiện của từng loại hàng tươi hoặc đông lạnh, kiểm tra trước khi xuất kho và giao bằng xe lạnh.",
-        items: ["Kiểm tra trước khi xuất kho", "Giao lạnh theo tuyến cố định", "Hóa đơn VAT đầy đủ"],
+          "TPS1 bảo quản bò tươi và bò đông lạnh riêng, mỗi loại theo điều kiện của nó. Hàng được kiểm tra lại trước khi xuất kho rồi mới lên xe lạnh đi giao.",
+        items: ["Kiểm tra trước khi xuất kho", "Giao lạnh theo tuyến cố định", "Có hóa đơn VAT"],
       },
     ],
     faqs: sharedFaqs,
@@ -140,14 +140,14 @@ export const categories: ContentItem[] = [
       {
         heading: "Gà, vịt cho bếp ăn tập thể",
         body:
-          "Gia cầm là nguồn đạm phổ biến, dễ xoay vòng trong thực đơn hằng tuần. TPS1 cung cấp gà, vịt nguyên con hoặc theo phần để bếp dễ định lượng.",
+          "Gà, vịt dễ đổi món nên bếp xoay vòng được nhiều lần trong tuần. TPS1 giao nguyên con hoặc chia sẵn theo phần để bếp khỏi mất công định lượng.",
         items: ["Gà, vịt nguyên con", "Đùi, cánh, ức, má đùi theo quy cách", "Đóng gói theo ca hoặc theo bữa"],
       },
       {
-        heading: "Kiểm soát chất lượng",
+        heading: "Giữ hàng tươi tới lúc bếp sơ chế",
         body:
-          "Hàng được kiểm tra khi nhập kho, bảo quản lạnh và giao theo tuyến cố định để giữ chất lượng tới khi bếp chế biến.",
-        items: ["Kiểm tra cảm quan khi nhận", "Giữ lạnh trong suốt quá trình giao", "Hóa đơn VAT đầy đủ"],
+          "Gà, vịt được kiểm tra khi nhập kho, giữ lạnh trong kho và giao theo tuyến cố định, để tới lúc bếp sơ chế hàng vẫn còn tươi.",
+        items: ["Kiểm tra cảm quan khi nhận", "Giữ lạnh suốt đường giao", "Có hóa đơn VAT"],
       },
     ],
     faqs: sharedFaqs,
@@ -165,16 +165,16 @@ export const categories: ContentItem[] = [
     highlights: ["Thủy hải sản về kho mỗi ngày", "Hàng tươi và đông lạnh", "Quy cách theo nhu cầu bếp"],
     sections: [
       {
-        heading: "Nguồn cung hải sản cho đơn hàng lớn",
+        heading: "Hải sản cho bếp đặt hàng đều đặn",
         body:
-          "Nguồn thủy hải sản được tổ chức theo nhóm hàng, quy cách và tần suất giao, đáp ứng đơn hàng lặp lại của bếp công nghiệp.",
+          "TPS1 chia hải sản theo nhóm hàng và quy cách, giao theo tần suất bếp đã chốt, nên bếp đặt lặp lại hằng tuần vẫn có hàng về đều.",
         items: ["Cá tươi và cá phi lê", "Tôm, mực và hải sản khác", "Hàng đông lạnh theo quy cách"],
       },
       {
-        heading: "Tín hiệu tin cậy khi mua hàng",
+        heading: "Mua hải sản cần hỏi kỹ những gì",
         body:
-          "Hải sản là nhóm hàng nhạy về an toàn thực phẩm. Khách cần quan tâm quy trình nhận hàng, bảo quản, đổi trả và phản hồi khi phát sinh sự cố.",
-        items: ["Kiểm tra cảm quan khi nhận hàng", "Tư vấn lịch giao theo ngày chế biến", "Ưu tiên ổn định giá cho khách mua định kỳ"],
+          "Với hải sản, an toàn thực phẩm phải đặt lên trước. Khi chọn nhà cung cấp, bếp nên hỏi rõ họ nhận hàng thế nào, bảo quản ra sao, đổi trả và xử lý sự cố như thế nào.",
+        items: ["Kiểm tra cảm quan khi nhận hàng", "Tư vấn lịch giao theo ngày chế biến", "Ưu tiên giữ giá ổn định cho khách mua định kỳ"],
       },
     ],
     faqs: sharedFaqs,
@@ -243,19 +243,19 @@ export const categories: ContentItem[] = [
     title: "Đồ khô",
     description:
       "Gạo, mì, bún khô, đậu, nấm khô, đồ hộp và hàng khô cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể.",
-    highlights: ["Danh mục hàng khô đầy đủ", "Một đầu mối cùng hàng tươi", "Giao chung tuyến định kỳ"],
+    highlights: ["Nhóm có nhiều mã hàng nhất", "Đặt chung đơn với hàng tươi", "Giao cùng tuyến định kỳ"],
     sections: [
       {
-        heading: "Hàng khô cho bếp vận hành hằng ngày",
+        heading: "Hàng khô bếp dùng mỗi ngày",
         body:
-          "Đồ khô là nhóm hàng có nhiều mã nhất trong danh mục của TPS1. Bếp có thể đặt hàng khô cùng đơn hàng tươi để giảm số nhà cung cấp phải làm việc.",
+          "Trong danh mục của TPS1, đồ khô là nhóm có nhiều mã hàng nhất. Bếp đặt hàng khô chung đơn với hàng tươi thì bớt được một nhà cung cấp phải làm việc.",
         items: ["Gạo, mì, bún, miến, phở khô", "Đậu, nấm, rong biển và hàng khô khác", "Đồ hộp và nguyên liệu chế biến"],
       },
       {
-        heading: "Kế hoạch tồn kho cho bếp",
+        heading: "Đặt vừa đủ, không ôm hàng",
         body:
-          "Hàng khô có hạn dùng dài, phù hợp đặt theo tuần hoặc theo tháng. TPS1 tư vấn số lượng theo định mức suất ăn để bếp không tồn kho quá nhiều.",
-        items: ["Đặt theo tuần hoặc theo tháng", "Giao chung tuyến với hàng tươi", "Hóa đơn VAT đầy đủ"],
+          "Hàng khô để được lâu nên bếp có thể đặt theo tuần hoặc theo tháng. TPS1 tính số lượng theo định mức suất ăn của bếp, để kho không phải chứa quá nhiều.",
+        items: ["Đặt theo tuần hoặc theo tháng", "Giao chung tuyến với hàng tươi", "Có hóa đơn VAT"],
       },
     ],
     faqs: sharedFaqs,
