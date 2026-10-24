@@ -9,9 +9,9 @@ import { LeadCaptureSection } from "@/components/b2b/lead-capture";
 import { QuickQuoteForm } from "@/components/b2b/quick-quote-form";
 
 export const metadata = makeMetadata({
-  title: "Nhà cung cấp thực phẩm cho bếp ăn công nghiệp tại Đồng Nai | TPS1",
+  title: "Cung cấp thực phẩm tươi cho nhà hàng, bếp ăn tại Đồng Nai | TPS1",
   description:
-    "TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh và đồ khô cho bếp ăn nhà máy, trường học, bệnh viện tại Đồng Nai. Đạt ISO 22000, HACCP; báo giá trong 24 giờ.",
+    "Tươi đến bếp, an tâm đến bữa. TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh, đồ khô cho nhà hàng, quán ăn, bếp công ty, trường học tại Đồng Nai, TP.HCM.",
   path: "/",
 });
 
@@ -19,26 +19,26 @@ const processSteps = [
   {
     num: "01",
     title: "Gửi danh sách hàng",
-    desc: "Upload file Excel, PDF hoặc ảnh chụp danh sách nguyên liệu cần mua.",
+    desc: "Tải lên file Excel, PDF hoặc ảnh chụp danh sách nguyên liệu cần mua.",
   },
   {
     num: "02",
-    title: "Nhận báo giá trong 24h",
-    desc: "Đội kinh doanh phân tích và gửi bảng giá chi tiết phù hợp sản lượng của bạn.",
+    title: "Nhận báo giá trong 24 giờ",
+    desc: "Đội kinh doanh gửi bảng giá chi tiết, tính theo sản lượng thực tế của từng gian bếp.",
   },
   {
     num: "03",
-    title: "Xác nhận & Giao hàng",
-    desc: "Chốt đơn qua điện thoại hoặc email. Giao đúng lịch, đúng quy cách đã thỏa thuận.",
+    title: "Xác nhận và giao hàng",
+    desc: "Chốt đơn qua điện thoại hoặc email; hàng về bếp đúng lịch, đúng quy cách đã thỏa thuận.",
   },
 ];
 
 const industryHighlights = [
-  { href: "/nganh-hang/bep-an-tap-the", label: "Bếp ăn tập thể", description: "Khu công nghiệp, nhà máy, doanh nghiệp — 100 đến 5.000 suất/ngày." },
-  { href: "/nganh-hang/suat-an-cong-nghiep", label: "Suất ăn công nghiệp", description: "Hỗ trợ nguyên liệu, tư vấn menu cho đơn vị cung cấp suất ăn." },
-  { href: "/nganh-hang/truong-hoc", label: "Trường học", description: "Nguồn hàng an toàn, hồ sơ rõ ràng cho bếp ăn bán trú." },
-  { href: "/nganh-hang/benh-vien", label: "Bệnh viện", description: "Tiêu chuẩn an toàn thực phẩm khắt khe cho bếp ăn bệnh viện." },
-  { href: "/nganh-hang/nha-hang-khach-san", label: "Nhà hàng, khách sạn", description: "Nguồn hàng tươi, đa dạng cho thực đơn thay đổi liên tục." },
+  { href: "/nganh-hang/nha-hang-khach-san", label: "Nhà hàng, quán ăn", description: "Hàng tươi, chuẩn món cho thực đơn đổi theo mùa; nhận đơn từ 2.000.000 đồng." },
+  { href: "/nganh-hang/bep-an-tap-the", label: "Bếp ăn công ty, nhà máy", description: "Giao theo ca, đúng định mức cho bếp ăn khu công nghiệp và doanh nghiệp." },
+  { href: "/nganh-hang/truong-hoc", label: "Trường học", description: "Nguồn hàng an toàn, hồ sơ rõ ràng cho bữa ăn bán trú của các em." },
+  { href: "/nganh-hang/benh-vien", label: "Bệnh viện", description: "Kiểm soát an toàn theo ISO 22000 và HACCP cho bếp ăn bệnh viện." },
+  { href: "/nganh-hang/suat-an-cong-nghiep", label: "Đơn vị suất ăn", description: "Nguyên liệu ổn định và hỗ trợ thực đơn cho đơn vị cung cấp suất ăn." },
 ];
 
 const areaHighlights = [
@@ -85,10 +85,10 @@ export default function HomePage() {
           <div style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto 40px" }}>
             <div className="section-label">Ngành hàng phục vụ</div>
             <h2 id="industries-heading" className="section-title">
-              Cung ứng cho từng loại bếp ăn — không dùng chung một giải pháp.
+              Mỗi gian bếp một nhịp riêng, TPS1 theo kịp từng nhịp.
             </h2>
             <p className="section-desc" style={{ margin: "0 auto" }}>
-              Mỗi ngành có yêu cầu riêng về định mức, lịch giao và hồ sơ an toàn thực phẩm.
+              Nhà hàng cần hàng chuẩn món, bếp công ty cần đúng ca, trường học cần đủ hồ sơ. Chúng tôi chuẩn bị nguồn hàng theo đúng nhịp ấy.
             </p>
           </div>
           <div className="home-local__grid">
@@ -116,10 +116,10 @@ export default function HomePage() {
           <div style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto 40px" }}>
             <div className="section-label">Khu vực phục vụ</div>
             <h2 id="areas-heading" className="section-title">
-              Có mặt tại các khu công nghiệp và thành phố lớn.
+              Xe lạnh TPS1 có mặt khắp Đồng Nai, TP.HCM và các tỉnh lân cận.
             </h2>
             <p className="section-desc" style={{ margin: "0 auto" }}>
-              Đội xe lạnh phục vụ theo tuyến cố định, giao đúng khung giờ bếp cần.
+              Các tuyến giao cố định phủ Đồng Nai (gồm cả khu vực Bình Phước cũ), TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu, đưa hàng đến đúng khung giờ mỗi gian bếp cần.
             </p>
           </div>
           <div className="home-local__grid">
@@ -141,10 +141,10 @@ export default function HomePage() {
           <div style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto 56px" }}>
             <div className="section-label">Quy trình làm việc</div>
             <h2 id="process-heading" className="section-title">
-              3 bước — Đơn giản &amp; Minh bạch
+              Ba bước để gian bếp có hàng tươi mỗi ngày
             </h2>
             <p className="section-desc" style={{ margin: "0 auto" }}>
-              Không phức tạp, không phí thời gian. TPS1 tối ưu hóa quy trình để bạn có báo giá nhanh nhất.
+              Quý khách chỉ cần gửi danh sách hàng, phần còn lại TPS1 lo trọn.
             </p>
           </div>
 
@@ -224,11 +224,11 @@ export default function HomePage() {
               Sẵn sàng hợp tác
             </div>
             <h2 className="section-title-light" style={{ maxWidth: "640px", margin: 0 }}>
-              Nhận báo giá thực phẩm<br />cho bếp ăn của bạn ngay hôm nay.
+              Hãy để bữa ăn ngày mai<br />bắt đầu từ chuyến hàng tươi hôm nay.
             </h2>
             <p style={{ color: "rgba(255,255,255,0.62)", fontSize: "1rem", lineHeight: 1.7, maxWidth: "480px", margin: 0 }}>
-              Phản hồi trong 24 giờ. Không cam kết, không ràng buộc.
-              Chỉ cần gửi danh sách hàng — TPS1 làm phần còn lại.
+              Gửi danh sách hàng cần mua, TPS1 xác nhận trong 30 phút và gửi báo giá trong vòng 24 giờ.
+              Báo giá hoàn toàn không kèm ràng buộc.
             </p>
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center" }}>
               <Link href="#rfq-form" className="btn-hero-primary" style={{ fontSize: "1rem" }}>

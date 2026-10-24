@@ -75,15 +75,12 @@ const texts = {
     certText: "Đạt chứng nhận ISO 22000 & HACCP",
     title: (
       <>
-        {/* Phrase groups never break internally, so lines only wrap between phrases. */}
-        <span className="b2b-hero__phrase">Thực phẩm tươi</span>{" "}
-        <span className="b2b-hero__phrase">về đến bếp đúng giờ,</span>{" "}
-        <span className="b2b-hero__phrase">để mỗi <span>bữa ăn tập thể</span></span>{" "}
-        <span className="b2b-hero__phrase">tại Đồng Nai</span>{" "}
-        <span className="b2b-hero__phrase">luôn được trọn vẹn</span>
+        {/* Brand slogan. Phrase groups never break internally. */}
+        <span className="b2b-hero__phrase">Tươi đến bếp,</span>{" "}
+        <span className="b2b-hero__phrase"><span>an tâm</span> đến bữa</span>
       </>
     ),
-    sub: "TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh và đồ khô cho bếp ăn nhà máy, trường học và bệnh viện. Hàng được giao theo lịch cố định đã thống nhất với bếp, kèm hóa đơn VAT đầy đủ; báo giá được gửi trong vòng 24 giờ.",
+    sub: "Mỗi chuyến thực phẩm tươi đến bếp đúng giờ là thêm một sự an tâm được gửi gắm, để từng bữa ăn luôn đủ đầy và được chăm chút từ những điều nhỏ nhất. Từ nhà hàng, quán ăn đến bếp công ty và trường học, TPS1 mang hơn 5.000 mặt hàng tươi, rõ nguồn gốc đến từng gian bếp tại Đồng Nai, TP.HCM và các tỉnh lân cận.",
     formRibbon: "PHẢN HỒI TRONG 30 PHÚT",
     formSuccessTitle: "Đã nhận yêu cầu!",
     formSuccessDesc: (name: string) => (

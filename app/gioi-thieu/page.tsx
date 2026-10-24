@@ -5,7 +5,7 @@ import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
   title: "Giới thiệu Công ty TNHH Thực Phẩm Số Một",
-  description: "Thực Phẩm Số Một hoạt động từ năm 2017, cung cấp nguyên liệu cho bếp ăn tập thể tại Đồng Nai; đạt ISO 22000, HACCP, có bảo hiểm trách nhiệm sản phẩm 5 tỷ đồng.",
+  description: "Từ năm 2017, Thực Phẩm Số Một mang thực phẩm tươi, rõ nguồn gốc đến nhà hàng, quán ăn, bếp công ty, trường học; đạt ISO 22000, HACCP, bảo hiểm sản phẩm 5 tỷ.",
   path: "/gioi-thieu",
 });
 
@@ -33,8 +33,8 @@ export default function GioiThieuPage() {
               <span style={{ color: "#4ade80" }}>trọn vẹn từng bữa ăn</span>
             </h1>
             <p className="b2b-about-hero__desc">
-              Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, cung cấp nguyên liệu thực phẩm
-              cho bếp ăn nhà máy, trường học, bệnh viện và các công ty suất ăn công nghiệp.
+              Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, mang thực phẩm tươi, rõ nguồn gốc
+              đến nhà hàng, quán ăn, bếp công ty, trường học, bệnh viện và bếp ăn công nghiệp.
             </p>
           </div>
         </div>
@@ -47,13 +47,13 @@ export default function GioiThieuPage() {
             <div className="b2b-about-story__text">
               <div className="section-label">Câu chuyện TPS1</div>
               <h2 className="section-title" style={{ marginBottom: "24px" }}>
-                Thấu hiểu những áp lực phía sau mỗi bữa ăn tập thể
+                Phía sau mỗi bữa ăn ngon là một gian bếp được chuẩn bị chu đáo
               </h2>
               <p className="section-desc" style={{ marginBottom: "20px" }}>
-                Mỗi ngày, người quản lý bếp ăn phải cân đối chi phí, giữ vững định lượng và không được phép sai sót về vệ sinh an toàn thực phẩm. Chỉ một chuyến hàng đến trễ cũng đủ khiến cả ca ăn bị xáo trộn.
+                Người đứng bếp, dù ở nhà hàng hay bếp ăn công ty, đều cần nguyên liệu tươi, đúng quy cách và về đến nơi đúng giờ. Chỉ một chuyến hàng đến trễ cũng đủ khiến cả một ca nấu bị xáo trộn.
               </p>
               <p className="section-desc" style={{ marginBottom: "32px" }}>
-                Vì thế, TPS1 lựa chọn tập trung trọn vẹn vào khách hàng doanh nghiệp. Kho bãi, đội xe lạnh và khâu sơ chế đều được tổ chức hướng về một mục tiêu: hàng đến bếp đúng giờ, đúng quy cách, để mỗi bữa ăn được phục vụ chu đáo.
+                TPS1 nhận về mình phần lo nguồn hàng ấy. Kho bãi, đội xe lạnh và khâu sơ chế đều hướng về một mục tiêu: hàng đến bếp đúng giờ, đúng quy cách, để người đứng bếp dành trọn tâm sức cho từng món ăn.
               </p>
 
               <div className="b2b-about-story__values">
@@ -227,9 +227,9 @@ export default function GioiThieuPage() {
       {/* 5. CTA */}
       <section className="b2b-cta-band">
         <div className="container-shell position-relative z-10" style={{ textAlign: "center" }}>
-          <h2 className="section-title-light">Chuẩn bị nguồn hàng vững vàng cho bếp ăn của quý doanh nghiệp</h2>
+          <h2 className="section-title-light">Tươi đến bếp, an tâm đến bữa</h2>
           <p className="section-desc" style={{ color: "rgba(255,255,255,0.7)", margin: "0 auto 32px" }}>
-            Quý doanh nghiệp chỉ cần gửi danh sách hàng và số lượng dự kiến, TPS1 sẽ gửi báo giá sỉ trong vòng 24 giờ.
+            Quý khách chỉ cần gửi danh sách hàng và số lượng dự kiến, TPS1 sẽ gửi báo giá sỉ trong vòng 24 giờ.
           </p>
           <Link href="/lien-he" className="btn-hero-primary" style={{ display: "inline-flex" }}>
             Gửi yêu cầu báo giá <ArrowRight size={18} />

@@ -14,12 +14,12 @@ const imageMap: Record<string, string> = {
 
 const texts = {
   vi: {
-    label: "Danh mục B2B",
-    title: <>Đáp ứng mọi nhu cầu <br />nguyên liệu bếp ăn.</>,
-    desc: "Không hiển thị giá niêm yết — mỗi đơn hàng được báo giá riêng theo sản lượng thực tế.",
+    label: "Danh mục sản phẩm",
+    title: <>Đủ đầy nguyên liệu <br />cho mọi thực đơn.</>,
+    desc: "Giá được báo riêng cho từng khách hàng theo sản lượng thực tế, vì vậy danh mục không niêm yết giá.",
     btnAll: "Xem toàn bộ danh mục",
     btnLink: "/san-pham",
-    rfqTag: "Chính sách B2B: Liên hệ để nhận báo giá — không hiển thị giá niêm yết",
+    rfqTag: "Giá sỉ được báo riêng theo sản lượng của từng gian bếp",
     rfqBtn: "Xem & Yêu cầu báo giá",
     catLinkPrefix: "/danh-muc/",
   },

@@ -10,11 +10,11 @@ import { brandAssets, customerHighlights } from "@/lib/brand";
 const footerText = {
   vi: {
     description:
-      "Website catalog và báo giá riêng cho khách B2B. Tập trung vào bếp ăn, nhà máy, trường học, bệnh viện và các đơn vị cần nguồn cung thực phẩm định kỳ.",
+      "Tươi đến bếp, an tâm đến bữa. Từ năm 2017, TPS1 mang thực phẩm tươi, rõ nguồn gốc, an toàn đến nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp.",
     contact: "Liên hệ",
     served: "Đã phục vụ",
     mapTitle: "Bản đồ công ty",
-    mapCopy: "Xem vị trí giao dịch và khu vực phục vụ thực tế của TPS1 tại Đồng Nai, TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
+    mapCopy: "Xem vị trí văn phòng và khu vực TPS1 đang giao hàng: Đồng Nai (gồm cả khu vực Bình Phước cũ), TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
     mapLink: "Mở Google Maps",
     mapIframeTitle: "Bản đồ Thực Phẩm Số Một",
     quoteHref: "/bao-gia",
@@ -57,6 +57,7 @@ const footerText = {
 >;
 
 const segmentFooterLinks = [
+  { href: "/nganh-hang/nha-hang-khach-san", label: "Nhà hàng, quán ăn" },
   { href: "/cung-cap-thuc-pham-cho-truong-hoc", label: "Trường học, bếp bán trú" },
   { href: "/cung-cap-thuc-pham-cho-nha-may", label: "Nhà máy, xí nghiệp" },
   { href: "/cung-cap-thuc-pham-cho-co-quan", label: "Cơ quan, văn phòng" },
