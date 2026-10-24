@@ -53,24 +53,20 @@ export const categories: ContentItem[] = [
     metaDescription: "Rau củ quả tươi từ Đà Lạt, miền Tây và Bảo Lộc cho bếp ăn công nghiệp, trường học, bệnh viện tại Đồng Nai. Giao theo khung giờ bếp, có hóa đơn VAT.",
     title: "Rau củ quả",
     description:
-      "Rau củ quả tươi cho bếp ăn tập thể, trường học, bệnh viện, nhà hàng và đơn vị suất ăn công nghiệp.",
-    highlights: ["Nguồn Đà Lạt, Miền Tây, Bảo Lộc", "Có nhóm hàng VietGAP", "Giao theo lịch bếp"],
+      "Rau củ từ Đà Lạt, miền Tây và Bảo Lộc được chọn lựa mỗi ngày, giữ trọn độ tươi trên suốt chặng đường về bếp, để đĩa rau trên bàn nhà hàng hay khay cơm trong bếp trường học đều xanh mướt như vừa hái.",
+    highlights: ["Nguồn rau từ Đà Lạt, miền Tây, Bảo Lộc", "Phân loại theo kích cỡ và độ chín", "Giao đúng giờ bếp cần"],
     sections: [
       {
-        heading: "Nguồn hàng phù hợp bếp quy mô lớn",
+        heading: "Theo mùa, theo vùng, theo đúng món",
         body:
-          "Nhóm rau củ quả được tổ chức theo nhu cầu của bếp quy mô lớn: nguồn cung ổn định, danh mục dễ kiểm soát và phù hợp canteen, trường học, bệnh viện, bếp ăn doanh nghiệp.",
-        items: [
-          "Rau củ quả theo mùa từ Đà Lạt và Miền Tây",
-          "Nhóm hàng hợp tác từ nhà vườn Bảo Lộc",
-          "Một số mặt hàng khó tìm như lá mè Hàn Quốc, ngồng tỏi, khoai mỡ trắng, trái cây nhập khẩu",
-        ],
+          "Mỗi vùng trồng cho một nhóm rau củ ngon nhất theo mùa. TPS1 lấy hàng từ Đà Lạt, miền Tây và các nhà vườn hợp tác ở Bảo Lộc, để nhà hàng, quán ăn hay bếp công ty đều có đủ nguyên liệu cho thực đơn quanh năm.",
+        items: ["Rau củ quả theo mùa từ Đà Lạt và miền Tây", "Nhóm hàng hợp tác từ nhà vườn Bảo Lộc", "Một số mặt hàng khó tìm như lá mè Hàn Quốc, ngồng tỏi, khoai mỡ trắng, trái cây nhập khẩu"],
       },
       {
-        heading: "Điểm cần kiểm soát khi nhận hàng",
+        heading: "Giữ trọn độ tươi đến lúc vào nồi",
         body:
-          "Khách B2B thường quan tâm quy cách nhận hàng, độ tươi, tỷ lệ hao hụt và khả năng giữ lịch giao ổn định qua nhiều ca bếp.",
-        items: ["Bảo quản và vận chuyển có kiểm soát", "Lịch giao theo khung giờ bếp", "Tư vấn danh mục theo menu và ngân sách"],
+          "Rau củ rất nhạy cảm với thời gian và nhiệt độ. TPS1 bảo quản lạnh, giao theo khung giờ bếp đã thống nhất và tư vấn danh mục theo thực đơn, để hao hụt ở khâu sơ chế luôn ở mức thấp.",
+        items: ["Bảo quản và vận chuyển lạnh", "Giao theo khung giờ bếp", "Tư vấn danh mục theo thực đơn và ngân sách"],
       },
     ],
     faqs: sharedFaqs,
@@ -85,13 +81,13 @@ export const categories: ContentItem[] = [
     metaDescription: "Thịt heo đùi, vai, ba rọi, nạc dăm, sườn cắt theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Kiểm tra khi nhập kho, giao bằng xe lạnh, hóa đơn VAT.",
     title: "Thịt heo",
     description:
-      "Thịt heo cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể tại Đồng Nai, TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
-    highlights: ["Cắt theo quy cách bếp", "Kiểm tra khi nhập kho", "Giao lạnh theo tuyến cố định"],
+      "Từ bát canh sườn của quán cơm đến khay thịt kho của bếp công ty, thịt heo có mặt trong hầu hết thực đơn. TPS1 chia phần đúng quy cách và giữ lạnh suốt đường giao, để miếng thịt về bếp vẫn tươi hồng, săn chắc.",
+    highlights: ["Cắt đúng quy cách của bếp", "Kiểm tra kỹ khi nhập kho", "Giữ lạnh suốt đường giao"],
     sections: [
       {
-        heading: "Thịt heo chuẩn quy cách cho từng bữa ăn",
+        heading: "Chia phần đúng quy cách cho từng món",
         body:
-          "Thịt heo hiện diện trong hầu hết thực đơn của bếp ăn tập thể, từ bữa trưa của học sinh đến bữa ăn giữa ca của công nhân. TPS1 sơ chế và chia phần theo đúng quy cách mỗi bếp đặt ra, để từng suất ăn được định lượng chuẩn xác và đồng đều qua mọi ca.",
+          "Thịt heo hiện diện trong hầu hết thực đơn, từ nhà hàng, quán ăn đến bếp ăn công ty và trường học. TPS1 sơ chế và chia phần theo đúng quy cách mỗi bếp đặt ra, để từng món được định lượng chuẩn xác và đồng đều qua mọi ca.",
         items: ["Thịt đùi, vai, ba rọi, nạc dăm, sườn, xương", "Cắt khối, cắt lát hoặc xay theo yêu cầu", "Đóng gói theo ca hoặc theo bữa"],
       },
       {
@@ -113,13 +109,13 @@ export const categories: ContentItem[] = [
     metaDescription: "Thịt bò tươi và đông lạnh, cắt theo món xào, kho, hầm, nướng cho bếp ăn công nghiệp tại Đồng Nai. Bảo quản riêng từng loại, giao bằng xe lạnh.",
     title: "Thịt bò",
     description:
-      "Thịt bò cho bếp ăn công nghiệp, trường học, bệnh viện, nhà hàng và suất ăn tập thể, cung cấp theo quy cách và lịch giao của bếp.",
-    highlights: ["Thịt bò tươi và đông lạnh", "Quy cách theo món", "Giao lạnh theo lịch bếp"],
+      "Một đĩa bò xào mềm ngọt hay nồi bò kho đậm vị đều bắt đầu từ phần thịt được chọn đúng. TPS1 tư vấn phần thịt hợp với từng món và giữ lạnh suốt đường giao, để bữa ăn trọn vị mà chi phí vẫn trong tầm kiểm soát.",
+    highlights: ["Bò tươi và bò đông lạnh", "Chọn phần thịt theo từng món", "Giữ lạnh suốt đường giao"],
     sections: [
       {
-        heading: "Thịt bò cho những bữa ăn được chăm chút",
+        heading: "Đúng phần thịt cho đúng món",
         body:
-          "Thịt bò thường xuất hiện trong những bữa tăng khẩu phần hay thực đơn dịp đặc biệt, khi bếp muốn dành cho người ăn một bữa tươm tất hơn. TPS1 tư vấn phần thịt phù hợp với từng món, để bữa ăn trọn vị mà chi phí mỗi suất vẫn nằm trong định mức.",
+          "Mỗi món bò cần một phần thịt riêng: thăn cho món xào, nạm gân cho món hầm, bắp cho món luộc. TPS1 tư vấn phần thịt phù hợp với từng món và từng mức chi phí, cho nhà hàng lẫn bếp ăn tập thể.",
         items: ["Thịt bò tươi và thịt bò đông lạnh", "Phần thịt chuyên dùng cho xào, kho, hầm, nướng", "Cắt và đóng gói theo yêu cầu"],
       },
       {
@@ -142,13 +138,13 @@ export const categories: ContentItem[] = [
     metaDescription: "Gà, vịt nguyên con hoặc chia phần đùi, cánh, ức theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Bảo quản lạnh liên tục, giao theo tuyến cố định.",
     title: "Gia cầm",
     description:
-      "Thịt gà, vịt cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể, cung cấp theo quy cách và lịch giao của bếp.",
-    highlights: ["Gà, vịt nguyên con và theo phần", "Quy cách theo món", "Giao lạnh theo lịch bếp"],
+      "Từ con gà luộc vàng da đến đĩa đùi gà chiên giòn, món ngon nào cũng cần nguyên liệu tươi và đều cỡ. TPS1 giao gà, vịt nguyên con hoặc chia sẵn theo phần, giữ lạnh liên tục từ kho đến bếp.",
+    highlights: ["Nguyên con hoặc chia sẵn theo phần", "Quy cách theo từng món", "Giữ lạnh từ kho đến bếp"],
     sections: [
       {
         heading: "Gà, vịt cho thực đơn phong phú mỗi tuần",
         body:
-          "Gà, vịt là nguồn đạm quen thuộc và dễ biến tấu, giúp bếp xoay vòng thực đơn mà không lặp món. TPS1 cung cấp nguyên con hoặc chia sẵn theo phần, để việc định lượng tại bếp nhanh chóng và chuẩn xác hơn.",
+          "Gà, vịt là nguồn đạm quen thuộc và dễ biến tấu, giúp nhà hàng làm mới thực đơn và bếp ăn xoay vòng món mà không lặp lại. TPS1 cung cấp nguyên con hoặc chia sẵn theo phần, để việc định lượng tại bếp nhanh chóng và chuẩn xác hơn.",
         items: ["Gà, vịt nguyên con", "Đùi, cánh, ức, má đùi theo quy cách", "Đóng gói theo ca hoặc theo bữa"],
       },
       {
@@ -170,8 +166,8 @@ export const categories: ContentItem[] = [
     metaDescription: "Cá, tôm, mực tươi và đông lạnh theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Hàng về kho mỗi ngày, giao theo lịch chế biến của bếp.",
     title: "Hải sản",
     description:
-      "Cá, tôm, mực và hải sản cho bếp ăn công nghiệp, trường học, bệnh viện, nhà hàng và suất ăn tập thể tại Đồng Nai và khu vực lân cận.",
-    highlights: ["Thủy hải sản về kho mỗi ngày", "Hàng tươi và đông lạnh", "Quy cách theo nhu cầu bếp"],
+      "Hải sản ngon nhất khi còn giữ được vị ngọt của biển. TPS1 nhập hàng về kho mỗi ngày, phân loại theo quy cách và giữ lạnh nghiêm ngặt, để con tôm, lát cá đến bếp nhà hàng hay bếp ăn công ty vẫn tươi như lúc vừa về kho.",
+    highlights: ["Hải sản về kho mỗi ngày", "Đủ hàng tươi và đông lạnh", "Phân loại theo quy cách bếp"],
     sections: [
       {
         heading: "Hải sản về đều đặn theo nhịp đặt hàng của bếp",
@@ -182,7 +178,7 @@ export const categories: ContentItem[] = [
       {
         heading: "Với hải sản, an toàn thực phẩm luôn đi trước",
         body:
-          "Hải sản là nhóm hàng đòi hỏi sự cẩn trọng cao về an toàn thực phẩm. Vì thế, khi lựa chọn nhà cung cấp, bếp ăn nên tìm hiểu kỹ quy trình nhận hàng, cách bảo quản, chính sách đổi trả và phương án xử lý khi phát sinh sự cố.",
+          "Hải sản là nhóm hàng đòi hỏi sự cẩn trọng cao về an toàn thực phẩm. Vì thế, khi lựa chọn nhà cung cấp, nhà hàng và bếp ăn nên tìm hiểu kỹ quy trình nhận hàng, cách bảo quản, chính sách đổi trả và phương án xử lý khi phát sinh sự cố.",
         items: ["Kiểm tra cảm quan khi nhận hàng", "Tư vấn lịch giao theo ngày chế biến", "Ưu tiên giữ giá ổn định cho khách mua định kỳ"],
       },
     ],
@@ -199,20 +195,20 @@ export const categories: ContentItem[] = [
     metaDescription: "Thịt bò, gà, cá và hải sản đông lạnh cho bếp ăn công nghiệp tại Đồng Nai. Kho lạnh riêng, giao theo kế hoạch sử dụng để bếp chủ động nguyên liệu.",
     title: "Hàng đông lạnh",
     description:
-      "Thực phẩm đông lạnh cho bếp cần tối ưu tồn kho, giữ chất lượng và chủ động kế hoạch nguyên liệu.",
-    highlights: ["Kho đông lạnh", "Thịt bò, gà, cá, hải sản", "Phục vụ trường học, công ty, bếp tập thể"],
+      "Hàng đông lạnh giúp gian bếp luôn chủ động, kể cả những ngày chợ khan hàng. TPS1 bảo quản thịt bò, gà, cá và hải sản đông lạnh trong kho lạnh riêng và giao theo kế hoạch sử dụng của từng bếp.",
+    highlights: ["Bảo quản trong kho lạnh riêng", "Thịt bò, gà, cá và hải sản", "Giao theo kế hoạch sử dụng"],
     sections: [
       {
-        heading: "Nhóm hàng đặc thù",
+        heading: "Chủ động nguyên liệu cho cả tuần",
         body:
-          "Danh mục đông lạnh có thể gồm thịt bò, gà, cá và hải sản theo quy cách. Khách có thể dùng nhóm hàng này làm danh mục tham khảo khi gửi yêu cầu báo giá.",
-        items: ["Thịt bò đông lạnh", "Gà đông lạnh", "Cá và hải sản đông lạnh", "Nhóm hàng theo kế hoạch menu"],
+          "Với hàng đông lạnh, bếp có thể lên kế hoạch nguyên liệu theo tuần thay vì theo ngày. Nhà hàng giữ được món chủ lực khi giá hàng tươi biến động, bếp ăn công ty và trường học yên tâm có đủ đạm cho thực đơn.",
+        items: ["Thịt bò đông lạnh", "Gà đông lạnh", "Cá và hải sản đông lạnh", "Hàng theo kế hoạch thực đơn"],
       },
       {
-        heading: "Bảo quản và kế hoạch tồn kho",
+        heading: "Giữ lạnh trọn vẹn từ kho đến bếp",
         body:
-          "Khách hàng mua hàng đông lạnh quan tâm kho lạnh, nhiệt độ bảo quản, tốc độ giao và kế hoạch tồn kho để chủ động nguyên liệu cho bếp.",
-        items: ["Kho lạnh diện tích lớn", "Giao theo kế hoạch sử dụng", "Giảm rủi ro thiếu hàng vào giờ cao điểm"],
+          "TPS1 bảo quản hàng đông lạnh ở nhiệt độ ổn định trong kho lạnh và vận chuyển bằng xe lạnh, giao theo kế hoạch sử dụng để bếp không phải trữ quá nhiều.",
+        items: ["Kho lạnh riêng", "Xe lạnh chuyên dụng", "Giao theo kế hoạch sử dụng"],
       },
     ],
     faqs: sharedFaqs,
@@ -227,20 +223,20 @@ export const categories: ContentItem[] = [
     metaDescription: "Gia vị Việt, Hoa, Hàn, Âu, gia vị chay mặn và dầu ăn cho bếp ăn công nghiệp, nhà hàng tại Đồng Nai. Giá sỉ theo sản lượng, hóa đơn VAT đầy đủ.",
     title: "Gia vị",
     description:
-      "Gia vị chay mặn, Âu - Á và vật tư nhà bếp phục vụ chế biến chuyên nghiệp cho canteen, nhà hàng và bếp công nghiệp.",
-    highlights: ["Gia vị món Hoa", "Gia vị món Hàn", "Gia vị món Âu", "Đủ danh mục bếp"],
+      "Gia vị là linh hồn giữ cho món quen luôn đúng vị quen. TPS1 cung cấp gia vị Việt, Hoa, Hàn, Âu, gia vị chay mặn và dầu ăn, để mỗi gian bếp giữ hương vị đồng đều qua từng ca nấu.",
+    highlights: ["Gia vị Việt, Hoa, Hàn, Âu", "Gia vị chay mặn đầy đủ", "Dầu ăn cho mọi nhu cầu bếp"],
     sections: [
       {
-        heading: "Gia vị cho bếp vận hành đều",
+        heading: "Đủ gia vị cho mọi phong cách bếp",
         body:
-          "Nhóm gia vị phục vụ chuỗi nhà hàng, canteen trường học, bệnh viện và suất ăn công nghiệp, giúp bếp chuẩn hóa hương vị và chi phí.",
-        items: ["Gia vị món Việt, Hoa, Hàn, Âu", "Gia vị chay mặn", "Vật tư, đồ dùng và thiết bị bếp khi có nhu cầu"],
+          "Từ nhà hàng món Á, quán ăn gia đình đến bếp ăn công ty, mỗi gian bếp có một bộ gia vị riêng. TPS1 gom đủ trong một danh mục, kèm vật tư và dụng cụ bếp khi quý khách cần.",
+        items: ["Gia vị món Việt, Hoa, Hàn, Âu", "Gia vị chay mặn, dầu ăn", "Vật tư, dụng cụ bếp khi có nhu cầu"],
       },
       {
-        heading: "Giá trị với khách B2B",
+        heading: "Giữ vị món đồng đều qua từng ca",
         body:
-          "Gia vị là nhóm giúp giữ chất lượng món ổn định giữa nhiều ca nấu, đồng thời hỗ trợ định mức, danh mục thay thế và khả năng đáp ứng khi menu thay đổi.",
-        items: ["Hỗ trợ chuẩn hóa menu", "Tư vấn danh mục theo món", "Đáp ứng đơn hàng lặp lại"],
+          "Cùng một loại gia vị, cùng một quy cách giúp món ăn không đổi vị dù thay ca hay thay người nấu. TPS1 hỗ trợ chuẩn hóa danh mục theo thực đơn và gợi ý mặt hàng thay thế khi một loại tạm hết.",
+        items: ["Chuẩn hóa danh mục theo thực đơn", "Gợi ý mặt hàng thay thế", "Đáp ứng đơn hàng lặp lại"],
       },
     ],
     faqs: sharedFaqs,
@@ -255,19 +251,19 @@ export const categories: ContentItem[] = [
     metaDescription: "Gạo, mì, bún, miến, đậu, nấm khô, đồ hộp và đồ uống cho bếp ăn công nghiệp tại Đồng Nai. Đặt chung đơn với hàng tươi, giao cùng tuyến định kỳ.",
     title: "Đồ khô",
     description:
-      "Gạo, mì, bún khô, đậu, nấm khô, đồ hộp và hàng khô cho bếp ăn công nghiệp, trường học, bệnh viện và suất ăn tập thể.",
+      "Hạt gạo, sợi bún, gói miến là nền móng lặng lẽ của mỗi bữa ăn. TPS1 cung cấp đủ gạo, mì, bún khô, đậu, nấm, đồ hộp và đồ uống, đặt chung đơn với hàng tươi để gian bếp chỉ cần một đầu mối.",
     highlights: ["Nhóm hàng có nhiều mã nhất", "Đặt chung đơn với hàng tươi", "Giao cùng tuyến định kỳ"],
     sections: [
       {
         heading: "Hàng khô, nền tảng của mỗi bữa ăn",
         body:
-          "Trong danh mục của TPS1, đồ khô là nhóm hàng có số lượng mã nhiều nhất. Khi đặt hàng khô cùng đơn hàng tươi, bếp chỉ cần làm việc với một đầu mối, giảm bớt số nhà cung cấp phải theo dõi mỗi ngày.",
-        items: ["Gạo, mì, bún, miến, phở khô", "Đậu, nấm, rong biển và hàng khô khác", "Đồ hộp và nguyên liệu chế biến"],
+          "Trong danh mục của TPS1, đồ khô là nhóm hàng có số lượng mã nhiều nhất. Khi đặt hàng khô cùng đơn hàng tươi, gian bếp chỉ cần làm việc với một đầu mối, giảm bớt số nhà cung cấp phải theo dõi mỗi ngày.",
+        items: ["Gạo, mì, bún, miến, phở khô", "Đậu, nấm, rong biển và hàng khô khác", "Đồ hộp, đồ uống và nguyên liệu chế biến"],
       },
       {
         heading: "Đặt hàng vừa đủ, tồn kho hợp lý",
         body:
-          "Với thời hạn sử dụng dài, hàng khô phù hợp đặt theo tuần hoặc theo tháng. TPS1 tính toán số lượng dựa trên định mức suất ăn của từng bếp, để kho luôn đủ hàng mà không tồn đọng quá mức.",
+          "Với thời hạn sử dụng dài, hàng khô phù hợp đặt theo tuần hoặc theo tháng. TPS1 tính toán số lượng dựa trên nhu cầu thực tế của từng bếp, để kho luôn đủ hàng mà không tồn đọng quá mức.",
         items: ["Đặt theo tuần hoặc theo tháng", "Giao chung tuyến với hàng tươi", "Hóa đơn VAT đầy đủ"],
       },
     ],
@@ -284,20 +280,20 @@ export const categories: ContentItem[] = [
     metaDescription: "Đậu hũ, chả chay và thực phẩm chay cho bếp ăn công nghiệp, trường học, nhà hàng tại Đồng Nai; phù hợp thực đơn ngày rằm, mùng một hoặc suất ăn chay.",
     title: "Thực phẩm chay",
     description:
-      "Thực phẩm chay và gia vị chay cho nhà hàng, bếp ăn, trường học, sự kiện và đơn vị cần menu linh hoạt.",
-    highlights: ["Nhà phân phối chuyên biệt", "Menu chay linh hoạt", "Phù hợp nhiều đối tượng"],
+      "Một bữa chay thanh đạm vẫn cần nguyên liệu tươi và đủ vị. TPS1 cung cấp đậu hũ, chả chay và thực phẩm chay cho thực đơn ngày rằm, mùng một, nhà hàng chay hay bếp cần phục vụ nhiều khẩu vị.",
+    highlights: ["Đậu hũ và chả chay", "Gia vị chay đầy đủ", "Phù hợp thực đơn rằm, mùng một"],
     sections: [
       {
-        heading: "Nguồn hàng chay đa dạng",
+        heading: "Đủ nguyên liệu cho bữa chay tròn vị",
         body:
-          "Nhóm sản phẩm chay được trình bày theo nguồn hàng rõ, dễ bổ sung vào menu ngày rằm, sự kiện hoặc bữa ăn có nhu cầu đặc biệt.",
-        items: ["Thực phẩm chế biến món chay", "Gia vị chay", "Nguyên liệu chay theo nhu cầu bếp"],
+          "Nhóm hàng chay gồm đậu hũ, chả chay, nguyên liệu chế biến món chay và gia vị chay, giúp bếp dễ bổ sung thực đơn chay vào ngày rằm, sự kiện hoặc bữa ăn có nhu cầu riêng.",
+        items: ["Đậu hũ và chả chay", "Gia vị chay", "Nguyên liệu chay theo nhu cầu bếp"],
       },
       {
-        heading: "Ứng dụng thực tế",
+        heading: "Một thực đơn, nhiều khẩu vị",
         body:
-          "Nhóm này phù hợp cho ngày rằm, sự kiện, thực đơn trường học, nhà hàng chay hoặc bếp cần phục vụ nhiều khẩu vị khác nhau.",
-        items: ["Menu chay định kỳ", "Menu sự kiện", "Phương án thay thế món mặn khi cần"],
+          "Nhà hàng chay, bếp trường học hay bếp công ty đều có lúc cần phục vụ người ăn chay. Với nhóm hàng này, bếp có sẵn phương án thay thế món mặn mà không phải tìm thêm nhà cung cấp.",
+        items: ["Thực đơn chay định kỳ", "Thực đơn sự kiện", "Phương án thay thế món mặn"],
       },
     ],
     faqs: sharedFaqs,
@@ -312,7 +308,7 @@ export const categories: ContentItem[] = [
 export const industries: ContentItem[] = [
   {
     slug: "nha-hang-khach-san",
-    metaDescription: "Thực phẩm tươi, đều cỡ, đúng quy cách cho bếp nhà hàng, khách sạn tại Đồng Nai, TP.HCM; giao theo giờ mở bếp, nhận đơn từ 2.000.000 đồng, hóa đơn VAT.",
+    metaDescription: "Thực phẩm tươi, đều cỡ, đúng quy cách cho bếp nhà hàng, khách sạn tại Đồng Nai, TP.HCM; giao theo giờ mở bếp, linh hoạt thanh toán, hóa đơn VAT.",
     title: "Nhà hàng, khách sạn",
     description:
       "Mỗi món ăn ngon bắt đầu từ nguyên liệu chuẩn. TPS1 chọn hàng tươi, đều cỡ, đúng quy cách và giao theo giờ mở bếp, để bếp trưởng yên tâm giữ trọn hương vị cho từng đĩa ăn.",
@@ -344,15 +340,15 @@ export const industries: ContentItem[] = [
           "Thay vì làm việc với nhiều mối hàng lẻ, nhà hàng có thể đặt rau củ, thịt cá, đồ khô và gia vị trong cùng một đơn, nhận một hóa đơn VAT và một đầu mối chăm sóc riêng.",
         items: [
           "Hơn 5.000 mặt hàng trong một danh mục",
-          "Nhận đơn từ 2.000.000 đồng",
-          "Hóa đơn VAT đầy đủ, công nợ theo thỏa thuận",
+          "Linh hoạt thanh toán, công nợ theo thỏa thuận",
+          "Hóa đơn VAT đầy đủ",
         ],
       },
     ],
     faqs: [
       {
-        question: "Nhà hàng cần đặt tối thiểu bao nhiêu cho mỗi đơn?",
-        answer: "TPS1 nhận đơn từ 2.000.000 đồng cho mỗi lần giao. Đơn định kỳ được thống nhất lịch giao và quy cách ngay từ đầu.",
+        question: "Nhà hàng có cần đặt số lượng tối thiểu không?",
+        answer: "Mỗi nhà hàng có nhịp đặt hàng riêng. Quý khách vui lòng liên hệ TPS1 để cùng trao đổi về lượng hàng, lịch giao và hình thức thanh toán phù hợp.",
       },
       {
         question: "Có giao vào khung giờ sáng sớm trước khi mở bếp không?",
@@ -367,7 +363,7 @@ export const industries: ContentItem[] = [
   {
     slug: "quan-an",
     metaTitle: "Thực phẩm cho quán ăn, chuỗi F&B",
-    metaDescription: "Hàng tươi mỗi sáng cho quán cơm, quán phở, bún và chuỗi F&B tại Đồng Nai, TP.HCM: giao đúng giờ quán cần, nhận đơn từ 2.000.000 đồng, hóa đơn VAT.",
+    metaDescription: "Hàng tươi mỗi sáng cho quán cơm, quán phở, bún và chuỗi F&B tại Đồng Nai, TP.HCM: giao đúng giờ quán cần, linh hoạt thanh toán, hóa đơn VAT.",
     title: "Quán ăn, chuỗi F&B",
     description:
       "Quán ăn cần hàng tươi mỗi sáng, lượng vừa đủ cho ngày bán. TPS1 giao đúng giờ quán cần, để chủ quán dành trọn tâm sức cho nồi nước dùng và những vị khách quen.",
@@ -398,7 +394,7 @@ export const industries: ContentItem[] = [
         body:
           "Chủ quán chỉ cần gửi danh sách hàng qua Zalo hoặc điện thoại. TPS1 xác nhận trong 30 phút, gửi báo giá trong vòng 24 giờ và xuất hóa đơn VAT cho từng đơn.",
         items: [
-          "Nhận đơn từ 2.000.000 đồng",
+          "Linh hoạt thanh toán theo nhịp bán của quán",
           "Đặt hàng qua Zalo, điện thoại hoặc form trên website",
           "Hóa đơn VAT đầy đủ",
         ],
@@ -407,7 +403,7 @@ export const industries: ContentItem[] = [
     faqs: [
       {
         question: "Quán nhỏ có đặt được không?",
-        answer: "Được. TPS1 nhận đơn từ 2.000.000 đồng cho mỗi lần giao, phù hợp với quán đặt hàng theo ngày hoặc theo vài ngày một lần.",
+        answer: "Được. TPS1 sẽ trao đổi cùng chủ quán về lượng hàng, lịch giao và hình thức thanh toán, sao cho phù hợp với nhịp bán của quán.",
       },
       {
         question: "Quán cần chuẩn bị gì để nhận báo giá?",
@@ -624,14 +620,21 @@ export const services: ContentItem[] = [
     slug: "tu-van-menu",
     metaTitle: "Tư vấn thực đơn cho bếp ăn tập thể",
     metaDescription: "TPS1 đề xuất thực đơn và danh mục nguyên liệu phù hợp với ngân sách, định lượng mỗi suất và đối tượng ăn của từng bếp ăn tập thể.",
-    title: "Tư vấn menu",
-    description: "Đề xuất danh mục món và nguyên liệu phù hợp ngân sách, định lượng và đối tượng ăn.",
+    title: "Tư vấn thực đơn",
+    description:
+      "Một thực đơn hay vừa ngon miệng người ăn, vừa nằm gọn trong ngân sách của bếp. TPS1 cùng quý khách đi từ thực đơn đến danh sách nguyên liệu, định lượng và lịch giao cụ thể.",
     sections: [
       {
-        heading: "Từ menu đến danh mục mua hàng",
+        heading: "Từ thực đơn đến danh sách mua hàng",
         body:
-          "Dịch vụ này giúp khách chuyển từ thực đơn sang danh sách nguyên liệu, định lượng và lịch giao cụ thể.",
-        items: ["Ra menu cho bếp ăn tập thể", "Cân đối chi phí theo suất", "Gợi ý nhóm hàng thay thế"],
+          "TPS1 chuyển thực đơn tuần hoặc tháng thành danh sách nguyên liệu, định lượng cho từng món và lịch giao phù hợp, để bếp đặt hàng đúng, đủ, không thừa.",
+        items: ["Lên thực đơn theo đối tượng ăn", "Cân đối chi phí theo từng suất hoặc từng món", "Gợi ý nhóm hàng thay thế khi giá biến động"],
+      },
+      {
+        heading: "Cho nhà hàng lẫn bếp ăn tập thể",
+        body:
+          "Nhà hàng cần thực đơn đổi theo mùa để thực khách không nhàm chán; bếp ăn công ty và trường học cần thực đơn xoay vòng mà vẫn đủ chất. TPS1 tư vấn theo đúng nhịp của từng gian bếp.",
+        items: ["Thực đơn theo mùa cho nhà hàng", "Thực đơn xoay vòng cho bếp ăn", "Danh mục hàng đi kèm từng thực đơn"],
       },
     ],
     faqs: sharedFaqs,
@@ -640,14 +643,21 @@ export const services: ContentItem[] = [
     slug: "setup-bep-an",
     metaTitle: "Hỗ trợ thiết lập bếp ăn mới",
     metaDescription: "Hỗ trợ bếp ăn mới tính danh mục hàng cần nhập, phương án lưu kho và luồng vận hành, để bếp đi vào hoạt động ổn định ngay từ những ngày đầu.",
-    title: "Setup bếp ăn",
-    description: "Hỗ trợ tính toán danh mục hàng, lưu kho và luồng vận hành cho bếp mới.",
+    title: "Thiết lập bếp ăn mới",
+    description:
+      "Một gian bếp vận hành trơn tru từ ngày đầu là gian bếp được chuẩn bị kỹ từ trước. TPS1 hỗ trợ tính danh mục hàng cần nhập, phương án lưu kho và luồng nhận hàng cho bếp mới.",
     sections: [
       {
-        heading: "Chuẩn bị trước khi bếp chạy thật",
+        heading: "Chuẩn bị trước khi bếp đỏ lửa",
         body:
-          "Setup bếp cần chuẩn bị tiêu chuẩn vệ sinh an toàn thực phẩm, thiết bị, dụng cụ và quy trình nhập hàng ngay từ đầu.",
+          "Một bếp mới cần sẵn sàng từ tiêu chuẩn vệ sinh an toàn thực phẩm, thiết bị, dụng cụ đến quy trình nhập hàng. TPS1 cùng quý khách rà từng khâu trước ngày khai bếp.",
         items: ["Tư vấn danh mục thiết bị", "Lập luồng nhận hàng", "Chuẩn hóa khu sơ chế, lưu kho, chế biến"],
+      },
+      {
+        heading: "Danh mục hàng cho những tuần đầu",
+        body:
+          "Dựa trên thực đơn và số suất dự kiến, TPS1 đề xuất danh mục hàng cho những tuần đầu, để bếp vừa đủ nguyên liệu vừa không tồn kho quá nhiều khi lượng khách chưa ổn định.",
+        items: ["Danh mục hàng theo thực đơn dự kiến", "Định mức nhập cho những tuần đầu", "Lịch giao ban đầu, điều chỉnh dần theo thực tế"],
       },
     ],
     faqs: sharedFaqs,
@@ -657,13 +667,14 @@ export const services: ContentItem[] = [
     metaTitle: "Tính toán dinh dưỡng cho suất ăn tập thể",
     metaDescription: "Phối hợp nguyên liệu theo nhu cầu dinh dưỡng của từng nhóm: trẻ em, người bệnh, phụ nữ mang thai và người lao động nặng.",
     title: "Tính toán dinh dưỡng",
-    description: "Phối hợp nguyên liệu theo nhóm đối tượng: trẻ em, người bệnh, phụ nữ mang thai, lao động nặng.",
+    description:
+      "Mỗi người ăn cần một bữa ăn vừa vặn với cơ thể mình. TPS1 phối hợp nguyên liệu theo nhu cầu dinh dưỡng của từng nhóm: trẻ em, người bệnh, phụ nữ mang thai và người lao động nặng.",
     sections: [
       {
         heading: "Mỗi nhóm ăn có nhu cầu khác nhau",
         body:
-          "Các nhóm như người bệnh, trẻ em, phụ nữ mang thai hoặc người lao động nặng cần khẩu phần và định lượng nguyên liệu khác nhau.",
-        items: ["Tính định lượng khẩu phần", "Cân đối nhóm đạm, rau củ, tinh bột", "Đề xuất menu theo môi trường làm việc"],
+          "Trẻ em cần đủ chất để lớn, người bệnh cần khẩu phần nhẹ và đúng chế độ, người lao động nặng cần đủ năng lượng cho cả ca làm. TPS1 hỗ trợ tính định lượng và cân đối các nhóm thực phẩm cho từng đối tượng.",
+        items: ["Tính định lượng khẩu phần", "Cân đối nhóm đạm, rau củ, tinh bột", "Đề xuất thực đơn theo môi trường làm việc"],
       },
     ],
     faqs: sharedFaqs,
@@ -672,14 +683,15 @@ export const services: ContentItem[] = [
     slug: "cung-cap-dinh-ky",
     metaTitle: "Cung cấp thực phẩm theo lịch định kỳ",
     metaDescription: "Giao thực phẩm theo lịch ngày, tuần hoặc theo ca với quy cách cố định, giúp bếp ăn hạn chế thiếu hàng, hư hao và thất thoát.",
-    title: "Cung cấp định kỳ",
-    description: "Lịch giao và quy cách ổn định để giảm rủi ro thiếu hàng, hư hao và thất thoát.",
+    title: "Cung cấp theo lịch định kỳ",
+    description:
+      "Khi chuyến hàng đến đều đặn như nhịp bếp mỗi ngày, người đứng bếp không còn phải lo thiếu hàng. TPS1 giao theo lịch ngày, tuần hoặc theo ca với quy cách cố định.",
     sections: [
       {
-        heading: "Phù hợp hợp đồng dài hạn",
+        heading: "Dành cho gian bếp đặt hàng lặp lại",
         body:
-          "Dịch vụ này dành cho khách có nhu cầu mua lặp lại, cần ổn định chất lượng, thời gian giao và kế hoạch chi phí.",
-        items: ["Lịch giao theo ngày hoặc theo tuần", "Danh mục hàng cố định", "Điều chỉnh theo mùa vụ và menu"],
+          "Dịch vụ phù hợp với nhà hàng, quán ăn, bếp công ty và trường học có nhu cầu mua lặp lại, cần chất lượng ổn định, thời gian giao đúng hẹn và chi phí dễ dự trù.",
+        items: ["Lịch giao theo ngày, theo tuần hoặc theo ca", "Danh mục hàng cố định", "Điều chỉnh theo mùa vụ và thực đơn"],
       },
     ],
     faqs: sharedFaqs,

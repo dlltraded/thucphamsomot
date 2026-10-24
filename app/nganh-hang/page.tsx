@@ -20,7 +20,7 @@ const INDUSTRIES = [
     subtitle: "Nhà hàng · Khách sạn · Tiệc cưới · Resort",
     description:
       "Mỗi món ăn ngon bắt đầu từ nguyên liệu chuẩn. TPS1 chọn hàng tươi, đều cỡ, đúng quy cách để bếp trưởng yên tâm giữ trọn hương vị cho từng đĩa ăn.",
-    tags: ["Hàng chuẩn món", "Đơn từ 2.000.000 đồng", "Giao theo giờ mở bếp"],
+    tags: ["Hàng hóa đạt chuẩn", "Linh hoạt thanh toán", "Giao đúng giờ mở bếp"],
     accent: "#be185d",
     accentBg: "rgba(190,24,93,0.07)",
     accentBorder: "rgba(190,24,93,0.18)",
@@ -32,7 +32,7 @@ const INDUSTRIES = [
     subtitle: "Quán cơm · Phở, bún, hủ tiếu · Chuỗi cửa hàng",
     description:
       "Quán ăn cần hàng tươi mỗi sáng, lượng vừa đủ cho ngày bán. TPS1 giao đúng giờ quán cần, để chủ quán dành trọn tâm sức cho nồi nước dùng và những vị khách quen.",
-    tags: ["Hàng tươi mỗi sáng", "Đơn từ 2.000.000 đồng", "Một đầu mối"],
+    tags: ["Hàng tươi mỗi sáng", "Linh hoạt thanh toán", "Giao đúng lịch trình"],
     accent: "#c2410c",
     accentBg: "rgba(194,65,12,0.07)",
     accentBorder: "rgba(194,65,12,0.18)",
@@ -44,7 +44,7 @@ const INDUSTRIES = [
     subtitle: "Khu công nghiệp · Nhà máy · Văn phòng",
     description:
       "Bếp công ty nấu theo ca, theo định mức và không được phép trễ giờ. TPS1 lập lịch giao theo từng ca bếp, để bữa cơm của người lao động luôn nóng và đủ đầy.",
-    tags: ["Giao theo ca", "Đúng định mức", "Hóa đơn VAT đầy đủ"],
+    tags: ["Giao đúng từng ca", "Định mức rõ ràng", "Hóa đơn VAT đầy đủ"],
     accent: "#0f6f4b",
     accentBg: "rgba(15,111,75,0.07)",
     accentBorder: "rgba(15,111,75,0.18)",
@@ -56,7 +56,7 @@ const INDUSTRIES = [
     subtitle: "Mầm non · Tiểu học · Trung học · Nội trú",
     description:
       "Bữa ăn bán trú cần sự cẩn trọng gấp đôi. TPS1 cung cấp hàng rõ nguồn gốc, đủ hồ sơ an toàn thực phẩm, giao đúng giờ để nhà trường an tâm trao từng phần cơm đến các em.",
-    tags: ["Rõ nguồn gốc", "Đủ hồ sơ", "Đúng giờ bếp nhận"],
+    tags: ["Nguồn gốc rõ ràng", "Hồ sơ an toàn đầy đủ", "Giao đúng giờ bếp nhận"],
     accent: "#b45309",
     accentBg: "rgba(180,83,9,0.07)",
     accentBorder: "rgba(180,83,9,0.18)",
@@ -68,7 +68,7 @@ const INDUSTRIES = [
     subtitle: "Suất ăn người bệnh · Nhân viên y tế",
     description:
       "Bếp bệnh viện phục vụ nhiều chế độ ăn khác nhau. TPS1 giữ nhịp giao ổn định và kiểm soát an toàn theo ISO 22000, HACCP, để mỗi khay cơm đến tay người bệnh đều được chuẩn bị chu đáo.",
-    tags: ["ISO 22000, HACCP", "Đa dạng nhóm hàng", "Giao ổn định"],
+    tags: ["Đạt chuẩn ISO 22000, HACCP", "Đa dạng nhóm hàng", "Giao hàng ổn định"],
     accent: "#6d28d9",
     accentBg: "rgba(109,40,217,0.07)",
     accentBorder: "rgba(109,40,217,0.18)",
@@ -80,7 +80,7 @@ const INDUSTRIES = [
     subtitle: "Nhà thầu suất ăn · Căng tin doanh nghiệp",
     description:
       "Nhà thầu suất ăn cần quy cách đồng đều để giữ chi phí mỗi suất. TPS1 cung cấp hàng chuẩn quy cách, báo trước biến động giá và gợi ý món thay thế theo mùa.",
-    tags: ["Quy cách đồng đều", "Giá theo sản lượng", "Hỗ trợ thực đơn"],
+    tags: ["Quy cách đồng đều", "Giá sỉ theo sản lượng", "Hỗ trợ xây dựng thực đơn"],
     accent: "#1a6fa8",
     accentBg: "rgba(26,111,168,0.07)",
     accentBorder: "rgba(26,111,168,0.18)",

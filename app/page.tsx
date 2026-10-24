@@ -34,7 +34,7 @@ const processSteps = [
 ];
 
 const industryHighlights = [
-  { href: "/nganh-hang/nha-hang-khach-san", label: "Nhà hàng, khách sạn", description: "Hàng tươi, chuẩn món cho thực đơn đổi theo mùa; nhận đơn từ 2.000.000 đồng." },
+  { href: "/nganh-hang/nha-hang-khach-san", label: "Nhà hàng, khách sạn", description: "Hàng hóa đạt chuẩn, đều cỡ cho thực đơn đổi theo mùa, giao đúng giờ mở bếp." },
   { href: "/nganh-hang/quan-an", label: "Quán ăn, chuỗi F&B", description: "Hàng tươi mỗi sáng, lượng vừa đủ cho ngày bán, giao đúng giờ quán cần." },
   { href: "/nganh-hang/bep-an-tap-the", label: "Bếp ăn công ty, nhà máy", description: "Giao theo ca, đúng định mức cho bếp ăn khu công nghiệp và doanh nghiệp." },
   { href: "/nganh-hang/truong-hoc", label: "Trường học", description: "Nguồn hàng an toàn, hồ sơ rõ ràng cho bữa ăn bán trú của các em." },

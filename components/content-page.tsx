@@ -107,8 +107,8 @@ export function ContentPage({
           </div>
           <div className="content-detail__aside-card">
             <CheckCircle2 size={18} />
-            <strong>Phù hợp khách mua định kỳ</strong>
-            <span>Dành cho bếp ăn, trường học, bệnh viện, nhà hàng và đơn vị suất ăn cần nguồn hàng ổn định.</span>
+            <strong>Phù hợp gian bếp đặt hàng đều đặn</strong>
+            <span>Dành cho nhà hàng, quán ăn, bếp công ty, trường học, bệnh viện và đơn vị suất ăn cần nguồn hàng ổn định.</span>
           </div>
         </aside>
       </div>
