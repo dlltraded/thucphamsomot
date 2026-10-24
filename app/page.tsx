@@ -9,9 +9,9 @@ import { LeadCaptureSection } from "@/components/b2b/lead-capture";
 import { QuickQuoteForm } from "@/components/b2b/quick-quote-form";
 
 export const metadata = makeMetadata({
-  title: "Cung cấp thực phẩm tươi cho nhà hàng, bếp ăn tại Đồng Nai | TPS1",
+  title: "Nhà cung cấp thực phẩm cho nhà hàng, bếp ăn tại Đồng Nai | TPS1",
   description:
-    "Tươi đến bếp, an tâm đến bữa. TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh, đồ khô cho nhà hàng, quán ăn, bếp công ty, trường học tại Đồng Nai, TP.HCM.",
+    "Gửi trọn an tâm trong từng bữa ăn. TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh, đồ khô cho nhà hàng, quán ăn, bếp công ty, trường học tại Đồng Nai, TP.HCM.",
   path: "/",
 });
 

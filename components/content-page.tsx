@@ -49,7 +49,6 @@ const sectionImages = [
 
 export function ContentPage({
   title,
-  description,
   bullets = [],
   sections = [],
   faqs = [],
@@ -63,22 +62,9 @@ export function ContentPage({
   return (
     <article className="content-detail">
       <FaqJsonLd faqs={faqs} />
-      <div className="content-detail__hero">
-        <div className="content-detail__copy">
-          <div className="pill">thucphamsomot.vn</div>
-          {/* PageShell already renders the page's H1. */}
-          <h2 className="content-detail__title">{title}</h2>
-          <p className="content-detail__description">{description}</p>
-          <div className="content-detail__actions">
-            <Link href={ctaHref} className="btn-primary">
-              {ctaLabel} <ArrowRight size={18} />
-            </Link>
-            <a href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`} className="btn-secondary">
-              Gọi {siteConfig.phone}
-            </a>
-          </div>
-        </div>
-
+      {/* PageShell above already shows the title, description and quote/call buttons,
+          so only the supporting cards are rendered here. */}
+      <div className="content-detail__hero content-detail__hero--aside-only">
         <aside className="content-detail__aside">
           {heroMedia ? (
             <div className="content-detail__media">

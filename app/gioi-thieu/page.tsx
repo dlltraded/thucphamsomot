@@ -5,7 +5,7 @@ import { makeMetadata } from "@/lib/seo";
 
 export const metadata = makeMetadata({
   title: "Giới thiệu Công ty TNHH Thực Phẩm Số Một",
-  description: "Từ năm 2017, Thực Phẩm Số Một mang thực phẩm tươi, rõ nguồn gốc đến nhà hàng, quán ăn, bếp công ty, trường học; đạt ISO 22000, HACCP, bảo hiểm sản phẩm 5 tỷ.",
+  description: "Từ năm 2017, Thực Phẩm Số Một cung cấp thực phẩm rõ nguồn gốc cho nhà hàng, quán ăn, bếp công ty, trường học; đạt ISO 22000, HACCP, bảo hiểm sản phẩm 5 tỷ.",
   path: "/gioi-thieu",
 });
 
@@ -33,7 +33,7 @@ export default function GioiThieuPage() {
               <span style={{ color: "#4ade80" }}>trọn vẹn từng bữa ăn</span>
             </h1>
             <p className="b2b-about-hero__desc">
-              Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, mang thực phẩm tươi, rõ nguồn gốc
+              Công ty TNHH Thực Phẩm Số Một (TPS1) chính thức hoạt động từ năm 2017, mang đa dạng thực phẩm có nguồn gốc rõ ràng
               đến nhà hàng, quán ăn, bếp công ty, trường học, bệnh viện và bếp ăn công nghiệp.
             </p>
           </div>
@@ -227,7 +227,7 @@ export default function GioiThieuPage() {
       {/* 5. CTA */}
       <section className="b2b-cta-band">
         <div className="container-shell position-relative z-10" style={{ textAlign: "center" }}>
-          <h2 className="section-title-light">Tươi đến bếp, an tâm đến bữa</h2>
+          <h2 className="section-title-light">Gửi trọn an tâm trong từng bữa ăn</h2>
           <p className="section-desc" style={{ color: "rgba(255,255,255,0.7)", margin: "0 auto 32px" }}>
             Quý khách chỉ cần gửi danh sách hàng và số lượng dự kiến, TPS1 sẽ gửi báo giá sỉ trong vòng 24 giờ.
           </p>

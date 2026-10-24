@@ -10,7 +10,7 @@ import { brandAssets, customerHighlights } from "@/lib/brand";
 const footerText = {
   vi: {
     description:
-      "Tươi đến bếp, an tâm đến bữa. Từ năm 2017, TPS1 mang thực phẩm tươi, rõ nguồn gốc, an toàn đến nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp.",
+      "Gửi trọn an tâm trong từng bữa ăn. Từ năm 2017, TPS1 mang đa dạng thực phẩm có nguồn gốc rõ ràng, an toàn đến nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp.",
     contact: "Liên hệ",
     served: "Đã phục vụ",
     mapTitle: "Bản đồ công ty",

@@ -51,3 +51,23 @@ Trang tư vấn thực đơn và thiết lập bếp có thêm một khối nộ
 ## D. Chung
 
 Khối bên phải trang danh mục và dịch vụ: "Phù hợp khách mua định kỳ — Dành cho bếp ăn, trường học…" → **"Phù hợp gian bếp đặt hàng đều đặn — Dành cho nhà hàng, quán ăn, bếp công ty, trường học, bệnh viện và đơn vị suất ăn cần nguồn hàng ổn định."**
+
+## E. Slogan mới (anh chọn ngày 24/10)
+
+| Vị trí | Trước | Sau |
+|---|---|---|
+| Tiêu đề lớn trang chủ | Tươi đến bếp, an tâm đến bữa | **Gửi trọn an tâm trong từng bữa ăn** |
+| Mô tả Google trang chủ | Tươi đến bếp, an tâm đến bữa. TPS1 cung cấp… | Gửi trọn an tâm trong từng bữa ăn. TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh, đồ khô cho nhà hàng, quán ăn, bếp công ty, trường học tại Đồng Nai, TP.HCM. |
+| Chân trang, trang Giới thiệu, trang Ngành hàng, thẻ bên phải các trang con | Câu slogan cũ | Gửi trọn an tâm trong từng bữa ăn |
+
+## F. Không chỉ hàng tươi
+
+| Vị trí | Trước | Sau |
+|---|---|---|
+| Câu giới thiệu trang chủ | …TPS1 mang hơn 5.000 mặt hàng tươi đến từng gian bếp… | Mỗi chuyến thực phẩm tươi đến bếp đúng giờ là thêm một sự an tâm được gửi gắm, để từng bữa ăn luôn đủ đầy và được chăm chút từ những điều nhỏ nhất. Từ nhà hàng, quán ăn đến bếp công ty và trường học, TPS1 mang hơn 5.000 mặt hàng thực phẩm có nguồn gốc rõ ràng đến từng gian bếp tại Đồng Nai, TP.HCM và các tỉnh lân cận: rau củ, thịt cá tươi sống, hàng đông lạnh, đồ khô và gia vị. |
+| Chân trang | …thực phẩm tươi… | Từ năm 2017, TPS1 mang đa dạng thực phẩm có nguồn gốc rõ ràng, an toàn đến nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp. |
+| Mô tả chung của web (Google, Facebook) | Nhà cung cấp thực phẩm tươi… | Nhà cung cấp đa dạng thực phẩm có nguồn gốc rõ ràng cho nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp tại Đồng Nai, TP.HCM và các tỉnh lân cận. |
+
+## G. Sửa bố cục bị vỡ (trang dịch vụ, danh mục, chính sách, trang tiếng Anh)
+
+Nguyên nhân: đợt chỉnh giao diện tháng 7/2026 lỡ xóa phần định dạng của khung trang con, nên chữ, nhãn và khối nội dung dính vào nhau (lỗi này đang có trên web thật). Đã khôi phục đúng phần định dạng cũ và bỏ khối tiêu đề bị lặp hai lần ở đầu trang. Đã kiểm tra trên máy tính (1366px) và điện thoại (500px): nhãn hiện thành ô gọn gàng, hai thẻ bên phải nằm cạnh nhau, các khối nội dung không còn chồng lên nhau, mỗi trang chỉ còn một tiêu đề chính.

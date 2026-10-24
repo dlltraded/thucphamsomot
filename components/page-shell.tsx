@@ -46,7 +46,7 @@ const shellText = {
     visualLabel: "Minh họa dịch vụ",
     brandAlt: "Thực Phẩm Số Một",
     badge: "Hồ sơ, chứng từ, quy trình rõ ràng",
-    cardTitle: "Tươi đến bếp, an tâm đến bữa",
+    cardTitle: "Gửi trọn an tâm trong từng bữa ăn",
     cardCopy:
       "Danh mục rõ ràng, lịch giao thống nhất ngay từ đầu và báo giá trong vòng 24 giờ cho từng gian bếp.",
   },

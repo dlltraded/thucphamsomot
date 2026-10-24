@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./fonts.css";
+import "./page-shell-base.css";
 import "./globals.css";
 import "./quick-quote.css";
 import "./segment-landing.css";

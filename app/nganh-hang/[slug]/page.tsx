@@ -218,7 +218,7 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
           
           <div className="relative z-10 max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Tươi đến bếp, an tâm đến bữa
+              Gửi trọn an tâm trong từng bữa ăn
             </h2>
             <p className="text-emerald-100 text-lg mb-8">
               Gửi danh mục hàng cần mua, TPS1 gửi lại bảng giá chi tiết trong vòng 24 giờ, kèm tư vấn định lượng để chi phí mỗi bữa luôn hợp lý.

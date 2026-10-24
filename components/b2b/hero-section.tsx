@@ -76,11 +76,11 @@ const texts = {
     title: (
       <>
         {/* Brand slogan. Phrase groups never break internally. */}
-        <span className="b2b-hero__phrase">Tươi đến bếp,</span>{" "}
-        <span className="b2b-hero__phrase"><span>an tâm</span> đến bữa</span>
+        <span className="b2b-hero__phrase">Gửi trọn <span>an tâm</span></span>{" "}
+        <span className="b2b-hero__phrase">trong từng bữa ăn</span>
       </>
     ),
-    sub: "Mỗi chuyến thực phẩm tươi đến bếp đúng giờ là thêm một sự an tâm được gửi gắm, để từng bữa ăn luôn đủ đầy và được chăm chút từ những điều nhỏ nhất. Từ nhà hàng, quán ăn đến bếp công ty và trường học, TPS1 mang hơn 5.000 mặt hàng tươi, rõ nguồn gốc đến từng gian bếp tại Đồng Nai, TP.HCM và các tỉnh lân cận.",
+    sub: "Mỗi chuyến thực phẩm tươi đến bếp đúng giờ là thêm một sự an tâm được gửi gắm, để từng bữa ăn luôn đủ đầy và được chăm chút từ những điều nhỏ nhất. Từ nhà hàng, quán ăn đến bếp công ty và trường học, TPS1 mang hơn 5.000 mặt hàng thực phẩm có nguồn gốc rõ ràng đến từng gian bếp tại Đồng Nai, TP.HCM và các tỉnh lân cận: rau củ, thịt cá tươi sống, hàng đông lạnh, đồ khô và gia vị.",
     formRibbon: "PHẢN HỒI TRONG 30 PHÚT",
     formSuccessTitle: "Đã nhận yêu cầu!",
     formSuccessDesc: (name: string) => (

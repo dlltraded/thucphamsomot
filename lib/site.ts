@@ -14,7 +14,7 @@ export const siteConfig = {
   domain: "thucphamsomot.vn",
   url: "https://thucphamsomot.vn",
   description:
-    "Nhà cung cấp thực phẩm tươi, rõ nguồn gốc cho nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp tại Đồng Nai, TP.HCM và các tỉnh lân cận.",
+    "Nhà cung cấp đa dạng thực phẩm có nguồn gốc rõ ràng cho nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp tại Đồng Nai, TP.HCM và các tỉnh lân cận.",
   englishDescription:
     "A B2B food supplier for canteens, industrial catering, schools, hospitals, restaurants, and hospitality operators in Dong Nai and nearby areas.",
   phone: primaryPhoneDisplay,
