@@ -18,6 +18,11 @@ const industrySeoTitles: Record<string, string> = {
   "nha-hang-khach-san": "Thực phẩm cho nhà hàng, khách sạn",
 };
 
+// Industries without their own /images/industries/<slug>-vn.png yet.
+const industryHeroOverrides: Record<string, string> = {
+  "quan-an": "/images/food-banner.jpg",
+};
+
 const industrySegmentLinks: Record<string, { href: string; label: string }> = {
   "truong-hoc": {
     href: "/cung-cap-thuc-pham-cho-truong-hoc",
@@ -59,7 +64,7 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
   
   const description = item.description ?? item.title;
   const segmentLink = industrySegmentLinks[slug];
-  const heroImage = `/images/industries/${slug}-vn.png`;
+  const heroImage = industryHeroOverrides[slug] ?? `/images/industries/${slug}-vn.png`;
   
   return (
     <main className="industry-detail-page bg-gray-50 pb-20">
@@ -107,13 +112,13 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
       <section className="relative z-20 -mt-8 mb-16 container-shell">
         <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12 border border-gray-100">
           <div className="flex-1">
-            <span className="text-3xl font-black text-emerald-600 block mb-1">99.8%</span>
-            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Tỷ lệ đúng hẹn (SLA)</span>
+            <span className="text-3xl font-black text-emerald-600 block mb-1">99,8%</span>
+            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Tỷ lệ đơn hàng giao đúng hẹn</span>
           </div>
           <div className="hidden md:block w-px h-12 bg-gray-200" />
           <div className="flex-1">
             <span className="text-3xl font-black text-emerald-600 block mb-1">5.000+</span>
-            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Suất ăn phục vụ mỗi ngày</span>
+            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Mã sản phẩm trong danh mục</span>
           </div>
           <div className="hidden md:block w-px h-12 bg-gray-200" />
           <div className="flex-1 flex gap-3 items-center">
@@ -122,7 +127,7 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
             </div>
             <div>
               <span className="font-bold text-gray-900 block">Khu vực phục vụ</span>
-              <span className="text-sm text-gray-500">Đồng Nai & lân cận</span>
+              <span className="text-sm text-gray-500">Đồng Nai, TP.HCM & lân cận</span>
             </div>
           </div>
         </div>
@@ -184,7 +189,7 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
           <FadeInUp className="max-w-3xl mx-auto">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Câu hỏi thường gặp</h2>
-              <p className="text-gray-500">Những thắc mắc phổ biến khi hợp tác cung ứng thực phẩm B2B.</p>
+              <p className="text-gray-500">Những điều quý khách thường hỏi trước khi đặt chuyến hàng đầu tiên.</p>
             </div>
             <div className="space-y-4">
               {item.faqs.map((faq, i) => (
@@ -213,14 +218,14 @@ export default async function IndustryDetailPage({ params }: { params: Promise<{
           
           <div className="relative z-10 max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Bạn đang cần báo giá cho {item.title.toLowerCase()}?
+              Tươi đến bếp, an tâm đến bữa
             </h2>
             <p className="text-emerald-100 text-lg mb-8">
-              Gửi danh mục thực tế của bạn, đội ngũ TPS1 sẽ gửi lại bảng giá chi tiết kèm tư vấn định lượng để tối ưu chi phí nhất.
+              Gửi danh mục hàng cần mua, TPS1 gửi lại bảng giá chi tiết trong vòng 24 giờ, kèm tư vấn định lượng để chi phí mỗi bữa luôn hợp lý.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link href="/bao-gia" className="btn-primary !px-8 !py-4 shadow-lg shadow-emerald-950/50">
-                Gửi yêu cầu ngay
+                Gửi yêu cầu báo giá
               </Link>
               <a href={`tel:${siteConfig.phone.replace(/\s+/g, "")}`} className="btn-secondary !bg-white/10 !border-white/20 !text-white hover:!bg-white/20 !px-8 !py-4">
                 Gọi {siteConfig.phone}

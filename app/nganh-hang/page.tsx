@@ -6,36 +6,48 @@ import { PageShell } from "@/components/page-shell";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Lĩnh vực phục vụ: bếp ăn, trường học, bệnh viện",
+  title: "Thực phẩm cho nhà hàng, quán ăn, bếp ăn, trường học",
   description:
-    "TPS1 cung cấp thực phẩm cho bếp ăn tập thể, đơn vị suất ăn công nghiệp, trường học, bệnh viện, nhà hàng và khách sạn tại Đồng Nai cùng các tỉnh lân cận.",
+    "TPS1 cung cấp thực phẩm tươi, rõ nguồn gốc cho nhà hàng, quán ăn, bếp công ty, trường học, bệnh viện và đơn vị suất ăn tại Đồng Nai, TP.HCM và tỉnh lân cận.",
   path: "/nganh-hang",
 });
 
 const INDUSTRIES = [
   {
+    slug: "nha-hang-khach-san",
+    emoji: "🍽️",
+    title: "Nhà hàng, khách sạn",
+    subtitle: "Nhà hàng · Khách sạn · Tiệc cưới · Resort",
+    description:
+      "Mỗi món ăn ngon bắt đầu từ nguyên liệu chuẩn. TPS1 chọn hàng tươi, đều cỡ, đúng quy cách để bếp trưởng yên tâm giữ trọn hương vị cho từng đĩa ăn.",
+    tags: ["Hàng chuẩn món", "Đơn từ 2.000.000 đồng", "Giao theo giờ mở bếp"],
+    accent: "#be185d",
+    accentBg: "rgba(190,24,93,0.07)",
+    accentBorder: "rgba(190,24,93,0.18)",
+  },
+  {
+    slug: "quan-an",
+    emoji: "🥢",
+    title: "Quán ăn, chuỗi F&B",
+    subtitle: "Quán cơm · Phở, bún, hủ tiếu · Chuỗi cửa hàng",
+    description:
+      "Quán ăn cần hàng tươi mỗi sáng, lượng vừa đủ cho ngày bán. TPS1 giao đúng giờ quán cần, để chủ quán dành trọn tâm sức cho nồi nước dùng và những vị khách quen.",
+    tags: ["Hàng tươi mỗi sáng", "Đơn từ 2.000.000 đồng", "Một đầu mối"],
+    accent: "#c2410c",
+    accentBg: "rgba(194,65,12,0.07)",
+    accentBorder: "rgba(194,65,12,0.18)",
+  },
+  {
     slug: "bep-an-tap-the",
     emoji: "🏭",
-    title: "Bếp ăn tập thể",
-    subtitle: "Khu công nghiệp · Nhà máy · Doanh nghiệp",
+    title: "Bếp ăn công ty, nhà máy",
+    subtitle: "Khu công nghiệp · Nhà máy · Văn phòng",
     description:
-      "Cung ứng thực phẩm theo định mức, lịch giao và quy trình rõ ràng cho bếp vận hành hằng ngày. Phục vụ từ 100 đến 5.000 suất/ngày.",
-    tags: ["Giao định kỳ", "Định mức rõ", "Lịch bếp ổn định"],
+      "Bếp công ty nấu theo ca, theo định mức và không được phép trễ giờ. TPS1 lập lịch giao theo từng ca bếp, để bữa cơm của người lao động luôn nóng và đủ đầy.",
+    tags: ["Giao theo ca", "Đúng định mức", "Hóa đơn VAT đầy đủ"],
     accent: "#0f6f4b",
     accentBg: "rgba(15,111,75,0.07)",
     accentBorder: "rgba(15,111,75,0.18)",
-  },
-  {
-    slug: "suat-an-cong-nghiep",
-    emoji: "🍱",
-    title: "Suất ăn công nghiệp",
-    subtitle: "Nhà cung cấp suất ăn · Ca sáng trưa tối",
-    description:
-      "Hỗ trợ nguyên liệu, tư vấn menu và tối ưu chi phí cho đơn vị cung cấp suất ăn số lượng lớn theo hợp đồng dài hạn.",
-    tags: ["Số lượng lớn", "Menu chuẩn hóa", "Tối ưu chi phí/suất"],
-    accent: "#1a6fa8",
-    accentBg: "rgba(26,111,168,0.07)",
-    accentBorder: "rgba(26,111,168,0.18)",
   },
   {
     slug: "truong-hoc",
@@ -43,8 +55,8 @@ const INDUSTRIES = [
     title: "Trường học",
     subtitle: "Mầm non · Tiểu học · Trung học · Nội trú",
     description:
-      "Nguyên liệu an toàn, truy xuất rõ ràng, phù hợp bữa ăn cho học sinh. Ưu tiên độ tươi, dinh dưỡng và đúng giờ bếp nhận hàng.",
-    tags: ["An toàn thực phẩm", "Truy xuất nguồn gốc", "Dinh dưỡng học đường"],
+      "Bữa ăn bán trú cần sự cẩn trọng gấp đôi. TPS1 cung cấp hàng rõ nguồn gốc, đủ hồ sơ an toàn thực phẩm, giao đúng giờ để nhà trường an tâm trao từng phần cơm đến các em.",
+    tags: ["Rõ nguồn gốc", "Đủ hồ sơ", "Đúng giờ bếp nhận"],
     accent: "#b45309",
     accentBg: "rgba(180,83,9,0.07)",
     accentBorder: "rgba(180,83,9,0.18)",
@@ -53,41 +65,41 @@ const INDUSTRIES = [
     slug: "benh-vien",
     emoji: "🏥",
     title: "Bệnh viện",
-    subtitle: "Suất ăn bệnh nhân · Nhân viên y tế · Dinh dưỡng",
+    subtitle: "Suất ăn người bệnh · Nhân viên y tế",
     description:
-      "Danh mục thực phẩm cần kiểm soát chất lượng và nhịp giao ổn định cho bếp bệnh viện phục vụ nhiều nhóm khẩu phần khác nhau.",
-    tags: ["Kiểm soát chất lượng", "Menu đặc thù", "Giao ổn định"],
+      "Bếp bệnh viện phục vụ nhiều chế độ ăn khác nhau. TPS1 giữ nhịp giao ổn định và kiểm soát an toàn theo ISO 22000, HACCP, để mỗi khay cơm đến tay người bệnh đều được chuẩn bị chu đáo.",
+    tags: ["ISO 22000, HACCP", "Đa dạng nhóm hàng", "Giao ổn định"],
     accent: "#6d28d9",
     accentBg: "rgba(109,40,217,0.07)",
     accentBorder: "rgba(109,40,217,0.18)",
   },
   {
-    slug: "nha-hang-khach-san",
-    emoji: "🍽️",
-    title: "Nhà hàng, khách sạn",
-    subtitle: "Bếp khách sạn · Nhà hàng · Ẩm thực đa phong cách",
+    slug: "suat-an-cong-nghiep",
+    emoji: "🍱",
+    title: "Đơn vị suất ăn",
+    subtitle: "Nhà thầu suất ăn · Căng tin doanh nghiệp",
     description:
-      "Nguồn hàng chuyên nghiệp cho bếp vận hành liên tục — từ rau củ tươi, thịt cá hải sản, hàng đông lạnh đến gia vị Âu Á.",
-    tags: ["Danh mục rộng", "Hàng đặc thù", "Phản hồi nhanh"],
-    accent: "#be185d",
-    accentBg: "rgba(190,24,93,0.07)",
-    accentBorder: "rgba(190,24,93,0.18)",
+      "Nhà thầu suất ăn cần quy cách đồng đều để giữ chi phí mỗi suất. TPS1 cung cấp hàng chuẩn quy cách, báo trước biến động giá và gợi ý món thay thế theo mùa.",
+    tags: ["Quy cách đồng đều", "Giá theo sản lượng", "Hỗ trợ thực đơn"],
+    accent: "#1a6fa8",
+    accentBg: "rgba(26,111,168,0.07)",
+    accentBorder: "rgba(26,111,168,0.18)",
   },
 ];
 
 const STATS = [
-  { value: "100+", label: "Đơn vị đang hợp tác" },
-  { value: "5.000+", label: "Suất ăn phục vụ mỗi ngày" },
-  { value: "500+", label: "Mặt hàng trong danh mục" },
-  { value: "Đồng Nai", label: "Trọng tâm · mở rộng TP.HCM, BD, BR-VT" },
+  { value: "109+", label: "Doanh nghiệp và bếp ăn đang hợp tác" },
+  { value: "5.000+", label: "Mã sản phẩm trong danh mục" },
+  { value: "99,8%", label: "Đơn hàng giao đúng hẹn" },
+  { value: "Từ 2017", label: "Phục vụ Đồng Nai, TP.HCM và tỉnh lân cận" },
 ];
 
 export default function NganhHangPage() {
   return (
     <PageShell
       eyebrow="Ngành hàng"
-      title="Chúng tôi phục vụ ngành nào?"
-      description="TPS1 cung ứng thực phẩm B2B cho các đơn vị vận hành bếp quy mô lớn — từ nhà máy, trường học, bệnh viện đến nhà hàng và dịch vụ suất ăn công nghiệp."
+      title="Mỗi gian bếp một nhịp riêng"
+      description="Nhà hàng cần hàng chuẩn món, quán ăn cần lượng vừa đủ mỗi sáng, bếp công ty cần đúng ca, trường học cần đủ hồ sơ. TPS1 chuẩn bị nguồn hàng theo đúng nhịp của từng gian bếp."
     >
       <div className="nganh-hub">
 
@@ -135,8 +147,8 @@ export default function NganhHangPage() {
         {/* CTA band */}
         <div className="nganh-hub__cta">
           <div className="nganh-hub__cta-copy">
-            <strong>Chưa tìm thấy ngành phù hợp?</strong>
-            <p>Liên hệ trực tiếp — đội kinh doanh sẽ tư vấn danh mục hàng, lịch giao và báo giá theo nhu cầu thực tế của bếp.</p>
+            <strong>Chưa thấy gian bếp của mình trong danh sách?</strong>
+            <p>Hãy gọi cho TPS1. Đội kinh doanh sẽ lắng nghe nhu cầu và đề xuất danh mục hàng, lịch giao, báo giá phù hợp với gian bếp của quý khách.</p>
           </div>
           <div className="nganh-hub__cta-actions">
             <Link href="/bao-gia" className="btn-primary">

@@ -57,7 +57,8 @@ const footerText = {
 >;
 
 const segmentFooterLinks = [
-  { href: "/nganh-hang/nha-hang-khach-san", label: "Nhà hàng, quán ăn" },
+  { href: "/nganh-hang/nha-hang-khach-san", label: "Nhà hàng, khách sạn" },
+  { href: "/nganh-hang/quan-an", label: "Quán ăn, chuỗi F&B" },
   { href: "/cung-cap-thuc-pham-cho-truong-hoc", label: "Trường học, bếp bán trú" },
   { href: "/cung-cap-thuc-pham-cho-nha-may", label: "Nhà máy, xí nghiệp" },
   { href: "/cung-cap-thuc-pham-cho-co-quan", label: "Cơ quan, văn phòng" },

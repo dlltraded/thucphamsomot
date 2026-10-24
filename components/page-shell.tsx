@@ -42,13 +42,13 @@ const shellText = {
     quoteHref: "/bao-gia",
     quoteLabel: "Mở form báo giá",
     tagsLabel: "Điểm mạnh dịch vụ",
-    tags: ["B2B", "Giao định kỳ", "An toàn thực phẩm", "Báo giá riêng", "Đồng Nai"],
+    tags: ["Rõ nguồn gốc", "Giao đúng giờ", "An toàn thực phẩm", "Báo giá riêng", "Đồng Nai, TP.HCM"],
     visualLabel: "Minh họa dịch vụ",
     brandAlt: "Thực Phẩm Số Một",
     badge: "Hồ sơ, chứng từ, quy trình rõ ràng",
-    cardTitle: "Hàng đúng nhóm, giao đúng nhịp",
+    cardTitle: "Tươi đến bếp, an tâm đến bữa",
     cardCopy:
-      "Tập trung vào nhu cầu mua số lượng lớn: danh mục rõ, lịch giao dễ thống nhất và phản hồi nhanh khi cần báo giá.",
+      "Danh mục rõ ràng, lịch giao thống nhất ngay từ đầu và báo giá trong vòng 24 giờ cho từng gian bếp.",
   },
   en: {
     quoteHref: "/en/bao-gia",
