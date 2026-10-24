@@ -4,6 +4,9 @@ const nextConfig = {
     workerThreads: true,
   },
   images: {
+    // All images bypass Vercel Image Optimization; see lib/image-loader.ts.
+    loader: "custom",
+    loaderFile: "./lib/image-loader.ts",
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {

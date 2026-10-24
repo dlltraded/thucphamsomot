@@ -56,6 +56,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="vi">
       <head>
         <link rel="preconnect" href="https://www.googletagmanager.com" />
+        {/* Site images are resized by wsrv.nl (lib/image-loader.ts); the hero image is the LCP. */}
+        <link rel="preconnect" href="https://wsrv.nl" />
       </head>
       <body>
         <GoogleAdsTag />
