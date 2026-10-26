@@ -67,6 +67,7 @@ export default function ProductItem(props: ProductItemProps) {
           <div className="text-sm font-medium line-clamp-2">
             {props.product.name}
           </div>
+          {props.product.shortDescription && <div className="text-xs text-subtitle mt-0.5 line-clamp-2">{props.product.shortDescription}</div>}
           <div className="mt-1 text-sm font-bold text-primary flex items-baseline gap-2">
             {props.product.priceOnRequest ? "Liên hệ báo giá" : formatPrice(props.product.price)}
           </div>
