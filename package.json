@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:catalog-cache": "node --experimental-strip-types --no-warnings --test tests/customer-catalog-cache.test.mjs",
     "migrate:supabase": "node scripts/migrate-json-to-supabase.mjs"
   },
   "keywords": [],

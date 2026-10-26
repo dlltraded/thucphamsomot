@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CUSTOMER_SESSION_COOKIE, parseSessionCookieValue } from "@/lib/customer-session";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { resolvePricesForProducts } from "@/lib/customer-pricing";
+import { createCustomerCatalogCache, type CatalogProductRow } from "@/lib/customer-catalog-cache";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,13 +32,10 @@ type CustomerContext = {
 const customerContextCache = new Map<string, CustomerContext>();
 const CUSTOMER_CONTEXT_TTL_MS = 60_000;
 const PRODUCT_CATALOG_TTL_MS = 5 * 60_000;
-const productCatalogCache = new Map<string, { expiresAt: number; body: unknown }>();
-let baseProductCatalogCache: { expiresAt: number; products: any[] } | null = null;
 let categoryListCache: { expiresAt: number; categories: string[] } | null = null;
 
 export function invalidateCustomerCatalogCache() {
-  productCatalogCache.clear();
-  baseProductCatalogCache = null;
+  customerCatalogCache.invalidate();
   categoryListCache = null;
 }
 
@@ -88,25 +86,27 @@ async function resolveCustomerContext(req: NextRequest, supabase: ReturnType<typ
   return context;
 }
 
-async function loadProductCatalog(
-  supabase: ReturnType<typeof getCustomerSupabaseAdmin>,
-  customerContext: CustomerContext | null
-) {
-  const cacheKey = customerContext?.customerId || "guest";
-  const cached = productCatalogCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return { body: cached.body, cacheStatus: "HIT" };
-  }
+const PRODUCT_CATALOG_FIELDS = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
 
-  let products = baseProductCatalogCache?.expiresAt && baseProductCatalogCache.expiresAt > Date.now()
-    ? baseProductCatalogCache.products
-    : null;
-  if (!products) {
-    const selectFields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
+const customerCatalogCache = createCustomerCatalogCache<CustomerContext | null>({
+  ttlMs: PRODUCT_CATALOG_TTL_MS,
+  async readVersion() {
+    // Đếm cả dòng ngừng bán: bật/tắt active cũng là UPDATE nên đổi updated_at,
+    // còn xóa hẳn sản phẩm thì làm đổi số dòng.
+    const { data, count, error } = await getCustomerSupabaseAdmin()
+      .from("products")
+      .select("updated_at", { count: "exact" })
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .limit(1);
+    if (error) throw error;
+    return `${count ?? 0}:${data?.[0]?.updated_at ?? ""}`;
+  },
+  async loadProducts() {
+    const supabase = getCustomerSupabaseAdmin();
     const pageSize = 1000;
     const first = await supabase
       .from("products")
-      .select(selectFields, { count: "exact" })
+      .select(PRODUCT_CATALOG_FIELDS, { count: "exact" })
       .eq("active", true)
       .order("name")
       .range(0, pageSize - 1);
@@ -119,7 +119,7 @@ async function loadProductCatalog(
         const page = index + 1;
         return supabase
           .from("products")
-          .select(selectFields)
+          .select(PRODUCT_CATALOG_FIELDS)
           .eq("active", true)
           .order("name")
           .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -129,69 +129,22 @@ async function loadProductCatalog(
       if (page.error) throw page.error;
     }
 
-    products = [
+    return [
       ...(first.data || []),
       ...remainingPages.flatMap((page) => page.data || []),
-    ] as any[];
-    baseProductCatalogCache = {
-      expiresAt: Date.now() + PRODUCT_CATALOG_TTL_MS,
-      products,
-    };
-  }
-  const priceMap = customerContext
-    ? await resolvePricesForProducts(
-        supabase,
-        customerContext.customerId,
-        products,
-        {
-          tier: customerContext.tier,
-          contractDiscountPercent: customerContext.contractDiscountPercent,
-          tierExpiryDate: customerContext.tierExpiryDate,
-        }
-      )
-    : new Map<string, { price?: number }>();
-  const supabaseUrl = (process.env.SUPABASE_PRODUCTS_URL || "").replace(/\/$/, "");
-  const imageBaseUrl = supabaseUrl
-    ? `${supabaseUrl}/storage/v1/object/public/product-images/thumbs`
-    : "";
-
-  // Mảng tuple giảm kích thước JSON khoảng 4 lần so với lặp lại tên field 5.000 lần.
-  // [id, sku, name, category, unit, price, priceOnRequest, hasImage, packagingNote, minOrderQty, orderStep, enforceOrderStep, quantityPrecision, quantityAdjustmentMode, shortDescription, imageUrl]
-  const items = products.map((product) => {
-    const priceInfo = priceMap.get(product.id);
-    const price = customerContext
-      ? priceInfo?.price ?? (Number(product.price_retail) || Number(product.price_wholesale) || 0)
-      : Number(product.price_retail) || 0;
-    return [
-      product.id,
-      product.sku || "",
-      product.name || "",
-      product.category || null,
-      product.unit || "Kg",
-      price,
-      price <= 0,
-      Boolean(product.thumb_url),
-      product.packaging_note || null,
-      product.min_order_qty == null ? 1 : Number(product.min_order_qty) || 1,
-      product.order_step == null ? 1 : Number(product.order_step) || 1,
-      Boolean(product.enforce_order_step),
-      product.quantity_precision == null ? 0 : Math.max(0, Number(product.quantity_precision) || 0),
-      product.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
-      product.short_description || null,
-      product.thumb_url || product.image_url || null,
-    ];
-  });
-  const body = { ok: true, count: items.length, imageBaseUrl, items };
-
-  for (const [key, entry] of productCatalogCache) {
-    if (entry.expiresAt <= Date.now()) productCatalogCache.delete(key);
-  }
-  productCatalogCache.set(cacheKey, {
-    expiresAt: Date.now() + PRODUCT_CATALOG_TTL_MS,
-    body,
-  });
-  return { body, cacheStatus: "MISS" };
-}
+    ] as CatalogProductRow[];
+  },
+  resolvePrices: (products, customerContext) =>
+    resolvePricesForProducts(getCustomerSupabaseAdmin(), customerContext!.customerId, products, {
+      tier: customerContext!.tier,
+      contractDiscountPercent: customerContext!.contractDiscountPercent,
+      tierExpiryDate: customerContext!.tierExpiryDate,
+    }),
+  imageBaseUrl() {
+    const supabaseUrl = (process.env.SUPABASE_PRODUCTS_URL || "").replace(/\/$/, "");
+    return supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/product-images/thumbs` : "";
+  },
+});
 
 // Giai đoạn E — trang "Đặt hàng": khách tìm sản phẩm để tự lên đơn, thấy
 // đúng giá theo khách hàng/nhóm bếp đã được gán. Giá tính trong bộ nhớ (không
@@ -243,14 +196,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Trang đặt hàng hỏi phiên bản (vài chục byte) để biết danh mục đang giữ
+  // trong sessionStorage còn đúng không; chỉ tải lại 5.000+ dòng khi đã đổi.
+  if (req.nextUrl.searchParams.get("catalogVersion") === "1") {
+    const version = await customerCatalogCache.currentVersion();
+    return json({ ok: true, version }, 200, { "Cache-Control": "no-store" });
+  }
+
   if (req.nextUrl.searchParams.get("catalog") === "1") {
     try {
-      const catalog = await loadProductCatalog(supabase, customerContext);
+      const catalog = await customerCatalogCache.get(customerContext);
       return json(catalog.body, 200, {
-        "Cache-Control": customerContext
-          ? "private, max-age=300, stale-while-revalidate=600"
-          : "public, max-age=300, stale-while-revalidate=600",
+        // Trình duyệt/CDN không được giữ bản cũ; trang đặt hàng tự cache theo phiên bản.
+        "Cache-Control": customerContext ? "private, no-cache" : "public, no-cache",
         "X-TPS1-Catalog-Cache": catalog.cacheStatus,
+        "X-TPS1-Catalog-Version": catalog.version,
       });
     } catch (error) {
       console.error("GET /api/customer/products?catalog=1 lỗi:", error);
