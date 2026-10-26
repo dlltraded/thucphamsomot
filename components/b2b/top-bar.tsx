@@ -5,7 +5,7 @@ const items = [
   { icon: ShieldCheck, text: "Đạt chuẩn ISO 22000 & HACCP" },
   { icon: Award, text: "Bảo hiểm trách nhiệm sản phẩm 5.000.000.000 VNĐ" },
   { icon: Phone, text: `Hotline B2B: ${siteConfig.phone}` },
-  { icon: ShieldCheck, text: "Giao hàng đúng hẹn 100%" },
+  { icon: ShieldCheck, text: "99,8% đơn hàng giao đúng hẹn" },
   { icon: Award, text: "109+ khách hàng doanh nghiệp tin dùng" },
 ];
 
