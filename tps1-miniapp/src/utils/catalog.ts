@@ -13,6 +13,7 @@ type ApiProduct = {
   price?: number;
   priceOnRequest?: boolean;
   packagingNote?: string | null;
+  shortDescription?: string | null;
   minOrderQty?: number;
   orderStep?: number;
   enforceOrderStep?: boolean;
@@ -91,7 +92,8 @@ function toProduct(item: ApiProduct): Product {
     image: item.thumbUrl || item.imageUrl || logoUrl,
     category: { id: group.id, name: group.name, image: "" },
     categoryId: group.id,
-    detail: "",
+    detail: item.shortDescription || "",
+    shortDescription: item.shortDescription || undefined,
     packagingNote: item.packagingNote || undefined,
     minOrderQty: item.minOrderQty != null ? Number(item.minOrderQty) : 1,
     orderStep: item.orderStep != null ? Number(item.orderStep) : 1,

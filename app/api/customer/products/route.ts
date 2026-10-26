@@ -72,12 +72,12 @@ async function resolveCustomerContext(req: NextRequest, supabase: ReturnType<typ
 
   const { data: customer } = await supabase
     .from("vip_accounts")
-    .select("discount_tier, contract_discount_percent, tier_expiry_date")
+    .select("contract_discount_percent, tier_expiry_date")
     .eq("id", data.customer_id)
     .maybeSingle();
   const context: CustomerContext = {
     customerId: data.customer_id,
-    tier: customer?.discount_tier || null,
+    tier: null,
     contractDiscountPercent: customer?.contract_discount_percent == null
       ? null
       : Number(customer.contract_discount_percent),
@@ -102,7 +102,7 @@ async function loadProductCatalog(
     ? baseProductCatalogCache.products
     : null;
   if (!products) {
-    const selectFields = "id, sku, name, category, unit, thumb_url, price_retail, price_wholesale, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
+    const selectFields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
     const pageSize = 1000;
     const first = await supabase
       .from("products")
@@ -156,7 +156,7 @@ async function loadProductCatalog(
     : "";
 
   // Mảng tuple giảm kích thước JSON khoảng 4 lần so với lặp lại tên field 5.000 lần.
-  // [id, sku, name, category, unit, price, priceOnRequest, hasImage, packagingNote, minOrderQty, orderStep, enforceOrderStep, quantityPrecision, quantityAdjustmentMode]
+  // [id, sku, name, category, unit, price, priceOnRequest, hasImage, packagingNote, minOrderQty, orderStep, enforceOrderStep, quantityPrecision, quantityAdjustmentMode, shortDescription, imageUrl]
   const items = products.map((product) => {
     const priceInfo = priceMap.get(product.id);
     const price = customerContext
@@ -177,6 +177,8 @@ async function loadProductCatalog(
       Boolean(product.enforce_order_step),
       product.quantity_precision == null ? 0 : Math.max(0, Number(product.quantity_precision) || 0),
       product.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
+      product.short_description || null,
+      product.thumb_url || product.image_url || null,
     ];
   });
   const body = { ok: true, count: items.length, imageBaseUrl, items };
@@ -192,7 +194,7 @@ async function loadProductCatalog(
 }
 
 // Giai đoạn E — trang "Đặt hàng": khách tìm sản phẩm để tự lên đơn, thấy
-// đúng giá theo hạng/hợp đồng riêng của mình. Giá tính trong bộ nhớ (không
+// đúng giá theo khách hàng/nhóm bếp đã được gán. Giá tính trong bộ nhớ (không
 // gọi RPC resolve_product_price cho từng sản phẩm — 24 sp/trang x gọi tuần
 // tự/song song vẫn chậm và có thể trông như "không tải được") — cùng cách
 // tối ưu đã dùng ở app/api/customer/order/import-excel.
@@ -297,7 +299,7 @@ export async function GET(req: NextRequest) {
           if (productIds.length > 0) {
             const { data: specRows, error: specErr } = await supabase
               .from("products")
-              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
+              .select("id, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
               .in("id", productIds);
             if (specErr) {
               console.error("Lỗi truy vấn bổ sung quy cách sản phẩm khách hàng:", specErr);
@@ -327,6 +329,7 @@ export async function GET(req: NextRequest) {
                 stock_qty: r.stock_qty,
                 min_stock: r.min_stock,
                 packaging_note: spec?.packaging_note || null,
+                short_description: spec?.short_description || null,
                 min_order_qty: spec?.min_order_qty == null ? 1 : Number(spec.min_order_qty) || 1,
                 order_step: spec?.order_step == null ? 1 : Number(spec.order_step) || 1,
                 enforce_order_step: Boolean(spec?.enforce_order_step),
@@ -344,7 +347,7 @@ export async function GET(req: NextRequest) {
     if (!usedRpc) {
       let query = supabase
         .from("products")
-        .select("id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode", { count: "exact" })
+        .select("id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode", { count: "exact" })
         .eq("active", true)
         .order("name")
         .range(page * pageSize, page * pageSize + pageSize - 1);
@@ -391,6 +394,7 @@ export async function GET(req: NextRequest) {
         available: true,
         stockQty: Number(p.stock_qty) || 0,
         packagingNote: p.packaging_note || null,
+        shortDescription: p.short_description || null,
         minOrderQty: p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
         orderStep: p.order_step == null ? 1 : Number(p.order_step) || 1,
         enforceOrderStep: Boolean(p.enforce_order_step),

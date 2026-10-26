@@ -27,6 +27,7 @@ type CatalogProduct = {
   enforce_order_step?: boolean | null;
   quantity_precision?: number | null;
   quantity_adjustment_mode?: string | null;
+  short_description?: string | null;
 };
 let baseCatalogCache: { expiresAt: number; products: CatalogProduct[] } | null = null;
 const pricedCatalogCache = new Map<string, { expiresAt: number; products: unknown[] }>();
@@ -38,7 +39,7 @@ export function invalidateAdminCatalogCache() {
 
 async function loadBaseCatalog(supabase: ReturnType<typeof getCustomerSupabaseAdmin>) {
   if (baseCatalogCache && baseCatalogCache.expiresAt > Date.now()) return baseCatalogCache.products;
-  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
+  const fields = "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, track_inventory, stock_qty, min_stock, is_low_stock, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode";
   const pageSize = 1000;
   const first = await supabase.from("products").select(fields, { count: "exact" }).eq("active", true).order("name").range(0, pageSize - 1);
   if (first.error) throw first.error;
@@ -74,6 +75,7 @@ const EDITABLE_FIELDS = [
   "pack_size",
   "supplier",
   "origin",
+  "short_description",
   "description",
   "notes",
   "tags",
@@ -157,7 +159,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 1. Meta danh mục & tiers — WP4-3B: ưu tiên dùng RPC get_distinct_categories
+  // 1. Meta danh mục — ưu tiên dùng RPC get_distinct_categories
   if (req.nextUrl.searchParams.get("meta") === "1") {
     let categories: string[] = [];
     try {
@@ -178,12 +180,7 @@ export async function GET(req: NextRequest) {
       categories = [...new Set((catRows || []).map((r) => r.category as string))].sort();
     }
 
-    const { data: tiers } = await supabase
-      .from("customer_tiers")
-      .select("code, name")
-      .neq("code", "CUSTOM")
-      .order("code");
-    return json({ ok: true, categories, tiers: tiers || [] });
+    return json({ ok: true, categories });
   }
 
   const productId = req.nextUrl.searchParams.get("productId")?.trim();
@@ -191,7 +188,6 @@ export async function GET(req: NextRequest) {
     const { data: product, error } = await supabase.from("products").select("*").eq("id", productId).single();
     if (error || !product) return json({ ok: false, error: "Không tìm thấy sản phẩm" }, 404);
 
-    const { data: tierRows } = await supabase.from("product_tier_prices").select("tier, price").eq("product_id", productId);
     const { data: history } = await supabase
       .from("inventory_transactions")
       .select("id, type, quantity, note, created_at, created_by, admin_profiles(name)")
@@ -201,10 +197,7 @@ export async function GET(req: NextRequest) {
 
     return json({
       ok: true,
-      product: {
-        ...product,
-        tierPrices: Object.fromEntries((tierRows || []).map((r) => [r.tier, Number(r.price)])),
-      },
+      product,
       inventoryHistory: history || [],
       canEdit: canForProfile(auth.profile, "products.edit"),
     });
@@ -243,7 +236,7 @@ export async function GET(req: NextRequest) {
           if (productIds.length > 0) {
             const { data: specRows, error: specErr } = await supabase
               .from("products")
-              .select("id, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
+              .select("id, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
               .in("id", productIds);
             if (specErr) {
               console.error("Lỗi truy vấn bổ sung quy cách sản phẩm:", specErr);
@@ -275,6 +268,7 @@ export async function GET(req: NextRequest) {
                 is_low_stock: r.track_inventory && (Number(r.stock_qty) || 0) <= (Number(r.min_stock) || 0),
                 active: r.active,
                 packaging_note: spec?.packaging_note || null,
+                short_description: spec?.short_description || null,
                 min_order_qty: spec?.min_order_qty == null ? 1 : Number(spec.min_order_qty) || 1,
                 order_step: spec?.order_step == null ? 1 : Number(spec.order_step) || 1,
                 enforce_order_step: Boolean(spec?.enforce_order_step),
@@ -293,7 +287,7 @@ export async function GET(req: NextRequest) {
       let query = supabase
         .from("products")
         .select(
-          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active, packaging_note, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode",
+          "id, sku, name, category, unit, image_url, thumb_url, price_retail, price_wholesale, cost_price, stock_qty, min_stock, max_stock, track_inventory, is_low_stock, active, packaging_note, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode",
           { count: "exact" }
         )
         .order("name")
@@ -321,25 +315,13 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. Hai nguồn dữ liệu bổ sung độc lập nhau, tải song song để giảm RTT.
-    const productIds = products.map((p) => p.id);
     const customerPricePromise = customerId && products.length > 0
       ? resolvePricesForProducts(supabase, customerId, products).catch((err) => {
           console.warn("Lỗi resolvePricesForProducts trong admin products:", err);
           return null;
         })
       : Promise.resolve(null);
-    const tierPricesPromise = productIds.length
-      ? supabase.from("product_tier_prices").select("product_id, tier, price").in("product_id", productIds)
-      : Promise.resolve({ data: [] as { product_id: string; tier: string; price: number }[] });
-    const [customerPriceMap, tierResult] = await Promise.all([customerPricePromise, tierPricesPromise]);
-    const tierPrices = tierResult.data || [];
-
-    const tierMap = new Map<string, Record<string, number>>();
-    for (const row of tierPrices || []) {
-      const entry = tierMap.get(row.product_id) || {};
-      entry[row.tier] = Number(row.price);
-      tierMap.set(row.product_id, entry);
-    }
+    const customerPriceMap = await customerPricePromise;
 
     // Thống kê chỉ số quy cách phục vụ chỉ báo giao diện
     let specStats = { total: 0, configured: 0, unconfigured: 0, enforced: 0 };
@@ -379,7 +361,6 @@ export async function GET(req: NextRequest) {
           trackInventory: !!p.track_inventory,
           stockQty: p.stock_qty != null ? Number(p.stock_qty) : null,
           lowStock: !!p.is_low_stock,
-          tierPrices: tierMap.get(p.id) || {},
           packaging_note: p.packaging_note || null,
           min_order_qty: p.min_order_qty == null ? 1 : Number(p.min_order_qty) || 1,
           order_step: p.order_step == null ? 1 : Number(p.order_step) || 1,
@@ -397,6 +378,9 @@ export async function GET(req: NextRequest) {
 }
 
 function validateSpecFields(fields: Record<string, unknown>): string | null {
+  if (fields.short_description !== undefined && fields.short_description !== null && String(fields.short_description).trim().length > 200) {
+    return "Mô tả ngắn tối đa 200 ký tự";
+  }
   if (fields.quantity_precision !== undefined && fields.quantity_precision !== null) {
     const precision = Number(fields.quantity_precision);
     if (!Number.isInteger(precision) || precision < 0 || precision > 6) return "Số chữ số thập phân phải là số nguyên từ 0 đến 6";
@@ -437,6 +421,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
+  if (body?.tierPrices !== undefined) {
+    return json({ ok: false, error: "Giá theo hạng khách hàng đã ngừng sử dụng. Hãy quản lý giá trong mục Thiết lập giá." }, 410);
+  }
   const productId = String(body?.productId || "").trim();
   const productIds = Array.isArray(body?.productIds) ? (body.productIds as string[]).map(String).filter(Boolean) : [];
 
@@ -527,21 +514,6 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    // 2. Cập nhật giá theo hạng
-    if (body?.tierPrices && typeof body.tierPrices === "object") {
-      for (const [tier, priceRaw] of Object.entries(body.tierPrices as Record<string, unknown>)) {
-        if (priceRaw === null || priceRaw === "" || priceRaw === undefined) {
-          await supabase.from("product_tier_prices").delete().eq("product_id", productId).eq("tier", tier);
-        } else {
-          const price = Number(priceRaw);
-          if (!Number.isFinite(price) || price < 0) continue;
-          await supabase
-            .from("product_tier_prices")
-            .upsert({ product_id: productId, tier, price, updated_at: new Date().toISOString() }, { onConflict: "product_id,tier" });
-        }
-      }
-    }
-
     // 3. Điều chỉnh tồn kho: insert 1 dòng inventory_transactions
     if (body?.inventoryAdjustment) {
       if (!canForProfile(auth.profile, "products.stock_in")) {
@@ -580,17 +552,9 @@ export async function PATCH(req: NextRequest) {
       .single();
     if (fetchError) throw fetchError;
 
-    const { data: tierRows } = await supabase
-      .from("product_tier_prices")
-      .select("tier, price")
-      .eq("product_id", productId);
-
     return json({
       ok: true,
-      product: {
-        ...updated,
-        tierPrices: Object.fromEntries((tierRows || []).map((r) => [r.tier, Number(r.price)])),
-      },
+      product: updated,
     });
   } catch (error) {
     console.error("PATCH /api/admin/products lỗi:", error);
@@ -611,6 +575,9 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const name = String(body?.name || "").trim();
   if (!name) return json({ ok: false, error: "Thiếu tên sản phẩm" }, 400);
+  if (String(body?.shortDescription || "").trim().length > 200) {
+    return json({ ok: false, error: "Mô tả ngắn tối đa 200 ký tự" }, 400);
+  }
 
   const supabase = getCustomerSupabaseAdmin();
 
@@ -639,6 +606,7 @@ export async function POST(req: NextRequest) {
         pack_size: body?.packSize || null,
         supplier: body?.supplier || null,
         origin: body?.origin || null,
+        short_description: body?.shortDescription || null,
         description: body?.description || null,
         track_inventory: body?.trackInventory !== false,
         data_source: "manual",
@@ -648,7 +616,7 @@ export async function POST(req: NextRequest) {
       .single();
     if (error) throw error;
 
-    return json({ ok: true, product: { ...created, tierPrices: {} } });
+    return json({ ok: true, product: created });
   } catch (error) {
     console.error("POST /api/admin/products lỗi:", error);
     return json({ ok: false, error: "Không tạo được sản phẩm" }, 500);

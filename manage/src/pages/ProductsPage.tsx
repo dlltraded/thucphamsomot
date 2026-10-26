@@ -4,14 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Search, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Plus,
   Upload, Download, X, CheckCircle2, Sliders, Edit3, Check, Layers,
-  ExternalLink, FileSpreadsheet, Info
+  ExternalLink, Info
 } from 'lucide-react';
 import { getValidQuantityExamples, formatQuantityVN } from '../lib/quantityRules';
 
 function money(v: number) {
   return new Intl.NumberFormat('vi-VN').format(Math.round(Number(v) || 0)) + 'đ';
 }
-
 interface Product {
   id: string;
   sku: string | null;
@@ -25,6 +24,7 @@ interface Product {
   track_inventory: boolean;
   is_low_stock: boolean;
   packaging_note?: string | null;
+  short_description?: string | null;
   min_order_qty?: number;
   order_step?: number;
   enforce_order_step?: boolean;
@@ -68,7 +68,6 @@ export default function ProductsPage() {
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [showSpecsImport, setShowSpecsImport] = useState(false);
   const [showInventoryImport, setShowInventoryImport] = useState(false);
-  const [showPricebookImport, setShowPricebookImport] = useState(false);
 
   // Toast feedback
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -201,10 +200,10 @@ export default function ProductsPage() {
                 <Upload size={16} /> Nhập kho
               </button>
               <button
-                onClick={() => setShowPricebookImport(true)}
+                onClick={() => navigate('/thiet-lap-gia')}
                 className="px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
               >
-                <FileSpreadsheet size={16} /> Bảng giá Excel
+                <Layers size={16} /> Thiết lập giá
               </button>
               <button
                 onClick={() => navigate('/hang-hoa/moi')}
@@ -443,6 +442,7 @@ export default function ProductsPage() {
                             >
                               {p.name}
                             </button>
+                            {p.short_description && <p className="text-[11px] text-slate-500 truncate max-w-md" title={p.short_description}>{p.short_description}</p>}
                             <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
                               <span className="font-mono text-slate-600 font-medium">{p.sku || '—'}</span>
                               <span>·</span>
@@ -619,15 +619,6 @@ export default function ProductsPage() {
         />
       )}
 
-      {/* Modal Nhập Bảng Giá Cũ */}
-      {showPricebookImport && (
-        <ImportPricebookModal
-          apiBase={apiBase}
-          token={token}
-          onClose={() => setShowPricebookImport(false)}
-          onDone={() => { setShowPricebookImport(false); fetchProducts(); }}
-        />
-      )}
     </div>
   );
 }
@@ -1538,88 +1529,6 @@ function ImportInventoryModal({
               className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
             >
               {applying ? 'Đang nhập...' : `Xác nhận nhập ${summary.ok} mã`}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ImportPricebookModal({
-  apiBase,
-  token,
-  onClose,
-  onDone,
-}: {
-  apiBase: string;
-  token: string | null;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const [file, setFile] = useState<File | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [applying, setApplying] = useState(false);
-  const [summary, setSummary] = useState<any | null>(null);
-  const [error, setError] = useState('');
-
-  const run = async (apply: boolean) => {
-    if (!file) return;
-    setError('');
-    apply ? setApplying(true) : setChecking(true);
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      if (apply) form.append('apply', '1');
-      const res = await fetch(`${apiBase}/api/admin/products/import-pricebook`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error);
-      setSummary(data.summary);
-      if (apply) onDone();
-    } catch (err: any) {
-      setError(err.message || 'Lỗi nhập bảng giá');
-    } finally {
-      apply ? setApplying(false) : setChecking(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="font-bold text-slate-800 text-lg">Nhập bảng giá từ Excel</h3>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
-            <X size={20} />
-          </button>
-        </div>
-        {error && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg">{error}</div>}
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="w-full text-sm"
-        />
-        <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose} className="px-4 py-2 border rounded-lg text-sm">Hủy</button>
-          {!summary ? (
-            <button
-              onClick={() => run(false)}
-              disabled={!file || checking}
-              className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 disabled:opacity-50"
-            >
-              {checking ? 'Đang kiểm tra...' : 'Xem trước'}
-            </button>
-          ) : (
-            <button
-              onClick={() => run(true)}
-              disabled={applying}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {applying ? 'Đang nhập...' : `Xác nhận nhập ${summary.ok} giá`}
             </button>
           )}
         </div>

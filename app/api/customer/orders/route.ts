@@ -82,6 +82,7 @@ export async function GET(req: NextRequest) {
           localProductId: item.product_local_id,
           sku: item.sku,
           name: item.name,
+          shortDescription: (item.short_description_snapshot as string) || null,
           unit: item.unit,
           quantity: Number(item.quantity) || 0,
           orderedQuantity: item.ordered_quantity != null ? Number(item.ordered_quantity) : Number(item.quantity) || 0,

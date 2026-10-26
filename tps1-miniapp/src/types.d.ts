@@ -19,6 +19,7 @@ export interface Product {
   category: Category;
   categoryId?: string | number;
   detail?: string;
+  shortDescription?: string;
   sizes?: Size[];
   colors?: Color[];
   packagingNote?: string;

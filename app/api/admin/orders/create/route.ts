@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
 
   const productIds = [...new Set(rawItems.map((item: any) => item.productId))] as string[];
   const { data: quantityProducts, error: quantityProductError } = await supabase.from("products")
-    .select("id, unit, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode, packaging_note")
+    .select("id, unit, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode, packaging_note")
     .in("id", productIds);
   if (quantityProductError) return json({ ok: false, error: "Không kiểm tra được quy cách sản phẩm" }, 500);
   const quantityProductMap = new Map((quantityProducts || []).map((product: any) => [product.id, product]));
@@ -456,6 +456,7 @@ export async function POST(req: NextRequest) {
       const product: any = quantityProductMap.get(sourceInput.productId);
       await supabase.from("order_items").update({
         requested_quantity: sourceInput.requestedQuantity,
+        short_description_snapshot: product?.short_description || null,
         quantity_precision_snapshot: Number(product?.quantity_precision) || 0,
         quantity_adjustment_mode_snapshot: product?.quantity_adjustment_mode || "reject",
         quantity_adjustment_note: sourceInput.quantityAdjustment?.adjusted ? sourceInput.quantityAdjustment.message : null,

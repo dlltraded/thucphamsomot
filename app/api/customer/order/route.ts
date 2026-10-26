@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
   const uniqueProductIds = [...new Set(items.map((item) => item.productId))];
   const { data: quantityProducts, error: quantityProductsError } = await supabaseAdmin
     .from("products")
-    .select("id, name, unit, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
+    .select("id, name, unit, short_description, min_order_qty, order_step, enforce_order_step, quantity_precision, quantity_adjustment_mode")
     .in("id", uniqueProductIds)
     .eq("active", true);
   if (quantityProductsError) {
@@ -457,6 +457,7 @@ export async function POST(req: NextRequest) {
         quantity_adjustment_mode_snapshot: product?.quantity_adjustment_mode === "ceil_to_step" ? "ceil_to_step" : "reject",
         quantity_adjustment_note: adjustment?.message || null,
         customer_note: sourceInput.note || null,
+        short_description_snapshot: product?.short_description || null,
         source_import_line_id: sourceLine?.id || null,
         source_input_unit: sourceLine?.raw_unit || null,
         source_conversion_factor: sourceLine?.conversion_factor ?? null,
