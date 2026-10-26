@@ -4,9 +4,9 @@ import { localLandingPages } from "@/lib/local-landing-content";
 import { LocalLandingPage } from "@/components/local-landing-page";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Cung cấp thực phẩm Đồng Nai cho bếp ăn, nhà máy",
+  title: "Cung cấp thực phẩm tại Đồng Nai cho nhà hàng, bếp ăn",
   description:
-    "TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh và đồ khô cho bếp ăn tập thể, nhà máy, trường học, bệnh viện tại Đồng Nai. Giao theo lịch, báo giá trong 24 giờ.",
+    "TPS1 cung cấp rau củ, thịt cá, hàng đông lạnh, đồ khô cho nhà hàng, quán ăn, bếp công ty, trường học tại Đồng Nai, gồm cả khu vực Bình Phước cũ. Báo giá 24 giờ.",
   path: "/cung-cap-thuc-pham-dong-nai",
   ogTitle: "Cung Cấp Thực Phẩm",
   ogSubtitle: "Tại Đồng Nai",

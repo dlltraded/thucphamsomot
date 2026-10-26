@@ -50,7 +50,7 @@ const sharedFaqs: FaqItem[] = [
 export const categories: ContentItem[] = [
   {
     slug: "rau-cu-qua",
-    metaDescription: "Rau củ quả tươi từ Đà Lạt, miền Tây và Bảo Lộc cho bếp ăn công nghiệp, trường học, bệnh viện tại Đồng Nai. Giao theo khung giờ bếp, có hóa đơn VAT.",
+    metaDescription: "Rau củ quả tươi từ Đà Lạt, miền Tây và Bảo Lộc cho nhà hàng, quán ăn, bếp ăn, trường học tại Đồng Nai, TP.HCM. Phân loại theo kích cỡ, giao đúng giờ bếp cần.",
     title: "Rau củ quả",
     description:
       "Rau củ từ Đà Lạt, miền Tây và Bảo Lộc được chọn lựa mỗi ngày, giữ trọn độ tươi trên suốt chặng đường về bếp, để đĩa rau trên bàn nhà hàng hay khay cơm trong bếp trường học đều xanh mướt như vừa hái.",
@@ -78,7 +78,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "thit-heo",
-    metaDescription: "Thịt heo đùi, vai, ba rọi, nạc dăm, sườn cắt theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Kiểm tra khi nhập kho, giao bằng xe lạnh, hóa đơn VAT.",
+    metaDescription: "Thịt heo đùi, vai, ba rọi, nạc dăm, sườn chia phần theo quy cách cho nhà hàng, quán ăn, bếp ăn tại Đồng Nai, TP.HCM. Giữ lạnh suốt đường giao, hóa đơn VAT.",
     title: "Thịt heo",
     description:
       "Từ bát canh sườn của quán cơm đến khay thịt kho của bếp công ty, thịt heo có mặt trong hầu hết thực đơn. TPS1 chia phần đúng quy cách và giữ lạnh suốt đường giao, để miếng thịt về bếp vẫn tươi hồng, săn chắc.",
@@ -106,7 +106,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "thit-bo",
-    metaDescription: "Thịt bò tươi và đông lạnh, cắt theo món xào, kho, hầm, nướng cho bếp ăn công nghiệp tại Đồng Nai. Bảo quản riêng từng loại, giao bằng xe lạnh.",
+    metaDescription: "Thịt bò tươi và đông lạnh, chọn phần theo món xào, kho, hầm, nướng cho nhà hàng, quán ăn, bếp ăn tại Đồng Nai, TP.HCM. Giữ lạnh suốt đường giao.",
     title: "Thịt bò",
     description:
       "Một đĩa bò xào mềm ngọt hay nồi bò kho đậm vị đều bắt đầu từ phần thịt được chọn đúng. TPS1 tư vấn phần thịt hợp với từng món và giữ lạnh suốt đường giao, để bữa ăn trọn vị mà chi phí vẫn trong tầm kiểm soát.",
@@ -134,8 +134,8 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "gia-cam",
-    metaTitle: "Cung cấp gà, vịt cho bếp ăn công nghiệp tại Đồng Nai",
-    metaDescription: "Gà, vịt nguyên con hoặc chia phần đùi, cánh, ức theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Bảo quản lạnh liên tục, giao theo tuyến cố định.",
+    metaTitle: "Cung cấp gà, vịt cho nhà hàng, bếp ăn tại Đồng Nai",
+    metaDescription: "Gà, vịt nguyên con hoặc chia phần đùi, cánh, ức theo quy cách cho nhà hàng, quán ăn, bếp ăn tại Đồng Nai, TP.HCM. Bảo quản lạnh, giao theo lịch.",
     title: "Gia cầm",
     description:
       "Từ con gà luộc vàng da đến đĩa đùi gà chiên giòn, món ngon nào cũng cần nguyên liệu tươi và đều cỡ. TPS1 giao gà, vịt nguyên con hoặc chia sẵn theo phần, giữ lạnh liên tục từ kho đến bếp.",
@@ -163,7 +163,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "hai-san",
-    metaDescription: "Cá, tôm, mực tươi và đông lạnh theo quy cách cho bếp ăn công nghiệp tại Đồng Nai. Hàng về kho mỗi ngày, giao theo lịch chế biến của bếp.",
+    metaDescription: "Cá, tôm, mực tươi và đông lạnh theo quy cách cho nhà hàng, quán ăn, bếp ăn tại Đồng Nai, TP.HCM. Hàng về kho mỗi ngày, giao theo lịch chế biến của bếp.",
     title: "Hải sản",
     description:
       "Hải sản ngon nhất khi còn giữ được vị ngọt của biển. TPS1 nhập hàng về kho mỗi ngày, phân loại theo quy cách và giữ lạnh nghiêm ngặt, để con tôm, lát cá đến bếp nhà hàng hay bếp ăn công ty vẫn tươi như lúc vừa về kho.",
@@ -191,8 +191,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "hang-dong-lanh",
-    metaTitle: "Cung cấp hàng đông lạnh cho bếp ăn công nghiệp",
-    metaDescription: "Thịt bò, gà, cá và hải sản đông lạnh cho bếp ăn công nghiệp tại Đồng Nai. Kho lạnh riêng, giao theo kế hoạch sử dụng để bếp chủ động nguyên liệu.",
+    metaDescription: "Thịt bò, gà, cá và hải sản đông lạnh cho nhà hàng, quán ăn, bếp ăn tại Đồng Nai, TP.HCM. Kho lạnh riêng, giao theo kế hoạch để bếp chủ động nguyên liệu.",
     title: "Hàng đông lạnh",
     description:
       "Hàng đông lạnh giúp gian bếp luôn chủ động, kể cả những ngày chợ khan hàng. TPS1 bảo quản thịt bò, gà, cá và hải sản đông lạnh trong kho lạnh riêng và giao theo kế hoạch sử dụng của từng bếp.",
@@ -220,7 +219,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "gia-vi",
-    metaDescription: "Gia vị Việt, Hoa, Hàn, Âu, gia vị chay mặn và dầu ăn cho bếp ăn công nghiệp, nhà hàng tại Đồng Nai. Giá sỉ theo sản lượng, hóa đơn VAT đầy đủ.",
+    metaDescription: "Gia vị Việt, Hoa, Hàn, Âu, gia vị chay mặn và dầu ăn cho nhà hàng, quán ăn, bếp ăn tại Đồng Nai, TP.HCM. Giá sỉ theo sản lượng, hóa đơn VAT đầy đủ.",
     title: "Gia vị",
     description:
       "Gia vị là linh hồn giữ cho món quen luôn đúng vị quen. TPS1 cung cấp gia vị Việt, Hoa, Hàn, Âu, gia vị chay mặn và dầu ăn, để mỗi gian bếp giữ hương vị đồng đều qua từng ca nấu.",
@@ -248,7 +247,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "do-kho",
-    metaDescription: "Gạo, mì, bún, miến, đậu, nấm khô, đồ hộp và đồ uống cho bếp ăn công nghiệp tại Đồng Nai. Đặt chung đơn với hàng tươi, giao cùng tuyến định kỳ.",
+    metaDescription: "Gạo, mì, bún, miến, đậu, nấm khô, đồ hộp cho nhà hàng, quán ăn, bếp ăn tại Đồng Nai, TP.HCM. Đặt chung đơn với hàng tươi, giao cùng tuyến định kỳ.",
     title: "Đồ khô",
     description:
       "Hạt gạo, sợi bún, gói miến là nền móng lặng lẽ của mỗi bữa ăn. TPS1 cung cấp đủ gạo, mì, bún khô, đậu, nấm, đồ hộp và đồ uống, đặt chung đơn với hàng tươi để gian bếp chỉ cần một đầu mối.",
@@ -276,8 +275,7 @@ export const categories: ContentItem[] = [
   },
   {
     slug: "thuc-pham-chay",
-    metaTitle: "Cung cấp thực phẩm chay cho bếp ăn công nghiệp",
-    metaDescription: "Đậu hũ, chả chay và thực phẩm chay cho bếp ăn công nghiệp, trường học, nhà hàng tại Đồng Nai; phù hợp thực đơn ngày rằm, mùng một hoặc suất ăn chay.",
+    metaDescription: "Đậu hũ, chả chay và thực phẩm chay cho nhà hàng, quán chay, bếp ăn, trường học tại Đồng Nai, TP.HCM; phù hợp thực đơn ngày rằm, mùng một và suất ăn chay.",
     title: "Thực phẩm chay",
     description:
       "Một bữa chay thanh đạm vẫn cần nguyên liệu tươi và đủ vị. TPS1 cung cấp đậu hũ, chả chay và thực phẩm chay cho thực đơn ngày rằm, mùng một, nhà hàng chay hay bếp cần phục vụ nhiều khẩu vị.",
@@ -618,8 +616,8 @@ export const industries: ContentItem[] = [
 export const services: ContentItem[] = [
   {
     slug: "tu-van-menu",
-    metaTitle: "Tư vấn thực đơn cho bếp ăn tập thể",
-    metaDescription: "TPS1 đề xuất thực đơn và danh mục nguyên liệu phù hợp với ngân sách, định lượng mỗi suất và đối tượng ăn của từng bếp ăn tập thể.",
+    metaTitle: "Tư vấn thực đơn cho nhà hàng và bếp ăn",
+    metaDescription: "TPS1 cùng nhà hàng, bếp ăn đi từ thực đơn đến danh sách nguyên liệu, định lượng từng món và lịch giao, phù hợp với ngân sách và đối tượng ăn của mỗi bếp.",
     title: "Tư vấn thực đơn",
     description:
       "Một thực đơn hay vừa ngon miệng người ăn, vừa nằm gọn trong ngân sách của bếp. TPS1 cùng quý khách đi từ thực đơn đến danh sách nguyên liệu, định lượng và lịch giao cụ thể.",
@@ -682,7 +680,7 @@ export const services: ContentItem[] = [
   {
     slug: "cung-cap-dinh-ky",
     metaTitle: "Cung cấp thực phẩm theo lịch định kỳ",
-    metaDescription: "Giao thực phẩm theo lịch ngày, tuần hoặc theo ca với quy cách cố định, giúp bếp ăn hạn chế thiếu hàng, hư hao và thất thoát.",
+    metaDescription: "Giao thực phẩm theo lịch ngày, tuần hoặc theo ca với quy cách cố định, giúp nhà hàng, quán ăn và bếp ăn hạn chế thiếu hàng, hư hao và thất thoát.",
     title: "Cung cấp theo lịch định kỳ",
     description:
       "Khi chuyến hàng đến đều đặn như nhịp bếp mỗi ngày, người đứng bếp không còn phải lo thiếu hàng. TPS1 giao theo lịch ngày, tuần hoặc theo ca với quy cách cố định.",
@@ -1087,7 +1085,7 @@ export const policies: ContentItem[] = [
   },
   {
     slug: "giao-hang",
-    metaDescription: "Khu vực giao hàng, khung giờ giao và cách phối hợp nhận hàng giữa TPS1 với bếp ăn tại Đồng Nai, TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
+    metaDescription: "Khu vực giao hàng, khung giờ giao và cách phối hợp nhận hàng tại Đồng Nai (gồm khu vực Bình Phước cũ), TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
     title: "Chính sách giao hàng",
     description: "Khung thời gian, khu vực giao và cách phối hợp nhận hàng.",
     sections: [

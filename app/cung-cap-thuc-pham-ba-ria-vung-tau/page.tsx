@@ -4,9 +4,9 @@ import { localLandingPages } from "@/lib/local-landing-content";
 import { LocalLandingPage } from "@/components/local-landing-page";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho bếp ăn",
+  title: "Cung cấp thực phẩm Bà Rịa - Vũng Tàu cho nhà hàng, bếp ăn",
   description:
-    "Nguồn thực phẩm theo lịch định kỳ cho doanh nghiệp, xí nghiệp và bếp ăn tập thể tại Bà Rịa - Vũng Tàu; báo giá rõ ràng, có hóa đơn VAT đầy đủ.",
+    "TPS1 giao thực phẩm theo lịch cho nhà hàng, khách sạn ở Vũng Tàu và bếp ăn nhà máy tại Phú Mỹ, Bà Rịa. Đạt ISO 22000, HACCP; báo giá trong 24 giờ.",
   path: "/cung-cap-thuc-pham-ba-ria-vung-tau",
   ogTitle: "Cung Cấp Thực Phẩm",
   ogSubtitle: "Tại Bà Rịa - Vũng Tàu",

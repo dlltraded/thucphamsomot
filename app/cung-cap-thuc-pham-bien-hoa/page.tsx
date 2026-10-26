@@ -4,9 +4,9 @@ import { localLandingPages } from "@/lib/local-landing-content";
 import { LocalLandingPage } from "@/components/local-landing-page";
 
 export const metadata: Metadata = makeMetadata({
-  title: "Cung cấp thực phẩm tại Biên Hòa cho bếp ăn, nhà máy",
+  title: "Cung cấp thực phẩm tại Biên Hòa cho nhà hàng, bếp ăn",
   description:
-    "Nguồn thực phẩm cho bếp ăn tập thể, nhà máy và trường học tại Biên Hòa: báo giá rõ ràng, giao đúng lịch, có hóa đơn VAT và hồ sơ an toàn thực phẩm.",
+    "Kho TPS1 đặt tại Tam Hiệp, Biên Hòa: giao rau củ, thịt cá, đồ khô đúng giờ cho nhà hàng, quán ăn, bếp nhà máy, trường học. Hóa đơn VAT, báo giá trong 24 giờ.",
   path: "/cung-cap-thuc-pham-bien-hoa",
   ogTitle: "Cung Cấp Thực Phẩm",
   ogSubtitle: "Tại Biên Hòa",

@@ -23,7 +23,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const page = parsePage((await searchParams).trang);
   const item = findBySlug(categories, slug);
   if (!item) return makeMetadata({ title: "Danh mục", path: `/danh-muc/${slug}` });
-  const title = item.metaTitle ?? `Cung cấp ${item.title.toLocaleLowerCase("vi")} cho bếp ăn công nghiệp tại Đồng Nai`;
+  const title = item.metaTitle ?? `Cung cấp ${item.title.toLocaleLowerCase("vi")} cho nhà hàng, bếp ăn tại Đồng Nai`;
   return makeMetadata({
     title: page > 1 ? `${title} – trang ${page}` : title,
     description: item.metaDescription ?? item.description,

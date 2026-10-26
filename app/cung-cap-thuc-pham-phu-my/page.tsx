@@ -5,7 +5,8 @@ import { LocalLandingPage } from "@/components/local-landing-page";
 
 export const metadata: Metadata = makeMetadata({
   title: "Cung cấp thực phẩm KCN Phú Mỹ cho bếp ăn nhà máy",
-  description: "Rau củ, thịt cá, gia vị cho bếp ăn nhà máy thép, cảng biển và các khu công nghiệp tại thị xã Phú Mỹ. Giao tận bếp, báo giá trong 24 giờ.",
+  description:
+    "Rau củ, thịt cá, hàng đông lạnh, gia vị cho bếp ăn nhà máy thép, khu cảng và các khu công nghiệp tại Phú Mỹ. Giao theo lịch, báo giá trong 24 giờ.",
   path: "/cung-cap-thuc-pham-phu-my",
   ogTitle: "Cung Cấp Thực Phẩm",
   ogSubtitle: "Tại Phú Mỹ",
