@@ -875,3 +875,6 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
 }
+
+/* Text-only content sections (no media column), e.g. related links on local pages. */
+.content-section.content-section--plain { display: block; }

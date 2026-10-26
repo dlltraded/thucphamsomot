@@ -27,6 +27,7 @@ const regionHeroImages: Record<string, string> = {
   "KCN Amata": brandAssets.warehouseWide,
   "Trảng Bom": brandAssets.deliveryTruck,
   "Long Thành": brandAssets.kitchen,
+  "Bình Phước": brandAssets.deliveryTruckReal,
 };
 
 export function LocalLandingPage({ config }: LocalLandingPageProps) {
@@ -67,22 +68,22 @@ export function LocalLandingPage({ config }: LocalLandingPageProps) {
         <div className="local-trust-item">
           <div className="local-trust-item__icon"><Truck size={24} /></div>
           <div className="local-trust-item__text">
-            <strong>Giao hàng đúng hẹn</strong>
-            <span>Cam kết SLA 99.8% cho các ca bếp sáng/chiều.</span>
+            <strong>99,8% đơn hàng giao đúng hẹn</strong>
+            <span>Lịch giao thống nhất theo khung giờ của từng gian bếp.</span>
           </div>
         </div>
         <div className="local-trust-item">
           <div className="local-trust-item__icon"><ShieldCheck size={24} /></div>
           <div className="local-trust-item__text">
-            <strong>Đạt chuẩn HACCP & ISO</strong>
-            <span>Quy trình kiểm soát chất lượng khắt khe từ đầu vào.</span>
+            <strong>Đạt chuẩn ISO 22000 và HACCP</strong>
+            <span>Kiểm soát chất lượng từ khâu nhập hàng đến khi giao.</span>
           </div>
         </div>
         <div className="local-trust-item">
           <div className="local-trust-item__icon"><PackageCheck size={24} /></div>
           <div className="local-trust-item__text">
-            <strong>Đa dạng danh mục</strong>
-            <span>Cung ứng đầy đủ rau củ, thịt cá, đồ khô và gia vị.</span>
+            <strong>Hơn 5.000 mặt hàng</strong>
+            <span>Rau củ, thịt cá, hàng đông lạnh, đồ khô và gia vị ở một đầu mối.</span>
           </div>
         </div>
       </section>
@@ -135,18 +136,20 @@ export function LocalLandingPage({ config }: LocalLandingPageProps) {
 
       {/* Related Links */}
       {config.relatedLinks.length > 0 && (
-        <section className="content-section" style={{ padding: 24, border: 'none', background: 'transparent' }}>
-          <div className="content-section__eyebrow">Trang liên quan</div>
-          <h2>Xem thêm nội dung liên quan.</h2>
-          <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", marginTop: 14 }}>
-            {config.relatedLinks.map((item) => (
-              <Link key={item.href} href={item.href} className="home-local__card" style={{ minHeight: 0 }}>
-                <h3>{item.label}</h3>
-                <span className="home-local__link">
-                  Xem trang <ArrowRight size={16} />
-                </span>
-              </Link>
-            ))}
+        <section className="content-section content-section--plain" style={{ marginTop: 24 }}>
+          <div className="content-section__body">
+            <div className="content-section__eyebrow">Trang liên quan</div>
+            <h2>Khu vực và ngành hàng liên quan</h2>
+            <div className="home-local__grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", marginTop: 14 }}>
+              {config.relatedLinks.map((item) => (
+                <Link key={item.href} href={item.href} className="home-local__card" style={{ minHeight: 0 }}>
+                  <h3>{item.label}</h3>
+                  <span className="home-local__link">
+                    Xem trang <ArrowRight size={16} />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       )}

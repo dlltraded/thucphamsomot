@@ -45,6 +45,7 @@ const industryHighlights = [
 const areaHighlights = [
   { href: "/cung-cap-thuc-pham-dong-nai", label: "Đồng Nai" },
   { href: "/cung-cap-thuc-pham-bien-hoa", label: "Biên Hòa" },
+  { href: "/cung-cap-thuc-pham-binh-phuoc", label: "Bình Phước" },
   { href: "/cung-cap-thuc-pham-nhon-trach", label: "Nhơn Trạch" },
   { href: "/cung-cap-thuc-pham-long-thanh", label: "Long Thành" },
   { href: "/cung-cap-thuc-pham-trang-bom", label: "Trảng Bom" },
