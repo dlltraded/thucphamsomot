@@ -20,7 +20,9 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
+  const startedAt = performance.now();
   const auth = await verifyAdminAuth(req);
+  const authMs = performance.now() - startedAt;
   if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
 
   if (!canForProfile(auth.profile, "finance.view")) {
@@ -32,13 +34,6 @@ export async function GET(req: NextRequest) {
     const isSale = auth.profile?.role === "sale";
 
     // 1. Lấy danh sách nhân viên Sale để map tên
-    const { data: salesReps } = await supabase
-      .from("admin_profiles")
-      .select("id, name");
-    const repNameMap = new Map<string, string>();
-    for (const r of salesReps || []) {
-      repNameMap.set(r.id, r.name);
-    }
 
     // 2. Query khách hàng (vip_accounts)
     // Tuyệt đối không query hay trả về VIP / discount_tier
@@ -59,7 +54,12 @@ export async function GET(req: NextRequest) {
     }
 
     let customersRaw: any[] = [];
-    const { data: cData, error: custError } = await custQueryWithTerms;
+    const [{ data: cData, error: custError }, { data: salesReps, error: repError }] = await Promise.all([
+      custQueryWithTerms,
+      supabase.from('admin_profiles').select('id, name'),
+    ]);
+    if (repError) throw repError;
+    const repNameMap = new Map<string, string>((salesReps || []).map(r => [r.id, r.name]));
     if (custError && /payment_terms_days|schema cache/i.test(custError.message)) {
       let fallbackQuery = supabase
         .from("vip_accounts")
@@ -126,8 +126,9 @@ export async function GET(req: NextRequest) {
     }
 
     // 4. Lấy phiếu thu và điều chỉnh
-    const receipts = await getCustomerReceipts();
-    const adjustments = await getCustomerAdjustments();
+    const [receipts, adjustments] = await Promise.all([
+      getCustomerReceipts(), getCustomerAdjustments(),
+    ]);
 
     // 5. Tính toán theo engine chuẩn hóa dùng chung
     const summary = calculateReceivablesSummary({
@@ -137,11 +138,15 @@ export async function GET(req: NextRequest) {
       receipts,
     });
 
-    return json({
+    const response = json({
       ok: true,
       summary,
       scope: isSale ? "assigned_only" : "all",
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    response.headers.set('Access-Control-Expose-Headers', 'Server-Timing');
+    response.headers.set('Server-Timing', `auth;dur=${authMs.toFixed(1)},data_and_compute;dur=${(performance.now() - startedAt - authMs).toFixed(1)}`);
+    return response;
   } catch (error: any) {
     console.error("GET /api/admin/receivables/summary lỗi:", error);
     return json({ ok: false, error: error?.message || "Không tải được tổng quan công nợ" }, 500);
