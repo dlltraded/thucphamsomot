@@ -84,6 +84,13 @@ export async function GET(req: NextRequest) {
   const requestStartedAt = Date.now();
   const requestId = randomUUID();
   const timings: Record<string, number> = {};
+  const timedJson = (body: unknown, status = 200) => {
+    const response = json(body, status);
+    response.headers.set('Server-Timing', Object.entries({ ...timings, totalMs: Date.now() - requestStartedAt }).map(([name, duration]) => `${name};dur=${duration}`).join(', '));
+    response.headers.set('Access-Control-Expose-Headers', 'Server-Timing');
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  };
   const logTiming = () => console.info("[admin-orders-timing]", JSON.stringify({
     requestId,
     totalMs: Date.now() - requestStartedAt,
@@ -211,7 +218,8 @@ export async function GET(req: NextRequest) {
     // Các số liệu trạng thái không phụ thuộc vào trang đơn đang xem. Khởi chạy
     // cùng lúc với truy vấn danh sách thay vì đợi danh sách xong mới hỏi DB.
     const queryStartedAt = Date.now();
-    const statusCountsPromise = orderId
+    const includeStats = req.nextUrl.searchParams.get('includeStats') !== '0';
+    const statusCountsPromise = orderId || !includeStats
       ? Promise.resolve(null)
       : Promise.all([
           statusCount("pending"),
@@ -232,12 +240,17 @@ export async function GET(req: NextRequest) {
     const enrichmentStartedAt = Date.now();
     const [processingResult, salesRepResult] = await Promise.all([
       rowIds.length
-        ? supabase
+        ? supabase.rpc('admin_latest_order_claims', { p_ids: rowIds }).then(async (result) => {
+            if (!result.error) return result;
+            // Compatibility while the additive RPC migration is being rolled out.
+            if (result.error.code !== 'PGRST202' && result.error.code !== '42883') throw result.error;
+            return await supabase
             .from("order_history")
             .select("order_id, actor, payload, created_at")
             .in("order_id", rowIds)
             .eq("action", "processing_claimed")
-            .order("created_at", { ascending: false })
+            .order("created_at", { ascending: false });
+          })
         : Promise.resolve({ data: [] as Array<{ order_id: string; actor: string; payload: Record<string, unknown>; created_at: string }> }),
       salesRepIds.length
         ? supabase.from("admin_profiles").select("id, name").in("id", salesRepIds)
@@ -288,7 +301,7 @@ export async function GET(req: NextRequest) {
       }
       timings.enrichmentMs = Date.now() - enrichmentStartedAt;
       logTiming();
-      return json({
+      return timedJson({
         ok: true,
         order: singleOrder ? {
           ...singleOrder,
@@ -308,7 +321,7 @@ export async function GET(req: NextRequest) {
       completed: completedResult?.count || 0,
       revenue: 0,
     };
-    const response = json({
+    const response = timedJson({
       ok: true,
       orders: orderRows.map((order: any) => ({
         ...order,
@@ -325,7 +338,7 @@ export async function GET(req: NextRequest) {
       totalCount: count || 0,
       page,
       pageSize,
-      stats,
+      ...(includeStats ? { stats } : {}),
     });
     logTiming();
     return response;
