@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { type ConfirmationOrderItem } from "@/lib/order-confirmation-pdf";
@@ -81,11 +81,23 @@ export async function DELETE(req: NextRequest) {
 
 
 export async function GET(req: NextRequest) {
+  const requestStartedAt = Date.now();
+  const requestId = randomUUID();
+  const timings: Record<string, number> = {};
+  const logTiming = () => console.info("[admin-orders-timing]", JSON.stringify({
+    requestId,
+    totalMs: Date.now() - requestStartedAt,
+    ...timings,
+  }));
+  const authStartedAt = Date.now();
   const auth = await verifyAdminAuth(req);
+  timings.authMs = Date.now() - authStartedAt;
   if (!auth.ok) {
+    logTiming();
     return json({ ok: false, error: auth.error }, 401);
   }
   if (!canForProfile(auth.profile, "orders.view")) {
+    logTiming();
     return json({ ok: false, error: "Tài khoản hiện tại chưa được phân quyền xem đơn hàng" }, 403);
   }
   try {
@@ -117,6 +129,8 @@ export async function GET(req: NextRequest) {
           )
         : null;
 
+      timings.productSearchMs = Date.now() - requestStartedAt - timings.authMs;
+      logTiming();
       return json({
         ok: true,
         products: (products || []).map((product, idx) => ({
@@ -136,6 +150,7 @@ export async function GET(req: NextRequest) {
       });
     }
     const orderId = req.nextUrl.searchParams.get("id")?.trim();
+    const compactList = !orderId && req.nextUrl.searchParams.get("compact") === "1";
     const mode = req.nextUrl.searchParams.get("mode") === "invoices" ? "invoices" : "orders";
     const status = req.nextUrl.searchParams.get("status");
     const paymentStatus = req.nextUrl.searchParams.get("paymentStatus");
@@ -156,7 +171,9 @@ export async function GET(req: NextRequest) {
           .order("created_at", { ascending: false })
       : supabase
           .from("orders")
-          .select("*", { count: "exact" })
+          .select(compactList
+            ? "id, order_code, status, payment_status, payment_method, source, grand_total, paid_amount, debt_amount, created_at, updated_at, customer_id, customer_code, customer_name, customer_phone, customer_company, delivery_date, delivery_shift, delivery_address, discount_amount, shipping_amount, sales_rep_id, pricing_status, item_count, merged_into_order_id"
+            : "*", { count: "exact" })
           .order("created_at", { ascending: false });
 
     if (orderId) {
@@ -185,7 +202,25 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const { data, error, count } = await query;
+    const statusCount = (statusValue: string) => {
+      let statusQuery = supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", statusValue);
+      if (dateFrom) statusQuery = statusQuery.gte("created_at", dateFrom);
+      if (dateTo) statusQuery = statusQuery.lte("created_at", dateTo);
+      return statusQuery;
+    };
+    // Các số liệu trạng thái không phụ thuộc vào trang đơn đang xem. Khởi chạy
+    // cùng lúc với truy vấn danh sách thay vì đợi danh sách xong mới hỏi DB.
+    const queryStartedAt = Date.now();
+    const statusCountsPromise = orderId
+      ? Promise.resolve(null)
+      : Promise.all([
+          statusCount("pending"),
+          statusCount("preparing"),
+          statusCount("shipping"),
+          statusCount("completed"),
+        ]);
+    const [{ data, error, count }, statusCounts] = await Promise.all([query, statusCountsPromise]);
+    timings.listAndCountsMs = Date.now() - queryStartedAt;
     if (error) throw error;
 
     const orderRows = (data || []) as any[];
@@ -194,6 +229,7 @@ export async function GET(req: NextRequest) {
 
     // Các truy vấn bổ sung không phụ thuộc nhau, chạy song song để tránh
     // cộng dồn độ trễ giữa Vercel và database.
+    const enrichmentStartedAt = Date.now();
     const [processingResult, salesRepResult] = await Promise.all([
       rowIds.length
         ? supabase
@@ -250,6 +286,8 @@ export async function GET(req: NextRequest) {
           };
         });
       }
+      timings.enrichmentMs = Date.now() - enrichmentStartedAt;
+      logTiming();
       return json({
         ok: true,
         order: singleOrder ? {
@@ -261,52 +299,39 @@ export async function GET(req: NextRequest) {
         } : null,
       });
     }
-    const customerIds = [...new Set(orderRows.map((order) => order.customer_id).filter(Boolean))] as string[];
-    const statusCount = (statusValue: string) => {
-      let statusQuery = supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", statusValue);
-      if (dateFrom) statusQuery = statusQuery.gte("created_at", dateFrom);
-      if (dateTo) statusQuery = statusQuery.lte("created_at", dateTo);
-      return statusQuery;
-    };
-    const [accountResult, tierResult, pendingResult, preparingResult, shippingResult, completedResult] = await Promise.all([
-      customerIds.length
-        ? supabase.from("vip_accounts").select("id, discount_tier, verification_status, verified_at").in("id", customerIds)
-        : Promise.resolve({ data: [] as any[] }),
-      supabase.from("customer_tiers").select("code, name, discount_percent").order("code"),
-      statusCount("pending"),
-      statusCount("preparing"),
-      statusCount("shipping"),
-      statusCount("completed"),
-    ]);
-    const accounts = accountResult.data || [];
-    const accountMap = new Map((accounts || []).map((account) => [account.id, account]));
-    const tiers = tierResult.data || [];
+    timings.enrichmentMs = Date.now() - enrichmentStartedAt;
+    const [pendingResult, preparingResult, shippingResult, completedResult] = statusCounts || [];
     const stats = {
-      pending: pendingResult.count || 0,
-      preparing: preparingResult.count || 0,
-      shipping: shippingResult.count || 0,
-      completed: completedResult.count || 0,
+      pending: pendingResult?.count || 0,
+      preparing: preparingResult?.count || 0,
+      shipping: shippingResult?.count || 0,
+      completed: completedResult?.count || 0,
       revenue: 0,
     };
-    return json({
+    const response = json({
       ok: true,
       orders: orderRows.map((order: any) => ({
         ...order,
-        customer_account: accountMap.get(order.customer_id) || null,
+        // Giữ trường tương thích với client cũ nhưng không truy vấn VIP/tier
+        // trên từng lần tải danh sách; dữ liệu này không còn dùng trong UI.
+        customer_account: null,
         sales_rep_name: salesRepMap.get(order.sales_rep_id) || null,
         processing_by_name: processingMap.get(order.id)?.name || null,
         processing_by_staff_id: processingMap.get(order.id)?.staffId || null,
         processing_started_at: processingMap.get(order.id)?.startedAt || null,
       })),
-      tiers: tiers || [],
+      tiers: [],
       count: count || 0,
       totalCount: count || 0,
       page,
       pageSize,
       stats,
     });
+    logTiming();
+    return response;
   } catch (error) {
     console.error("Admin orders GET error:", error);
+    logTiming();
     return json(
       {
         ok: false,

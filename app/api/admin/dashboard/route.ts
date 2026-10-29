@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
@@ -47,10 +48,12 @@ async function fetchConfirmedOrders(
   salesRepId?: string,
 ) {
   const rows: any[] = [];
+  let pages = 0;
   for (let fromIndex = 0; ; fromIndex += PAGE_SIZE) {
     let query = supabase
       .from("orders")
       .select("id, status, grand_total, customer_id, customer_name, customer_company, confirmed_at")
+      .in("status", Array.from(REVENUE_STATUSES))
       .gte("confirmed_at", from)
       .lt("confirmed_at", to)
       .order("confirmed_at", { ascending: true })
@@ -58,10 +61,11 @@ async function fetchConfirmedOrders(
     if (salesRepId) query = query.eq("sales_rep_id", salesRepId);
     const { data, error } = await query;
     if (error) throw error;
+    pages += 1;
     rows.push(...(data || []));
     if (!data || data.length < PAGE_SIZE) break;
   }
-  return rows;
+  return { rows, pages };
 }
 
 async function fetchOutstandingDebt(
@@ -69,6 +73,7 @@ async function fetchOutstandingDebt(
   salesRepId?: string,
 ) {
   let total = 0;
+  let pages = 0;
   for (let fromIndex = 0; ; fromIndex += PAGE_SIZE) {
     let query = supabase
       .from("orders")
@@ -79,16 +84,32 @@ async function fetchOutstandingDebt(
     if (salesRepId) query = query.eq("sales_rep_id", salesRepId);
     const { data, error } = await query;
     if (error) throw error;
+    pages += 1;
     total += (data || []).reduce((sum, row) => sum + (Number(row.debt_amount) || 0), 0);
     if (!data || data.length < PAGE_SIZE) break;
   }
-  return total;
+  return { total, pages };
 }
 
 export async function GET(req: NextRequest) {
+  const requestStartedAt = Date.now();
+  const requestId = randomUUID();
+  const timings: Record<string, number> = {};
+  const logTiming = (analytics?: { analyticsRows: number; analyticsPages: number; debtPages: number }) => console.info("[admin-dashboard-timing]", JSON.stringify({
+    requestId,
+    totalMs: Date.now() - requestStartedAt,
+    ...timings,
+    ...analytics,
+  }));
+  const authStartedAt = Date.now();
   const auth = await verifyAdminAuth(req);
-  if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
+  timings.authMs = Date.now() - authStartedAt;
+  if (!auth.ok) {
+    logTiming();
+    return json({ ok: false, error: auth.error }, 401);
+  }
   if (!canForProfile(auth.profile, "orders.view")) {
+    logTiming();
     return json({ ok: false, error: "Bạn không có quyền xem Dashboard" }, 403);
   }
 
@@ -131,7 +152,8 @@ export async function GET(req: NextRequest) {
       recentQuery = recentQuery.eq("sales_rep_id", salesRepId);
     }
 
-    const [analyticsOrders, openResult, todayResult, recentResult, debtOutstanding, customerResult] = await Promise.all([
+    const queryStartedAt = Date.now();
+    const [analyticsResult, openResult, todayResult, recentResult, debtResult, customerResult] = await Promise.all([
       fetchConfirmedOrders(supabase, analyticsStart, nextMonthStart, salesRepId),
       openQuery,
       todayQuery,
@@ -139,11 +161,15 @@ export async function GET(req: NextRequest) {
       fetchOutstandingDebt(supabase, salesRepId),
       supabase.from("vip_accounts").select("id", { count: "exact", head: true }).eq("is_active", true),
     ]);
+    timings.databaseMs = Date.now() - queryStartedAt;
     if (openResult.error) throw openResult.error;
     if (todayResult.error) throw todayResult.error;
     if (recentResult.error) throw recentResult.error;
     if (customerResult.error) throw customerResult.error;
 
+    const analyticsOrders = analyticsResult.rows;
+    const debtOutstanding = debtResult.total;
+    const aggregationStartedAt = Date.now();
     const monthRows = analyticsOrders.filter((order) => (
       order.confirmed_at >= monthStart && order.confirmed_at < nextMonthStart && REVENUE_STATUSES.has(order.status)
     ));
@@ -205,6 +231,8 @@ export async function GET(req: NextRequest) {
       })
       .slice(0, 8);
 
+    timings.aggregationMs = Date.now() - aggregationStartedAt;
+    logTiming({ analyticsRows: analyticsOrders.length, analyticsPages: analyticsResult.pages, debtPages: debtResult.pages });
     return json({
       ok: true,
       generatedAt: now.toISOString(),
@@ -228,6 +256,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("GET /api/admin/dashboard lỗi:", error);
+    logTiming();
     return json({ ok: false, error: "Không tải được dữ liệu Dashboard" }, 500);
   }
 }
