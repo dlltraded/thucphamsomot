@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { canForProfile } from "@/lib/permissions";
 import { getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
@@ -14,13 +15,25 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
+  const requestStartedAt = Date.now();
+  const requestId = randomUUID();
+  const timings: Record<string, number> = {};
+  const logTiming = () => console.info("[price-book-grid-timing]", JSON.stringify({
+    requestId,
+    totalMs: Date.now() - requestStartedAt,
+    ...timings,
+  }));
+  const authStartedAt = Date.now();
   try {
     const auth = await verifyAdminAuth(req);
+    timings.authMs = Date.now() - authStartedAt;
     if (!auth.ok) {
+      logTiming();
       return NextResponse.json({ error: auth.error || "Chưa đăng nhập" }, { status: 401, headers: corsHeaders });
     }
 
     if (!canForProfile(auth.profile, "pricing.view") && !canForProfile(auth.profile, "products.view")) {
+      logTiming();
       return NextResponse.json({ error: "Không có quyền xem bảng giá" }, { status: 403, headers: corsHeaders });
     }
 
@@ -40,14 +53,51 @@ export async function GET(req: NextRequest) {
     const customerId = url.searchParams.get("customerId")?.trim() || "";
     const groupName = url.searchParams.get("groupName")?.trim() || "";
 
-    // 1. Fetch available price books
-    const { data: allBooks, error: booksErr } = await supabase
+    // Ba nguồn nền độc lập được tải song song thay vì tuần tự qua nhiều lượt DB.
+    let prodQuery = supabase
+      .from("products")
+      .select("id, sku, name, unit, category, price_retail, cost_price, last_import_price, min_order_qty, order_step, packaging_note, quantity_precision, active", { count: "exact" })
+      .eq("active", true);
+
+    if (skuFilter) prodQuery = prodQuery.ilike("sku", `%${skuFilter}%`);
+    if (nameFilter) prodQuery = prodQuery.ilike("name", `%${nameFilter}%`);
+    if (searchFilter) prodQuery = prodQuery.or(`sku.ilike.%${searchFilter}%,name.ilike.%${searchFilter}%`);
+    if (categoryFilter) prodQuery = prodQuery.eq("category", categoryFilter);
+
+    const productsQuery = prodQuery
+      .order("sku", { ascending: true, nullsFirst: false })
+      .range(offset, offset + pageSize - 1);
+    const booksQuery = supabase
       .from("price_books")
       .select("id, code, name, kind, status, version, valid_from, valid_to, created_at, updated_at, created_by, approved_by")
       .in("status", ["active", "draft", "pending_approval"])
       .order("created_at", { ascending: false });
+    const customerOptionsQuery = supabase
+      .from("vip_accounts")
+      .select("id, partner_code, name, company, customer_group")
+      .eq("is_active", true)
+      .order("company", { ascending: true })
+      .limit(1000);
+    const customerAssignmentsQuery = customerId
+      ? Promise.all([
+          supabase.from("vip_accounts").select("customer_group").eq("id", customerId).maybeSingle(),
+          supabase.from("price_book_customer_assignments").select("price_book_id").eq("customer_id", customerId),
+        ])
+      : Promise.resolve(null);
 
+    const baseQueriesStartedAt = Date.now();
+    const [booksResult, productsResult, customerOptionsResult, customerAssignmentsResult] = await Promise.all([
+      booksQuery,
+      productsQuery,
+      customerOptionsQuery,
+      customerAssignmentsQuery,
+    ]);
+    timings.baseQueriesMs = Date.now() - baseQueriesStartedAt;
+    const { data: allBooks, error: booksErr } = booksResult;
+    const { data: products, count, error: prodErr } = productsResult;
+    const { data: customerOptions } = customerOptionsResult;
     if (booksErr) throw booksErr;
+    if (prodErr) throw prodErr;
 
     // Determine which price books to show as columns
     let selectedBooks: any[] = [];
@@ -62,10 +112,10 @@ export async function GET(req: NextRequest) {
       const applicableIds = new Set<string>();
       let resolvedGroup = groupName;
       if (customerId) {
-        const { data: customer } = await supabase.from("vip_accounts").select("customer_group").eq("id", customerId).maybeSingle();
+        const [customerResult, customerBookResult] = customerAssignmentsResult || [];
+        const customer = customerResult?.data;
         resolvedGroup = customer?.customer_group || resolvedGroup;
-        const { data: customerAssignments } = await supabase.from("price_book_customer_assignments").select("price_book_id").eq("customer_id", customerId);
-        for (const row of customerAssignments || []) applicableIds.add(row.price_book_id);
+        for (const row of customerBookResult?.data || []) applicableIds.add(row.price_book_id);
       }
       if (resolvedGroup) {
         const { data: groupAssignments } = await supabase.from("price_book_customer_group_assignments").select("price_book_id").ilike("group_name", resolvedGroup);
@@ -84,31 +134,6 @@ export async function GET(req: NextRequest) {
       selectedBooks = (allBooks || []).filter(b => defaultIds.has(b.id));
     }
 
-    // 2. Query products with pagination & filters
-    let prodQuery = supabase
-      .from("products")
-      .select("id, sku, name, unit, category, price_retail, cost_price, last_import_price, min_order_qty, order_step, packaging_note, quantity_precision, active", { count: "exact" })
-      .eq("active", true);
-
-    if (skuFilter) {
-      prodQuery = prodQuery.ilike("sku", `%${skuFilter}%`);
-    }
-    if (nameFilter) {
-      prodQuery = prodQuery.ilike("name", `%${nameFilter}%`);
-    }
-    if (searchFilter) {
-      prodQuery = prodQuery.or(`sku.ilike.%${searchFilter}%,name.ilike.%${searchFilter}%`);
-    }
-    if (categoryFilter) {
-      prodQuery = prodQuery.eq("category", categoryFilter);
-    }
-
-    const { data: products, count, error: prodErr } = await prodQuery
-      .order("sku", { ascending: true, nullsFirst: false })
-      .range(offset, offset + pageSize - 1);
-
-    if (prodErr) throw prodErr;
-
     // 3. Query price items for the fetched products in the selected price books
     const productIds = (products || []).map(p => p.id);
     const selectedBookIds = selectedBooks.map(b => b.id);
@@ -117,6 +142,7 @@ export async function GET(req: NextRequest) {
     let detailsMap: Record<string, Record<string, any>> = {};
 
     if (productIds.length > 0 && selectedBookIds.length > 0) {
+      const priceItemsStartedAt = Date.now();
       const { data: priceItems, error: itemsErr } = await supabase
         .from("price_book_items")
         .select("price_book_id, product_id, price, base_price, discount_percent, min_qty, order_step")
@@ -124,6 +150,7 @@ export async function GET(req: NextRequest) {
         .in("price_book_id", selectedBookIds);
 
       if (itemsErr) throw itemsErr;
+      timings.priceItemsMs = Date.now() - priceItemsStartedAt;
 
       for (const item of (priceItems || [])) {
         if (!priceMap[item.product_id]) {
@@ -163,14 +190,9 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const { data: customerOptions } = await supabase
-      .from("vip_accounts")
-      .select("id, partner_code, name, company, customer_group")
-      .eq("is_active", true)
-      .order("company", { ascending: true })
-      .limit(1000);
     const groupOptions = Array.from(new Set((customerOptions || []).map(c => c.customer_group).filter(Boolean))).sort();
 
+    logTiming();
     return NextResponse.json({
       ok: true,
       data: {
@@ -189,6 +211,7 @@ export async function GET(req: NextRequest) {
     }, { headers: corsHeaders });
   } catch (err: any) {
     console.error("Error in /api/admin/price-books/grid:", err);
+    logTiming();
     return NextResponse.json({ error: err.message || "Lỗi tải dữ liệu bảng giá" }, { status: 500, headers: corsHeaders });
   }
 }
