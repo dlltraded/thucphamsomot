@@ -12,6 +12,7 @@ const footerText = {
     description:
       "Gửi trọn an tâm trong từng bữa ăn. Từ năm 2017, TPS1 mang đa dạng thực phẩm có nguồn gốc rõ ràng, an toàn đến nhà hàng, quán ăn, bếp công ty, trường học và bếp ăn công nghiệp.",
     contact: "Liên hệ",
+    facebookLabel: "Facebook chính thức",
     served: "Đã phục vụ",
     mapTitle: "Bản đồ công ty",
     mapCopy: "Xem vị trí văn phòng và khu vực TPS1 đang giao hàng: Đồng Nai (gồm cả khu vực Bình Phước cũ), TP.HCM, Bình Dương và Bà Rịa - Vũng Tàu.",
@@ -27,6 +28,7 @@ const footerText = {
     description:
       "A B2B food catalog and quote-request website for canteens, factories, schools, hospitals, and organizations that need recurring food supply.",
     contact: "Contact",
+    facebookLabel: "Official Facebook page",
     served: "Serving",
     mapTitle: "Company map",
     mapCopy: "View TPS1 location and service area in Dong Nai.",
@@ -43,6 +45,7 @@ const footerText = {
   {
     description: string;
     contact: string;
+    facebookLabel: string;
     served: string;
     mapTitle: string;
     mapCopy: string;
@@ -92,6 +95,12 @@ export function SiteFooter() {
             <li>
               <MapPin size={14} />
               <span>{text.address}</span>
+            </li>
+            <li>
+              <ArrowUpRight size={14} />
+              <a href={siteConfig.facebook} target="_blank" rel="noopener noreferrer">
+                {text.facebookLabel}
+              </a>
             </li>
           </ul>
         </div>
