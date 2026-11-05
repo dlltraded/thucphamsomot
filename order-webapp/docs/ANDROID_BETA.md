@@ -16,7 +16,7 @@ Sau khi web app đặt hàng được triển khai ở địa chỉ chính thứ
 
 ## Dành cho đội triển khai
 
-- Bản `0.1.0-beta.2` là **debug APK** để cài thử nội bộ, ký bằng khóa debug của máy build. Các bản cập nhật gửi cùng nhóm thử phải dùng cùng khóa; trước khi phát hành rộng cần khóa release do TPS1 quản lý.
+- Bản `0.1.0-beta.3` là **debug APK** để cài thử nội bộ, ký bằng khóa debug của máy build. Các bản cập nhật gửi cùng nhóm thử phải dùng cùng khóa; trước khi phát hành rộng cần khóa release do TPS1 quản lý. Nền thực phẩm ở màn đăng nhập là ảnh minh họa tạo riêng cho giao diện, không phải ảnh nguồn hàng TPS1.
 - API thay đổi ở web chính phải được triển khai trước khi thử đặt đơn chưa có giá và gắn sale. Không dùng đơn thật để thử trên backend production khi chưa có nhóm nghiệm thu.
 - Bản dịch tên hàng là bản dịch tự động từ danh mục công khai ngày 05/11/2026 (5.295 sản phẩm, 5.187 tên khác nhau). Ứng dụng hiển thị cả tên tiếng Việt và SKU để đối chiếu, hỗ trợ tìm theo tên đã dịch. Đã sửa thủ công một số thuật ngữ dễ nhầm trong `scripts/apply-catalog-corrections.mjs`, nhưng **chưa có người thông thạo tiếng Trung rà toàn bộ danh mục**. Đội TPS1 cần rà các mặt hàng khách Trung Quốc thường mua trước khi gửi rộng. Khi cập nhật tệp dịch, chạy script sửa thuật ngữ rồi build lại. Hàng thêm sau ngày này sẽ hiện tên gốc cho đến khi cập nhật tệp dịch.
 - Build lại: `npm ci`, `npm run android:sync`, rồi trong `android/` chạy `gradlew.bat assembleDebug` với JDK 21 và Android SDK đã cấu hình.
