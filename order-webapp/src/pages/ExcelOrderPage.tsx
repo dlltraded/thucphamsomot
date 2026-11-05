@@ -30,6 +30,9 @@ export default function ExcelOrderPage() {
   const downloadTemplate = async () => {
     try {
       const blob = await requestFile('/api/customer/order/import-excel');
+      if (blob.size < 100 || (blob.type && !blob.type.includes('spreadsheet') && !blob.type.includes('octet-stream'))) {
+        throw new Error('Tệp mẫu trả về không đúng định dạng Excel');
+      }
       if (Capacitor.isNativePlatform()) {
         const data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -45,10 +48,13 @@ export default function ExcelOrderPage() {
       const a = document.createElement('a');
       a.href = url;
       a.download = 'mau-dat-hang.xlsx';
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      setError(t('Không tải được file mẫu, vui lòng thử lại'));
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+    } catch (cause) {
+      setError(cause instanceof Error && cause.message ? cause.message : t('Không tải được file mẫu, vui lòng thử lại'));
     }
   };
 

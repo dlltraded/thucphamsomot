@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, ScanLine } from 'lucide-react';
+import { Clock, Search } from 'lucide-react';
 import {
   api,
   type Product,
@@ -14,13 +14,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 import OrderTabsBar, { type OrderTab } from '../components/products/OrderTabsBar';
 import ProductSearchBar from '../components/products/ProductSearchBar';
-import QuickOrderSections from '../components/products/QuickOrderSections';
 import ProductGrid from '../components/products/ProductGrid';
 import CartSummarySidebar from '../components/products/CartSummarySidebar';
 import CartFloatingBar from '../components/products/CartFloatingBar';
 import CartCheckoutDrawer from '../components/products/CartCheckoutDrawer';
 import OrderSuccessModal from '../components/products/OrderSuccessModal';
-import SmartOrderImportModal, { type SmartImportItem } from '../components/SmartOrderImportModal';
 
 const storageKeyFor = (customerId: string) => `tps1_b2b_pos_tabs_v2_${customerId}`;
 const PRODUCT_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -162,20 +160,15 @@ export default function ProductsPage() {
 
   // 2. Search & Catalog state
   const [searchQuery, setSearchQuery] = useState('');
-  const [addQty, setAddQty] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedResultIndex, setSelectedResultIndex] = useState(0);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [cutoffInfo, setCutoffInfo] = useState<{ earliestDate: string; cutoffTimeStr: string } | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [frequentItems, setFrequentItems] = useState<FrequentItem[]>([]);
   const [loadingLatestOrder, setLoadingLatestOrder] = useState(false);
-  const [showSmartImport, setShowSmartImport] = useState(false);
-  const [importNotice, setImportNotice] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(`tps1_favorite_products_v2_${session?.id || 'guest'}`);
@@ -192,7 +185,6 @@ export default function ProductsPage() {
   const [successOrder, setSuccessOrder] = useState<{ code: string; total: number; pendingPriceCount: number } | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<any>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
   const searchRequestRef = useRef(0);
@@ -214,8 +206,6 @@ export default function ProductsPage() {
       const cached = productSearchCache.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) {
         setSearchResults(cached.products);
-        setIsDropdownOpen(openDropdown);
-        setSelectedResultIndex(0);
         return;
       }
 
@@ -233,8 +223,6 @@ export default function ProductsPage() {
           products,
         });
         setSearchResults(products);
-        setIsDropdownOpen(openDropdown);
-        setSelectedResultIndex(0);
       } catch (err) {
         if (controller.signal.aborted) return;
         if (err instanceof ApiError && err.status === 401) {
@@ -354,7 +342,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const q = searchQuery.trim();
     if (!q) {
-      setIsDropdownOpen(false);
+      setSearchResults([]);
       return;
     }
 
@@ -362,8 +350,6 @@ export default function ProductsPage() {
       searchAbortRef.current?.abort();
       setSearchLoading(false);
       setSearchResults(searchLocalCatalog(catalogProducts, q, productName));
-      setIsDropdownOpen(true);
-      setSelectedResultIndex(0);
       return;
     }
 
@@ -372,21 +358,6 @@ export default function ProductsPage() {
 
     return () => clearTimeout(searchTimeoutRef.current);
   }, [searchQuery, loadProducts, catalogProducts, productName]);
-
-  // Đóng dropdown khi click ngoài
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        !searchInputRef.current?.contains(e.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Update tab helper
   const updateActiveTab = useCallback(
@@ -437,11 +408,7 @@ export default function ProductsPage() {
       }
     });
 
-    if (options?.resetSearch) {
-      setSearchQuery('');
-      setIsDropdownOpen(false);
-      setAddQty(1);
-    }
+    if (options?.resetSearch) { setSearchQuery(''); setSearchInput(''); }
     if (options?.keepFocus) {
       searchInputRef.current?.focus();
     }
@@ -475,35 +442,6 @@ export default function ProductsPage() {
       const items = tab.items.filter((item) => (item.lineKey || item.product.id) !== lineKey);
       return { ...tab, items, sourceImportBatchId: items.some((item) => item.sourceImportLineId) ? tab.sourceImportBatchId : undefined };
     });
-  };
-
-  const handleSmartImport = (sourceImportBatchId: string, imported: SmartImportItem[]) => {
-    updateActiveTab((tab) => {
-      const next = [...tab.items];
-      for (const item of imported) {
-        const note = item.note?.trim() || '';
-        const existing = next.findIndex((line) => line.product.id === item.productId && (line.note?.trim() || '') === note);
-        if (existing >= 0) {
-          next[existing] = { ...next[existing], quantity: next[existing].quantity + item.quantity, sourceImportLineId: next[existing].sourceImportLineId || item.importLineId };
-          continue;
-        }
-        next.push({
-          lineKey: `import-${item.importLineId}`,
-          sourceImportLineId: item.importLineId,
-          product: {
-            id: item.productId, sku: item.sku, name: item.name, category: item.category, unit: item.unit,
-            imageUrl: item.imageUrl, thumbUrl: item.imageUrl, price: item.price, priceOnRequest: item.price <= 0,
-            available: true, minOrderQty: item.minOrderQty, orderStep: item.orderStep,
-            enforceOrderStep: item.enforceOrderStep, packagingNote: item.packagingNote, quantityPrecision: item.quantityPrecision,
-          },
-          quantity: item.quantity,
-          note,
-        });
-      }
-      return { ...tab, items: next, sourceImportBatchId };
-    });
-    setImportNotice(`Đã thêm ${imported.length} dòng hợp lệ vào giỏ hàng.`);
-    window.setTimeout(() => setImportNotice(''), 5000);
   };
 
   // Nhận yêu cầu "Đặt lại" từ lịch sử đơn sau khi catalog đã sẵn sàng.
@@ -552,25 +490,6 @@ export default function ProductsPage() {
     setTabs((prev) => prev.filter((t) => t.id !== tabId));
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (!isDropdownOpen || searchResults.length === 0) return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedResultIndex((prev) => (prev < searchResults.length - 1 ? prev + 1 : prev));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedResultIndex((prev) => (prev > 0 ? prev - 1 : 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (searchResults[selectedResultIndex]) {
-        handleAddProduct(searchResults[selectedResultIndex], addQty, { resetSearch: true, keepFocus: true });
-      }
-    } else if (e.key === 'Escape') {
-      setIsDropdownOpen(false);
-    }
-  };
-
   // Danh sách gợi ý từ catalog và lịch sử
   const frequentProducts = useMemo(
     () =>
@@ -600,29 +519,9 @@ export default function ProductsPage() {
 
   const latestOrder = recentOrders[0];
 
-  const categories = useMemo(() => {
-    const values = [
-      ...new Set(
-        catalogProducts.map((p) => String(p.category || '').trim()).filter(Boolean)
-      ),
-    ];
-    return values.sort((a, b) => a.localeCompare(b, 'vi')).slice(0, 16);
-  }, [catalogProducts]);
-
-  const categoryProducts = useMemo(() => {
-    if (!selectedCategory) return [];
-    return catalogProducts.filter((p) => p.category === selectedCategory).slice(0, 12);
-  }, [catalogProducts, selectedCategory]);
-
   const displayedProducts = useMemo(() => {
-    if (searchQuery.trim()) {
-      return searchResults;
-    }
-    if (selectedCategory) {
-      return catalogProducts.filter((p) => p.category === selectedCategory);
-    }
-    return (catalogProducts.length > 0 ? catalogProducts : searchResults).slice(0, 48);
-  }, [searchQuery, searchResults, selectedCategory, catalogProducts]);
+    return searchQuery.trim() ? searchResults : [];
+  }, [searchQuery, searchResults]);
 
   const toggleFavorite = (productId: string) => {
     setFavoriteIds((current) =>
@@ -734,16 +633,14 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-3.5 sm:gap-4 pb-12 lg:pb-0">
+      <div className="flex flex-col gap-3.5 sm:gap-4 pb-12 lg:pb-0">
       {/* 1. Header trang: Lời chào & Giờ chốt đơn */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-0.5">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-[#17231d] tracking-tight">
             {t('Đặt hàng cho bếp')}
           </h1>
-          <p className="text-xs sm:text-sm text-[#59665f] mt-0.5">
-            {t('Chọn món quen thuộc hoặc tìm nhanh theo tên, mã SKU')}
-          </p>
+          <p className="text-xs sm:text-sm text-[#59665f] mt-0.5">{t('Tìm sản phẩm rồi thêm vào đơn hàng')}</p>
         </div>
         <div className="inline-flex items-center gap-2 self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/35 text-amber-900 text-xs font-bold shadow-xs">
           <Clock size={15} className="text-[#e0742f]" />
@@ -756,32 +653,10 @@ export default function ProductsPage() {
       </div>
 
       {/* 2. Top Bar: Tìm kiếm F3 & Hệ thống Đa Tab */}
-      <div className="bg-white rounded-2xl border border-[#17231d]/10 shadow-xs p-3 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sticky top-[58px] z-20 backdrop-blur-md bg-white/95">
-        <ProductSearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          addQty={addQty}
-          onAddQtyChange={setAddQty}
-          searchResults={searchResults}
-          searchLoading={searchLoading}
-          isDropdownOpen={isDropdownOpen}
-          onOpenDropdown={() => {
-            if (searchResults.length > 0) setIsDropdownOpen(true);
-            else void loadProducts('');
-          }}
-          onCloseDropdown={() => setIsDropdownOpen(false)}
-          selectedResultIndex={selectedResultIndex}
-          onSelectIndex={setSelectedResultIndex}
-          onAddProduct={handleAddProduct}
-          searchInputRef={searchInputRef}
-          dropdownRef={dropdownRef}
-          onKeyDown={handleSearchKeyDown}
-        />
-
-        <button type="button" onClick={() => setShowSmartImport(true)} className="shrink-0 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#17231d] text-white text-xs font-bold hover:bg-[#0f7a4f] transition-colors">
-          <ScanLine size={17}/> <span>{t('Nhập đơn thông minh')}</span>
-        </button>
-
+      <div className="rounded-2xl border border-[#17231d]/10 bg-white p-3.5 shadow-sm sm:p-5">
+        <ProductSearchBar value={searchInput} onChange={setSearchInput} inputRef={searchInputRef}
+          onSubmit={() => { const query = searchInput.trim(); setSearchQuery(query); if (!query) setSearchResults([]); }} />
+        <div className="mt-4 border-t border-[#17231d]/8 pt-3">
         <OrderTabsBar
           tabs={tabs}
           activeTabId={activeTab.id}
@@ -789,25 +664,8 @@ export default function ProductsPage() {
           onAddTab={handleAddNewTab}
           onCloseTab={handleCloseTab}
         />
+        </div>
       </div>
-
-      {importNotice && <div className="rounded-xl bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 text-sm font-semibold">{importNotice}</div>}
-
-      {/* 3. Khối đặt nhanh cho bếp (Đơn gần nhất, Thường mua, Yêu thích, Nhóm hàng) */}
-      <QuickOrderSections
-        latestOrder={latestOrder}
-        loadingLatestOrder={loadingLatestOrder}
-        onReorderLatest={loadLatestOrderAndAdd}
-        frequentProducts={frequentProducts}
-        favoriteProducts={favoriteProducts}
-        favoriteIds={favoriteIds}
-        onToggleFavorite={toggleFavorite}
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        categoryProducts={categoryProducts}
-        onAddProduct={handleAddProduct}
-      />
 
       {/* 4. Vùng làm việc chính: 2 Cột (Trái: Lưới sản phẩm; Phải: Sidebar Tóm tắt & Gửi đơn) */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px] gap-4 items-start">
@@ -818,24 +676,13 @@ export default function ProductsPage() {
               <span>
                 {searchQuery.trim()
                   ? `${t('Kết quả tìm kiếm')} ("${searchQuery}")`
-                  : selectedCategory
-                  ? `${t('Nhóm:')} ${productName(selectedCategory)}`
-                  : t('Danh mục hàng hóa')}
+                  : t('Kết quả tìm kiếm')}
               </span>
               <span className="text-xs font-mono font-normal text-[#59665f]">
                 ({displayedProducts.length} mặt hàng)
               </span>
             </h2>
 
-            {selectedCategory && (
-              <button
-                type="button"
-                onClick={() => setSelectedCategory('')}
-                className="text-xs text-[#0f7a4f] hover:underline font-semibold cursor-pointer"
-              >
-                {t('Xem tất cả nhóm')}
-              </button>
-            )}
           </div>
 
           <ProductGrid
@@ -847,7 +694,7 @@ export default function ProductsPage() {
             onUpdateQty={handleUpdateQty}
             onUpdateNote={handleUpdateItemNote}
             searchQuery={searchQuery}
-            loading={catalogLoading || searchLoading}
+            loading={Boolean(searchQuery) && searchLoading}
           />
         </div>
 
@@ -897,7 +744,6 @@ export default function ProductsPage() {
         pendingVerification={session?.verificationStatus === 'pending'}
         onClose={() => setSuccessOrder(null)}
       />
-      <SmartOrderImportModal open={showSmartImport} onClose={() => setShowSmartImport(false)} onConfirm={handleSmartImport}/>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import ExcelOrderPage from './pages/ExcelOrderPage';
 import RegisterPage from './pages/RegisterPage';
+import AccountPage from './pages/AccountPage';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 const LoadingScreen = () => (
@@ -84,6 +85,7 @@ function App() {
               <Route path="dat-hang/excel" element={<ExcelOrderPage />} />
               <Route path="don-hang" element={<OrdersPage />} />
               <Route path="don-hang/:id" element={<OrderDetailPage />} />
+              <Route path="tai-khoan" element={<AccountPage />} />
               <Route path="doi-mat-khau" element={<ChangePasswordPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
