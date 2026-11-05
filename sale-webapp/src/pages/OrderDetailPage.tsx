@@ -452,6 +452,14 @@ export default function OrderDetailPage() {
   };
 
   const handleFinalize = async () => {
+    if (totals.priced.some(line => Number(line.unit_price) <= 0)) {
+      alert('Đơn còn mặt hàng chưa có giá. Hãy nhập giá hoặc xóa mặt hàng không có hàng trước khi chốt.');
+      return;
+    }
+    if (lines.some(line => Number(line.base_unit_price) <= 0 && Number(line.unit_price) > 0 && !line.pricing_note?.trim()) && !pricingNote.trim()) {
+      alert('Vui lòng ghi lý do báo giá vào ghi chú giá của mặt hàng hoặc ghi chú chốt giá của đơn.');
+      return;
+    }
     if (!confirm(`Xác nhận khách ở hạng ${selectedTier} và chốt tổng đơn ${money(totals.total)}?`)) return;
     setSaving(true);
     try {

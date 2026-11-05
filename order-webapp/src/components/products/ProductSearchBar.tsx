@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import type { Product } from '../../lib/api';
 import ProductThumbnail from './ProductThumbnail';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 function money(v: number) {
   return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ';
@@ -41,6 +42,7 @@ export default function ProductSearchBar({
   dropdownRef,
   onKeyDown,
 }: ProductSearchBarProps) {
+  const { t, productName, productUnit } = useLanguage();
   return (
     <div className="relative flex-1 flex items-center gap-2">
       {/* Ô tìm kiếm hàng hóa */}
@@ -56,7 +58,7 @@ export default function ProductSearchBar({
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={onKeyDown}
           onFocus={onOpenDropdown}
-          placeholder="Tìm hàng hóa theo tên, mã SKU, nhóm hàng (F3)..."
+          placeholder={t('Tìm hàng hóa theo tên, mã SKU, nhóm hàng (F3)...')}
           className="w-full pl-10 pr-9 py-2.5 bg-[#f8faf7] border border-[#17231d]/12 rounded-xl text-sm font-medium text-[#17231d] placeholder:text-[#59665f]/55 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0f7a4f]/25 focus:border-[#0f7a4f] transition-all"
         />
         {searchQuery ? (
@@ -101,17 +103,17 @@ export default function ProductSearchBar({
           {searchLoading ? (
             <div className="py-7 text-center text-sm text-[#59665f] flex items-center justify-center gap-2">
               <Loader2 className="w-4 h-4 text-[#0f7a4f] animate-spin" />
-              <span>Đang tra cứu danh mục hàng hóa...</span>
+              <span>{t('Đang tra cứu danh mục hàng hóa...')}</span>
             </div>
           ) : searchResults.length === 0 ? (
             <div className="py-7 px-4 text-center text-sm text-[#59665f]">
-              Không tìm thấy sản phẩm nào khớp với <span className="font-bold text-[#17231d]">"{searchQuery}"</span>
+              {t('Không tìm thấy sản phẩm nào khớp với')} <span className="font-bold text-[#17231d]">"{searchQuery}"</span>
             </div>
           ) : (
             <div className="divide-y divide-[#17231d]/5">
               <div className="bg-[#f8faf7] px-3.5 py-2 text-[11px] font-bold text-[#59665f] uppercase tracking-wider flex justify-between">
                 <span>Hình ảnh • Mã SKU • Tên mặt hàng</span>
-                <span>ĐVT • Giá khách hàng</span>
+                <span>{t('ĐVT • Giá khách hàng')}</span>
               </div>
               {searchResults.map((p, idx) => {
                 const isSelected = idx === selectedResultIndex;
@@ -134,11 +136,12 @@ export default function ProductSearchBar({
                             {p.sku}
                           </span>
                         )}
-                        <span className="text-sm font-semibold truncate">{p.name}</span>
+                        <span className="text-sm font-semibold truncate">{productName(p.name)}</span>
                       </div>
+                      {productName(p.name) !== p.name && <span className="block text-[11px] text-[#59665f] truncate">{p.name}</span>}
                       {p.category && (
                         <span className="text-[11px] text-[#59665f] mt-0.5 block">
-                          Nhóm: {p.category}
+                          {t('Nhóm:')} {productName(p.category)}
                         </span>
                       )}
                     </div>
@@ -146,13 +149,13 @@ export default function ProductSearchBar({
                     <div className="text-right shrink-0">
                       <div className="text-sm font-bold text-[#0f7a4f]">
                         {p.priceOnRequest ? (
-                          <span className="text-[#e0742f] text-xs font-semibold">Liên hệ báo giá</span>
+                          <span className="text-[#e0742f] text-xs font-semibold">{t('Chờ sale báo giá')}</span>
                         ) : (
                           money(p.price)
                         )}
                       </div>
                       <div className="text-xs text-[#59665f] mt-0.5 font-medium">
-                        {p.unit || 'Kg'} • <span className="text-emerald-700 font-semibold">Nhận đặt</span>
+                        {productUnit(p.unit || 'Kg')} • <span className="text-emerald-700 font-semibold">{t('Nhận đặt')}</span>
                       </div>
                     </div>
                   </div>

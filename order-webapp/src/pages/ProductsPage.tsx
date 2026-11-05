@@ -10,6 +10,7 @@ import {
   ApiError,
 } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 import OrderTabsBar, { type OrderTab } from '../components/products/OrderTabsBar';
 import ProductSearchBar from '../components/products/ProductSearchBar';
@@ -21,7 +22,7 @@ import CartCheckoutDrawer from '../components/products/CartCheckoutDrawer';
 import OrderSuccessModal from '../components/products/OrderSuccessModal';
 import SmartOrderImportModal, { type SmartImportItem } from '../components/SmartOrderImportModal';
 
-const STORAGE_KEY = 'tps1_b2b_pos_tabs_v1';
+const storageKeyFor = (customerId: string) => `tps1_b2b_pos_tabs_v2_${customerId}`;
 const PRODUCT_CACHE_TTL_MS = 2 * 60 * 1000;
 const productSearchCache = new Map<string, { expiresAt: number; products: Product[] }>();
 const PRODUCT_CATALOG_TTL_MS = 5 * 60 * 1000;
@@ -35,7 +36,7 @@ function normalizeSearch(value: string) {
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D')
     .toLocaleLowerCase('vi-VN')
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 }
 
@@ -60,17 +61,17 @@ function decodeCatalog(catalog: ProductCatalogResponse): Product[] {
   });
 }
 
-function searchLocalCatalog(products: Product[], rawQuery: string): Product[] {
+function searchLocalCatalog(products: Product[], rawQuery: string, productName: (name: string) => string): Product[] {
   const query = normalizeSearch(rawQuery);
   if (!query) return products.slice(0, 48);
   const words = query.split(' ').filter(Boolean);
   const ranked: Array<{ product: Product; score: number }> = [];
 
   for (const product of products) {
-    const key = productSearchKeys.get(product.id) || normalizeSearch(`${product.sku} ${product.name}`);
+    const key = normalizeSearch(`${productSearchKeys.get(product.id) || `${product.sku} ${product.name} ${product.category || ''}`} ${productName(product.name)} ${product.category ? productName(product.category) : ''}`);
     if (!words.every((word) => key.includes(word))) continue;
     const sku = normalizeSearch(product.sku || '');
-    const name = normalizeSearch(product.name);
+    const name = normalizeSearch(productName(product.name));
     const score =
       sku === query ? 0 : sku.startsWith(query) ? 1 : name === query ? 2 : name.startsWith(query) ? 3 : 4;
     ranked.push({ product, score });
@@ -127,12 +128,13 @@ function createDefaultTab(index: number, session: any): OrderTab {
 
 export default function ProductsPage() {
   const { session, logout } = useAuth();
+  const { t, errorText, productName } = useLanguage();
   const navigate = useNavigate();
 
   // 1. Quản lý hệ thống Đa tab đặt hàng
   const [tabs, setTabs] = useState<OrderTab[]>(() => {
     try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKeyFor(session?.id || 'guest'));
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -153,8 +155,8 @@ export default function ProductsPage() {
     if (!tabs.some((t) => t.id === activeTabId) && tabs.length > 0) {
       setActiveTabId(tabs[0].id);
     }
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(tabs));
-  }, [tabs, activeTabId]);
+    localStorage.setItem(storageKeyFor(session?.id || 'guest'), JSON.stringify(tabs));
+  }, [tabs, activeTabId, session?.id]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
@@ -176,7 +178,7 @@ export default function ProductsPage() {
   const [importNotice, setImportNotice] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('tps1_favorite_products_v1');
+      const saved = localStorage.getItem(`tps1_favorite_products_v2_${session?.id || 'guest'}`);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -187,7 +189,7 @@ export default function ProductsPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successOrder, setSuccessOrder] = useState<{ code: string; total: number } | null>(null);
+  const [successOrder, setSuccessOrder] = useState<{ code: string; total: number; pendingPriceCount: number } | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -200,9 +202,9 @@ export default function ProductsPage() {
   // Lưu danh sách yêu thích
   useEffect(() => {
     try {
-      localStorage.setItem('tps1_favorite_products_v1', JSON.stringify(favoriteIds));
+      localStorage.setItem(`tps1_favorite_products_v2_${session?.id || 'guest'}`, JSON.stringify(favoriteIds));
     } catch {}
-  }, [favoriteIds]);
+  }, [favoriteIds, session?.id]);
 
   // Tìm kiếm qua Search API khi catalog cục bộ chưa sẵn sàng
   const loadProducts = useCallback(
@@ -289,10 +291,10 @@ export default function ProductsPage() {
 
     const storageKey = `tps1_product_catalog_v1_${customerId}`;
     try {
-      const saved = sessionStorage.getItem(storageKey);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved) as { expiresAt: number; catalog: ProductCatalogResponse };
-        if (parsed.expiresAt > now && Array.isArray(parsed.catalog?.items)) {
+        if ((parsed.expiresAt > now || !navigator.onLine) && Array.isArray(parsed.catalog?.items)) {
           const products = decodeCatalog(parsed.catalog);
           productCatalogMemoryCache.set(customerId, { expiresAt: parsed.expiresAt, products });
           setCatalogProducts(products);
@@ -300,10 +302,10 @@ export default function ProductsPage() {
           setCatalogLoading(false);
           return;
         }
-        sessionStorage.removeItem(storageKey);
+        localStorage.removeItem(storageKey);
       }
     } catch {
-      sessionStorage.removeItem(storageKey);
+      localStorage.removeItem(storageKey);
     }
 
     const controller = new AbortController();
@@ -319,7 +321,7 @@ export default function ProductsPage() {
         setSearchResults((current) => (searchQuery.trim() ? current : products.slice(0, 48)));
         setCatalogLoading(false);
         try {
-          sessionStorage.setItem(storageKey, JSON.stringify({ expiresAt, catalog }));
+          localStorage.setItem(storageKey, JSON.stringify({ expiresAt, catalog }));
         } catch {}
       })
       .catch((error) => {
@@ -359,7 +361,7 @@ export default function ProductsPage() {
     if (catalogProducts.length > 0) {
       searchAbortRef.current?.abort();
       setSearchLoading(false);
-      setSearchResults(searchLocalCatalog(catalogProducts, q));
+      setSearchResults(searchLocalCatalog(catalogProducts, q, productName));
       setIsDropdownOpen(true);
       setSelectedResultIndex(0);
       return;
@@ -369,7 +371,7 @@ export default function ProductsPage() {
     searchTimeoutRef.current = setTimeout(() => void loadProducts(q), 120);
 
     return () => clearTimeout(searchTimeoutRef.current);
-  }, [searchQuery, loadProducts, catalogProducts]);
+  }, [searchQuery, loadProducts, catalogProducts, productName]);
 
   // Đóng dropdown khi click ngoài
   useEffect(() => {
@@ -660,8 +662,14 @@ export default function ProductsPage() {
   // Gửi đơn đặt hàng (Submit Order)
   const handleSubmitOrder = async () => {
     setErrorMessage('');
+    if (!navigator.onLine) { setErrorMessage(t('Không có kết nối mạng. Giỏ hàng của bạn đã được lưu.')); return; }
     if (activeTab.items.length === 0) {
-      setErrorMessage('Vui lòng thêm ít nhất 1 mặt hàng vào đơn');
+      setErrorMessage(t('Vui lòng thêm ít nhất 1 mặt hàng vào đơn'));
+      return;
+    }
+    if (cutoffInfo && activeTab.deliveryDate < cutoffInfo.earliestDate) {
+      setErrorMessage(t('Đã quá giờ chốt đơn. Vui lòng chọn ngày giao mới.'));
+      updateActiveTab(tab => ({ ...tab, deliveryDate: cutoffInfo.earliestDate }));
       return;
     }
     if (
@@ -669,7 +677,7 @@ export default function ProductsPage() {
       !activeTab.deliveryPhone.trim() ||
       !activeTab.deliveryAddress.trim()
     ) {
-      setErrorMessage('Vui lòng điền đầy đủ Tên, SĐT và Địa chỉ giao hàng');
+      setErrorMessage(t('Vui lòng điền đầy đủ Tên, SĐT và Địa chỉ giao hàng'));
       return;
     }
 
@@ -711,14 +719,14 @@ export default function ProductsPage() {
         0
       );
 
-      setSuccessOrder({ code: res.orderCode, total: subtotal });
+      setSuccessOrder({ code: res.orderCode, total: res.total ?? subtotal, pendingPriceCount: res.pendingPriceCount || 0 });
       setIsDrawerOpen(false);
 
       // Reset giỏ của tab vừa gửi
       updateActiveTab((t) => ({ ...t, items: [], note: '', idempotencyKey: crypto.randomUUID(), sourceImportBatchId: undefined }));
     } catch (err) {
       setErrorMessage(
-        err instanceof ApiError ? err.message : 'Không gửi được đơn hàng, vui lòng thử lại'
+        err instanceof ApiError ? errorText(err) : t('Không gửi được đơn hàng, vui lòng thử lại')
       );
     } finally {
       setSubmitting(false);
@@ -731,18 +739,18 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-0.5">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-[#17231d] tracking-tight">
-            Đặt hàng cho bếp
+            {t('Đặt hàng cho bếp')}
           </h1>
           <p className="text-xs sm:text-sm text-[#59665f] mt-0.5">
-            Chọn món quen thuộc hoặc tìm nhanh theo tên, mã SKU
+            {t('Chọn món quen thuộc hoặc tìm nhanh theo tên, mã SKU')}
           </p>
         </div>
         <div className="inline-flex items-center gap-2 self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/35 text-amber-900 text-xs font-bold shadow-xs">
           <Clock size={15} className="text-[#e0742f]" />
           <span>
             {cutoffInfo
-              ? `Ngày giao sớm nhất: ${cutoffInfo.earliestDate} · Chốt ${cutoffInfo.cutoffTimeStr}`
-              : 'Vui lòng chọn ngày và ca giao hàng phù hợp'}
+              ? `${t('Ngày giao sớm nhất')}: ${cutoffInfo.earliestDate} · ${t('Giờ chốt đơn')}: ${cutoffInfo.cutoffTimeStr}`
+              : t('Vui lòng chọn ngày và ca giao hàng phù hợp')}
           </span>
         </div>
       </div>
@@ -771,7 +779,7 @@ export default function ProductsPage() {
         />
 
         <button type="button" onClick={() => setShowSmartImport(true)} className="shrink-0 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#17231d] text-white text-xs font-bold hover:bg-[#0f7a4f] transition-colors">
-          <ScanLine size={17}/> <span>Nhập đơn thông minh</span>
+          <ScanLine size={17}/> <span>{t('Nhập đơn thông minh')}</span>
         </button>
 
         <OrderTabsBar
@@ -809,10 +817,10 @@ export default function ProductsPage() {
             <h2 className="text-sm font-bold text-[#17231d] uppercase tracking-wider flex items-center gap-2">
               <span>
                 {searchQuery.trim()
-                  ? `Kết quả tìm kiếm ("${searchQuery}")`
+                  ? `${t('Kết quả tìm kiếm')} ("${searchQuery}")`
                   : selectedCategory
-                  ? `Nhóm: ${selectedCategory}`
-                  : 'Danh mục hàng hóa'}
+                  ? `${t('Nhóm:')} ${productName(selectedCategory)}`
+                  : t('Danh mục hàng hóa')}
               </span>
               <span className="text-xs font-mono font-normal text-[#59665f]">
                 ({displayedProducts.length} mặt hàng)
@@ -825,7 +833,7 @@ export default function ProductsPage() {
                 onClick={() => setSelectedCategory('')}
                 className="text-xs text-[#0f7a4f] hover:underline font-semibold cursor-pointer"
               >
-                Xem tất cả nhóm
+                {t('Xem tất cả nhóm')}
               </button>
             )}
           </div>
@@ -847,6 +855,8 @@ export default function ProductsPage() {
         <div className="hidden lg:block min-w-0">
           <CartSummarySidebar
             session={session}
+            earliestDate={cutoffInfo?.earliestDate}
+            cutoffTimeStr={cutoffInfo?.cutoffTimeStr}
             activeTab={activeTab}
             onUpdateTab={updateActiveTab}
             onUpdateQty={handleUpdateQty}
@@ -869,6 +879,8 @@ export default function ProductsPage() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         session={session}
+        earliestDate={cutoffInfo?.earliestDate}
+        cutoffTimeStr={cutoffInfo?.cutoffTimeStr}
         activeTab={activeTab}
         onUpdateTab={updateActiveTab}
         onUpdateQty={handleUpdateQty}
@@ -882,6 +894,7 @@ export default function ProductsPage() {
       {/* 7. Modal thông báo đặt hàng thành công */}
       <OrderSuccessModal
         order={successOrder}
+        pendingVerification={session?.verificationStatus === 'pending'}
         onClose={() => setSuccessOrder(null)}
       />
       <SmartOrderImportModal open={showSmartImport} onClose={() => setShowSmartImport(false)} onConfirm={handleSmartImport}/>

@@ -16,6 +16,7 @@ import {
 import type { CustomerSession } from '../../lib/api';
 import type { OrderTab } from './OrderTabsBar';
 import ProductThumbnail from './ProductThumbnail';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 function money(v: number) {
   return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ';
@@ -33,6 +34,8 @@ interface CartCheckoutDrawerProps {
   onSubmitOrder: () => void;
   submitting: boolean;
   errorMessage: string;
+  earliestDate?: string;
+  cutoffTimeStr?: string;
 }
 
 export default function CartCheckoutDrawer({
@@ -47,12 +50,16 @@ export default function CartCheckoutDrawer({
   onSubmitOrder,
   submitting,
   errorMessage,
+  earliestDate,
+  cutoffTimeStr,
 }: CartCheckoutDrawerProps) {
+  const { t, productName, productUnit } = useLanguage();
   const [isDeliveryExpanded, setIsDeliveryExpanded] = useState(true);
 
   if (!isOpen) return null;
 
   const totalQuantity = activeTab.items.reduce((sum, item) => sum + item.quantity, 0);
+  const pendingPriceCount = activeTab.items.filter(item => item.product.priceOnRequest || item.product.price <= 0).length;
   const subtotalAmount = activeTab.items.reduce(
     (sum, item) => sum + item.quantity * (item.product.price || 0),
     0
@@ -70,7 +77,7 @@ export default function CartCheckoutDrawer({
           <div>
             <div className="w-10 h-1 rounded-full bg-[#17231d]/15 mx-auto mb-2" />
             <h3 className="font-bold text-base text-[#17231d] flex items-center gap-2">
-              <span>{activeTab.title}</span>
+              <span>{activeTab.title.startsWith('Đặt hàng ') ? `${t('Đặt hàng')} ${activeTab.title.slice('Đặt hàng '.length)}` : activeTab.title}</span>
               <span className="text-xs font-normal text-[#59665f]">
                 ({activeTab.items.length} món · {totalQuantity.toFixed(1)} ĐVT)
               </span>
@@ -111,12 +118,13 @@ export default function CartCheckoutDrawer({
                       <ProductThumbnail product={item.product} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-xs text-[#17231d] leading-snug">
-                          {item.product.name}
+                          {productName(item.product.name)}
                         </p>
+                        {productName(item.product.name) !== item.product.name && <p className="text-[10px] text-[#59665f] truncate">{item.product.name}</p>}
                         <p className="text-[11px] text-[#59665f] mt-0.5">
-                          {item.product.unit || 'Kg'} ·{' '}
+                          {productUnit(item.product.unit || 'Kg')} ·{' '}
                           <strong className="text-[#0f7a4f]">
-                            {item.product.priceOnRequest ? 'Liên hệ' : money(item.product.price)}
+                            {item.product.priceOnRequest ? t('Chờ sale báo giá') : money(item.product.price)}
                           </strong>
                         </p>
                       </div>
@@ -174,7 +182,7 @@ export default function CartCheckoutDrawer({
                       <div className="text-right">
                         <span className="text-[10px] text-[#59665f] block">Thành tiền</span>
                         <span className="font-mono font-bold text-sm text-[#0f7a4f]">
-                          {item.product.priceOnRequest ? 'Tạm tính' : money(lineTotal)}
+                          {item.product.priceOnRequest ? t('Chờ sale báo giá') : money(lineTotal)}
                         </span>
                       </div>
                     </div>
@@ -185,7 +193,7 @@ export default function CartCheckoutDrawer({
                         type="text"
                         value={item.note || ''}
                         onChange={(e) => onUpdateNote(item.lineKey || item.product.id, e.target.value)}
-                        placeholder="Ghi chú quy cách (vd: sơ chế, thái lát...)"
+                        placeholder={t('Ghi chú quy cách (vd: sơ chế, thái lát...)')}
                         className="w-full text-xs py-1.5 px-2.5 bg-white border border-[#17231d]/15 rounded-lg text-[#17231d] placeholder:text-[#59665f]/50 focus:outline-none focus:border-[#0f7a4f]"
                       />
                     </div>
@@ -204,7 +212,7 @@ export default function CartCheckoutDrawer({
               type="text"
               value={activeTab.note}
               onChange={(e) => onUpdateTab((t) => ({ ...t, note: e.target.value }))}
-              placeholder="Ghi chú thêm cho bộ phận giao nhận..."
+              placeholder={t('Ghi chú thêm cho bộ phận giao nhận...')}
               className="w-full text-xs py-2 px-3 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-[#17231d] focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
             />
           </div>
@@ -218,7 +226,7 @@ export default function CartCheckoutDrawer({
             >
               <span className="flex items-center gap-1.5">
                 <MapPin size={14} className="text-[#0f7a4f]" />
-                <span>Địa chỉ và thời gian nhận hàng</span>
+                <span>{t('Địa chỉ và thời gian nhận hàng')}</span>
               </span>
               {isDeliveryExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
@@ -235,7 +243,7 @@ export default function CartCheckoutDrawer({
                       <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#59665f]/60" size={14} />
                       <input
                         type="date"
-                        min={new Date().toLocaleDateString('en-CA')}
+                        min={earliestDate}
                         value={activeTab.deliveryDate}
                         onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryDate: e.target.value }))}
                         className="w-full pl-8 pr-2.5 py-2 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
@@ -254,10 +262,10 @@ export default function CartCheckoutDrawer({
                         onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryShift: e.target.value }))}
                         className="w-full pl-8 pr-2.5 py-2 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
                       >
-                        <option value="Ca sáng sớm (05:00 - 07:00)">Ca sáng sớm (05:00 - 07:00)</option>
-                        <option value="Ca sáng (07:00 - 09:00)">Ca sáng (07:00 - 09:00)</option>
-                        <option value="Ca trưa (09:30 - 11:00)">Ca trưa (09:30 - 11:00)</option>
-                        <option value="Ca chiều (14:00 - 16:00)">Ca chiều (14:00 - 16:00)</option>
+                        <option value="Ca sáng sớm (05:00 - 07:00)">{t('Ca sáng sớm (05:00 - 07:00)')}</option>
+                        <option value="Ca sáng (07:00 - 09:00)">{t('Ca sáng (07:00 - 09:00)')}</option>
+                        <option value="Ca trưa (09:30 - 11:00)">{t('Ca trưa (09:30 - 11:00)')}</option>
+                        <option value="Ca chiều (14:00 - 16:00)">{t('Ca chiều (14:00 - 16:00)')}</option>
                       </select>
                     </div>
                   </div>
@@ -275,7 +283,7 @@ export default function CartCheckoutDrawer({
                         type="text"
                         value={activeTab.deliveryName}
                         onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryName: e.target.value }))}
-                        placeholder="Tên người nhận"
+                        placeholder={t('Tên người nhận')}
                         className="w-full pl-8 pr-2 py-2 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
                       />
                     </div>
@@ -290,7 +298,7 @@ export default function CartCheckoutDrawer({
                         type="tel"
                         value={activeTab.deliveryPhone}
                         onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryPhone: e.target.value }))}
-                        placeholder="SĐT người nhận"
+                        placeholder={t('SĐT người nhận')}
                         className="w-full pl-8 pr-2 py-2 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
                       />
                     </div>
@@ -306,7 +314,7 @@ export default function CartCheckoutDrawer({
                     rows={2}
                     value={activeTab.deliveryAddress}
                     onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryAddress: e.target.value }))}
-                    placeholder="Số nhà, đường, xưởng, bếp ăn..."
+                    placeholder={t('Số nhà, đường, xưởng, bếp ăn...')}
                     className="w-full px-3 py-2 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs focus:outline-none focus:bg-white focus:border-[#0f7a4f] resize-none"
                   />
                 </div>
@@ -326,7 +334,7 @@ export default function CartCheckoutDrawer({
                     className="text-[11px] text-[#0f7a4f] hover:underline font-semibold flex items-center gap-1"
                   >
                     <MapPin size={12} />
-                    <span>Dùng địa chỉ mặc định của công ty</span>
+                    <span>{t('Dùng địa chỉ mặc định của công ty')}</span>
                   </button>
                 )}
               </div>
@@ -338,10 +346,10 @@ export default function CartCheckoutDrawer({
         <div className="p-4 border-t border-[#17231d]/10 bg-[#fbfcfb] space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs text-[#59665f] block">Tạm tính đơn hàng</span>
+              <span className="text-xs text-[#59665f] block">{t('Tạm tính đơn hàng')}</span>
               <p className="text-[10px] text-[#59665f] flex items-center gap-1">
                 <Info size={11} className="text-[#e0742f]" />
-                <span>TPS1 sẽ xác nhận lại mặt hàng cần báo giá hoặc có điều chỉnh</span>
+                <span>{t('TPS1 sẽ xác nhận lại mặt hàng cần báo giá hoặc có điều chỉnh')}</span>
               </p>
             </div>
             <div className="text-right">
@@ -350,6 +358,8 @@ export default function CartCheckoutDrawer({
               </span>
             </div>
           </div>
+          {earliestDate && <p className="text-xs text-[#59665f]">{t('Ngày giao sớm nhất')}: {earliestDate}{cutoffTimeStr ? ` · ${t('Giờ chốt đơn')}: ${cutoffTimeStr}` : ''}</p>}
+          {pendingPriceCount > 0 && <p className="text-xs font-semibold text-amber-800 rounded-xl bg-amber-50 p-2">{t('Tạm tính chưa gồm hàng chờ giá')} ({pendingPriceCount}). {t('Sale sẽ nhập giá hoặc bỏ mặt hàng không có hàng trước khi xác nhận đơn.')}</p>}
 
           {errorMessage && (
             <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex items-center gap-2">
@@ -367,11 +377,11 @@ export default function CartCheckoutDrawer({
             {submitting ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Đang gửi đơn hàng...</span>
+                <span>{t('Đang gửi đơn hàng...')}</span>
               </>
             ) : (
               <>
-                <span>Gửi đơn đặt hàng</span>
+                <span>{t('Gửi đơn đặt hàng')}</span>
                 <ArrowRight size={16} />
               </>
             )}

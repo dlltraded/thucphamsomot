@@ -16,6 +16,7 @@ import {
 import type { CustomerSession } from '../../lib/api';
 import type { OrderTab } from './OrderTabsBar';
 import ProductThumbnail from './ProductThumbnail';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 function money(v: number) {
   return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ';
@@ -30,6 +31,8 @@ interface CartSummarySidebarProps {
   onSubmitOrder: () => void;
   submitting: boolean;
   errorMessage: string;
+  earliestDate?: string;
+  cutoffTimeStr?: string;
 }
 
 export default function CartSummarySidebar({
@@ -41,11 +44,15 @@ export default function CartSummarySidebar({
   onSubmitOrder,
   submitting,
   errorMessage,
+  earliestDate,
+  cutoffTimeStr,
 }: CartSummarySidebarProps) {
+  const { t, productName, productUnit } = useLanguage();
   const [isDeliveryExpanded, setIsDeliveryExpanded] = useState(true);
 
   const totalItemsCount = activeTab.items.length;
   const totalQuantity = activeTab.items.reduce((sum, item) => sum + item.quantity, 0);
+  const pendingPriceCount = activeTab.items.filter(item => item.product.priceOnRequest || item.product.price <= 0).length;
   const subtotalAmount = activeTab.items.reduce(
     (sum, item) => sum + item.quantity * (item.product.price || 0),
     0
@@ -62,7 +69,7 @@ export default function CartSummarySidebar({
             </span>
             <div>
               <h3 className="font-bold text-sm text-[#17231d] leading-tight">
-                {activeTab.title}
+                {activeTab.title.startsWith('Đặt hàng ') ? `${t('Đặt hàng')} ${activeTab.title.slice('Đặt hàng '.length)}` : activeTab.title}
               </h3>
               <p className="text-[11px] text-[#59665f]">
                 {totalItemsCount} mặt hàng ({totalQuantity.toFixed(1)} ĐVT)
@@ -79,8 +86,8 @@ export default function CartSummarySidebar({
         <div className="divide-y divide-[#17231d]/5 max-h-[300px] overflow-y-auto p-2 space-y-1">
           {activeTab.items.length === 0 ? (
             <div className="py-8 text-center text-[#59665f] space-y-1">
-              <p className="text-xs font-semibold text-[#17231d]">Đơn hàng này chưa có món</p>
-              <p className="text-[11px] text-[#59665f]">Chọn từ danh mục hoặc tìm kiếm để thêm vào đơn.</p>
+              <p className="text-xs font-semibold text-[#17231d]">{t('Đơn hàng này chưa có món')}</p>
+              <p className="text-[11px] text-[#59665f]">{t('Chọn từ danh mục hoặc tìm kiếm để thêm vào đơn.')}</p>
             </div>
           ) : (
             activeTab.items.map((item) => {
@@ -94,12 +101,13 @@ export default function CartSummarySidebar({
                     <ProductThumbnail product={item.product} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-xs text-[#17231d] truncate">
-                        {item.product.name}
+                        {productName(item.product.name)}
                       </p>
+                      {productName(item.product.name) !== item.product.name && <p className="text-[10px] text-[#59665f] truncate">{item.product.name}</p>}
                       <p className="text-[10px] text-[#59665f]">
-                        {item.product.unit || 'Kg'} ·{' '}
+                        {productUnit(item.product.unit || 'Kg')} ·{' '}
                         {item.product.priceOnRequest ? (
-                          <span className="text-[#e0742f]">Báo giá</span>
+                          <span className="text-[#e0742f]">{t('Chờ sale báo giá')}</span>
                         ) : (
                           money(item.product.price)
                         )}
@@ -157,7 +165,7 @@ export default function CartSummarySidebar({
                     </div>
 
                     <div className="text-right font-mono font-bold text-xs text-[#0f7a4f]">
-                      {item.product.priceOnRequest ? 'Tạm tính 0đ' : money(lineTotal)}
+                      {item.product.priceOnRequest ? t('Chờ sale báo giá') : money(lineTotal)}
                     </div>
                   </div>
 
@@ -179,7 +187,7 @@ export default function CartSummarySidebar({
             type="text"
             value={activeTab.note}
             onChange={(e) => onUpdateTab((t) => ({ ...t, note: e.target.value }))}
-            placeholder="Ghi chú đơn (sơ chế, giao sớm, chia bao...)"
+            placeholder={t('Ghi chú đơn (sơ chế, giao sớm, chia bao...)')}
             className="w-full bg-white border border-[#17231d]/15 rounded-xl px-3 py-2 text-xs text-[#17231d] placeholder:text-[#59665f]/60 focus:outline-none focus:border-[#0f7a4f]"
           />
         </div>
@@ -193,7 +201,7 @@ export default function CartSummarySidebar({
           >
             <span className="flex items-center gap-1.5">
               <MapPin size={14} className="text-[#0f7a4f]" />
-              <span>Thông tin nhận hàng</span>
+              <span>{t('Thông tin nhận hàng')}</span>
             </span>
             {isDeliveryExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
           </button>
@@ -212,7 +220,7 @@ export default function CartSummarySidebar({
                   />
                     <input
                       type="date"
-                      min={new Date().toLocaleDateString('en-CA')}
+                      min={earliestDate}
                     value={activeTab.deliveryDate}
                     onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryDate: e.target.value }))}
                     className="w-full pl-8 pr-2.5 py-1.5 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
@@ -234,10 +242,10 @@ export default function CartSummarySidebar({
                     onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryShift: e.target.value }))}
                     className="w-full pl-8 pr-2.5 py-1.5 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#0f7a4f] cursor-pointer"
                   >
-                    <option value="Ca sáng sớm (05:00 - 07:00)">Ca sáng sớm (05:00 - 07:00)</option>
-                    <option value="Ca sáng (07:00 - 09:00)">Ca sáng (07:00 - 09:00)</option>
-                    <option value="Ca trưa (09:30 - 11:00)">Ca trưa (09:30 - 11:00)</option>
-                    <option value="Ca chiều (14:00 - 16:00)">Ca chiều (14:00 - 16:00)</option>
+                    <option value="Ca sáng sớm (05:00 - 07:00)">{t('Ca sáng sớm (05:00 - 07:00)')}</option>
+                    <option value="Ca sáng (07:00 - 09:00)">{t('Ca sáng (07:00 - 09:00)')}</option>
+                    <option value="Ca trưa (09:30 - 11:00)">{t('Ca trưa (09:30 - 11:00)')}</option>
+                    <option value="Ca chiều (14:00 - 16:00)">{t('Ca chiều (14:00 - 16:00)')}</option>
                   </select>
                 </div>
               </div>
@@ -254,7 +262,7 @@ export default function CartSummarySidebar({
                       type="text"
                       value={activeTab.deliveryName}
                       onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryName: e.target.value }))}
-                      placeholder="Tên người nhận"
+                      placeholder={t('Tên người nhận')}
                       className="w-full pl-7 pr-2 py-1.5 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
                     />
                   </div>
@@ -269,7 +277,7 @@ export default function CartSummarySidebar({
                       type="tel"
                       value={activeTab.deliveryPhone}
                       onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryPhone: e.target.value }))}
-                      placeholder="SĐT người nhận"
+                      placeholder={t('SĐT người nhận')}
                       className="w-full pl-7 pr-2 py-1.5 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
                     />
                   </div>
@@ -285,7 +293,7 @@ export default function CartSummarySidebar({
                   rows={2}
                   value={activeTab.deliveryAddress}
                   onChange={(e) => onUpdateTab((t) => ({ ...t, deliveryAddress: e.target.value }))}
-                  placeholder="Số nhà, đường, xưởng, bếp ăn..."
+                  placeholder={t('Số nhà, đường, xưởng, bếp ăn...')}
                   className="w-full px-2.5 py-1.5 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs focus:outline-none focus:bg-white focus:border-[#0f7a4f] resize-none"
                 />
               </div>
@@ -306,7 +314,7 @@ export default function CartSummarySidebar({
                   className="text-[11px] text-[#0f7a4f] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   <MapPin size={12} />
-                  <span>Nạp lại địa chỉ mặc định của công ty</span>
+                  <span>{t('Nạp lại địa chỉ mặc định của công ty')}</span>
                 </button>
               )}
             </div>
@@ -317,19 +325,21 @@ export default function CartSummarySidebar({
         <div className="p-3.5 sm:p-4 bg-[#fbfcfb] border-t border-[#17231d]/10 space-y-3">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-[#59665f]">
-              <span>Tổng tiền hàng:</span>
+              <span>{t('Tổng tiền hàng:')}</span>
               <span className="font-mono font-semibold text-[#17231d]">{money(subtotalAmount)}</span>
             </div>
             <div className="flex items-center justify-between pt-1.5 border-t border-[#17231d]/10">
-              <span className="text-sm font-bold text-[#17231d]">Tạm tính:</span>
+              <span className="text-sm font-bold text-[#17231d]">{t('Tạm tính:')}</span>
               <span className="text-xl font-black font-mono text-[#0f7a4f]">
                 {money(subtotalAmount)}
               </span>
             </div>
             <p className="text-[10px] text-[#59665f] flex items-center gap-1 leading-tight pt-1">
               <Info size={12} className="text-[#e0742f] shrink-0" />
-              <span>Giá hiển thị theo bảng giá hiện tại. TPS1 sẽ xác nhận lại các mặt hàng cần báo giá hoặc có điều chỉnh.</span>
+              <span>{t('Giá hiển thị theo bảng giá hiện tại. TPS1 sẽ xác nhận lại các mặt hàng cần báo giá hoặc có điều chỉnh.')}</span>
             </p>
+            {earliestDate && <p className="text-xs text-[#59665f]">{t('Ngày giao sớm nhất')}: {earliestDate}{cutoffTimeStr ? ` · ${t('Giờ chốt đơn')}: ${cutoffTimeStr}` : ''}</p>}
+            {pendingPriceCount > 0 && <p className="text-xs font-semibold text-amber-800 rounded-xl bg-amber-50 p-2">{t('Tạm tính chưa gồm hàng chờ giá')} ({pendingPriceCount}). {t('Sale sẽ nhập giá hoặc bỏ mặt hàng không có hàng trước khi xác nhận đơn.')}</p>}
           </div>
 
           {errorMessage && (
@@ -348,11 +358,11 @@ export default function CartSummarySidebar({
             {submitting ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Đang gửi đơn...</span>
+                <span>{t('Đang gửi đơn...')}</span>
               </>
             ) : (
               <>
-                <span>Xác nhận đặt hàng</span>
+                <span>{t('Xác nhận đặt hàng')}</span>
                 <ArrowRight size={16} />
               </>
             )}

@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   if (!orderSessionToken) {
     return json(
-      { ok: false, error: "Phiên đặt hàng chưa hợp lệ, vui lòng đăng nhập lại" },
+      { ok: false, code: "SESSION_EXPIRED", error: "Phiên đặt hàng chưa hợp lệ, vui lòng đăng nhập lại" },
       401
     );
   }
@@ -75,12 +75,20 @@ export async function POST(req: NextRequest) {
 
   if (sessionErr || !sessionData) {
     return json(
-      { ok: false, error: "Phiên đặt hàng đã hết hạn, vui lòng đăng nhập lại" },
+      { ok: false, code: "SESSION_EXPIRED", error: "Phiên đặt hàng đã hết hạn, vui lòng đăng nhập lại" },
       401
     );
   }
 
   const customerId = sessionData.customer_id;
+  const { data: orderingCustomer, error: orderingCustomerError } = await supabaseAdmin
+    .from("vip_accounts")
+    .select("sales_rep_id, verification_status, is_active")
+    .eq("id", customerId)
+    .maybeSingle();
+  if (orderingCustomerError || !orderingCustomer?.is_active || orderingCustomer.verification_status === "rejected") {
+    return json({ ok: false, code: "CUSTOMER_NOT_ELIGIBLE", error: "Tài khoản chưa được phép đặt hàng" }, 403);
+  }
 
   // 1. Kiểm tra ngày giao hàng (bắt buộc, ≥ hôm nay, ≤ +30 ngày) — quyết định D4
   const deliveryDate = String(body.deliveryDate || "").trim();
@@ -178,7 +186,7 @@ export async function POST(req: NextRequest) {
     : [];
 
   if (items.length === 0) {
-    return json({ ok: false, error: "Giỏ hàng đang trống" }, 400);
+    return json({ ok: false, code: "EMPTY_CART", error: "Giỏ hàng đang trống" }, 400);
   }
 
   const productIdsToValidate = [...new Set(items.map((item) => item.productId))];
@@ -318,35 +326,45 @@ export async function POST(req: NextRequest) {
   // bảng giá mới và ghi snapshot trước khi trả đơn cho khách.
   const { data: createdItems, error: createdItemsError } = await supabaseAdmin
     .from("order_items")
-    .select("id, product_id, quantity")
+    .select("id, product_id, quantity, price_source, final_unit_price, customer_note")
     .eq("order_id", order.id);
   if (createdItemsError) {
-    await supabaseAdmin.from("orders").delete().eq("id", order.id);
     return json({ ok: false, error: "Không kiểm tra được bảng giá của đơn hàng" }, 500);
+  }
+  // RPC trả lại cùng đơn nếu idempotencyKey được gửi lại. Khi đơn đã có
+  // snapshot giá, không tính giá lần nữa (đặc biệt sau khi sale đã chốt).
+  const notesReady = (createdItems || []).every((item) => {
+    const matchingInputs = items.filter((input) => input.productId === item.product_id);
+    return !(matchingInputs.some((input) => input.note) || item.price_source === "pending_sale_price") || Boolean(item.customer_note);
+  });
+  if (createdItems?.length && order.delivery_date && notesReady && createdItems.every((item) => item.price_source)) {
+    return json({
+      ok: true,
+      orderId: order.id,
+      orderCode: order.order_code,
+      status: order.status,
+      pricingStatus: order.pricing_status || "provisional",
+      pendingPriceCount: createdItems.filter((item) => item.final_unit_price == null).length,
+      total: Number(order.grand_total || 0),
+      deliveryDate: order.delivery_date || deliveryDate,
+      isLate: false,
+    });
   }
   const productIds = (createdItems || []).map((item) => item.product_id).filter(Boolean) as string[];
   const resolvedPrices = await resolvePriceBookPrices(supabaseAdmin, customerId, productIds);
-  const missingItems = (createdItems || []).filter((item) => resolvedPrices.get(item.product_id)?.price == null);
-  if (missingItems.length) {
-    await supabaseAdmin.from("orders").delete().eq("id", order.id);
-    return json({
-      ok: false,
-      code: "PRICE_MISSING",
-      error: `Có ${missingItems.length} sản phẩm chưa có giá trong bảng giá áp dụng. Vui lòng liên hệ TPS1.`,
-      productIds: missingItems.map((item) => item.product_id),
-    }, 409);
-  }
+  const missingItems = (createdItems || []).filter((item) => Number(resolvedPrices.get(item.product_id)?.price || 0) <= 0);
 
   let resolvedSubtotal = 0;
   const usedBooks = new Map<string, { id: string; version: number; name: string; source: string }>();
   const pendingInputsByProduct = new Map<string, typeof items>();
   for (const input of items) pendingInputsByProduct.set(input.productId, [...(pendingInputsByProduct.get(input.productId) || []), input]);
   for (const item of createdItems || []) {
-    const priceInfo = resolvedPrices.get(item.product_id)!;
-    const price = Number(priceInfo.price);
+    const priceInfo = resolvedPrices.get(item.product_id);
+    const hasPrice = priceInfo?.price != null && Number(priceInfo.price) > 0;
+    const price = hasPrice ? Number(priceInfo!.price) : 0;
     const lineTotal = Math.round(price * Number(item.quantity));
     resolvedSubtotal += lineTotal;
-    if (priceInfo.priceBookId) {
+    if (hasPrice && priceInfo?.priceBookId) {
       usedBooks.set(priceInfo.priceBookId, {
         id: priceInfo.priceBookId,
         version: priceInfo.priceBookVersion || 1,
@@ -359,18 +377,18 @@ export async function POST(req: NextRequest) {
     const constraint = constraintById.get(item.product_id);
     const { error: itemPriceError } = await supabaseAdmin.from("order_items").update({
       base_unit_price: price,
-      general_unit_price: priceInfo.priceSource === "general_price_book" || priceInfo.priceSource === "general_fallback" ? price : null,
-      assigned_unit_price: price,
+      general_unit_price: hasPrice && (priceInfo?.priceSource === "general_price_book" || priceInfo?.priceSource === "general_fallback") ? price : null,
+      assigned_unit_price: hasPrice ? price : null,
       unit_price: price,
-      final_unit_price: price,
+      final_unit_price: hasPrice ? price : null,
       line_total: lineTotal,
-      final_line_total: lineTotal,
+      final_line_total: hasPrice ? lineTotal : null,
       discount_percent: 0,
       discount_amount: 0,
-      price_source: priceInfo.priceSource,
-      price_book_id: priceInfo.priceBookId,
-      price_book_version: priceInfo.priceBookVersion,
-      price_resolved_at: new Date().toISOString(),
+      price_source: hasPrice ? priceInfo?.priceSource : "pending_sale_price",
+      price_book_id: hasPrice ? priceInfo?.priceBookId : null,
+      price_book_version: hasPrice ? priceInfo?.priceBookVersion : null,
+      price_resolved_at: hasPrice ? new Date().toISOString() : null,
       packaging_note: constraint?.packaging_note || null,
       min_qty_snapshot: constraint?.min_order_qty ?? null,
       order_step_snapshot: constraint?.order_step ?? null,
@@ -379,7 +397,6 @@ export async function POST(req: NextRequest) {
       source_conversion_factor: sourceLine?.conversion_factor || null,
     }).eq("id", item.id);
     if (itemPriceError) {
-      await supabaseAdmin.from("orders").delete().eq("id", order.id);
       return json({ ok: false, error: "Không lưu được giá sản phẩm vào đơn hàng" }, 500);
     }
   }
@@ -392,12 +409,12 @@ export async function POST(req: NextRequest) {
     customer_tier: null,
     price_book_id: primaryBook?.id || null,
     price_book_version: primaryBook?.version || null,
-    price_resolution_status: "resolved",
+    price_resolution_status: missingItems.length ? "pending" : "resolved",
     customer_price_source: [...new Set([...usedBooks.values()].map((book) => book.source))].join(","),
     source_import_batch_id: sourceImportBatchId,
+    sales_rep_id: orderingCustomer.sales_rep_id || null,
   }).eq("id", order.id);
   if (resolvedOrderError) {
-    await supabaseAdmin.from("orders").delete().eq("id", order.id);
     return json({ ok: false, error: "Không lưu được bảng giá áp dụng cho đơn hàng" }, 500);
   }
 
@@ -415,8 +432,6 @@ export async function POST(req: NextRequest) {
     orderUpdates.delivery_address_id = selectedAddress.id;
   }
 
-  const warnings: string[] = [];
-
   const { error: updateOrderErr } = await supabaseAdmin
     .from("orders")
     .update(orderUpdates)
@@ -424,23 +439,22 @@ export async function POST(req: NextRequest) {
 
   if (updateOrderErr) {
     console.error("Lỗi UPDATE orders sau customer_create_order:", updateOrderErr);
-    warnings.push("delivery_info_not_saved");
+    return json({ ok: false, error: "Không lưu được thông tin giao hàng" }, 500);
   }
 
   // Cập nhật customer_note cho từng dòng order_items (≤200 ký tự)
+  const unpricedProductIds = new Set(missingItems.map((item) => item.product_id));
   for (const it of items) {
-    if (it.note) {
+    if (it.note || unpricedProductIds.has(it.productId)) {
       const { error: noteErr } = await supabaseAdmin
         .from("order_items")
-        .update({ customer_note: it.note })
+        .update({ customer_note: it.note || "Chờ sale báo giá; nếu không có hàng, bỏ dòng trước khi xác nhận" })
         .eq("order_id", order.id)
         .eq("product_id", it.productId);
 
       if (noteErr) {
         console.error("Lỗi UPDATE order_items.customer_note:", noteErr);
-        if (!warnings.includes("item_notes_not_saved")) {
-          warnings.push("item_notes_not_saved");
-        }
+        return json({ ok: false, error: "Không lưu được ghi chú mặt hàng" }, 500);
       }
     }
   }
@@ -478,7 +492,7 @@ export async function POST(req: NextRequest) {
           deliveryAddress,
           deliveryName,
           deliveryPhone,
-          message: `Mã đơn: ${order.order_code}\nNgày giao: ${deliveryDate} ${isLate ? "(TRỄ GIỜ CHỐT)" : ""}\nĐịa chỉ giao: ${deliveryAddress || "Nhận tại điểm"}\nNgười nhận: ${deliveryName} - ${deliveryPhone}\nGhi chú: ${note || "Không có"}\nTạm tính: ${order.grand_total}đ`,
+          message: `Mã đơn: ${order.order_code}\nNgày giao: ${deliveryDate} ${isLate ? "(TRỄ GIỜ CHỐT)" : ""}\nĐịa chỉ giao: ${deliveryAddress || "Nhận tại điểm"}\nNgười nhận: ${deliveryName} - ${deliveryPhone}\nGhi chú: ${note || "Không có"}\nTạm tính: ${resolvedSubtotal}đ`,
           selectedItems: items
             .map((item) => `${item.name || item.productId} x${item.quantity}${item.note ? ` [${item.note}]` : ""}`)
             .join(" | "),
@@ -498,10 +512,10 @@ export async function POST(req: NextRequest) {
     orderCode: order.order_code,
     status: order.status,
     pricingStatus: fullOrder?.pricing_status || "provisional",
+    pendingPriceCount: missingItems.length,
     total: resolvedSubtotal,
     deliveryDate,
     isLate,
-    warnings: warnings.length ? warnings : undefined,
     items: fullOrder?.items || [],
     idempotencyKey,
   });

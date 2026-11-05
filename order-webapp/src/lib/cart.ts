@@ -7,23 +7,23 @@ export interface CartLine {
   note?: string;
 }
 
-const CART_KEY = 'tps1_order_cart_v1';
+const cartKey = (customerId: string) => `tps1_order_cart_v2_${customerId}`;
 
-function readCart(): Record<string, CartLine> {
+function readCart(customerId: string): Record<string, CartLine> {
   try {
-    const raw = sessionStorage.getItem(CART_KEY);
+    const raw = localStorage.getItem(cartKey(customerId));
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
 
-export function useCart() {
-  const [cart, setCart] = useState<Record<string, CartLine>>(() => readCart());
+export function useCart(customerId: string) {
+  const [cart, setCart] = useState<Record<string, CartLine>>(() => readCart(customerId));
 
   useEffect(() => {
-    sessionStorage.setItem(CART_KEY, JSON.stringify(cart));
-  }, [cart]);
+    localStorage.setItem(cartKey(customerId), JSON.stringify(cart));
+  }, [cart, customerId]);
 
   const addItem = useCallback((product: Product, qty = 1, note = '') => {
     setCart((prev) => {

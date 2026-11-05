@@ -1,6 +1,7 @@
 import { ChefHat, Repeat2, Heart, Sparkles, FolderOpen, Plus } from 'lucide-react';
 import type { Product, Order } from '../../lib/api';
 import ProductThumbnail from './ProductThumbnail';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 function money(v: number) {
   return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ';
@@ -35,6 +36,7 @@ export default function QuickOrderSections({
   categoryProducts,
   onAddProduct,
 }: QuickOrderSectionsProps) {
+  const { t, productName, productUnit } = useLanguage();
   const hasAnyQuickSection =
     Boolean(latestOrder) ||
     frequentProducts.length > 0 ||
@@ -53,11 +55,11 @@ export default function QuickOrderSections({
           </span>
           <div>
             <h2 className="font-bold text-sm sm:text-base text-[#17231d] flex items-center gap-1.5">
-              <span>Đặt nhanh cho bếp</span>
+              <span>{t('Đặt nhanh cho bếp')}</span>
               <Sparkles size={14} className="text-[#e0742f]" />
             </h2>
             <p className="text-[11px] sm:text-xs text-[#59665f]">
-              Món quen thuộc, thêm vào đơn chỉ bằng một chạm
+              {t('Món quen thuộc, thêm vào đơn chỉ bằng một chạm')}
             </p>
           </div>
         </div>
@@ -70,10 +72,10 @@ export default function QuickOrderSections({
         >
           <Repeat2 size={15} className={loadingLatestOrder ? 'animate-spin' : ''} />
           <span className="hidden sm:inline">
-            {loadingLatestOrder ? 'Đang nạp đơn...' : 'Đặt lại đơn gần nhất'}
+            {t(loadingLatestOrder ? 'Đang nạp đơn...' : 'Đặt lại đơn gần nhất')}
           </span>
           <span className="sm:hidden">
-            {loadingLatestOrder ? 'Đang nạp' : 'Đặt lại đơn'}
+            {t(loadingLatestOrder ? 'Đang nạp' : 'Đặt lại đơn')}
           </span>
         </button>
       </div>
@@ -83,7 +85,7 @@ export default function QuickOrderSections({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#59665f] flex items-center gap-1">
-              <span>Hàng thường mua</span>
+              <span>{t('Hàng thường mua')}</span>
               <span className="px-1.5 py-0.2 rounded-full bg-[#0f7a4f]/10 text-[#0f7a4f] text-[10px] font-mono">
                 {frequentProducts.length}
               </span>
@@ -106,12 +108,13 @@ export default function QuickOrderSections({
                     <ProductThumbnail product={product} size="sm" />
                     <div className="min-w-0 flex-1">
                       <span className="block text-xs font-semibold truncate text-[#17231d] group-hover:text-[#0f7a4f] transition-colors">
-                        {product.name}
+                        {productName(product.name)}
                       </span>
+                      {product.sku && <span className="block text-[10px] text-[#59665f] truncate">{product.sku}</span>}
                       <span className="block text-[11px] text-[#59665f] mt-0.5">
-                        {product.unit || 'Kg'} •{' '}
+                        {productUnit(product.unit || 'Kg')} •{' '}
                         <strong className="text-[#0f7a4f]">
-                          {product.priceOnRequest ? 'Liên hệ' : money(product.price)}
+                          {product.priceOnRequest ? t('Chờ sale báo giá') : money(product.price)}
                         </strong>
                       </span>
                     </div>
@@ -139,7 +142,7 @@ export default function QuickOrderSections({
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#59665f] mb-1.5 flex items-center gap-1.5">
             <Heart size={13} className="fill-rose-500 text-rose-500" />
-            <span>Món yêu thích của bếp</span>
+            <span>{t('Món yêu thích của bếp')}</span>
             <span className="px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-700 text-[10px] font-mono border border-rose-200">
               {favoriteProducts.length}
             </span>
@@ -158,10 +161,11 @@ export default function QuickOrderSections({
                   <ProductThumbnail product={product} size="sm" />
                   <div className="min-w-0 flex-1">
                     <span className="block text-xs font-semibold truncate text-[#17231d] group-hover:text-rose-700">
-                      {product.name}
+                      {productName(product.name)}
                     </span>
+                    {product.sku && <span className="block text-[10px] text-[#59665f] truncate">{product.sku}</span>}
                     <span className="block text-[11px] text-[#0f7a4f] font-bold mt-0.5">
-                      {product.priceOnRequest ? 'Liên hệ' : money(product.price)}
+                      {product.priceOnRequest ? t('Chờ sale báo giá') : money(product.price)}
                     </span>
                   </div>
                 </button>
@@ -185,7 +189,7 @@ export default function QuickOrderSections({
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#59665f] mb-1.5 flex items-center gap-1">
             <FolderOpen size={13} className="text-[#0f7a4f]" />
-            <span>Duyệt theo nhóm hàng</span>
+            <span>{t('Duyệt theo nhóm hàng')}</span>
           </p>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
             <button
@@ -197,7 +201,7 @@ export default function QuickOrderSections({
                   : 'bg-[#f8faf7] text-[#59665f] border-[#17231d]/10 hover:border-[#0f7a4f]/30 hover:text-[#17231d]'
               }`}
             >
-              Tất cả nhóm
+              {t('Tất cả nhóm')}
             </button>
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat;
@@ -212,7 +216,7 @@ export default function QuickOrderSections({
                       : 'bg-[#f8faf7] text-[#59665f] border-[#17231d]/10 hover:border-[#0f7a4f]/30 hover:text-[#17231d]'
                   }`}
                 >
-                  {cat}
+                  {productName(cat)}
                 </button>
               );
             })}
@@ -231,12 +235,13 @@ export default function QuickOrderSections({
                   <ProductThumbnail product={product} size="sm" />
                   <div className="min-w-0 flex-1">
                     <span className="block text-xs font-semibold truncate group-hover:text-[#0f7a4f]">
-                      {product.name}
+                      {productName(product.name)}
                     </span>
+                    {product.sku && <span className="block text-[10px] text-[#59665f] truncate">{product.sku}</span>}
                     <span className="block text-[10px] text-[#59665f] mt-0.5">
-                      {product.unit || 'Kg'} •{' '}
+                      {productUnit(product.unit || 'Kg')} •{' '}
                       <strong className="text-[#0f7a4f]">
-                        {product.priceOnRequest ? 'Liên hệ' : money(product.price)}
+                        {product.priceOnRequest ? t('Chờ sale báo giá') : money(product.price)}
                       </strong>
                     </span>
                   </div>

@@ -85,6 +85,16 @@ export async function POST(req: NextRequest) {
     if (updateErr) throw updateErr;
 
     const affectedRows = updatedRows?.length || 0;
+    const updatedIds = (updatedRows || []).map((row) => row.id);
+    if (updatedIds.length) {
+      const { error: pendingOrderError } = await supabase
+        .from("orders")
+        .update({ sales_rep_id: salesRepId })
+        .in("customer_id", updatedIds)
+        .eq("status", "pending")
+        .is("sales_rep_id", null);
+      if (pendingOrderError) throw pendingOrderError;
+    }
 
     console.log(
       `[ASSIGN_REP] ${auth.profile?.name} (${role}) đã gán ${affectedRows} khách hàng cho ${staff.name} (${staff.id})`

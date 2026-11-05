@@ -24,9 +24,11 @@ export function clearToken() {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -54,7 +56,7 @@ async function request<T = any>(
     // vd tải file nhị phân (PDF) — để caller tự xử lý res gốc qua requestRaw
   }
   if (!res.ok || (data && data.ok === false)) {
-    throw new ApiError(data?.error || `Lỗi máy chủ (${res.status})`, res.status);
+    throw new ApiError(data?.error || `Lỗi máy chủ (${res.status})`, res.status, data?.code);
   }
   return data as T;
 }
@@ -62,8 +64,7 @@ async function request<T = any>(
 export async function requestFile(path: string): Promise<Blob> {
   const token = getToken();
   const url = new URL(`${API_BASE}${path}`, window.location.href);
-  if (token) url.searchParams.set('sessionToken', token);
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new ApiError(data?.error || 'Không tải được tệp', res.status);
@@ -89,6 +90,9 @@ export interface CustomerSession {
 }
 
 export const api = {
+  register: (payload: { name: string; company: string; phone: string; email: string; password: string }) =>
+    request<{ ok: true; account: { id: string; code: string; verificationStatus: 'pending' } }>(
+      '/api/customer/register', { method: 'POST', auth: false, body: { ...payload, confirmPassword: payload.password, source: 'website' } }),
   login: (code: string, password: string) =>
     request<{ ok: true; session: CustomerSession }>('/api/customer/login', {
       method: 'POST',
@@ -143,7 +147,7 @@ export const api = {
     idempotencyKey: string;
     sourceImportBatchId?: string;
   }) =>
-    request<{ ok: true; orderId: string; orderCode: string; total: number }>('/api/customer/order', {
+    request<{ ok: true; orderId: string; orderCode: string; total: number; pendingPriceCount: number }>('/api/customer/order', {
       method: 'POST',
       body: {
         source: 'website',

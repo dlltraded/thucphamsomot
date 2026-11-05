@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Package, ClipboardList, LogOut, FileSpreadsheet, UserCircle2, Phone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationBell from '../components/NotificationBell';
+import { LanguageSwitcher, useLanguage } from '../contexts/LanguageContext';
 
 const tabs = [
   { to: '/', label: 'Đặt hàng', icon: Package, end: true },
@@ -11,6 +12,7 @@ const tabs = [
 
 export default function CustomerLayout() {
   const { session, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -29,7 +31,7 @@ export default function CustomerLayout() {
           <div className="flex items-center gap-3.5 min-w-0">
             <NavLink to="/" className="bg-white/95 px-3 py-1.5 rounded-xl shadow-sm border border-white/50 shrink-0 hover:bg-white transition-colors">
               <img
-                src="/images/tps1-logo-horizontal.png"
+                src={`${import.meta.env.BASE_URL}images/tps1-logo-horizontal.png`}
                 alt="Thực Phẩm Số Một (TPS1)"
                 className="h-7 w-auto object-contain"
               />
@@ -40,7 +42,7 @@ export default function CustomerLayout() {
               </p>
               <div className="flex items-center gap-1.5 text-[11px] text-emerald-100/80 font-mono mt-0.5">
                 <span className="font-bold">{session?.code}</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-900/60 text-emerald-200 border border-emerald-400/30 text-[10px]">Đối tác TPS1</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-900/60 text-emerald-200 border border-emerald-400/30 text-[10px]">TPS1</span>
               </div>
             </div>
           </div>
@@ -60,7 +62,7 @@ export default function CustomerLayout() {
                   }`
                 }
               >
-                <Icon size={16} /> {label}
+                <Icon size={16} /> {t(label)}
               </NavLink>
             ))}
             <NavLink
@@ -71,7 +73,7 @@ export default function CustomerLayout() {
                 }`
               }
             >
-              <UserCircle2 size={16} /> Tài khoản
+              <UserCircle2 size={16} /> {t('Tài khoản')}
             </NavLink>
 
             {/* Hotline B2B TPS1 */}
@@ -87,26 +89,20 @@ export default function CustomerLayout() {
             <div className="h-4 w-[1px] bg-white/20 mx-1" />
 
             <NotificationBell />
+            <LanguageSwitcher dark />
 
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white/75 hover:bg-white/12 hover:text-white transition-colors cursor-pointer"
               title="Đăng xuất"
             >
-              <LogOut size={16} />
+              <LogOut size={16} /><span className="sr-only">{t('Đăng xuất')}</span>
             </button>
           </nav>
 
           {/* Mobile Top Bar */}
           <div className="flex md:hidden items-center gap-2">
-            <a
-              href="tel:0898902222"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-200 border border-amber-400/35 text-[11px] font-bold"
-              title="Gọi hotline TPS1"
-            >
-              <Phone size={11} className="text-amber-300" />
-              <span>0898902222</span>
-            </a>
+            <LanguageSwitcher dark />
             <NotificationBell />
             <button
               onClick={() => navigate('/doi-mat-khau')}
@@ -121,6 +117,7 @@ export default function CustomerLayout() {
 
       {/* Main Content Area */}
       <main className="max-w-[1520px] mx-auto w-full px-2.5 sm:px-4 lg:px-6 py-3.5 flex-1 pb-24 md:pb-6">
+        {session?.verificationStatus === 'pending' && <div role="status" className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">{t('Tài khoản của bạn đang chờ xác minh. Đơn đầu tiên sẽ được tiếp nhận nhưng chỉ xử lý sau khi TPS1 xác minh.')}</div>}
         <Outlet />
       </main>
 
@@ -153,7 +150,7 @@ export default function CustomerLayout() {
                   >
                     <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                   </span>
-                  <span className={isActive ? 'font-bold' : 'font-medium'}>{label}</span>
+                  <span className={isActive ? 'font-bold' : 'font-medium'}>{t(label)}</span>
                 </>
               )}
             </NavLink>

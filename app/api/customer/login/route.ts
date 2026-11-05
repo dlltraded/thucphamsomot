@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   // Giới hạn số lần đăng nhập sai (mã khách hàng dạng viết tắt dễ đoán) — yêu cầu 2026-09-20
   if (await isLoginBlocked(req, rawCode)) {
-    return NextResponse.json({ ok: false, error: LOGIN_BLOCKED_MESSAGE }, { status: 429, headers: corsHeaders });
+    return NextResponse.json({ ok: false, code: "LOGIN_RATE_LIMITED", error: LOGIN_BLOCKED_MESSAGE }, { status: 429, headers: corsHeaders });
   }
 
   const supabase = getCustomerSupabase();
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
   if (!row) {
     await recordLoginFailure(req, rawCode);
     return NextResponse.json(
-      { ok: false, error: "Mã khách hàng hoặc mật khẩu không đúng" },
+      { ok: false, code: "INVALID_CREDENTIALS", error: "Mã khách hàng hoặc mật khẩu không đúng" },
       { status: 401, headers: corsHeaders }
     );
   }

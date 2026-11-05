@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Camera, CheckCircle2, FileText, Loader2, Sparkles, Upload, X, XCircle } from 'lucide-react';
 import { getToken } from '../lib/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : 'https://thucphamsomot.vn')).replace(/\/$/, '');
 
@@ -134,13 +135,14 @@ function Summary({ label, value, color }: { label: string; value: number; color:
   return <div className={`rounded-xl border p-3 text-center ${cls}`}><div className="text-xl font-black">{value}</div><div className="text-[11px] font-bold">{label}</div></div>;
 }
 function LineCard({ line, disabled, onPatch }: { line: ImportLine; disabled: boolean; onPatch: (update: Record<string, unknown>) => void }) {
+  const { productName } = useLanguage();
   const isValid = line.status === 'matched'; const isReview = line.status === 'ambiguous';
   const color = isValid ? 'border-green-200 bg-green-50/60' : isReview ? 'border-amber-200 bg-amber-50/60' : 'border-red-200 bg-red-50/60';
   return <div className={`rounded-2xl border p-3.5 ${color}`}>
     <div className="flex items-start gap-3">{isValid ? <CheckCircle2 className="text-green-600 shrink-0" size={20}/> : isReview ? <AlertTriangle className="text-amber-600 shrink-0" size={20}/> : <XCircle className="text-red-600 shrink-0" size={20}/>}<div className="min-w-0 flex-1">
       <div className="flex flex-wrap justify-between gap-2"><div><p className="font-bold text-sm text-[#17231d]">{line.raw_name}</p><p className="text-xs text-[#59665f]">Đọc được: {line.raw_quantity} {line.raw_unit || ''}{line.raw_note ? ` · ${line.raw_note}` : ''}</p></div>{line.resolved_price != null && <span className="font-bold text-sm text-[#0f7a4f]">{new Intl.NumberFormat('vi-VN').format(line.resolved_price)}đ</span>}</div>
-      {line.product && <p className="mt-1.5 text-xs font-semibold text-[#0f7a4f]">→ {line.product.name} ({line.product.sku}) · {line.converted_quantity} {line.product.unit}</p>}
-      {isReview && line.suggestions?.length ? <div className="mt-2 flex flex-wrap gap-2">{line.suggestions.map((item) => <button disabled={disabled} key={item.id} onClick={() => onPatch({ productId: item.id, quantity: line.raw_quantity, inputUnit: line.raw_unit || item.unit })} className="text-xs bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 hover:border-[#0f7a4f]">{item.name} ({item.sku}) · {Math.round(item.score*100)}%</button>)}</div> : null}
+      {line.product && <p className="mt-1.5 text-xs font-semibold text-[#0f7a4f]">→ {productName(line.product.name)} ({line.product.sku}) · {line.converted_quantity} {line.product.unit}</p>}
+      {isReview && line.suggestions?.length ? <div className="mt-2 flex flex-wrap gap-2">{line.suggestions.map((item) => <button disabled={disabled} key={item.id} onClick={() => onPatch({ productId: item.id, quantity: line.raw_quantity, inputUnit: line.raw_unit || item.unit })} className="text-xs bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 hover:border-[#0f7a4f]">{productName(item.name)} ({item.sku}) · {Math.round(item.score*100)}%</button>)}</div> : null}
       {!isValid && line.warnings?.map((warning) => <p key={warning} className="text-xs text-red-700 mt-1.5 font-semibold">{warning}</p>)}
       {line.selected_product_id && <div className="mt-2 flex flex-wrap items-center gap-2"><input type="number" min="0.001" step="any" defaultValue={line.raw_quantity} className="w-24 px-2 py-1.5 border rounded-lg text-sm" onBlur={(event) => { const qty=Number(event.target.value); if(qty!==Number(line.raw_quantity)) onPatch({ productId: line.selected_product_id, quantity: qty, inputUnit: line.raw_unit || line.product?.unit || '' }); }}/><input defaultValue={line.raw_unit || line.product?.unit || ''} className="w-24 px-2 py-1.5 border rounded-lg text-sm" onBlur={(event) => { if(event.target.value!==(line.raw_unit||'')) onPatch({ productId: line.selected_product_id, quantity: line.raw_quantity, inputUnit: event.target.value }); }}/><button disabled={disabled} onClick={() => line.selected ? onPatch({ selected: false }) : onPatch({ productId: line.selected_product_id, quantity: line.raw_quantity, inputUnit: line.raw_unit || line.product?.unit || '', selected: true })} className="text-xs underline text-[#59665f]">{line.selected ? 'Bỏ dòng này' : 'Chọn lại dòng này'}</button></div>}
     </div></div>

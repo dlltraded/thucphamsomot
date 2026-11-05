@@ -173,7 +173,7 @@ export async function finalizeOrderWithLegacyLineEditor(
       const quantity = Number(input.quantity || 0);
       const finalUnitPrice = Number(input.finalUnitPrice || 0);
       const note = String(input.note || "").trim();
-      if (!(quantity > 0) || finalUnitPrice < 0) throw new Error("Số lượng hoặc đơn giá sản phẩm không hợp lệ");
+      if (!(quantity > 0) || !(finalUnitPrice > 0)) throw new Error("Mỗi mặt hàng giữ lại phải có đơn giá lớn hơn 0; hãy nhập giá hoặc xóa mặt hàng không cung cấp được");
 
       let itemId = String(input.itemId || "").trim();
       const identifier = String(input.productId || input.productLocalId || "").trim();

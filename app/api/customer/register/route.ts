@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     });
     if (error) {
       const duplicate = /đã có tài khoản|duplicate|unique/i.test(error.message || "");
-      return json({ ok: false, error: duplicate ? "Số điện thoại này đã có tài khoản" : error.message }, duplicate ? 409 : 400);
+      return json({ ok: false, code: duplicate ? "PHONE_ALREADY_REGISTERED" : "REGISTRATION_FAILED", error: duplicate ? "Số điện thoại này đã có tài khoản" : error.message }, duplicate ? 409 : 400);
     }
     const account = Array.isArray(data) ? data[0] : data;
     if (!account) return json({ ok: false, error: "Không tạo được tài khoản" }, 500);

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -20,6 +20,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { api, ApiError } from '../lib/api';
 import ProductThumbnail from '../components/products/ProductThumbnail';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function money(v: number) {
   return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ';
@@ -35,6 +36,7 @@ function getTomorrowDateStr() {
 }
 
 export default function CartPage() {
+  const { t, errorText, productName, productUnit } = useLanguage();
   const { lines, total, setQty, setNote: setLineNote, removeItem, clear } = useCart();
   const { session } = useAuth();
   const navigate = useNavigate();
@@ -46,13 +48,26 @@ export default function CartPage() {
   const [deliveryName, setDeliveryName] = useState(defaultShipping?.name || session?.name || '');
   const [deliveryPhone, setDeliveryPhone] = useState(defaultShipping?.phone || session?.phone || '');
   const [deliveryDate, setDeliveryDate] = useState(getTomorrowDateStr());
+  const [earliestDate, setEarliestDate] = useState('');
+  const [cutoffTimeStr, setCutoffTimeStr] = useState('');
   const [deliveryShift, setDeliveryShift] = useState('Ca sáng sớm (05:00 - 07:00)');
   const [generalNote, setGeneralNote] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successCode, setSuccessCode] = useState('');
+  const [submittedPendingPriceCount, setSubmittedPendingPriceCount] = useState(0);
   const idempotencyKey = useRef(crypto.randomUUID());
+  useEffect(() => {
+    let alive = true;
+    api.orderConfig().then(info => {
+      if (!alive) return;
+      setEarliestDate(info.earliestDate);
+      setCutoffTimeStr(info.cutoffTimeStr);
+      setDeliveryDate(current => current < info.earliestDate ? info.earliestDate : current);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   const submitOrder = async () => {
     setError('');
@@ -60,6 +75,8 @@ export default function CartPage() {
       setError('Giỏ hàng đang trống');
       return;
     }
+    if (!navigator.onLine) { setError(t('Không có kết nối mạng. Giỏ hàng của bạn đã được lưu.')); return; }
+    if (earliestDate && deliveryDate < earliestDate) { setError(t('Đã quá giờ chốt đơn. Vui lòng chọn ngày giao mới.')); setDeliveryDate(earliestDate); return; }
     if (!deliveryAddress.trim() || !deliveryName.trim() || !deliveryPhone.trim()) {
       setError('Vui lòng nhập đầy đủ Tên người nhận, SĐT và Địa chỉ nhận hàng');
       return;
@@ -98,10 +115,12 @@ export default function CartPage() {
       });
 
       setSuccessCode(res.orderCode);
+      setSubmittedPendingPriceCount(res.pendingPriceCount || 0);
+      idempotencyKey.current = crypto.randomUUID();
       clear();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'Không gửi được đơn hàng, vui lòng thử lại sau.'
+        err instanceof ApiError ? errorText(err) : t('Không gửi được đơn hàng, vui lòng thử lại sau.')
       );
     } finally {
       setSubmitting(false);
@@ -115,14 +134,16 @@ export default function CartPage() {
           <div className="w-20 h-20 rounded-full bg-emerald-50 border border-emerald-200 text-[#0f7a4f] flex items-center justify-center mx-auto shadow-inner">
             <CheckCircle2 size={42} />
           </div>
-          <h2 className="text-2xl font-black text-[#17231d]">Đặt hàng thành công!</h2>
+          <h2 className="text-2xl font-black text-[#17231d]">{t('Gửi đơn đặt hàng thành công!')}</h2>
           <p className="text-sm text-[#59665f] leading-relaxed">
-            Mã đơn hàng của bạn là{' '}
+            {t('Mã đơn hàng:')}{' '}
             <strong className="text-[#0f7a4f] font-mono text-base px-2 py-0.5 bg-[#0f7a4f]/10 rounded-lg">
               {successCode}
             </strong>
-            . Nhân viên kinh doanh TPS1 sẽ liên hệ xác nhận giá thực tế và sắp xếp xe lạnh giao theo đúng ca hẹn.
+            . {t('TPS1 sẽ liên hệ xác nhận giá và lịch giao hàng.')}
           </p>
+          {session?.verificationStatus === 'pending' && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{t('Đã gửi đơn, chờ TPS1 xác minh tài khoản và xác nhận đơn.')}</p>}
+          {submittedPendingPriceCount > 0 && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{t('Có mặt hàng đang chờ sale báo giá. Sale sẽ nhập giá hoặc bỏ mặt hàng không có hàng trước khi xác nhận đơn.')}</p>}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3">
             <button
@@ -133,13 +154,13 @@ export default function CartPage() {
               className="px-5 py-3 rounded-xl border border-[#17231d]/15 text-[#17231d] font-bold text-xs hover:bg-[#f5f7f3] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
             >
               <ShoppingBag size={15} />
-              <span>Tiếp tục đặt hàng</span>
+              <span>{t('Tiếp tục đặt đơn')}</span>
             </button>
             <button
               onClick={() => navigate('/don-hang')}
               className="px-5 py-3 rounded-xl bg-[#0f7a4f] hover:bg-[#0b4f34] text-white font-bold text-xs shadow-md shadow-[#0f7a4f]/25 transition-all cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <span>Xem đơn hàng của tôi</span>
+              <span>{t('Đơn hàng của tôi')}</span>
               <ArrowRight size={15} />
             </button>
           </div>
@@ -172,6 +193,7 @@ export default function CartPage() {
   }
 
   const totalQuantity = lines.reduce((s, l) => s + l.quantity, 0);
+  const pendingPriceCount = lines.filter(line => line.product.priceOnRequest || line.product.price <= 0).length;
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 pb-10">
@@ -215,8 +237,9 @@ export default function CartPage() {
                           </span>
                         )}
                         <h3 className="font-bold text-sm text-[#17231d] mt-0.5 leading-snug">
-                          {product.name}
+                          {productName(product.name)}
                         </h3>
+                        {productName(product.name) !== product.name && <p className="text-[11px] text-[#59665f]">{product.name}</p>}
                       </div>
 
                       <button
@@ -230,10 +253,10 @@ export default function CartPage() {
                     </div>
 
                     <p className="text-xs text-[#59665f] mt-1 font-medium">
-                      ĐVT: <strong className="text-[#17231d]">{product.unit || 'Kg'}</strong> ·{' '}
+                      {t('ĐVT:')} <strong className="text-[#17231d]">{productUnit(product.unit || 'Kg')}</strong> ·{' '}
                       Đơn giá:{' '}
                       <strong className="text-[#0f7a4f]">
-                        {product.priceOnRequest ? 'Liên hệ' : money(product.price)}
+                        {product.priceOnRequest ? t('Chờ sale báo giá') : money(product.price)}
                       </strong>
                     </p>
                   </div>
@@ -275,7 +298,7 @@ export default function CartPage() {
                   <div className="text-right">
                     <span className="text-[10px] text-[#59665f] block">Thành tiền</span>
                     <span className="font-mono font-bold text-sm sm:text-base text-[#0f7a4f]">
-                      {product.priceOnRequest ? 'Tạm tính 0đ' : money(lineTotal)}
+                      {product.priceOnRequest ? t('Chờ sale báo giá') : money(lineTotal)}
                     </span>
                   </div>
                 </div>
@@ -341,12 +364,13 @@ export default function CartPage() {
                   <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#59665f]/60" size={14} />
                     <input
                       type="date"
-                      min={new Date().toLocaleDateString('en-CA')}
+                      min={earliestDate}
                     value={deliveryDate}
                     onChange={(e) => setDeliveryDate(e.target.value)}
                     className="w-full pl-8 pr-2.5 py-2 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#0f7a4f]"
                   />
                 </div>
+                {earliestDate && <p className="mt-1 text-[11px] text-[#59665f]">{t('Ngày giao sớm nhất')}: {earliestDate}{cutoffTimeStr ? ` · ${t('Giờ chốt đơn')}: ${cutoffTimeStr}` : ''}</p>}
               </div>
 
               <div>
@@ -360,10 +384,10 @@ export default function CartPage() {
                     onChange={(e) => setDeliveryShift(e.target.value)}
                     className="w-full pl-8 pr-2.5 py-2 bg-[#f8faf7] border border-[#17231d]/15 rounded-xl text-xs font-semibold focus:outline-none focus:bg-white focus:border-[#0f7a4f] cursor-pointer"
                   >
-                    <option value="Ca sáng sớm (05:00 - 07:00)">Ca sáng sớm (05:00 - 07:00)</option>
-                    <option value="Ca sáng (07:00 - 09:00)">Ca sáng (07:00 - 09:00)</option>
-                    <option value="Ca trưa (09:30 - 11:00)">Ca trưa (09:30 - 11:00)</option>
-                    <option value="Ca chiều (14:00 - 16:00)">Ca chiều (14:00 - 16:00)</option>
+                    <option value="Ca sáng sớm (05:00 - 07:00)">{t('Ca sáng sớm (05:00 - 07:00)')}</option>
+                    <option value="Ca sáng (07:00 - 09:00)">{t('Ca sáng (07:00 - 09:00)')}</option>
+                    <option value="Ca trưa (09:30 - 11:00)">{t('Ca trưa (09:30 - 11:00)')}</option>
+                    <option value="Ca chiều (14:00 - 16:00)">{t('Ca chiều (14:00 - 16:00)')}</option>
                   </select>
                 </div>
               </div>
@@ -459,6 +483,7 @@ export default function CartPage() {
                   Giá hiển thị theo bảng giá hiện tại. TPS1 sẽ xác nhận lại các mặt hàng cần báo giá hoặc có điều chỉnh.
                 </span>
               </p>
+              {pendingPriceCount > 0 && <p className="rounded-xl bg-amber-50 p-2 text-xs font-semibold text-amber-800">{t('Tạm tính chưa gồm hàng chờ giá')} ({pendingPriceCount}). {t('Sale sẽ nhập giá hoặc bỏ mặt hàng không có hàng trước khi xác nhận đơn.')}</p>}
             </div>
 
             {error && (
