@@ -17,6 +17,5 @@ export default function ProductSearchBar({ value, onChange, onSubmit, inputRef }
       </div>
       <button type="submit" className="flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[#0f7a4f] px-4 text-sm font-bold text-white"><Search size={17}/><span>{t('Tìm')}</span></button>
     </div>
-    <p className="mt-2 text-xs text-[#718579]">{t('Nhập từ khóa rồi nhấn Tìm để xem sản phẩm.')}</p>
   </form>;
 }

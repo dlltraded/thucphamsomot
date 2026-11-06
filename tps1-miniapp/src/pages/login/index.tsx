@@ -4,27 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input } from "zmp-ui";
 import toast from "react-hot-toast";
 import { customerAuthState, shippingAddressState } from "@/state";
-import { supabase } from "@/utils/supabase";
-
-interface LoginRpcRow {
-  id: string;
-  code: string;
-  name: string;
-  phone: string;
-  company: string;
-  email: string;
-  tax_code: string;
-  address: string;
-  default_shipping_alias: string;
-  default_shipping_address: string;
-  default_shipping_name: string;
-  default_shipping_phone: string;
-  tier: string;
-  discount_percent: number;
-  verification_status?: "pending" | "verified" | "rejected";
-  must_change_password: boolean;
-  order_session_token: string;
-}
+import CONFIG from "@/config";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -40,24 +20,19 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim() || !password) {
-      toast.error("Vui lòng nhập đầy đủ Mã khách hàng và Mật khẩu");
+      toast.error("Vui lòng nhập SĐT hoặc tên đăng nhập và mật khẩu");
       return;
     }
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc("verify_customer_login", {
-        p_code: code.trim(),
-        p_password: password,
-      });
-
-      if (error) throw error;
-
-      const row: LoginRpcRow | undefined = Array.isArray(data) ? data[0] : data;
-      if (!row) {
-        toast.error("Mã khách hàng hoặc mật khẩu không đúng");
+      const response = await fetch(`${CONFIG.API_BASE}/api/customer/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: code.trim(), password }) });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        toast.error(data.error || "Thông tin đăng nhập hoặc mật khẩu không đúng");
         return;
       }
+      const row = data.session;
 
       const customer = {
         id: row.id,
@@ -66,13 +41,13 @@ export default function LoginPage() {
         phone: row.phone,
         company: row.company,
         email: row.email || "",
-        taxCode: row.tax_code || "",
+        taxCode: row.taxCode || "",
         address: row.address || "",
         defaultShippingAddress: {
-          alias: row.default_shipping_alias || "Địa chỉ mặc định",
-          address: row.default_shipping_address || row.address || "",
-          name: row.default_shipping_name || row.name || "",
-          phone: row.default_shipping_phone || row.phone || "",
+          alias: row.defaultShippingAddress?.alias || "Địa chỉ mặc định",
+          address: row.defaultShippingAddress?.address || row.address || "",
+          name: row.defaultShippingAddress?.name || row.name || "",
+          phone: row.defaultShippingAddress?.phone || row.phone || "",
           customerId: row.id,
           isDefault: true,
         },
@@ -80,11 +55,11 @@ export default function LoginPage() {
         // phát hành; giá mới chỉ đến từ bảng giá do server resolve.
         tier: "",
         discountPercent: 0,
-        verificationStatus: row.verification_status || "verified",
-        orderSessionToken: row.order_session_token || "",
+        verificationStatus: row.verificationStatus || "verified",
+        orderSessionToken: row.orderSessionToken || "",
       };
 
-      if (row.must_change_password) {
+      if (row.mustChangePassword) {
         navigate("/change-password", {
           replace: true,
           state: { customer, oldPassword: password, redirect },
@@ -118,16 +93,15 @@ export default function LoginPage() {
     >
       <div className="bg-section p-4 grid gap-4">
         <p className="text-sm text-subtitle">
-          Nhập Mã khách hàng và Mật khẩu do TPS1 cung cấp để xem bảng giá
-          đang áp dụng và đặt hàng.
+          Đăng nhập để đặt hàng và theo dõi đơn.
         </p>
         <Input
           name="code"
-          label="Mã khách hàng"
-          placeholder="TPS1-XXXX"
+          label="SĐT hoặc tên đăng nhập"
+          placeholder="SĐT hoặc tên đăng nhập"
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          autoCapitalize="characters"
+          onChange={(e) => setCode(e.target.value)}
+          autoCapitalize="none"
         />
         <Input
           name="password"
@@ -141,7 +115,7 @@ export default function LoginPage() {
       <div className="p-6 pt-4 bg-section">
         {searchParams.get("registered") === "1" && (
           <div className="mb-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs leading-5 text-green-800">
-            Đăng ký thành công. Mã khách hàng đã được điền sẵn; hãy nhập mật khẩu vừa tạo để tiếp tục đơn hàng.
+            Đăng ký thành công. Nhập mật khẩu vừa tạo để tiếp tục.
           </div>
         )}
         <Button htmlType="submit" fullWidth loading={submitting}>

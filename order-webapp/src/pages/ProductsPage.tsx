@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Search } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import {
   api,
   type Product,
@@ -12,8 +12,9 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
-import OrderTabsBar, { type OrderTab } from '../components/products/OrderTabsBar';
+import type { OrderTab } from '../components/products/OrderTabsBar';
 import ProductSearchBar from '../components/products/ProductSearchBar';
+import QuickOrderSections from '../components/products/QuickOrderSections';
 import ProductGrid from '../components/products/ProductGrid';
 import CartSummarySidebar from '../components/products/CartSummarySidebar';
 import CartFloatingBar from '../components/products/CartFloatingBar';
@@ -109,12 +110,12 @@ function getDefaultDelivery(session: any) {
   };
 }
 
-function createDefaultTab(index: number, session: any): OrderTab {
+function createDefaultTab(session: any): OrderTab {
   const defaultDelivery = getDefaultDelivery(session);
   return {
     id: `tab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     idempotencyKey: crypto.randomUUID(),
-    title: `Đặt hàng ${index}`,
+    title: 'Đặt hàng',
     items: [],
     note: '',
     deliveryDate: getTomorrowDateStr(),
@@ -129,46 +130,63 @@ export default function ProductsPage() {
   const { t, errorText, productName } = useLanguage();
   const navigate = useNavigate();
 
-  // 1. Quản lý hệ thống Đa tab đặt hàng
-  const [tabs, setTabs] = useState<OrderTab[]>(() => {
+  // Một giỏ đặt hàng; gom các giỏ cũ vào một giỏ khi nâng cấp từ bản beta trước.
+  const [activeTab, setActiveTab] = useState<OrderTab>(() => {
     try {
       const saved = localStorage.getItem(storageKeyFor(session?.id || 'guest'));
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const defaultDelivery = getDefaultDelivery(session);
-          return parsed.map((tab) => ({
-            ...tab,
-            idempotencyKey: tab?.idempotencyKey || crypto.randomUUID(),
-            ...(String(tab?.deliveryAddress || '').trim() ? {} : defaultDelivery),
-          }));
+          const sourceTabs = parsed.filter((tab) => tab && typeof tab === 'object');
+          const primary = sourceTabs[0];
+          if (primary) {
+            const mergedItems = new Map<string, OrderTab['items'][number]>();
+            for (const tab of sourceTabs) {
+              for (const item of Array.isArray(tab.items) ? tab.items : []) {
+                if (!item?.product?.id) continue;
+                const current = mergedItems.get(item.product.id);
+                mergedItems.set(item.product.id, current
+                  ? { ...current, quantity: Number((current.quantity + (Number(item.quantity) || 0)).toFixed(2)), note: [current.note, item.note].filter(Boolean).join('; ') || undefined, sourceImportLineId: undefined }
+                  : { ...item, quantity: Number(item.quantity) || 1, sourceImportLineId: undefined });
+              }
+            }
+            return {
+              ...primary,
+              id: primary.id || `tab-${Date.now()}`,
+              idempotencyKey: sourceTabs.length === 1 && primary.idempotencyKey ? primary.idempotencyKey : crypto.randomUUID(),
+              title: 'Đặt hàng',
+              items: [...mergedItems.values()],
+              note: [...new Set(sourceTabs.map((tab) => String(tab.note || '').trim()).filter(Boolean))].join('\n'),
+              sourceImportBatchId: undefined,
+              ...(String(primary.deliveryAddress || '').trim() ? {} : defaultDelivery),
+            } as OrderTab;
+          }
         }
       }
     } catch {}
-    return [createDefaultTab(1, session)];
+    return createDefaultTab(session);
   });
-  const [activeTabId, setActiveTabId] = useState<string>(() => tabs[0]?.id || '');
 
   useEffect(() => {
-    if (!tabs.some((t) => t.id === activeTabId) && tabs.length > 0) {
-      setActiveTabId(tabs[0].id);
-    }
-    localStorage.setItem(storageKeyFor(session?.id || 'guest'), JSON.stringify(tabs));
-  }, [tabs, activeTabId, session?.id]);
-
-  const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+    localStorage.setItem(storageKeyFor(session?.id || 'guest'), JSON.stringify([activeTab]));
+  }, [activeTab, session?.id]);
 
   // 2. Search & Catalog state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [initialProducts, setInitialProducts] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const [browseLimit, setBrowseLimit] = useState(40);
   const [cutoffInfo, setCutoffInfo] = useState<{ earliestDate: string; cutoffTimeStr: string } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [frequentItems, setFrequentItems] = useState<FrequentItem[]>([]);
   const [loadingLatestOrder, setLoadingLatestOrder] = useState(false);
+  const hasSubmittedSearch = Boolean(searchQuery.trim()) && searchInput.trim() === searchQuery.trim();
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(`tps1_favorite_products_v2_${session?.id || 'guest'}`);
@@ -200,7 +218,7 @@ export default function ProductsPage() {
 
   // Tìm kiếm qua Search API khi catalog cục bộ chưa sẵn sàng
   const loadProducts = useCallback(
-    async (rawQuery: string, openDropdown = true) => {
+    async (rawQuery: string) => {
       const query = rawQuery.trim();
       const cacheKey = `${session?.id || 'anonymous'}:${query.toLocaleLowerCase('vi-VN')}`;
       const cached = productSearchCache.get(cacheKey);
@@ -246,22 +264,31 @@ export default function ProductsPage() {
     return () => controller.abort();
   }, []);
 
+  // Nạp đơn gần nhất để khách có thể đặt lại ngay ở màn hình mặc định.
+  useEffect(() => {
+    void api.orders()
+      .then((res) => setRecentOrders((res.orders || []).slice(0, 1)))
+      .catch(() => undefined);
+  }, []);
+
   // Hiển thị nhóm hàng đầu tiên trước. Không bắt khách chờ toàn bộ catalog
   // 5.000+ mặt hàng; tìm kiếm sẽ gọi API theo từ khóa trong lúc catalog nền
   // chưa sẵn sàng.
   useEffect(() => {
+    const cached = productCatalogMemoryCache.get(session?.id || '');
+    if (cached && cached.expiresAt > Date.now()) return;
     const controller = new AbortController();
     void api.products({}, controller.signal)
       .then((res) => {
         if (controller.signal.aborted) return;
-        setSearchResults(res.products || []);
+        setInitialProducts(res.products || []);
         setCatalogLoading(false);
       })
       .catch(() => {
         if (!controller.signal.aborted) setCatalogLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [session?.id]);
 
   // Tải toàn bộ Catalog vào bộ nhớ ở nền để tìm kiếm tức thì cho các lần sau.
   // Trì hoãn nhẹ để request đầu tiên và khung thao tác của khách được ưu tiên.
@@ -272,7 +299,6 @@ export default function ProductsPage() {
     const memory = productCatalogMemoryCache.get(customerId);
     if (memory && memory.expiresAt > now) {
       setCatalogProducts(memory.products);
-      setSearchResults(memory.products.slice(0, 48));
       setCatalogLoading(false);
       return;
     }
@@ -286,7 +312,6 @@ export default function ProductsPage() {
           const products = decodeCatalog(parsed.catalog);
           productCatalogMemoryCache.set(customerId, { expiresAt: parsed.expiresAt, products });
           setCatalogProducts(products);
-          setSearchResults(products.slice(0, 48));
           setCatalogLoading(false);
           return;
         }
@@ -306,18 +331,20 @@ export default function ProductsPage() {
         const expiresAt = Date.now() + PRODUCT_CATALOG_TTL_MS;
         productCatalogMemoryCache.set(customerId, { expiresAt, products });
         setCatalogProducts(products);
-        setSearchResults((current) => (searchQuery.trim() ? current : products.slice(0, 48)));
         setCatalogLoading(false);
         try {
           localStorage.setItem(storageKey, JSON.stringify({ expiresAt, catalog }));
         } catch {}
       })
       .catch((error) => {
-        if (!controller.signal.aborted) console.warn('Không tải được catalog nền:', error);
+        if (!controller.signal.aborted) {
+          setCatalogLoading(false);
+          console.warn('Không tải được catalog nền:', error);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setCatalogLoading(false);
-      }), 1200);
+      }), 3000);
 
     return () => {
       window.clearTimeout(timer);
@@ -362,11 +389,9 @@ export default function ProductsPage() {
   // Update tab helper
   const updateActiveTab = useCallback(
     (updater: (prev: OrderTab) => OrderTab) => {
-      setTabs((prevTabs) =>
-        prevTabs.map((tab) => (tab.id === activeTab.id ? updater(tab) : tab))
-      );
+      setActiveTab(updater);
     },
-    [activeTab.id]
+    []
   );
 
   // Lấy ngày giao sớm nhất do server tính theo giờ Việt Nam. Không dùng giờ
@@ -474,22 +499,6 @@ export default function ProductsPage() {
     }
   }, [catalogProducts, updateActiveTab]);
 
-  const handleAddNewTab = () => {
-    const nextNum = tabs.length + 1;
-    const newT = createDefaultTab(nextNum, session);
-    setTabs((prev) => [...prev, newT]);
-    setActiveTabId(newT.id);
-  };
-
-  const handleCloseTab = (tabId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (tabs.length === 1) {
-      updateActiveTab((t) => ({ ...t, items: [] }));
-      return;
-    }
-    setTabs((prev) => prev.filter((t) => t.id !== tabId));
-  };
-
   // Danh sách gợi ý từ catalog và lịch sử
   const frequentProducts = useMemo(
     () =>
@@ -520,8 +529,18 @@ export default function ProductsPage() {
   const latestOrder = recentOrders[0];
 
   const displayedProducts = useMemo(() => {
-    return searchQuery.trim() ? searchResults : [];
-  }, [searchQuery, searchResults]);
+    return hasSubmittedSearch ? searchResults : [];
+  }, [hasSubmittedSearch, searchResults]);
+
+  const categories = useMemo(() => [...new Set(catalogProducts.map(p => String(p.category || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b,'vi')), [catalogProducts]);
+  const browseProducts = useMemo(
+    () => {
+      const products = catalogProducts.length ? catalogProducts : initialProducts;
+      return selectedCategory ? products.filter(product => product.category === selectedCategory) : products;
+    },
+    [catalogProducts, initialProducts, selectedCategory]
+  );
+  const visibleProducts = hasSubmittedSearch ? displayedProducts : browseProducts.slice(0, browseLimit);
 
   const toggleFavorite = (productId: string) => {
     setFavoriteIds((current) =>
@@ -635,67 +654,55 @@ export default function ProductsPage() {
   return (
       <div className="flex flex-col gap-3.5 sm:gap-4 pb-12 lg:pb-0">
       {/* 1. Header trang: Lời chào & Giờ chốt đơn */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-0.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-0.5">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-[#17231d] tracking-tight">
             {t('Đặt hàng cho bếp')}
           </h1>
-          <p className="text-xs sm:text-sm text-[#59665f] mt-0.5">{t('Tìm sản phẩm rồi thêm vào đơn hàng')}</p>
         </div>
-        <div className="inline-flex items-center gap-2 self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/35 text-amber-900 text-xs font-bold shadow-xs">
-          <Clock size={15} className="text-[#e0742f]" />
-          <span>
-            {cutoffInfo
-              ? `${t('Ngày giao sớm nhất')}: ${cutoffInfo.earliestDate} · ${t('Giờ chốt đơn')}: ${cutoffInfo.cutoffTimeStr}`
-              : t('Vui lòng chọn ngày và ca giao hàng phù hợp')}
-          </span>
+        <div className="inline-flex items-center gap-1.5 self-start sm:self-auto text-[11px] font-semibold text-[#8a5729]">
+          <Clock size={13} className="text-[#e0742f]" />
+          <span>{cutoffInfo ? `${t('Giao')}: ${cutoffInfo.earliestDate} · ${t('Chốt')}: ${cutoffInfo.cutoffTimeStr}` : t('Đang tải lịch giao')}</span>
         </div>
       </div>
 
-      {/* 2. Top Bar: Tìm kiếm F3 & Hệ thống Đa Tab */}
-      <div className="rounded-2xl border border-[#17231d]/10 bg-white p-3.5 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-[#17231d]/10 bg-white p-3 shadow-sm sm:p-4">
         <ProductSearchBar value={searchInput} onChange={setSearchInput} inputRef={searchInputRef}
           onSubmit={() => { const query = searchInput.trim(); setSearchQuery(query); if (!query) setSearchResults([]); }} />
-        <div className="mt-4 border-t border-[#17231d]/8 pt-3">
-        <OrderTabsBar
-          tabs={tabs}
-          activeTabId={activeTab.id}
-          onSelectTab={setActiveTabId}
-          onAddTab={handleAddNewTab}
-          onCloseTab={handleCloseTab}
-        />
-        </div>
       </div>
 
-      {/* 4. Vùng làm việc chính: 2 Cột (Trái: Lưới sản phẩm; Phải: Sidebar Tóm tắt & Gửi đơn) */}
+      {/* Thao tác đặt nhanh và danh mục chỉ hiện khi chưa gửi từ khóa. */}
+      {!hasSubmittedSearch && <QuickOrderSections latestOrder={latestOrder} loadingLatestOrder={loadingLatestOrder} onReorderLatest={loadLatestOrderAndAdd}
+        frequentProducts={frequentProducts} favoriteProducts={favoriteProducts} favoriteIds={favoriteIds} onToggleFavorite={toggleFavorite}
+        categories={categories} selectedCategory={selectedCategory} onSelectCategory={(category) => { setSelectedCategory(category); setBrowseLimit(40); }} onAddProduct={handleAddProduct} />}
+
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px] gap-4 items-start">
-        {/* CỘT TRÁI: Lưới card sản phẩm */}
         <div className="space-y-3 min-w-0">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-bold text-[#17231d] uppercase tracking-wider flex items-center gap-2">
               <span>
-                {searchQuery.trim()
+                {hasSubmittedSearch
                   ? `${t('Kết quả tìm kiếm')} ("${searchQuery}")`
-                  : t('Kết quả tìm kiếm')}
+                  : selectedCategory ? productName(selectedCategory) : t('Tất cả sản phẩm')}
               </span>
               <span className="text-xs font-mono font-normal text-[#59665f]">
-                ({displayedProducts.length} mặt hàng)
+                ({hasSubmittedSearch ? displayedProducts.length : browseProducts.length} {t('mặt hàng')})
               </span>
             </h2>
-
           </div>
 
           <ProductGrid
-            products={displayedProducts}
+            products={visibleProducts}
             itemsInCart={activeTab.items}
             favoriteIds={favoriteIds}
             onToggleFavorite={toggleFavorite}
             onAddProduct={handleAddProduct}
             onUpdateQty={handleUpdateQty}
             onUpdateNote={handleUpdateItemNote}
-            searchQuery={searchQuery}
-            loading={Boolean(searchQuery) && searchLoading}
+            searchQuery={hasSubmittedSearch ? searchQuery : selectedCategory}
+            loading={hasSubmittedSearch ? searchLoading : catalogLoading}
           />
+          {!hasSubmittedSearch && visibleProducts.length < browseProducts.length && <button type="button" onClick={() => setBrowseLimit(limit => limit + 40)} className="mx-auto block min-h-11 rounded-xl border border-[#0f7a4f]/25 bg-white px-5 text-sm font-bold text-[#0f7a4f]">{t('Xem thêm sản phẩm')}</button>}
         </div>
 
         {/* CỘT PHẢI (Desktop): Sidebar Tóm tắt đơn & Gửi đơn */}

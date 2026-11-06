@@ -6,7 +6,6 @@ import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
 
 function money(v: number) {
   return new Intl.NumberFormat('vi-VN').format(Number(v) || 0) + 'đ';
@@ -25,10 +24,13 @@ export default function ExcelOrderPage() {
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [downloadMessage, setDownloadMessage] = useState('');
   const [chosenSuggestion, setChosenSuggestion] = useState<Record<number, string>>({});
 
   const downloadTemplate = async () => {
     try {
+      setError('');
+      setDownloadMessage('');
       const blob = await requestFile('/api/customer/order/import-excel');
       if (blob.size < 100 || (blob.type && !blob.type.includes('spreadsheet') && !blob.type.includes('octet-stream'))) {
         throw new Error('Tệp mẫu trả về không đúng định dạng Excel');
@@ -40,8 +42,8 @@ export default function ExcelOrderPage() {
           reader.onerror = () => reject(reader.error);
           reader.readAsDataURL(blob);
         });
-        const saved = await Filesystem.writeFile({ path: 'mau-dat-hang.xlsx', data, directory: Directory.Cache });
-        await Share.share({ title: 'mau-dat-hang.xlsx', url: saved.uri, dialogTitle: t('Mở hoặc lưu tài liệu') });
+        await Filesystem.writeFile({ path: 'TPS1-mau-dat-hang.xlsx', data, directory: Directory.Documents, recursive: true });
+        setDownloadMessage(t('Đã tải file mẫu vào thư mục Tài liệu'));
         return;
       }
       const url = URL.createObjectURL(blob);
@@ -53,6 +55,7 @@ export default function ExcelOrderPage() {
       a.click();
       a.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      setDownloadMessage(t('File mẫu đã được tải xuống'));
     } catch (cause) {
       setError(cause instanceof Error && cause.message ? cause.message : t('Không tải được file mẫu, vui lòng thử lại'));
     }
@@ -99,7 +102,7 @@ export default function ExcelOrderPage() {
       <header>
         <h1 className="text-2xl font-bold text-[#14231c]">{t('Đặt hàng bằng file Excel')}</h1>
         <p className="text-[#59665f] text-sm mt-1">
-          {t('Tải file mẫu, điền tên/mã hàng và số lượng cần mua, sau đó tải lên lại để hệ thống tự dựng giỏ hàng.')}
+          {t('Tải mẫu → điền hàng và số lượng → tải lên')}
         </p>
       </header>
 
@@ -131,6 +134,7 @@ export default function ExcelOrderPage() {
       </div>
 
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>}
+      {downloadMessage && <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-sm text-emerald-800">{downloadMessage}</div>}
 
       {summary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

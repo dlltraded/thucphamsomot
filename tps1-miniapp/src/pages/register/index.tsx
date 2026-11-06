@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     name: "",
     phone: "",
+    username: "",
     company: "",
     email: "",
     password: "",
@@ -26,8 +27,8 @@ export default function RegisterPage() {
     // TPS1 chỉ bán sỉ cho công ty/cửa hàng, không bán lẻ — bắt buộc có tên
     // công ty/cửa hàng, người liên hệ và SĐT ngay từ lúc đăng ký, không để
     // "Công ty" tùy chọn như trước (yêu cầu 2026-09-11).
-    if (!form.company.trim() || !form.name.trim() || !form.phone.trim() || form.password.length < 8) {
-      toast.error("Vui lòng nhập đầy đủ tên công ty/cửa hàng, người liên hệ, số điện thoại và mật khẩu từ 8 ký tự");
+    if (!form.company.trim() || !form.name.trim() || !form.phone.trim() || !form.username.trim() || form.password.length < 8) {
+      toast.error("Vui lòng nhập tên công ty, người liên hệ, SĐT, tên đăng nhập và mật khẩu");
       return;
     }
     if (form.password !== form.confirmPassword) {
@@ -43,9 +44,8 @@ export default function RegisterPage() {
       });
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error || "Không đăng ký được tài khoản");
-      const code = String(data.account.code);
-      toast.success(`Đăng ký thành công - Mã khách hàng ${code}`);
-      navigate(`/login?redirect=${encodeURIComponent(redirect)}&code=${encodeURIComponent(code)}&registered=1`, { replace: true });
+      toast.success(`Đăng ký thành công - ${form.username}`);
+      navigate(`/login?redirect=${encodeURIComponent(redirect)}&code=${encodeURIComponent(form.username)}&registered=1`, { replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Không đăng ký được tài khoản");
     } finally {
@@ -69,6 +69,7 @@ export default function RegisterPage() {
         <Input label="Tên công ty / cửa hàng *" value={form.company} onChange={update("company")} placeholder="Công ty TNHH ABC / Quán ăn ABC" />
         <Input label="Người liên hệ *" value={form.name} onChange={update("name")} placeholder="Nguyễn Văn A" />
         <Input label="Số điện thoại *" value={form.phone} onChange={update("phone")} placeholder="09xxxxxxxx" />
+        <Input label="Tên đăng nhập *" value={form.username} onChange={update("username")} placeholder="Ví dụ: bepabc" autoCapitalize="none" />
         <Input label="Email" value={form.email} onChange={update("email")} placeholder="Không bắt buộc" />
         <Input label="Mật khẩu *" type="password" value={form.password} onChange={update("password")} placeholder="Tối thiểu 8 ký tự" />
         <Input label="Xác nhận mật khẩu *" type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="Nhập lại mật khẩu" />

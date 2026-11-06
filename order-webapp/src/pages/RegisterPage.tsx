@@ -8,7 +8,7 @@ export default function RegisterPage() {
   const { login } = useAuth();
   const { t, errorText } = useLanguage();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', company: '', phone: '', email: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ name: '', company: '', phone: '', username: '', email: '', password: '', confirmPassword: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [registeredCode, setRegisteredCode] = useState('');
@@ -24,7 +24,7 @@ export default function RegisterPage() {
     try {
       const { account } = await api.register(form);
       setRegisteredCode(account.code);
-      await login(account.code, form.password);
+      await login(form.username, form.password);
       navigate('/', { replace: true });
     } catch (cause) {
       setError(errorText(cause instanceof ApiError ? cause : { message: 'Có lỗi xảy ra, vui lòng thử lại sau.' }));
@@ -39,11 +39,13 @@ export default function RegisterPage() {
         <p className="text-sm text-[#59665f] mt-2 mb-5">{t('Dành cho công ty, cửa hàng và bếp ăn đặt hàng từ TPS1.')}</p>
         {registeredCode && <p className="rounded-xl bg-emerald-50 p-3 text-sm">{t('Mã khách hàng')}: <strong>{registeredCode}</strong></p>}
         <form onSubmit={submit} className="space-y-4">
-          {([['name', 'Tên người liên hệ'], ['company', 'Tên công ty / cửa hàng'], ['phone', 'Số điện thoại'], ['email', 'Email (không bắt buộc)'], ['password', 'Mật khẩu'], ['confirmPassword', 'Xác nhận mật khẩu']] as const).map(([key, label]) =>
+          {([['name', 'Tên người liên hệ'], ['company', 'Tên công ty / cửa hàng'], ['phone', 'Số điện thoại'], ['username', 'Tên đăng nhập'], ['email', 'Email (không bắt buộc)'], ['password', 'Mật khẩu'], ['confirmPassword', 'Xác nhận mật khẩu']] as const).map(([key, label]) =>
             <label className="block text-sm font-semibold text-[#17231d]" key={key}>{t(label)}
               <input value={form[key]} onChange={event => update(key, event.target.value)}
                 type={key.includes('assword') ? 'password' : key === 'email' ? 'email' : key === 'phone' ? 'tel' : 'text'}
-                autoComplete={key === 'name' ? 'name' : key === 'company' ? 'organization' : key === 'phone' ? 'tel' : key === 'email' ? 'email' : key === 'password' ? 'new-password' : 'off'}
+                autoComplete={key === 'name' ? 'name' : key === 'company' ? 'organization' : key === 'phone' ? 'tel' : key === 'username' ? 'username' : key === 'email' ? 'email' : key === 'password' ? 'new-password' : 'off'}
+                autoCapitalize={key === 'username' ? 'none' : undefined}
+                pattern={key === 'username' ? '[a-zA-Z][a-zA-Z0-9._-]{3,29}' : undefined}
                 minLength={key === 'password' || key === 'confirmPassword' ? 8 : undefined}
                 required={key !== 'email'} maxLength={key === 'company' ? 180 : 120}
                 className="mt-1 block w-full min-h-12 rounded-xl border border-[#17231d]/20 px-3 text-base focus:outline-none focus:ring-2 focus:ring-[#0f7a4f]/40" />

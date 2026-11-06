@@ -3,10 +3,19 @@ import { customerAuthState, shippingAddressState } from "@/state";
 import { Icon } from "zmp-ui";
 import TransitionLink from "@/components/transition-link";
 import toast from "react-hot-toast";
+import { useEffect, useState } from "react";
+import CONFIG from "@/config";
 
 export default function CustomerAccount() {
   const [customer, setCustomer] = useAtom(customerAuthState);
   const setShippingAddress = useSetAtom(shippingAddressState);
+  const [username, setUsername] = useState('');
+  const [usernameInput, setUsernameInput] = useState('');
+  useEffect(() => {
+    if (!customer?.orderSessionToken) return;
+    fetch(`${CONFIG.API_BASE}/api/customer/account`, { headers: { Authorization: `Bearer ${customer.orderSessionToken}` } })
+      .then(r => r.json()).then(data => { if (data.ok) { setUsername(data.account.username || ''); setUsernameInput(data.account.username || ''); } }).catch(() => undefined);
+  }, [customer?.orderSessionToken]);
 
   if (!customer) {
     return (
@@ -54,6 +63,11 @@ export default function CustomerAccount() {
           <Info icon="zi-location" label="Giao mặc định" value={shipping?.address || "Chưa có địa chỉ mặc định"} />
         </div>
       </section>
+
+      <form className="rounded-2xl bg-section p-4 shadow-sm" onSubmit={async event => { event.preventDefault(); const response = await fetch(`${CONFIG.API_BASE}/api/customer/username`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${customer.orderSessionToken}` }, body: JSON.stringify({ username: usernameInput }) }); const data = await response.json(); if (data.ok) { setUsername(data.username); toast.success('Đã lưu tên đăng nhập'); } else toast.error(data.error || 'Không lưu được tên đăng nhập'); }}>
+        <label className="block text-sm font-bold">Tên đăng nhập<input className="mt-2 w-full rounded-xl border border-black/10 p-3 text-base" value={usernameInput} onChange={event => setUsernameInput(event.target.value)} autoCapitalize="none" autoComplete="username" pattern="[a-zA-Z][a-zA-Z0-9._-]{3,29}" required /></label>
+        <button className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-50" disabled={usernameInput.trim().toLowerCase() === username}>Lưu</button>
+      </form>
 
       <div className="grid grid-cols-2 gap-2">
         <TransitionLink to="/change-password" className="flex items-center justify-center gap-1.5 rounded-xl border border-primary/20 bg-section py-3 text-xs font-bold text-primary"><Icon icon="zi-lock" size={16} />Đổi mật khẩu</TransitionLink>

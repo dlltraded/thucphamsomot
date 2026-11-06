@@ -66,15 +66,24 @@ export async function PATCH(req: NextRequest) {
       return json({ ok: false, error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" }, 401);
     }
 
+    const { data: currentAccount, error: currentError } = await supabase
+      .from('vip_accounts').select('company,tax_code').eq('id', customerId).maybeSingle();
+    if (currentError || !currentAccount) return json({ ok: false, error: 'Không tải được tài khoản' }, 500);
+    if ((values.company || '') !== (currentAccount.company || '') || (values.taxCode || '') !== (currentAccount.tax_code || '')) {
+      const { data: pending } = await supabase.from('customer_profile_requests').select('id').eq('customer_id', customerId).eq('status', 'pending').maybeSingle();
+      const result = pending
+        ? await supabase.from('customer_profile_requests').update({ company: values.company, tax_code: values.taxCode, requested_at: now }).eq('id', pending.id)
+        : await supabase.from('customer_profile_requests').insert({ customer_id: customerId, company: values.company, tax_code: values.taxCode });
+      if (result.error) return json({ ok: false, error: 'Không gửi được yêu cầu cập nhật' }, 500);
+    }
+
     const shippingAddress = values.shippingAddress || values.address;
     const { data: customer, error: updateError } = await supabase
       .from("vip_accounts")
       .update({
         name: values.name,
         phone: values.phone,
-        company: values.company || null,
         email: values.email || null,
-        tax_code: values.taxCode || null,
         address: values.address || null,
         default_shipping_alias: values.shippingAlias || "Địa chỉ mặc định",
         default_shipping_address: shippingAddress || null,

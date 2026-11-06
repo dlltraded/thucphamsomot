@@ -89,14 +89,19 @@ export interface CustomerSession {
   orderSessionToken?: string;
 }
 
+export interface AccountProfile { name: string; company: string; taxCode: string; username: string; usernameChangedAt: string | null; avatarUrl: string | null; request: { id: string; company: string; tax_code: string; status: string; note?: string } | null }
 export const api = {
-  register: (payload: { name: string; company: string; phone: string; email: string; password: string }) =>
+  account: () => request<{ ok: true; account: AccountProfile }>('/api/customer/account'),
+  saveAccount: (body: { name: string; company: string; taxCode: string }) => request<{ ok: true; account: AccountProfile }>('/api/customer/account', { method: 'PATCH', body }),
+  saveUsername: (username: string) => request<{ ok: true; username: string }>('/api/customer/username', { method: 'PATCH', body: { username } }),
+  uploadAvatar: (file: File) => { const formData = new FormData(); formData.set('avatar', file); return request<{ ok: true; account: AccountProfile }>('/api/customer/account', { method: 'POST', formData }); },
+  register: (payload: { name: string; company: string; phone: string; username: string; email: string; password: string }) =>
     request<{ ok: true; account: { id: string; code: string; verificationStatus: 'pending' } }>(
       '/api/customer/register', { method: 'POST', auth: false, body: { ...payload, confirmPassword: payload.password, source: 'website' } }),
-  login: (code: string, password: string) =>
+  login: (identifier: string, password: string) =>
     request<{ ok: true; session: CustomerSession }>('/api/customer/login', {
       method: 'POST',
-      body: { code, password },
+      body: { identifier, password },
       auth: false,
     }),
 
@@ -107,6 +112,10 @@ export const api = {
     }),
 
   session: () => request<{ ok: true; session: CustomerSession }>('/api/customer/session'),
+  addresses: () => request<{ok:true;addresses:{id:string;label:string;address:string;contactName:string;contactPhone:string;isDefault:boolean}[]}>('/api/customer/addresses'),
+  addAddress: (body:{label:string;address:string;contactName:string;contactPhone:string;isDefault:boolean}) => request<{ok:true}>('/api/customer/addresses',{method:'POST',body}),
+  setDefaultAddress: (id:string) => request<{ok:true}>('/api/customer/addresses',{method:'PATCH',body:{id,isDefault:true}}),
+  deleteAddress: (id:string) => request<{ok:true}>(`/api/customer/addresses?id=${encodeURIComponent(id)}`,{method:'DELETE'}),
 
   products: (params: { search?: string; category?: string; page?: number } = {}, signal?: AbortSignal) => {
     const qs = new URLSearchParams();

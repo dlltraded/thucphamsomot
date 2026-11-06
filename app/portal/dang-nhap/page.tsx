@@ -8,7 +8,7 @@ import { LoginForm } from "./login-form";
 
 export const metadata = makeMetadata({
   title: "Đăng nhập tài khoản khách hàng",
-  description: "Đăng nhập bằng Mã khách hàng và Mật khẩu do sale TPS1 cung cấp.",
+  description: "Đăng nhập bằng SĐT hoặc tên đăng nhập để đặt hàng TPS1.",
   path: "/portal/dang-nhap",
 });
 

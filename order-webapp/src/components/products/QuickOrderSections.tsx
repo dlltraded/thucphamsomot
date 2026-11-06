@@ -1,4 +1,4 @@
-import { ChefHat, Repeat2, Heart, Sparkles, FolderOpen, Plus } from 'lucide-react';
+import { Repeat2, Heart, FolderOpen } from 'lucide-react';
 import type { Product, Order } from '../../lib/api';
 import ProductThumbnail from './ProductThumbnail';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -18,7 +18,6 @@ interface QuickOrderSectionsProps {
   categories: string[];
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
-  categoryProducts: Product[];
   onAddProduct: (product: Product, qty?: number) => void;
 }
 
@@ -33,7 +32,6 @@ export default function QuickOrderSections({
   categories,
   selectedCategory,
   onSelectCategory,
-  categoryProducts,
   onAddProduct,
 }: QuickOrderSectionsProps) {
   const { t, productName, productUnit } = useLanguage();
@@ -46,39 +44,16 @@ export default function QuickOrderSections({
   if (!hasAnyQuickSection) return null;
 
   return (
-    <section className="bg-white rounded-2xl border border-[#17231d]/10 shadow-sm p-3.5 sm:p-4.5 space-y-3.5">
-      {/* Tiêu đề mục & Nút đặt lại đơn gần nhất */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <span className="w-10 h-10 rounded-xl bg-[#0f7a4f]/10 text-[#0f7a4f] flex items-center justify-center shrink-0">
-            <ChefHat size={20} />
-          </span>
-          <div>
-            <h2 className="font-bold text-sm sm:text-base text-[#17231d] flex items-center gap-1.5">
-              <span>{t('Đặt nhanh cho bếp')}</span>
-              <Sparkles size={14} className="text-[#e0742f]" />
-            </h2>
-            <p className="text-[11px] sm:text-xs text-[#59665f]">
-              {t('Món quen thuộc, thêm vào đơn chỉ bằng một chạm')}
-            </p>
-          </div>
-        </div>
-
-        <button
+    <section className="space-y-4 rounded-2xl border border-[#17231d]/10 bg-white p-3 shadow-sm sm:p-4">
+      {latestOrder && <button
           type="button"
           onClick={onReorderLatest}
           disabled={loadingLatestOrder}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0f7a4f] text-white text-xs font-bold hover:bg-[#0b4f34] active:scale-[.97] transition-all disabled:opacity-60 shadow-sm shadow-[#0f7a4f]/20 cursor-pointer touch-target"
+          className="ml-auto flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-[#0f7a4f] hover:bg-[#f1f7f3] disabled:opacity-60"
         >
           <Repeat2 size={15} className={loadingLatestOrder ? 'animate-spin' : ''} />
-          <span className="hidden sm:inline">
-            {t(loadingLatestOrder ? 'Đang nạp đơn...' : 'Đặt lại đơn gần nhất')}
-          </span>
-          <span className="sm:hidden">
-            {t(loadingLatestOrder ? 'Đang nạp' : 'Đặt lại đơn')}
-          </span>
-        </button>
-      </div>
+          <span>{t(loadingLatestOrder ? 'Đang nạp' : 'Đặt lại đơn gần nhất')}</span>
+        </button>}
 
       {/* 1. Mặt hàng thường mua */}
       {frequentProducts.length > 0 && (
@@ -222,36 +197,6 @@ export default function QuickOrderSections({
             })}
           </div>
 
-          {/* Nếu đang lọc theo danh mục, hiển thị một số sản phẩm tiêu biểu của nhóm */}
-          {selectedCategory && categoryProducts.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pt-2">
-              {categoryProducts.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => onAddProduct(product, 1)}
-                  className="flex items-center gap-2 min-w-0 p-2 rounded-xl border border-[#17231d]/10 bg-[#fbfcfb] hover:border-[#0f7a4f]/35 hover:bg-[#f3f7f4] text-left transition-colors cursor-pointer group"
-                >
-                  <ProductThumbnail product={product} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <span className="block text-xs font-semibold truncate group-hover:text-[#0f7a4f]">
-                      {productName(product.name)}
-                    </span>
-                    {product.sku && <span className="block text-[10px] text-[#59665f] truncate">{product.sku}</span>}
-                    <span className="block text-[10px] text-[#59665f] mt-0.5">
-                      {productUnit(product.unit || 'Kg')} •{' '}
-                      <strong className="text-[#0f7a4f]">
-                        {product.priceOnRequest ? t('Chờ sale báo giá') : money(product.price)}
-                      </strong>
-                    </span>
-                  </div>
-                  <span className="w-7 h-7 rounded-lg bg-[#0f7a4f]/10 text-[#0f7a4f] flex items-center justify-center shrink-0 group-hover:bg-[#0f7a4f] group-hover:text-white transition-colors">
-                    <Plus size={14} />
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </section>

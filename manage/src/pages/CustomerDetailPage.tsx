@@ -40,6 +40,8 @@ export default function CustomerDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [profileRequest, setProfileRequest] = useState<{ id: string; company: string; tax_code: string; status: string } | null>(null);
+  const [resolvingProfile, setResolvingProfile] = useState(false);
   const [passwordCopied, setPasswordCopied] = useState(false);
 
   const [contractPrices, setContractPrices] = useState<any[]>([]);
@@ -58,6 +60,26 @@ export default function CustomerDetailPage() {
   const [savingAddress, setSavingAddress] = useState(false);
 
   const setField = (key: string, value: any) => setForm((f) => ({ ...f, [key]: value }));
+
+  useEffect(() => {
+    if (!id || isNew) return;
+    void authFetch(`${apiBase}/api/admin/customers/${encodeURIComponent(id)}/profile-request`)
+      .then(response => response.json()).then(result => setProfileRequest(result.request || null)).catch(() => undefined);
+  }, [id, isNew, apiBase, authFetch]);
+
+  const resolveProfile = async (status: 'approved' | 'rejected') => {
+    if (!id || !profileRequest) return;
+    setResolvingProfile(true);
+    try {
+      const response = await authFetch(`${apiBase}/api/admin/customers/${encodeURIComponent(id)}/profile-request`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: profileRequest.id, status }),
+      });
+      if (!response.ok) throw new Error('Không xử lý được yêu cầu');
+      setProfileRequest({ ...profileRequest, status });
+      if (status === 'approved') setForm(form => ({ ...form, company: profileRequest.company, tax_code: profileRequest.tax_code }));
+    } catch { alert('Không xử lý được yêu cầu cập nhật hồ sơ'); }
+    finally { setResolvingProfile(false); }
+  };
 
   const loadSalesReps = useCallback(async () => {
     const { data } = await supabase.from('admin_profiles').select('id, name, role').eq('is_active', true).order('name');
@@ -555,6 +577,8 @@ export default function CustomerDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {profileRequest?.status === 'pending' && <div className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-slate-800">Khách yêu cầu sửa hồ sơ</h2><p className="mt-2 text-sm">Tên công ty: <strong>{profileRequest.company}</strong></p><p className="text-sm">MST: <strong>{profileRequest.tax_code || '—'}</strong></p><div className="mt-3 flex gap-2"><button disabled={resolvingProfile} onClick={() => void resolveProfile('approved')} className="rounded-lg bg-green-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Duyệt</button><button disabled={resolvingProfile} onClick={() => void resolveProfile('rejected')} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 disabled:opacity-50">Từ chối</button></div></div>}
+
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
             <h2 className="font-bold text-slate-800">Thông tin khách hàng</h2>
             <div className="grid grid-cols-2 gap-4">

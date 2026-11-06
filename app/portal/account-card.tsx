@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Building2,
@@ -28,6 +28,17 @@ export function AccountCard({ session }: { session: CustomerSession }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [username, setUsername] = useState('');
+  const [usernameInput, setUsernameInput] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState('');
+  useEffect(() => { fetch('/api/customer/account').then(r => r.json()).then(data => { if (data.ok) { setUsername(data.account.username || ''); setUsernameInput(data.account.username || ''); } }).catch(() => undefined); }, []);
+  const saveUsername = async (event: React.FormEvent) => {
+    event.preventDefault(); setUsernameStatus('');
+    const response = await fetch('/api/customer/username', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: usernameInput }) });
+    const data = await response.json();
+    if (data.ok) { setUsername(data.username); setUsernameStatus('Đã lưu tên đăng nhập'); }
+    else setUsernameStatus(data.error || 'Không lưu được tên đăng nhập');
+  };
   const initials = session.name
     .split(/\s+/)
     .filter(Boolean)
@@ -112,6 +123,13 @@ export function AccountCard({ session }: { session: CustomerSession }) {
               <div><span className="customer-section-kicker">Hồ sơ đối tác</span><h3>Thông tin khách hàng</h3></div>
               <div className="customer-panel__tools"><span className="customer-code">Mã KH: {session.code}</span><button type="button" className="customer-edit-button" onClick={() => setEditing(true)}><Pencil /> Chỉnh sửa</button></div>
             </div>
+            <form onSubmit={saveUsername} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'end', gap: 8, marginBottom: 16 }}>
+              <label style={{ flex: '1 1 190px', fontSize: 13, fontWeight: 600 }}>Tên đăng nhập
+                <input className="lead-form__input" value={usernameInput} onChange={e => setUsernameInput(e.target.value)} autoCapitalize="none" autoComplete="username" pattern="[a-zA-Z][a-zA-Z0-9._-]{3,29}" required />
+              </label>
+              <button className="btn-primary" disabled={usernameInput.trim().toLowerCase() === username}>Lưu</button>
+              {usernameStatus && <span role="status" style={{ width: '100%', fontSize: 12 }}>{usernameStatus}</span>}
+            </form>
             <div className="customer-info-grid">
               <Info icon={<UserRound />} label="Người liên hệ" value={session.name} />
               <Info icon={<Phone />} label="Số điện thoại" value={session.phone} />

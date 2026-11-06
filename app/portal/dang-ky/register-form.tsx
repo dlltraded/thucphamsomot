@@ -14,6 +14,7 @@ export function RegisterForm() {
   const [form, setForm] = useState({
     name: "",
     phone: "",
+    username: "",
     company: "",
     email: "",
     password: "",
@@ -29,8 +30,8 @@ export function RegisterForm() {
     e.preventDefault();
     setError("");
 
-    if (!form.name.trim() || !form.phone.trim()) {
-      setError("Vui lòng nhập họ tên và số điện thoại");
+    if (!form.name.trim() || !form.phone.trim() || !form.username.trim()) {
+      setError("Vui lòng nhập tên, SĐT và tên đăng nhập");
       return;
     }
     if (form.password.length < 8) {
@@ -55,10 +56,9 @@ export function RegisterForm() {
         return;
       }
 
-      const code = String(data.account.code);
-      // Redirect to login page pre-filling the code
+      const username = String(data.account.username);
       router.push(
-        `/portal/dang-nhap?redirect=${encodeURIComponent(redirect)}&code=${encodeURIComponent(code)}&registered=1`
+        `/portal/dang-nhap?redirect=${encodeURIComponent(redirect)}&code=${encodeURIComponent(username)}&registered=1`
       );
     } catch {
       setError("Có lỗi xảy ra, vui lòng thử lại");
@@ -123,12 +123,18 @@ export function RegisterForm() {
         </div>
 
         <div className="quote-landing__field">
-          <label className="portal-form__label">Tên công ty / bếp ăn</label>
+          <label className="portal-form__label">Tên đăng nhập *</label>
+          <input className="lead-form__input" value={form.username} onChange={(e) => set("username")(e.target.value)} placeholder="Ví dụ: bepabc" autoCapitalize="none" autoComplete="username" pattern="[a-zA-Z][a-zA-Z0-9._-]{3,29}" required />
+        </div>
+
+        <div className="quote-landing__field">
+          <label className="portal-form__label">Tên công ty / bếp ăn *</label>
           <input
             className="lead-form__input"
             value={form.company}
             onChange={(e) => set("company")(e.target.value)}
-            placeholder="Công ty TNHH ABC (không bắt buộc)"
+            placeholder="Công ty TNHH ABC"
+            required
           />
         </div>
 

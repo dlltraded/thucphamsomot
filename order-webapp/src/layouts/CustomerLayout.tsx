@@ -117,7 +117,7 @@ export default function CustomerLayout() {
 
       {/* Main Content Area */}
       <main className="max-w-[1520px] mx-auto w-full px-2.5 sm:px-4 lg:px-6 py-3.5 flex-1 pb-24 md:pb-6">
-        {session?.verificationStatus === 'pending' && <div role="status" className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">{t('Tài khoản của bạn đang chờ xác minh. Đơn đầu tiên sẽ được tiếp nhận nhưng chỉ xử lý sau khi TPS1 xác minh.')}</div>}
+        {session?.verificationStatus === 'pending' && <div role="status" className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">{t('Chưa xác minh')}</div>}
         <Outlet />
       </main>
 

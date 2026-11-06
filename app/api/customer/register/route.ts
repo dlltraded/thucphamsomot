@@ -9,6 +9,7 @@ const schema = z
     // còn tùy chọn như trước (yêu cầu 2026-09-11).
     name: z.string().trim().min(2).max(120),
     phone: z.string().trim().min(9).max(20),
+    username: z.string().trim().toLowerCase().regex(/^[a-z][a-z0-9._-]{3,29}$/, 'Tên đăng nhập gồm 4–30 ký tự, bắt đầu bằng chữ cái').optional(),
     password: z.string().min(8).max(100),
     confirmPassword: z.string().min(8).max(100),
     company: z.string().trim().min(2, "Vui lòng nhập tên công ty / cửa hàng").max(180),
@@ -36,17 +37,19 @@ export async function POST(req: NextRequest) {
   const value = parsed.data;
   try {
     const supabase = getCustomerSupabaseAdmin();
-    const { data, error } = await supabase.rpc("register_customer_account", {
+    const { data, error } = await supabase.rpc(value.username ? "tps1_register_customer_with_username" : "register_customer_account", {
       p_name: value.name,
       p_phone: value.phone,
       p_password: value.password,
       p_company: value.company,
       p_email: value.email,
       p_source: value.source,
+      ...(value.username ? { p_username: value.username } : {}),
     });
     if (error) {
+      const usernameConflict = /USERNAME_CONFLICT|vip_accounts_username_unique/i.test(error.message || "");
       const duplicate = /đã có tài khoản|duplicate|unique/i.test(error.message || "");
-      return json({ ok: false, code: duplicate ? "PHONE_ALREADY_REGISTERED" : "REGISTRATION_FAILED", error: duplicate ? "Số điện thoại này đã có tài khoản" : error.message }, duplicate ? 409 : 400);
+      return json({ ok: false, code: usernameConflict ? 'USERNAME_TAKEN' : duplicate ? "PHONE_ALREADY_REGISTERED" : "REGISTRATION_FAILED", error: usernameConflict ? 'Tên đăng nhập đã được sử dụng' : duplicate ? "Số điện thoại này đã có tài khoản" : error.message }, usernameConflict || duplicate ? 409 : 400);
     }
     const account = Array.isArray(data) ? data[0] : data;
     if (!account) return json({ ok: false, error: "Không tạo được tài khoản" }, 500);
@@ -57,6 +60,7 @@ export async function POST(req: NextRequest) {
         code: account.code,
         name: account.name,
         phone: account.phone,
+        username: value.username || '',
         verificationStatus: account.verification_status || "pending",
       },
     }, 201);

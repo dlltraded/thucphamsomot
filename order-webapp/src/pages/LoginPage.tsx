@@ -20,15 +20,15 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (rememberCode && code.trim()) localStorage.setItem(REMEMBER_KEY, code.trim().toUpperCase());
+    if (rememberCode && code.trim()) localStorage.setItem(REMEMBER_KEY, code.trim());
     else if (!rememberCode) localStorage.removeItem(REMEMBER_KEY);
   }, [rememberCode, code]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
-    const cleanCode = code.trim().toUpperCase();
-    if (!cleanCode) { setError(t('Vui lòng nhập mã khách hàng')); return; }
+    const cleanCode = code.trim();
+    if (!cleanCode) { setError(t('Vui lòng nhập SĐT hoặc tên đăng nhập')); return; }
     if (!password) { setError(t('Vui lòng nhập mật khẩu')); return; }
     setLoading(true);
     try {
@@ -71,13 +71,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="tps1-login-form space-y-3">
             <div>
-              <label htmlFor="customer-code" className="mb-1.5 block text-[13px] font-semibold text-[#315141]">{t('Mã khách hàng')}</label>
+              <label htmlFor="customer-code" className="mb-1.5 block text-[13px] font-semibold text-[#315141]">{t('SĐT hoặc tên đăng nhập')}</label>
               <div className="relative">
                 <UserRound size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#799486]" />
-                <input id="customer-code" type="text" value={code} onChange={event => setCode(event.target.value.toUpperCase())}
-                  placeholder={t('VD: TPS1-CG2, KH-TOYOTA...')} autoCapitalize="characters" autoComplete="username" required
+                <input id="customer-code" type="text" value={code} onChange={event => setCode(event.target.value)}
+                  placeholder={t('Nhập SĐT hoặc tên đăng nhập')} autoCapitalize="none" autoComplete="username" required
                   className="h-12 w-full rounded-xl border border-[#d7e3d9] bg-white pl-11 pr-11 text-base font-medium text-[#17382a] outline-none placeholder:font-normal placeholder:text-[#9aa9a0] focus:border-[#0b8b60] focus:ring-2 focus:ring-[#0b8b60]/15" />
-                {code && <button type="button" onClick={() => setCode('')} aria-label={t('Xóa mã khách hàng')}
+                {code && <button type="button" onClick={() => setCode('')} aria-label={t('Xóa thông tin đăng nhập')}
                   className="absolute right-1 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#7d9184]"><X size={17} /></button>}
               </div>
             </div>
@@ -101,7 +101,7 @@ export default function LoginPage() {
 
             <label className="flex min-h-9 items-center gap-2.5 text-[13px] text-[#536d5c]">
               <input type="checkbox" checked={rememberCode} onChange={event => setRememberCode(event.target.checked)} className="size-[18px] accent-[#0b8b60]" />
-              {t('Ghi nhớ mã khách hàng')}
+              {t('Ghi nhớ đăng nhập')}
             </label>
 
             {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

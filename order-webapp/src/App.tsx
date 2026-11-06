@@ -1,5 +1,5 @@
 import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as NativeApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
@@ -7,15 +7,16 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import CustomerLayout from './layouts/CustomerLayout';
 import LoginPage from './pages/LoginPage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
 import ProductsPage from './pages/ProductsPage';
-import CartPage from './pages/CartPage';
-import OrdersPage from './pages/OrdersPage';
-import OrderDetailPage from './pages/OrderDetailPage';
-import ExcelOrderPage from './pages/ExcelOrderPage';
 import RegisterPage from './pages/RegisterPage';
-import AccountPage from './pages/AccountPage';
 import { LanguageProvider } from './contexts/LanguageContext';
+
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
+const CartPage = lazy(() => import('./pages/CartPage'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
+const ExcelOrderPage = lazy(() => import('./pages/ExcelOrderPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 min-h-screen bg-white flex flex-col items-center justify-center z-50">
@@ -69,7 +70,7 @@ function App() {
       <CartProvider>
         <Router>
           <NativeBackButton />
-          <Routes>
+          <Suspense fallback={<LoadingScreen />}><Routes>
             <Route path="/dang-nhap" element={<LoginPage />} />
             <Route path="/dang-ky" element={<RegisterPage />} />
             <Route
@@ -89,7 +90,7 @@ function App() {
               <Route path="doi-mat-khau" element={<ChangePasswordPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          </Routes></Suspense>
         </Router>
       </CartProvider>
     </AuthProvider></LanguageProvider>

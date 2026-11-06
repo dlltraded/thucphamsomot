@@ -32,6 +32,7 @@ export default function ProductCard({
   const { t, productName, productUnit } = useLanguage();
   const [showNoteInput, setShowNoteInput] = useState(Boolean(itemNote));
   const [tempNote, setTempNote] = useState(itemNote);
+  const [draftQuantity, setDraftQuantity] = useState('1');
 
   useEffect(() => {
     setTempNote(itemNote);
@@ -165,14 +166,15 @@ export default function ProductCard({
       {/* Phần dưới: Nút Thêm hoặc Bộ Stepper tăng giảm >= 44px */}
       <div className="p-2.5 sm:p-3 pt-0 border-t border-[#17231d]/5 mt-1 bg-white/60">
         {!isInCart ? (
-          <button
-            type="button"
-            onClick={() => onAdd(product, 1)}
-            className="w-full h-11 sm:h-10 rounded-xl bg-[#0f7a4f] hover:bg-[#0b4f34] active:scale-[0.98] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm shadow-[#0f7a4f]/20 transition-all cursor-pointer touch-target"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            <span>{t('Thêm vào đơn')}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex h-11 min-w-0 flex-1 items-center rounded-xl border border-[#17231d]/12 bg-[#f8faf7]">
+              <button type="button" onClick={() => setDraftQuantity(value => String(Math.max(0.1, (Number(value) || 1) - 1)))} aria-label={t('Giảm số lượng')} className="flex size-10 shrink-0 items-center justify-center text-[#466253]"><Minus size={16}/></button>
+              <input type="number" min="0.1" step="any" value={draftQuantity} onChange={e => setDraftQuantity(e.target.value)} aria-label={`Số lượng ${product.name}`} className="w-full min-w-0 bg-transparent text-center text-sm font-bold text-[#17382a] outline-none" />
+              <span className="pr-1 text-[11px] text-[#718579]">{productUnit(product.unit || 'Kg')}</span>
+              <button type="button" onClick={() => setDraftQuantity(value => String((Number(value) || 0) + 1))} aria-label={t('Tăng số lượng')} className="flex size-10 shrink-0 items-center justify-center text-[#0f7a4f]"><Plus size={16}/></button>
+            </div>
+            <button type="button" onClick={() => onAdd(product, Math.max(0.1, Number(draftQuantity) || 1))} aria-label={t('Thêm vào đơn')} className="flex h-11 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0f7a4f] text-white shadow-sm"><Plus size={20}/></button>
+          </div>
         ) : (
           <div className="flex items-center justify-between gap-1.5 bg-[#f5f7f3] p-1 rounded-xl border border-[#17231d]/10">
             {/* Nút giảm */}

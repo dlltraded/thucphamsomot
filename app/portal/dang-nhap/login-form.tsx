@@ -22,7 +22,7 @@ export function LoginForm() {
     setError("");
 
     if (!code.trim() || !password) {
-      setError("Vui lòng nhập đầy đủ Mã khách hàng và Mật khẩu");
+      setError("Vui lòng nhập SĐT hoặc tên đăng nhập và mật khẩu");
       return;
     }
 
@@ -31,7 +31,7 @@ export function LoginForm() {
       const res = await fetch("/api/customer/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim(), password }),
+        body: JSON.stringify({ identifier: code.trim(), password }),
       });
       const data = await res.json();
 
@@ -94,24 +94,25 @@ export function LoginForm() {
               lineHeight: 1.5,
             }}
           >
-            🎉 Đăng ký thành công! Mã khách hàng đã được điền sẵn. Nhập mật khẩu vừa tạo để tiếp tục.
+            Đăng ký thành công. Nhập mật khẩu vừa tạo để tiếp tục.
           </div>
         )}
 
         {!registered && (
           <p style={{ color: "#666", fontSize: 14, textAlign: "center", marginBottom: 24, lineHeight: 1.6 }}>
-            Nhập Mã khách hàng và Mật khẩu để xem giá chiết khấu riêng, đặt hàng và quản lý đơn hàng.
+            Đăng nhập để đặt hàng và theo dõi đơn.
           </p>
         )}
 
         <div className="quote-landing__field">
-          <label className="portal-form__label">Mã khách hàng</label>
+          <label className="portal-form__label">SĐT hoặc tên đăng nhập</label>
           <input
             className="lead-form__input"
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="TPS1-XXXX"
-            autoCapitalize="characters"
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="SĐT hoặc tên đăng nhập"
+            autoCapitalize="none"
+            autoComplete="username"
           />
         </div>
 
