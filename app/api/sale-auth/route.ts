@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCustomerSupabase, getCustomerSupabaseAdmin } from "@/lib/customer-supabase-server";
 import { setAdminSession } from "@/lib/admin-session";
 import { isLoginBlocked, recordLoginFailure, clearLoginFailures, LOGIN_BLOCKED_MESSAGE } from "@/lib/rate-limit";
+import { resolveCustomerIdentifier } from '@/lib/customer-login-identifier';
 
 // LƯU Ý BẢO MẬT (2026-09-09): route này TRƯỚC ĐÂY không hề kiểm tra mật khẩu
 // (chỉ tra tên/email trong admin_profiles rồi cho đăng nhập luôn), cộng thêm
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(staffResult, { headers: corsHeaders });
     }
 
-    const customerResult = await tryCustomerLogin(identifier, password);
+    const customerResult = await tryCustomerLogin(req, identifier, password);
     if (customerResult) {
       await clearLoginFailures(identifier);
       return NextResponse.json(customerResult, { headers: corsHeaders });
@@ -61,6 +62,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Tên đăng nhập hoặc mật khẩu không đúng" }, { status: 401, headers: corsHeaders });
   } catch (error) {
     console.error("Sale auth error:", error);
+    if (error instanceof Error && error.message === 'AMBIGUOUS_PHONE') return NextResponse.json({ ok: false, code: 'AMBIGUOUS_PHONE', error: 'SĐT dùng cho nhiều tài khoản. Hãy dùng tên đăng nhập hoặc mã khách hàng.' }, { status: 409, headers: corsHeaders });
+    if (error instanceof Error && error.message === 'LOGIN_RATE_LIMITED') return NextResponse.json({ ok: false, code: 'LOGIN_RATE_LIMITED', error: LOGIN_BLOCKED_MESSAGE }, { status: 429, headers: corsHeaders });
+    if (error instanceof Error && error.message === "AUTH_SERVICE_UNAVAILABLE") {
+      return NextResponse.json({ ok: false, error: "Không kết nối được hệ thống xác thực. Vui lòng thử lại sau." }, { status: 503, headers: corsHeaders });
+    }
     return NextResponse.json({ ok: false, error: "Lỗi hệ thống" }, { status: 500, headers: corsHeaders });
   }
 }
@@ -78,6 +84,9 @@ async function tryStaffLogin(identifier: string, password: string) {
     password,
   });
 
+  if (authError && /fetch failed|network|connect/i.test(authError.message || "")) {
+    throw new Error("AUTH_SERVICE_UNAVAILABLE");
+  }
   if (authError || !authData?.session || !authData.user) return null;
 
   // Tra hồ sơ nhân viên bằng service-role (không tin bất kỳ dữ liệu role/tên
@@ -154,47 +163,31 @@ interface CustomerLoginRow {
   order_session_token: string;
 }
 
-function normalizeCustomerLoginCode(code: string): string {
-  return code
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .replace(/\s+/g, "")
-    .toUpperCase();
-}
-
-async function tryCustomerLogin(identifier: string, password: string) {
+async function tryCustomerLogin(req: NextRequest, identifier: string, password: string) {
   const supabase = getCustomerSupabase();
-  const normalizedCode = normalizeCustomerLoginCode(identifier);
+  const resolved = await resolveCustomerIdentifier(identifier);
+  if (resolved.status === 'ambiguous') throw new Error('AMBIGUOUS_PHONE');
+  if (resolved.status !== 'found' || !resolved.code) return null;
+  if (await isLoginBlocked(req, resolved.code)) throw new Error('LOGIN_RATE_LIMITED');
 
   // Thử lần 1: với mã đúng như gõ (đã chuẩn hóa HOA, bỏ dấu/khoảng trắng)
   let { data, error } = await supabase.rpc("verify_customer_login", {
-    p_code: normalizedCode,
+    p_code: resolved.code,
     p_password: password,
   });
 
   let row: CustomerLoginRow | undefined = Array.isArray(data) ? data[0] : data;
 
-  // Thử lần 2: nếu không khớp và chưa có tiền tố TPS1- -> thử lại với TPS1- + mã (yêu cầu 2026-09-20)
-  if ((!row || !row.order_session_token) && !normalizedCode.startsWith("TPS1-")) {
-    const codeWithPrefix = `TPS1-${normalizedCode}`;
-    const retry = await supabase.rpc("verify_customer_login", {
-      p_code: codeWithPrefix,
-      p_password: password,
-    });
-    if (!retry.error && retry.data) {
-      row = Array.isArray(retry.data) ? retry.data[0] : retry.data;
-    }
-  }
-
   if (error && (!row || !row.order_session_token)) {
     console.error("verify_customer_login error (sale-auth):", error);
+    if (/fetch failed|network|connect/i.test(error.message || "")) {
+      throw new Error("AUTH_SERVICE_UNAVAILABLE");
+    }
     return null;
   }
 
-  if (!row || !row.order_session_token) return null;
+  if (!row || !row.order_session_token) { await recordLoginFailure(req, resolved.code); return null; }
+  await clearLoginFailures(resolved.code);
 
   return {
     ok: true,
